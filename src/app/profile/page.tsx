@@ -158,19 +158,20 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8">
+    <div className="min-h-screen bg-slate-50 p-3 md:p-8">
       <Toaster />
-      <div className="max-w-6xl mx-auto space-y-8">
-        <div className="flex items-center justify-between">
+      <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
+        <div className="flex items-center justify-between gap-2">
           <Link href="/">
-            <Button variant="ghost" size="sm" className="gap-2 font-bold text-slate-600 hover:text-primary">
-              <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+            <Button variant="ghost" size="sm" className="gap-1.5 font-bold text-slate-600 hover:text-primary">
+              <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Back</span>
             </Button>
           </Link>
-          <div className="flex items-center gap-4">
-             <div className="flex items-center gap-2 bg-white px-4 py-1.5 rounded-full border shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-4">
+             <div className="flex items-center gap-1.5 sm:gap-2 bg-white px-2 sm:px-4 py-1.5 rounded-full border shadow-sm">
                 <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
-                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{format(new Date(), 'EEEE, MMMM do')}</span>
+                <span className="text-[9px] sm:text-[10px] font-black text-slate-600 uppercase tracking-widest hidden sm:inline">{format(new Date(), 'EEEE, MMMM do')}</span>
+                <span className="text-[9px] sm:text-[10px] font-black text-slate-600 uppercase sm:hidden">{format(new Date(), 'MMM do')}</span>
              </div>
           </div>
         </div>

@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview A Puter.js-powered flow for batched pedagogical explanations using GPT-5 Nano.
  * Note: This function runs in the browser environment since Puter is loaded via script tag.
@@ -24,7 +23,7 @@ export type ExplainMistakesInput = z.infer<typeof ExplainMistakesInputSchema>;
 
 const ExplanationResultSchema = z.object({
   questionId: z.string(),
-  aiExplanation: z.string().describe('A very concise pedagogical explanation (max 1 sentence).'),
+  aiExplanation: z.string().describe('A concise pedagogical explanation (max 2 sentences).'),
 });
 
 const ExplainMistakesOutputSchema = z.object({
@@ -47,7 +46,9 @@ export async function explainMistakesBatch(
 
     const context = input.mistakes.map(m => `Q: ${m.text}\nCorrect: ${m.correctAnswer}\nUser: ${m.userAnswer}`).join('\n---\n');
     
-    const response = await puter.ai.chat(`For each of these LET mistakes, provide a 1-sentence pedagogical explanation. 
+    const response = await puter.ai.chat(`For each of these LET mistakes, provide a 2-sentence pedagogical explanation. 
+      First sentence: Identify the correct answer.
+      Second sentence: Explain why the user's answer was wrong and the key concept they missed.
       Return a JSON array of objects with fields "questionId" and "aiExplanation".
       
       Mistakes:
@@ -78,7 +79,7 @@ export async function explainMistakesBatch(
       const aiItem = Array.isArray(parsed) ? (parsed[idx] || parsed.find((p: any) => p.questionId === m.questionId)) : null;
       return {
         questionId: m.questionId,
-        aiExplanation: aiItem?.aiExplanation || aiItem?.explanation || "Review board-preferred standard for this track."
+        aiExplanation: aiItem?.aiExplanation || aiItem?.explanation || "Review the core concepts related to this subject track."
       };
     });
 
@@ -88,7 +89,7 @@ export async function explainMistakesBatch(
     return { 
       explanations: input.mistakes.map(m => ({ 
         questionId: m.questionId, 
-        aiExplanation: "Review board-preferred standard for this track." 
+        aiExplanation: "Review the core concepts related to this subject track." 
       })) 
     };
   }

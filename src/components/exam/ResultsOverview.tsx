@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LabelList } from 'recharts';
-import { CheckCircle2, XCircle, Trophy, Target, BookOpen, ArrowLeft, BrainCircuit, Sparkles, Loader2, AlertCircle, LayoutDashboard, ChevronRight, Lock, Play } from "lucide-react";
+import { CheckCircle2, XCircle, Trophy, Target, BookOpen, ArrowLeft, BrainCircuit, Sparkles, Loader2, AlertCircle, LayoutDashboard, ChevronRight, Lock, Play, MessageSquare } from "lucide-react";
 import { PersonalizedPerformanceSummaryOutput } from "@/ai/flows/personalized-performance-summary-flow";
 import { explainMistakesBatch } from "@/ai/flows/explain-mistakes-batch-flow";
 import { Question } from "@/app/lib/mock-data";
@@ -335,27 +334,80 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                           <span className="text-xs font-bold line-clamp-1">{q.text}</span>
                         </AccordionTrigger>
                         <AccordionContent className="p-6 pt-0 space-y-4">
+                          {/* Show the question without highlighting correct answer - user must ask AI */}
                           <div className="bg-slate-50 p-4 rounded-xl border">
                             <p className="font-bold text-sm mb-3">{q.text}</p>
                             <div className="grid gap-2">
-                              {q.options.map((opt, i) => (
-                                <div key={i} className={cn(
-                                  "p-3 rounded-lg border text-xs flex justify-between",
-                                  opt === q.correctAnswer ? "bg-emerald-50 border-emerald-200 text-emerald-700 font-bold" : (opt === answers[q.id] ? "bg-destructive/5 border-destructive/20 text-destructive" : "bg-white opacity-60")
-                                )}>
-                                  {opt} {opt === q.correctAnswer && <CheckCircle2 className="w-4 h-4" />}
-                                </div>
-                              ))}
+                              {q.options.map((opt, i) => {
+                                const isUserAnswer = opt === answers[q.id];
+                                return (
+                                  <div 
+                                    key={i} 
+                                    className={cn(
+                                      "p-3 rounded-lg border text-xs flex items-center gap-2",
+                                      isUserAnswer 
+                                        ? "bg-orange-50 border-orange-200 text-orange-700 font-bold" 
+                                        : "bg-white opacity-70"
+                                    )}
+                                  >
+                                    <span className="w-5 h-5 rounded-full border flex items-center justify-center text-[9px] shrink-0">
+                                      {String.fromCharCode(65 + i)}
+                                    </span>
+                                    {opt}
+                                    {isUserAnswer && <span className="ml-auto text-[10px] font-black">YOUR ANSWER</span>}
+                                  </div>
+                                );
+                              })}
                             </div>
+                            <p className="text-[10px] text-slate-400 mt-3 italic">Tap "Ask AI for Explanation" to reveal the correct answer and learn why.</p>
                           </div>
+                          
+                          {/* AI Generation Animation */}
                           {!localExplanations[q.id] ? (
-                            <Button onClick={() => handleGenerateExplanation(q)} disabled={generatingIds.has(q.id)} size="sm" className="w-full font-black gap-2">
-                              {generatingIds.has(q.id) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                              Ask AI for Explanation
+                            <Button 
+                              onClick={() => handleGenerateExplanation(q)} 
+                              disabled={generatingIds.has(q.id)} 
+                              size="sm" 
+                              className={cn(
+                                "w-full font-black gap-2 transition-all",
+                                generatingIds.has(q.id) 
+                                  ? "bg-primary/10 text-primary border-2 border-primary/20" 
+                                  : "hover:bg-primary/5"
+                              )}
+                            >
+                              {generatingIds.has(q.id) ? (
+                                <>
+                                  <div className="relative">
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <div className="absolute inset-0 w-4 h-4 border-2 border-primary/30 rounded-full animate-ping" />
+                                  </div>
+                                  <span className="flex items-center gap-1">
+                                    Analyzing your mistake
+                                    <span className="flex gap-0.5">
+                                      <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                      <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                      <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                    </span>
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="w-4 h-4" />
+                                  Ask AI for Explanation
+                                </>
+                              )}
                             </Button>
                           ) : (
-                            <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 italic text-sm text-slate-700 leading-relaxed">
-                              "{localExplanations[q.id]}"
+                            <div className="relative overflow-hidden">
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent animate-shimmer" />
+                              <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 italic text-sm text-slate-700 leading-relaxed relative">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-primary rounded-l-xl" />
+                                <div className="flex items-start gap-2 mb-2">
+                                  <MessageSquare className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                                  <span className="text-[10px] font-black text-primary uppercase tracking-widest">AI Explanation</span>
+                                </div>
+                                "{localExplanations[q.id]}"
+                              </div>
                             </div>
                           )}
                         </AccordionContent>

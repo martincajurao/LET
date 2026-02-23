@@ -37,7 +37,10 @@ export interface UserProfile {
   referralTier?: string;
   taskQuestionsClaimed?: boolean;
   taskMockClaimed?: boolean;
+  taskMistakesClaimed?: boolean;
+  mistakesReviewed?: number;
   lastExplanationRequest?: number;
+  dailyEventEntries?: number;
 }
 
 interface AuthContextType {
@@ -108,9 +111,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
               taskQuestionsClaimed: false,
               taskMockClaimed: false,
+              taskMistakesClaimed: false,
+              mistakesReviewed: 0,
               referralCount: 0,
               referralCreditsEarned: 0,
-              referralTier: 'Bronze'
+              referralTier: 'Bronze',
+              dailyEventEntries: 1
             };
             try {
               await setDoc(userDocRef, newUserProfile);

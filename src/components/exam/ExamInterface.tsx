@@ -1,7 +1,6 @@
+'use client';
 
-'use client'
-
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -40,6 +39,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: ExamInterfaceProps) {
   const { user } = useUser();
   const firestore = useFirestore();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -121,7 +121,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       const question = questions[currentIdx];
       const explanationRef = doc(firestore, 'ai_explanations', question.id);
 
-      // 1. Check Cache
       const cachedDoc = await getDoc(explanationRef);
       if (cachedDoc.exists()) {
         setExplanation(cachedDoc.data().explanation);
@@ -130,12 +129,10 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         return;
       }
 
-      // 2. Check Credits
       if (!user.isPro && (user.credits || 0) < 2) {
         throw new Error("Insufficient AI Credits. Complete daily tasks to earn more!");
       }
 
-      // 3. Call AI Flow
       const result = await explainQuestion({
         questionText: question.text,
         options: question.options,
@@ -149,10 +146,8 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       setExplanation(result.explanation);
       setShowExplanation(true);
       
-      // 4. Perform Client-Side Mutations
       const userRef = doc(firestore, 'users', user.uid);
       
-      // Deduct Credits
       if (!user.isPro) {
         updateDoc(userRef, {
           credits: increment(-2),
@@ -161,7 +156,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         });
       }
 
-      // Cache Explanation
       setDoc(explanationRef, {
         explanation: result.explanation,
         createdAt: serverTimestamp()
@@ -216,175 +210,184 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   if (!currentQuestion) return null;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
+    <div ref={containerRef} className="h-[calc(100vh-100px)] min-h-[400px] flex flex-col">
+      {/* Compact Header */}
+      <div className="flex-shrink-0">
+        <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-1.5 sm:p-2 rounded-lg sm:rounded-xl shadow-sm border border-border sticky top-0 z-10 gap-1 sm:gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-1 pr-1.5 sm:pr-2 border-r">
+              <Clock className="w-3 h-3 text-primary" />
+              <p className={`text-xs sm:text-sm font-mono font-bold tabular-nums ${timeLeft < 60 ? 'text-destructive animate-pulse' : ''}`}>
+                {formatTime(timeLeft)}
+              </p>
+            </div>
+            <div className="flex items-center gap-1 truncate">
+              <Layers className="w-3 h-3 text-secondary-foreground shrink-0" />
+              <p className="text-[10px] sm:text-xs font-bold truncate">Phase {currentPhase.step}: {currentPhase.name}</p>
+            </div>
+          </div>
+          <div className="flex-1 px-2 w-full order-first sm:order-none">
+            <Progress value={progress} className="h-1 rounded-full" />
+          </div>
+          <Button variant="default" size="sm" className="font-bold gap-1 h-8 px-2 sm:px-4 rounded-lg" onClick={() => setShowSubmitConfirm(true)}>
+            <Send className="w-3 h-3" />
+            <span className="hidden sm:inline text-xs">Finish Test</span>
+            <span className="sm:hidden text-xs">Submit</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Main Content - Compact */}
+      <div className="flex-1 overflow-hidden pt-2 pb-2">
+        <div className="h-full grid grid-cols-1 lg:grid-cols-4 gap-2">
+          {/* Question Area */}
+          <div className="lg:col-span-3 h-full overflow-y-auto">
+            <Card className="border-none shadow-md overflow-hidden rounded-lg h-fit">
+              <CardHeader className="bg-primary/5 py-2 px-2 sm:px-3 border-b border-primary/10">
+                <div className="flex flex-row justify-between items-center gap-1">
+                  <Badge variant="outline" className="bg-white border-primary/20 text-[8px] font-black uppercase tracking-widest w-fit">{currentQuestion.subject}</Badge>
+                  <Button variant="ghost" size="sm" onClick={toggleFlag} className={`h-6 px-1.5 rounded text-[9px] font-bold ${flags[currentQuestion.id] ? "text-orange-500 bg-orange-50" : "text-muted-foreground"}`}>
+                    <Flag className={`w-2.5 h-2.5 ${flags[currentQuestion.id] ? "fill-orange-500" : ""}`} />
+                  </Button>
+                </div>
+                <CardTitle className="text-xs sm:text-sm leading-tight font-headline tracking-tight">{currentQuestion.text}</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-2 pb-2 px-2">
+<RadioGroup value={answers[currentQuestion.id] || ""} onValueChange={handleAnswer} className={`grid ${shuffledOptions.some(o => o.length > 60) ? 'grid-cols-1' : 'grid-cols-2'} gap-1.5`}>
+                  {shuffledOptions.map((opt, idx) => (
+                    <div key={idx} className="flex items-center">
+                      <RadioGroupItem value={opt} id={`opt-${idx}`} className="sr-only" />
+                      <Label htmlFor={`opt-${idx}`} className={`flex flex-1 items-center p-2 rounded-lg border-2 cursor-pointer transition-all hover:bg-primary/5 text-xs ${answers[currentQuestion.id] === opt ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary/5" : "border-border bg-white"}`}>
+                        <span className={`w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full mr-1.5 text-[9px] font-black border-2 shrink-0 transition-colors ${answers[currentQuestion.id] === opt ? "bg-primary text-primary-foreground border-primary" : "border-border bg-muted text-muted-foreground"}`}>
+                          {String.fromCharCode(65 + idx)}
+                        </span>
+                        <span className="text-[11px] sm:text-xs font-bold leading-tight line-clamp-2">{opt}</span>
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </CardContent>
+              <CardFooter className="flex flex-wrap justify-center sm:justify-between bg-muted/20 p-1.5 sm:p-2 border-t gap-1">
+                <Button variant="outline" size="sm" className="font-bold rounded px-2 sm:px-3 flex-1 sm:flex-none h-8 text-xs" onClick={() => setCurrentIdx(prev => Math.max(0, prev - 1))} disabled={currentIdx === 0}>
+                  <ChevronLeft className="w-3 h-3 mr-1" />
+                  <span className="hidden sm:inline">Prev</span>
+                </Button>
+                <Button variant="outline" size="sm" className="font-bold rounded px-2 sm:px-3 flex-1 sm:flex-none h-8 text-xs shadow-sm border-primary/20 text-primary hover:bg-primary/5" onClick={handleExplain} disabled={explaining}>
+                  {explaining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
+                  <span className="hidden sm:inline">Explain</span>
+                </Button>
+                <Button variant="outline" size="sm" className="font-bold rounded px-2 sm:px-3 flex-1 sm:flex-none h-8 text-xs" onClick={handleNext} disabled={currentIdx === questions.length - 1}>
+                  <span className="hidden sm:inline">Next</span>
+                  <span className="sm:hidden">Next</span>
+                  <ChevronRight className="w-3 h-3 ml-1" />
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+
+          {/* Navigator - Fixed on lg screens */}
+          <div className="lg:col-span-1 hidden lg:block h-full">
+            <Card className="border-none shadow-md sticky top-0 rounded-lg overflow-hidden h-full">
+              <CardHeader className="py-2 px-3 border-b bg-muted/20 flex-shrink-0">
+                <CardTitle className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Navigator</CardTitle>
+              </CardHeader>
+              <CardContent className="p-2 space-y-2 overflow-y-auto h-[calc(100%-50px)]">
+                {Object.entries(categorizedNavigator).map(([subject, data]) => (
+                  <div key={subject} className="space-y-1">
+                    <p className="text-[8px] font-black text-primary uppercase tracking-widest border-b border-primary/10 pb-0.5 truncate">{subject}</p>
+                    <div className="grid grid-cols-5 gap-0.5">
+                      {data.questions.map((q) => (
+                        <button
+                          key={q.id}
+                          onClick={() => setCurrentIdx(q.originalIndex)}
+                          className={`w-full aspect-square rounded text-[8px] font-black transition-all relative flex items-center justify-center shadow-sm ${currentIdx === q.originalIndex ? 'ring-1 ring-primary ring-offset-1 scale-105 z-10' : ''} ${answers[q.id] ? 'bg-primary text-primary-foreground' : 'bg-muted/50 text-muted-foreground'} ${flags[q.id] ? 'border border-orange-400' : ''}`}
+                        >
+                          {q.originalIndex + 1}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Dialogs */}
       <Dialog open={showBreakDialog} onOpenChange={setShowBreakDialog}>
         <DialogContent className="sm:max-w-md rounded-[2rem] border-none shadow-2xl">
-          <DialogHeader className="space-y-4">
-            <div className="mx-auto w-16 h-16 bg-secondary/20 rounded-2xl flex items-center justify-center">
-              <Coffee className="w-8 h-8 text-secondary-foreground" />
+          <DialogHeader className="space-y-3">
+            <div className="mx-auto w-12 h-12 bg-secondary/20 rounded-xl flex items-center justify-center">
+              <Coffee className="w-6 h-6 text-secondary-foreground" />
             </div>
-            <DialogTitle className="text-center text-2xl font-black tracking-tight">Phase Complete!</DialogTitle>
-            <DialogDescription className="text-center text-sm font-medium text-slate-500">
+            <DialogTitle className="text-center text-xl font-black tracking-tight">Phase Complete!</DialogTitle>
+            <DialogDescription className="text-center text-xs font-medium text-slate-500">
               You've finished the current phase. Take a short rest or proceed directly to the next track.
             </DialogDescription>
           </DialogHeader>
-          <div className="text-center space-y-4 py-2">
+          <div className="text-center space-y-3 py-2">
             {isResting ? (
-              <div className="space-y-3">
-                <div className="font-bold text-primary text-lg">Resting... Take a deep breath.</div>
-                <div className="text-4xl font-mono font-black tabular-nums">{formatTime(restTimer)}</div>
+              <div className="space-y-2">
+                <div className="font-bold text-primary text-sm">Resting... Take a deep breath.</div>
+                <div className="text-3xl font-mono font-black tabular-nums">{formatTime(restTimer)}</div>
               </div>
             ) : (
-              <div className="space-y-3">
-                <div className="text-lg text-foreground font-medium leading-relaxed px-4">
-                  You've finished the <span className="font-black text-primary underline underline-offset-4">{currentPhase.name}</span> phase.
+              <div className="space-y-2">
+                <div className="text-sm text-foreground font-medium leading-relaxed px-2">
+                  You've finished the <span className="font-black text-primary underline underline-offset-2">{currentPhase.name}</span> phase.
                 </div>
               </div>
             )}
           </div>
-          <DialogFooter className="flex-col sm:flex-row gap-3 mt-6">
+          <DialogFooter className="flex-col sm:flex-row gap-2 mt-4">
             {!isResting && (
-              <Button variant="outline" className="w-full gap-2 font-bold h-12 rounded-xl" onClick={() => setIsResting(true)}>
+              <Button variant="outline" className="w-full gap-2 font-bold h-10 rounded-lg" onClick={() => setIsResting(true)}>
                 <Coffee className="w-4 h-4" />
-                Take a Rest
+                Rest
               </Button>
             )}
-            <Button className="w-full gap-2 font-bold h-12 rounded-xl shadow-lg" onClick={() => { setShowBreakDialog(false); setIsResting(false); setCurrentIdx(prev => prev + 1); }}>
+            <Button className="w-full gap-2 font-bold h-10 rounded-lg shadow-lg" onClick={() => { setShowBreakDialog(false); setIsResting(false); setCurrentIdx(prev => prev + 1); }}>
               {isResting ? <PlayCircle className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-              {isResting ? "Resume Simulation" : "Proceed to Next Phase"}
+              {isResting ? "Resume" : "Next Phase"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-       <Dialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
+      <Dialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
         <DialogContent className="rounded-[2rem]">
           <DialogHeader>
-            <DialogTitle className="font-black">Submit Simulation?</DialogTitle>
-            <DialogDescription>
-              You are about to finish your board track. Your analytics and board readiness score will be calculated based on your performance.
+            <DialogTitle className="font-black text-lg">Submit Simulation?</DialogTitle>
+            <DialogDescription className="text-xs">
+              You are about to finish your board track. Your analytics and board readiness score will be calculated.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="ghost" className="font-bold" onClick={() => setShowSubmitConfirm(false)}>Review More</Button>
-            <Button className="font-black rounded-xl" onClick={handleSubmit}>Yes, Submit Now</Button>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" className="font-bold text-xs" onClick={() => setShowSubmitConfirm(false)}>Review</Button>
+            <Button className="font-black rounded-xl text-xs" onClick={handleSubmit}>Submit Now</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={showExplanation} onOpenChange={setShowExplanation}>
-        <DialogContent className="max-w-lg rounded-[2rem]">
+        <DialogContent className="max-w-md rounded-[2rem]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 font-black">
-               <Sparkles className="w-5 h-5 text-primary" /> AI Pedagogical Insight
+            <DialogTitle className="flex items-center gap-2 font-black text-sm">
+               <Sparkles className="w-4 h-4 text-primary" /> AI Insight
             </DialogTitle>
-            <DialogDescription>
-              A brief explanation focusing on the board-standard reasoning for this specific item.
+            <DialogDescription className="text-xs">
+              Board-standard reasoning for this item.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-6 italic text-slate-700 leading-relaxed font-medium">
+          <div className="py-3 italic text-slate-700 leading-relaxed text-xs font-medium">
             "{explanation}"
           </div>
           <DialogFooter>
-            <Button variant="secondary" className="w-full rounded-xl font-black" onClick={() => setShowExplanation(false)}>Understood</Button>
+            <Button variant="secondary" className="w-full rounded-xl font-black text-xs" onClick={() => setShowExplanation(false)}>Got it</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-
-      <div className="flex flex-col md:flex-row justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-border sticky top-4 z-10 gap-4">
-        <div className="flex items-center gap-4 w-full md:w-auto">
-          <div className="flex items-center gap-2 pr-4 border-r">
-            <Clock className="w-4 h-4 text-primary" />
-            <p className={`text-lg font-mono font-bold tabular-nums ${timeLeft < 60 ? 'text-destructive animate-pulse' : ''}`}>
-              {formatTime(timeLeft)}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 truncate">
-            <Layers className="w-4 h-4 text-secondary-foreground" />
-            <p className="text-sm font-bold truncate">Phase {currentPhase.step}: {currentPhase.name}</p>
-          </div>
-        </div>
-        <div className="flex-1 px-4 md:px-8 w-full">
-          <Progress value={progress} className="h-1.5 rounded-full" />
-        </div>
-        <Button variant="default" size="sm" className="font-bold gap-2 ml-2 h-10 px-6 rounded-xl shadow-md transform active:scale-95" onClick={() => setShowSubmitConfirm(true)}>
-          <Send className="w-4 h-4" />
-          Finish Test
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3 space-y-4">
-          <Card className="border-none shadow-md overflow-hidden rounded-[2rem]">
-            <CardHeader className="bg-primary/5 py-6 px-8 border-b border-primary/10">
-              <div className="flex justify-between items-center mb-4">
-                <Badge variant="outline" className="bg-white border-primary/20 text-[10px] font-black uppercase tracking-widest">{currentQuestion.subject}</Badge>
-                <Button variant="ghost" size="sm" onClick={toggleFlag} className={`h-8 px-3 rounded-lg text-[10px] font-bold ${flags[currentQuestion.id] ? "text-orange-500 bg-orange-50" : "text-muted-foreground"}`}>
-                  <Flag className={`w-3.5 h-3.5 mr-1.5 ${flags[currentQuestion.id] ? "fill-orange-500" : ""}`} />
-                  {flags[currentQuestion.id] ? "Flagged for Review" : "Flag Question"}
-                </Button>
-              </div>
-              <CardTitle className="text-2xl leading-snug font-headline tracking-tight">{currentQuestion.text}</CardTitle>
-             </CardHeader>
-            <CardContent className="pt-8 pb-10 px-4 md:px-12">
-              <RadioGroup value={answers[currentQuestion.id] || ""} onValueChange={handleAnswer} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {shuffledOptions.map((opt, idx) => (
-                  <div key={idx} className="flex items-center">
-                    <RadioGroupItem value={opt} id={`opt-${idx}`} className="sr-only" />
-                    <Label htmlFor={`opt-${idx}`} className={`flex flex-1 items-center p-5 rounded-2xl border-2 cursor-pointer transition-all hover:bg-primary/5 min-h-[80px] ${answers[currentQuestion.id] === opt ? "border-primary bg-primary/10 shadow-sm ring-4 ring-primary/5" : "border-border bg-white"}`}>
-                      <span className={`w-10 h-10 flex items-center justify-center rounded-full mr-4 text-xs font-black border-2 shrink-0 transition-colors ${answers[currentQuestion.id] === opt ? "bg-primary text-primary-foreground border-primary" : "border-border bg-muted text-muted-foreground"}`}>
-                        {String.fromCharCode(65 + idx)}
-                      </span>
-                      <span className="text-base font-bold leading-tight">{opt}</span>
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            </CardContent>
-            <CardFooter className="flex justify-between bg-muted/20 p-6 border-t gap-2">
-              <Button variant="outline" size="lg" className="font-bold rounded-xl px-8" onClick={() => setCurrentIdx(prev => Math.max(0, prev - 1))} disabled={currentIdx === 0}>
-                <ChevronLeft className="w-4 h-4 mr-2" />
-                Previous
-              </Button>
-              <Button variant="outline" size="lg" className="font-bold rounded-xl px-8 shadow-sm border-primary/20 text-primary hover:bg-primary/5" onClick={handleExplain} disabled={explaining}>
-                {explaining ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                Explain with AI
-              </Button>
-              <Button variant="outline" size="lg" className="font-bold rounded-xl px-8" onClick={handleNext} disabled={currentIdx === questions.length - 1}>
-                Next Question
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-
-        <div className="lg:col-span-1">
-          <Card className="border-none shadow-md sticky top-24 rounded-[2rem] overflow-hidden">
-            <CardHeader className="py-4 px-6 border-b bg-muted/20">
-              <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Simulation Navigator</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-6 max-h-[70vh] overflow-y-auto">
-              {Object.entries(categorizedNavigator).map(([subject, data]) => (
-                <div key={subject} className="space-y-2">
-                  <p className="text-[10px] font-black text-primary uppercase tracking-widest border-b border-primary/10 pb-1">{subject}</p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {data.questions.map((q) => (
-                      <button
-                        key={q.id}
-                        onClick={() => setCurrentIdx(q.originalIndex)}
-                        className={`w-full aspect-square rounded-xl text-[10px] font-black transition-all relative flex items-center justify-center shadow-sm ${currentIdx === q.originalIndex ? 'ring-2 ring-primary ring-offset-2 scale-105 z-10' : ''} ${answers[q.id] ? 'bg-primary text-primary-foreground shadow-primary/20' : 'bg-muted/50 text-muted-foreground'} ${flags[q.id] ? 'border-2 border-orange-400' : ''}`}
-                      >
-                        {q.originalIndex + 1}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
     </div>
   );
 }
