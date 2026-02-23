@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { 
   Dialog, 
   DialogContent, 
@@ -24,7 +23,6 @@ import {
   BrainCircuit,
   ArrowUpRight,
   ShieldCheck,
-  CheckCircle2,
   Sparkles,
   Users
 } from "lucide-react";
@@ -267,12 +265,12 @@ export default function LetsPrepApp() {
   if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-body pb-20 overflow-x-hidden">
+    <div className="min-h-screen bg-[#F8FAFC] font-body pb-10 overflow-x-hidden">
       <Toaster />
       
       {/* Auth Dialog */}
       <Dialog open={authIssue} onOpenChange={setAuthIssue}>
-        <DialogContent className="rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
+        <DialogContent className="rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl">
           <div className="bg-primary h-2 w-full" />
           <div className="p-8 pt-6">
             <DialogHeader className="mb-6 text-center">
@@ -280,7 +278,7 @@ export default function LetsPrepApp() {
                 <ShieldCheck className="w-8 h-8 text-primary" />
               </div>
               <DialogTitle className="text-2xl font-black tracking-tight">Access Your Tracks</DialogTitle>
-              <p className="text-slate-500 font-medium">Sign in to sync your board readiness score and earn AI credits.</p>
+              <p className="text-slate-500 font-medium text-sm">Sign in to sync your board readiness score and earn AI credits.</p>
             </DialogHeader>
             <div className="grid gap-3">
               <Button onClick={loginWithGoogle} className="h-14 rounded-2xl font-black gap-3 shadow-lg shadow-primary/10 transition-transform active:scale-95"><GoogleIcon /> Continue with Google</Button>
@@ -315,23 +313,23 @@ export default function LetsPrepApp() {
       </Dialog>
 
       {state === 'exam' ? (
-        <div className="max-w-7xl mx-auto p-4 md:p-8"><ExamInterface questions={currentQuestions} timePerQuestion={timePerQuestion} onComplete={handleExamComplete} /></div>
+        <div className="max-w-7xl mx-auto p-4"><ExamInterface questions={currentQuestions} timePerQuestion={timePerQuestion} onComplete={handleExamComplete} /></div>
       ) : state === 'results' ? (
-        <div className="max-w-7xl mx-auto p-4 md:p-8"><ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} aiSummary={aiSummary} onRestart={() => setState('dashboard')} /></div>
+        <div className="max-w-7xl mx-auto p-4"><ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} aiSummary={aiSummary} onRestart={() => setState('dashboard')} /></div>
       ) : state === 'registration' ? (
         <div className="min-h-[80vh] flex items-center justify-center p-4">
-          <Card className="max-w-md w-full rounded-[3rem] shadow-2xl border-none overflow-hidden group">
+          <Card className="max-w-md w-full rounded-[2.5rem] shadow-2xl border-none overflow-hidden group">
             <div className="h-2 bg-primary group-hover:h-3 transition-all" />
-            <CardHeader className="text-center pt-12">
-              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
-                <Users className="w-8 h-8 text-primary" />
+            <CardHeader className="text-center pt-10 pb-4">
+              <div className="mx-auto w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
+                <Users className="w-7 h-7 text-primary" />
               </div>
-              <CardTitle className="text-3xl font-black tracking-tight">Tailor Your Path</CardTitle>
-              <CardDescription className="text-slate-500 font-medium px-6">Select your professional majorship to calibrate your Specialization track.</CardDescription>
+              <CardTitle className="text-2xl font-black tracking-tight">Tailor Your Path</CardTitle>
+              <CardDescription className="text-slate-500 font-medium px-6 text-xs">Select your professional majorship to calibrate your Specialization track.</CardDescription>
             </CardHeader>
-            <CardContent className="pb-12 pt-6 px-10">
+            <CardContent className="pb-10 pt-4 px-10">
               <Select onValueChange={(val) => { updateProfile({ majorship: val }); setState('dashboard'); }}>
-                <SelectTrigger className="h-16 rounded-[1.25rem] font-black border-2 text-lg shadow-sm">
+                <SelectTrigger className="h-14 rounded-xl font-black border-2 text-base shadow-sm">
                   <SelectValue placeholder="Select your majorship..." />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
@@ -342,172 +340,158 @@ export default function LetsPrepApp() {
           </Card>
         </div>
       ) : (
-        <>
-          <div className="max-w-7xl mx-auto px-4 py-8 md:py-12 space-y-12">
-            {/* Enhanced Hero Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-              <div className="lg:col-span-8 space-y-10">
-                <Card className="overflow-hidden border-none shadow-2xl rounded-[2.5rem] lg:rounded-[3.5rem] bg-white relative group min-h-[420px] flex flex-col justify-center">
-                  <div className="absolute inset-0 bg-mesh opacity-100" />
-                  <div className="absolute top-10 right-10 w-24 h-24 bg-primary/20 blur-3xl rounded-full animate-float" />
-                  <div className="absolute bottom-10 left-10 w-32 h-32 bg-secondary/20 blur-3xl rounded-full animate-float" style={{ animationDelay: '2s' }} />
+        <div className="max-w-7xl mx-auto px-4 py-6 md:py-8 space-y-8">
+          {/* Main Top Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="lg:col-span-8 space-y-6">
+              <Card className="overflow-hidden border-none shadow-xl rounded-[2rem] bg-white relative min-h-[380px] flex flex-col justify-center">
+                <div className="absolute inset-0 bg-mesh opacity-100" />
+                <div className="absolute top-10 right-10 w-24 h-24 bg-primary/20 blur-3xl rounded-full animate-float" />
+                
+                <CardHeader className="p-8 md:p-12 space-y-4 relative z-10">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className="bg-primary/20 text-primary border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-widest">
+                      Board Simulator
+                    </Badge>
+                    <div className="flex items-center gap-1 text-orange-500 bg-orange-50 px-2 py-1 rounded-full border border-orange-100">
+                      <Sparkles className="w-3 h-3 fill-current" />
+                      <span className="text-[9px] font-black uppercase tracking-wider">AI Integrated</span>
+                    </div>
+                  </div>
                   
-                  <CardHeader className="p-8 md:p-12 lg:p-16 space-y-6 relative z-10">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <Badge className="bg-primary/20 text-primary border-none font-black text-[10px] md:text-xs px-4 py-1.5 rounded-full uppercase tracking-widest">
-                        High-Fidelity Board Simulator
-                      </Badge>
-                      <div className="flex items-center gap-1.5 text-orange-500 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100">
-                        <Sparkles className="w-3.5 h-3.5 fill-current" />
-                        <span className="text-[10px] md:text-xs font-black uppercase tracking-wider">AI Powered</span>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-4 max-w-2xl">
-                      <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.05] text-slate-900">
-                        The <span className="text-primary italic relative">Ultimate<span className="absolute -bottom-2 left-0 w-full h-2 bg-primary/20 -skew-x-12" /></span> <br /> Teacher Prep.
-                      </h1>
-                      <p className="text-slate-500 font-medium text-lg md:text-xl leading-relaxed">
-                        Master General Education, Professional Education, and your Majorship with high-fidelity adaptive simulations.
-                      </p>
-                    </div>
+                  <div className="space-y-2 max-w-xl">
+                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] text-slate-900">
+                      The Ultimate <br /> <span className="text-primary italic">Teacher Prep.</span>
+                    </h1>
+                    <p className="text-slate-500 font-medium text-base md:text-lg leading-relaxed">
+                      Master General Education, Professional Education, and your Majorship with high-fidelity adaptive simulations.
+                    </p>
+                  </div>
 
-                    <div className="pt-4 flex flex-col sm:flex-row gap-4">
-                      <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-16 md:h-20 px-10 md:px-12 rounded-2xl md:rounded-[1.5rem] font-black text-lg md:text-xl gap-3 shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all bg-primary hover:bg-primary/90 text-slate-900">
-                        <Zap className="w-6 h-6 fill-current" /> Start Full Simulation
-                      </Button>
-                      <Button variant="outline" size="lg" className="h-16 md:h-20 px-8 rounded-2xl md:rounded-[1.5rem] font-black border-2 border-slate-200 text-slate-600 hover:bg-slate-50 gap-2">
-                        View Track Roadmap <ArrowUpRight className="w-5 h-5" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                </Card>
+                  <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                    <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-14 md:h-16 px-8 rounded-xl font-black text-base gap-2 shadow-xl shadow-primary/30 hover:scale-[1.02] transition-all bg-primary hover:bg-primary/90 text-slate-900">
+                      <Zap className="w-5 h-5 fill-current" /> Start Simulation
+                    </Button>
+                    <Button variant="outline" size="lg" className="h-14 md:h-16 px-6 rounded-xl font-black border-2 border-slate-200 text-slate-600 hover:bg-slate-50 gap-2 text-sm">
+                      Track Roadmap <ArrowUpRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+              </Card>
 
-                {/* Trust/Impact Section */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {/* Simulation Tracks Integrated Header */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                  <h3 className="text-xl font-black tracking-tight text-slate-900">Focused Tracks</h3>
+                  <Button variant="ghost" size="sm" className="font-black text-primary gap-1 text-xs">View All <ChevronRight className="w-3 h-3" /></Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
-                    { label: 'Questions', value: '10k+', color: 'text-blue-600' },
-                    { label: 'Mock Tests', value: '5k+', color: 'text-purple-600' },
-                    { label: 'Pass Rate', value: '92%', color: 'text-emerald-600' },
-                    { label: 'AI Credits', value: '50k+', color: 'text-orange-600' }
-                  ].map((item, i) => (
-                    <div key={i} className="flex flex-col items-center justify-center p-6 bg-white rounded-3xl border border-slate-100 shadow-sm transition-transform hover:scale-[1.02] cursor-default">
-                      <span className={`text-3xl font-black ${item.color} mb-1`}>{item.value}</span>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{item.label}</span>
-                    </div>
+                    { name: 'Gen Ed', icon: <Languages className="w-6 h-6" />, lightColor: 'bg-blue-50 text-blue-600', borderColor: 'border-blue-100', id: 'General Education', desc: 'Social Sciences & Applied Sciences.' },
+                    { name: 'Prof Ed', icon: <BookOpen className="w-6 h-6" />, lightColor: 'bg-purple-50 text-purple-600', borderColor: 'border-purple-100', id: 'Professional Education', desc: 'Methodologies & Development.' },
+                    { name: user?.majorship || 'Majorship', icon: <Star className="w-6 h-6" />, lightColor: 'bg-emerald-50 text-emerald-600', borderColor: 'border-emerald-100', id: 'Specialization', desc: 'Expertise in your specific field.' }
+                  ].map((track, i) => (
+                    <Card key={i} onClick={() => !loading && startExam(track.id as any)} className={`border-2 ${track.borderColor} shadow-sm hover:shadow-lg transition-all rounded-[1.5rem] bg-white group cursor-pointer overflow-hidden flex flex-col hover:-translate-y-1`}>
+                      <CardHeader className="p-5 pb-3 space-y-3">
+                        <div className={`w-12 h-12 ${track.lightColor} rounded-xl flex items-center justify-center border border-white/50 group-hover:scale-110 transition-transform duration-500`}>
+                          {track.icon}
+                        </div>
+                        <div className="space-y-1">
+                          <h4 className="text-lg font-black tracking-tight text-slate-900">{track.name}</h4>
+                          <p className="text-slate-400 text-[10px] font-medium leading-tight">{track.desc}</p>
+                        </div>
+                      </CardHeader>
+                      <CardFooter className="p-5 pt-2 mt-auto">
+                        <div className={`w-full justify-center font-black text-[10px] h-10 px-4 rounded-lg flex items-center border-2 border-slate-50 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-all duration-300 gap-1.5`}>
+                          Launch <ArrowUpRight className="w-3 h-3" />
+                        </div>
+                      </CardFooter>
+                    </Card>
                   ))}
                 </div>
               </div>
-
-              {/* Sidebar Column */}
-              <div className="lg:col-span-4 space-y-8">
-                {user ? (
-                  <Card className="border-none shadow-2xl rounded-[2.5rem] bg-gradient-to-br from-primary to-primary/80 text-primary-foreground overflow-hidden relative group">
-                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <CardContent className="p-8 relative z-10">
-                      <div className="flex items-center justify-between mb-8">
-                        <div className="flex items-center gap-4">
-                          <Avatar className="w-14 h-14 border-[3px] border-white/40 shadow-xl rounded-2xl">
-                            <AvatarImage src={user.photoURL || ''} />
-                            <AvatarFallback className="bg-white/20 text-white font-black text-lg">{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-black text-xl truncate max-w-[180px]">{user.displayName || 'Educator'}</p>
-                            <Badge className="bg-white/20 text-white border-none font-black text-[9px] uppercase tracking-widest">{user.majorship || 'Not selected'}</Badge>
-                          </div>
-                        </div>
-                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center border border-white/20">
-                          <ShieldCheck className="w-5 h-5 text-white" />
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="text-center p-4 bg-white/15 rounded-2xl backdrop-blur-md border border-white/10 hover:bg-white/20 transition-colors cursor-pointer">
-                          <Zap className="w-5 h-5 mx-auto mb-2 text-yellow-300" />
-                          <p className="font-black text-2xl">{user.credits || 0}</p>
-                          <p className="text-[8px] uppercase font-black tracking-widest opacity-70">Credits</p>
-                        </div>
-                        <div className="text-center p-4 bg-white/15 rounded-2xl backdrop-blur-md border border-white/10 hover:bg-white/20 transition-colors cursor-pointer">
-                          <Flame className="w-5 h-5 mx-auto mb-2 text-orange-400" />
-                          <p className="font-black text-2xl">{user.streakCount || 0}</p>
-                          <p className="text-[8px] uppercase font-black tracking-widest opacity-70">Streak</p>
-                        </div>
-                        <div className="text-center p-4 bg-white/15 rounded-2xl backdrop-blur-md border border-white/10 hover:bg-white/20 transition-colors cursor-pointer">
-                          <Trophy className="w-5 h-5 mx-auto mb-2 text-yellow-400" />
-                          <p className="font-black text-2xl">{user.referralCount || 0}</p>
-                          <p className="text-[8px] uppercase font-black tracking-widest opacity-70">Invites</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card className="border-none shadow-2xl rounded-[2.5rem] bg-slate-900 text-white overflow-hidden p-8 space-y-6">
-                    <div className="space-y-2">
-                      <h3 className="text-2xl font-black tracking-tight">Ready to Rank?</h3>
-                      <p className="text-slate-400 font-medium text-sm">Join thousands of professional educators preparing for excellence.</p>
-                    </div>
-                    <div className="space-y-3 pt-2">
-                      <Button onClick={loginWithGoogle} className="w-full h-14 bg-white text-slate-900 hover:bg-slate-100 rounded-2xl font-black gap-3 text-base shadow-xl active:scale-95 transition-all">
-                        <GoogleIcon /> Sign in with Google
-                      </Button>
-                      <Button onClick={loginAnonymously} variant="outline" className="w-full h-12 border-slate-700 text-slate-300 hover:bg-slate-800 rounded-xl font-bold text-sm">
-                        Continue as Guest
-                      </Button>
-                    </div>
-                  </Card>
-                )}
-                <Leaderboard />
-              </div>
             </div>
 
-            {/* Simulation Tracks Grid */}
-            <div className="space-y-8 pt-4">
-              <div className="flex items-center justify-between px-2">
-                <div className="space-y-1">
-                  <h3 className="text-3xl font-black tracking-tight text-slate-900">Simulation Tracks</h3>
-                  <p className="text-slate-500 font-medium text-sm uppercase tracking-widest">Focused Preparation Areas</p>
-                </div>
-                <Button variant="ghost" className="font-black text-primary gap-2">View All Tracks <ChevronRight className="w-4 h-4" /></Button>
-              </div>
+            {/* Sidebar Section */}
+            <div className="lg:col-span-4 space-y-6">
+              {user ? (
+                <Card className="border-none shadow-xl rounded-[2rem] bg-gradient-to-br from-primary to-primary/80 text-primary-foreground overflow-hidden group">
+                  <CardContent className="p-6 relative z-10">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-12 h-12 border-2 border-white/40 shadow-lg rounded-xl">
+                          <AvatarImage src={user.photoURL || ''} />
+                          <AvatarFallback className="bg-white/20 text-white font-black text-base">{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-black text-lg truncate max-w-[140px]">{user.displayName || 'Educator'}</p>
+                          <Badge className="bg-white/20 text-white border-none font-black text-[8px] uppercase tracking-widest">{user.majorship || 'Generalist'}</Badge>
+                        </div>
+                      </div>
+                      <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center border border-white/20">
+                        <ShieldCheck className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { icon: <Zap className="w-4 h-4 text-yellow-300" />, val: user.credits || 0, label: 'Credits' },
+                        { icon: <Flame className="w-4 h-4 text-orange-400" />, val: user.streakCount || 0, label: 'Streak' },
+                        { icon: <Trophy className="w-4 h-4 text-yellow-400" />, val: user.referralCount || 0, label: 'Invites' }
+                      ].map((stat, i) => (
+                        <div key={i} className="text-center p-3 bg-white/15 rounded-xl border border-white/10">
+                          {stat.icon}
+                          <p className="font-black text-xl mt-1 leading-none">{stat.val}</p>
+                          <p className="text-[7px] uppercase font-black tracking-widest opacity-70 mt-1">{stat.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="border-none shadow-xl rounded-[2rem] bg-slate-900 text-white overflow-hidden p-6 space-y-4">
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-black tracking-tight">Ready to Rank?</h3>
+                    <p className="text-slate-400 font-medium text-xs">Join 5,000+ educators preparing for excellence.</p>
+                  </div>
+                  <div className="space-y-2 pt-1">
+                    <Button onClick={loginWithGoogle} className="w-full h-12 bg-white text-slate-900 hover:bg-slate-100 rounded-xl font-black gap-2 text-sm shadow-xl transition-all">
+                      <GoogleIcon /> Sign in with Google
+                    </Button>
+                    <Button onClick={loginAnonymously} variant="outline" className="w-full h-10 border-slate-700 text-slate-300 hover:bg-slate-800 rounded-lg font-bold text-xs">
+                      Try as Guest
+                    </Button>
+                  </div>
+                </Card>
+              )}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Tighter Stats Row */}
+              <div className="grid grid-cols-2 gap-3">
                 {[
-                  { name: 'General Education', icon: <Languages className="w-7 h-7" />, color: 'from-blue-500 to-blue-600', lightColor: 'bg-blue-50 text-blue-600', borderColor: 'border-blue-100', id: 'General Education', desc: 'Cover Humanities, Social Sciences, and Applied Sciences.' },
-                  { name: 'Professional Education', icon: <BookOpen className="w-7 h-7" />, color: 'from-purple-500 to-purple-600', lightColor: 'bg-purple-50 text-purple-600', borderColor: 'border-purple-100', id: 'Professional Education', desc: 'Focus on Teaching Methodologies and Child Development.' },
-                  { name: user?.majorship || 'Specialization', icon: <Star className="w-7 h-7" />, color: 'from-emerald-500 to-emerald-600', lightColor: 'bg-emerald-50 text-emerald-600', borderColor: 'border-emerald-100', id: 'Specialization', desc: 'Master your specific field of expertise and majorship.' }
-                ].map((track, i) => (
-                  <Card key={i} onClick={() => !loading && startExam(track.id as any)} className={`border-2 ${track.borderColor} shadow-lg hover:shadow-2xl transition-all rounded-[2.5rem] bg-white group cursor-pointer overflow-hidden flex flex-col hover:-translate-y-2`}>
-                    <CardHeader className="p-8 pb-4 space-y-6">
-                      <div className={`w-16 h-16 ${track.lightColor} rounded-2xl flex items-center justify-center shadow-inner border border-white/50 group-hover:scale-110 transition-transform duration-500`}>
-                        {track.icon}
-                      </div>
-                      <div className="space-y-2">
-                        <h4 className="text-2xl font-black tracking-tight text-slate-900">{track.name}</h4>
-                        <p className="text-slate-500 text-sm font-medium leading-relaxed">{track.desc}</p>
-                      </div>
-                    </CardHeader>
-                    <CardFooter className="p-8 pt-4 mt-auto">
-                      <div className={`w-full justify-center font-black text-sm h-14 px-6 rounded-2xl flex items-center border-2 border-slate-100 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-all duration-300 gap-2`}>
-                        Launch Simulation <ArrowUpRight className="w-4 h-4" />
-                      </div>
-                    </CardFooter>
-                  </Card>
+                  { label: 'Pass Rate', value: '92%', color: 'text-emerald-600' },
+                  { label: 'Board Items', value: '10k+', color: 'text-blue-600' }
+                ].map((item, i) => (
+                  <div key={i} className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                    <span className={`text-xl font-black ${item.color}`}>{item.value}</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">{item.label}</span>
+                  </div>
                 ))}
               </div>
-            </div>
 
-            {/* Gamification Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 pt-8">
-              <div className="lg:col-span-12 space-y-12">
-                <EventsSection />
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                  <DailyTaskDashboard />
-                  <ReferralSystem />
-                </div>
-              </div>
+              <Leaderboard />
             </div>
           </div>
-        </>
+
+          {/* Bottom Gamification Section */}
+          <div className="space-y-6">
+            <EventsSection />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <DailyTaskDashboard />
+              <ReferralSystem />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
