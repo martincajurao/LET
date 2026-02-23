@@ -124,7 +124,18 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
       toast({ title: "Locked Feature", description: "Unlock full analysis to use AI review." });
       return;
     }
+    if (!user || !firestore) {
+      toast({ variant: "destructive", title: "Error", description: "Please sign in to use AI explanation." });
+      return;
+    }
     if (generatingIds.has(q.id)) return;
+    
+    // Check credits for non-pro users
+    if (!user.isPro && (user.credits || 0) < 2) {
+      toast({ variant: "destructive", title: "Insufficient AI Credits", description: "Complete daily tasks to earn more credits!" });
+      return;
+    }
+    
     setGeneratingIds(prev => new Set(prev).add(q.id));
     
     try {
@@ -141,6 +152,15 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
       
       if (result.explanations && result.explanations.length > 0) {
         setLocalExplanations(prev => ({ ...prev, [q.id]: result.explanations[0].aiExplanation }));
+        
+        // Deduct credits for non-pro users
+        if (!user.isPro && firestore) {
+          const userRef = doc(firestore, 'users', user.uid);
+          await updateDoc(userRef, {
+            credits: increment(-2),
+            dailyAiUsage: increment(1)
+          });
+        }
       } else {
         throw new Error("Empty explanation");
       }
@@ -393,7 +413,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                               ) : (
                                 <>
                                   <Sparkles className="w-4 h-4" />
-                                  Ask AI for Explanation
+                                  Ask AI for Explanation (2 AI Credits)
                                 </>
                               )}
                             </Button>

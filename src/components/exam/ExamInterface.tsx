@@ -272,10 +272,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   <ChevronLeft className="w-3 h-3 mr-1" />
                   <span className="hidden sm:inline">Prev</span>
                 </Button>
-                <Button variant="outline" size="sm" className="font-bold rounded px-2 sm:px-3 flex-1 sm:flex-none h-8 text-xs shadow-sm border-primary/20 text-primary hover:bg-primary/5" onClick={handleExplain} disabled={explaining}>
-                  {explaining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
-                  <span className="hidden sm:inline">Explain</span>
-                </Button>
                 <Button variant="outline" size="sm" className="font-bold rounded px-2 sm:px-3 flex-1 sm:flex-none h-8 text-xs" onClick={handleNext} disabled={currentIdx === questions.length - 1}>
                   <span className="hidden sm:inline">Next</span>
                   <span className="sm:hidden">Next</span>

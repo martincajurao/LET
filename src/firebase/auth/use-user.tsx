@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
@@ -6,12 +5,14 @@ import {
   onAuthStateChanged,
   signInWithPopup,
   GoogleAuthProvider,
+  FacebookAuthProvider,
   signOut,
   signInAnonymously,
 } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, firestore } from '../index';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 export interface UserProfile {
   uid: string;
@@ -47,6 +48,7 @@ interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
   loginWithGoogle: () => Promise<void>;
+  loginWithFacebook: () => Promise<void>;
   loginAnonymously: () => Promise<void>;
   bypassLogin: () => void;
   logout: () => Promise<void>;
@@ -57,6 +59,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   loginWithGoogle: async () => {},
+  loginWithFacebook: async () => {},
   loginAnonymously: async () => {},
   bypassLogin: () => {},
   logout: async () => {},
@@ -65,6 +68,7 @@ const AuthContext = createContext<AuthContextType>({
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -166,6 +170,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginWithFacebook = async () => {
+    if (!auth) return;
+    setLoading(true);
+    const provider = new FacebookAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      if (error.code !== 'auth/popup-closed-by-user') {
+        toast({ 
+          variant: "destructive", 
+          title: "Sign In Failed", 
+          description: error.message || "Could not complete Facebook sign-in." 
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loginAnonymously = async () => {
     if (!auth) return;
     setLoading(true);
@@ -203,6 +226,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth) return;
     await signOut(auth);
     setUser(null);
+    router.push('/');
   };
 
   const updateProfile = async (data: Partial<UserProfile>) => {
@@ -216,6 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user, 
       loading, 
       loginWithGoogle, 
+      loginWithFacebook,
       loginAnonymously, 
       bypassLogin, 
       logout, 

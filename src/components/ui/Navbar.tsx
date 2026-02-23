@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -20,7 +19,7 @@ import { doc, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 export function Navbar() {
-  const { user, logout } = useUser();
+  const { user, logout, loginWithGoogle } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [showAdModal, setShowAdModal] = useState(false);
@@ -60,7 +59,11 @@ export function Navbar() {
       </div>
 
       <div className="flex items-center gap-4">
-        {user && (
+        {!user ? (
+          <Link href="/">
+            <Button variant="outline" className="font-bold rounded-xl">Sign In</Button>
+          </Link>
+        ) : (
           <>
             <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-2xl border cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => setShowAdModal(true)}>
               <Coins className="w-4 h-4 text-yellow-500 fill-current" />
