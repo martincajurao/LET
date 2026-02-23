@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect } from 'react';
@@ -340,15 +341,15 @@ export default function LetsPrepApp() {
           </Card>
         </div>
       ) : (
-        <div className="max-w-7xl mx-auto px-4 py-6 md:py-8 space-y-8">
+        <div className="max-w-7xl mx-auto px-4 py-4 md:py-6 space-y-6">
           {/* Main Top Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start">
             <div className="lg:col-span-8 space-y-6">
-              <Card className="overflow-hidden border-none shadow-xl rounded-[2rem] bg-white relative min-h-[380px] flex flex-col justify-center">
+              <Card className="overflow-hidden border-none shadow-xl rounded-[2rem] bg-white relative min-h-[320px] flex flex-col justify-center">
                 <div className="absolute inset-0 bg-mesh opacity-100" />
                 <div className="absolute top-10 right-10 w-24 h-24 bg-primary/20 blur-3xl rounded-full animate-float" />
                 
-                <CardHeader className="p-8 md:p-12 space-y-4 relative z-10">
+                <CardHeader className="p-6 md:p-10 space-y-4 relative z-10">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge className="bg-primary/20 text-primary border-none font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-widest">
                       Board Simulator
@@ -360,19 +361,19 @@ export default function LetsPrepApp() {
                   </div>
                   
                   <div className="space-y-2 max-w-xl">
-                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] text-slate-900">
+                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] text-slate-900">
                       The Ultimate <br /> <span className="text-primary italic">Teacher Prep.</span>
                     </h1>
-                    <p className="text-slate-500 font-medium text-base md:text-lg leading-relaxed">
+                    <p className="text-slate-500 font-medium text-sm md:text-base leading-relaxed">
                       Master General Education, Professional Education, and your Majorship with high-fidelity adaptive simulations.
                     </p>
                   </div>
 
                   <div className="pt-2 flex flex-col sm:flex-row gap-3">
-                    <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-14 md:h-16 px-8 rounded-xl font-black text-base gap-2 shadow-xl shadow-primary/30 hover:scale-[1.02] transition-all bg-primary hover:bg-primary/90 text-slate-900">
+                    <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-12 md:h-14 px-8 rounded-xl font-black text-sm gap-2 shadow-xl shadow-primary/30 hover:scale-[1.02] transition-all bg-primary hover:bg-primary/90 text-slate-900">
                       <Zap className="w-5 h-5 fill-current" /> Start Simulation
                     </Button>
-                    <Button variant="outline" size="lg" className="h-14 md:h-16 px-6 rounded-xl font-black border-2 border-slate-200 text-slate-600 hover:bg-slate-50 gap-2 text-sm">
+                    <Button variant="outline" size="lg" className="h-12 md:h-14 px-6 rounded-xl font-black border-2 border-slate-200 text-slate-600 hover:bg-slate-50 gap-2 text-xs">
                       Track Roadmap <ArrowUpRight className="w-4 h-4" />
                     </Button>
                   </div>
@@ -382,28 +383,28 @@ export default function LetsPrepApp() {
               {/* Simulation Tracks Integrated Header */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between px-2">
-                  <h3 className="text-xl font-black tracking-tight text-slate-900">Focused Tracks</h3>
-                  <Button variant="ghost" size="sm" className="font-black text-primary gap-1 text-xs">View All <ChevronRight className="w-3 h-3" /></Button>
+                  <h3 className="text-lg font-black tracking-tight text-slate-900">Focused Tracks</h3>
+                  <Button variant="ghost" size="sm" className="font-black text-primary gap-1 text-[10px]">View All <ChevronRight className="w-3 h-3" /></Button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
-                    { name: 'Gen Ed', icon: <Languages className="w-6 h-6" />, lightColor: 'bg-blue-50 text-blue-600', borderColor: 'border-blue-100', id: 'General Education', desc: 'Social Sciences & Applied Sciences.' },
+                    { name: 'Gen Ed', icon: <Languages className="w-6 h-6" />, lightColor: 'bg-blue-50 text-blue-600', borderColor: 'border-blue-100', id: 'General Education', desc: 'Social & Applied Sciences.' },
                     { name: 'Prof Ed', icon: <BookOpen className="w-6 h-6" />, lightColor: 'bg-purple-50 text-purple-600', borderColor: 'border-purple-100', id: 'Professional Education', desc: 'Methodologies & Development.' },
-                    { name: user?.majorship || 'Majorship', icon: <Star className="w-6 h-6" />, lightColor: 'bg-emerald-50 text-emerald-600', borderColor: 'border-emerald-100', id: 'Specialization', desc: 'Expertise in your specific field.' }
+                    { name: user?.majorship || 'Majorship', icon: <Star className="w-6 h-6" />, lightColor: 'bg-emerald-50 text-emerald-600', borderColor: 'border-emerald-100', id: 'Specialization', desc: 'Your specific field expertise.' }
                   ].map((track, i) => (
                     <Card key={i} onClick={() => !loading && startExam(track.id as any)} className={`border-2 ${track.borderColor} shadow-sm hover:shadow-lg transition-all rounded-[1.5rem] bg-white group cursor-pointer overflow-hidden flex flex-col hover:-translate-y-1`}>
-                      <CardHeader className="p-5 pb-3 space-y-3">
-                        <div className={`w-12 h-12 ${track.lightColor} rounded-xl flex items-center justify-center border border-white/50 group-hover:scale-110 transition-transform duration-500`}>
+                      <CardHeader className="p-4 pb-2 space-y-2">
+                        <div className={`w-10 h-10 ${track.lightColor} rounded-xl flex items-center justify-center border border-white/50 group-hover:scale-110 transition-transform duration-500`}>
                           {track.icon}
                         </div>
-                        <div className="space-y-1">
-                          <h4 className="text-lg font-black tracking-tight text-slate-900">{track.name}</h4>
-                          <p className="text-slate-400 text-[10px] font-medium leading-tight">{track.desc}</p>
+                        <div className="space-y-0.5">
+                          <h4 className="text-base font-black tracking-tight text-slate-900">{track.name}</h4>
+                          <p className="text-slate-400 text-[9px] font-medium leading-tight">{track.desc}</p>
                         </div>
                       </CardHeader>
-                      <CardFooter className="p-5 pt-2 mt-auto">
-                        <div className={`w-full justify-center font-black text-[10px] h-10 px-4 rounded-lg flex items-center border-2 border-slate-50 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-all duration-300 gap-1.5`}>
+                      <CardFooter className="p-4 pt-2 mt-auto">
+                        <div className={`w-full justify-center font-black text-[9px] h-8 px-4 rounded-lg flex items-center border-2 border-slate-50 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-all duration-300 gap-1.5`}>
                           Launch <ArrowUpRight className="w-3 h-3" />
                         </div>
                       </CardFooter>
@@ -414,52 +415,52 @@ export default function LetsPrepApp() {
             </div>
 
             {/* Sidebar Section */}
-            <div className="lg:col-span-4 space-y-6">
+            <div className="lg:col-span-4 space-y-4 lg:space-y-6">
               {user ? (
                 <Card className="border-none shadow-xl rounded-[2rem] bg-gradient-to-br from-primary to-primary/80 text-primary-foreground overflow-hidden group">
-                  <CardContent className="p-6 relative z-10">
-                    <div className="flex items-center justify-between mb-6">
+                  <CardContent className="p-5 relative z-10">
+                    <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <Avatar className="w-12 h-12 border-2 border-white/40 shadow-lg rounded-xl">
+                        <Avatar className="w-10 h-10 border-2 border-white/40 shadow-lg rounded-xl">
                           <AvatarImage src={user.photoURL || ''} />
-                          <AvatarFallback className="bg-white/20 text-white font-black text-base">{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                          <AvatarFallback className="bg-white/20 text-white font-black text-xs">{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-black text-lg truncate max-w-[140px]">{user.displayName || 'Educator'}</p>
-                          <Badge className="bg-white/20 text-white border-none font-black text-[8px] uppercase tracking-widest">{user.majorship || 'Generalist'}</Badge>
+                          <p className="font-black text-base truncate max-w-[120px]">{user.displayName || 'Educator'}</p>
+                          <Badge className="bg-white/20 text-white border-none font-black text-[7px] uppercase tracking-widest">{user.majorship || 'Generalist'}</Badge>
                         </div>
                       </div>
-                      <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center border border-white/20">
-                        <ShieldCheck className="w-5 h-5 text-white" />
+                      <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center border border-white/20">
+                        <ShieldCheck className="w-4 h-4 text-white" />
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { icon: <Zap className="w-4 h-4 text-yellow-300" />, val: user.credits || 0, label: 'Credits' },
-                        { icon: <Flame className="w-4 h-4 text-orange-400" />, val: user.streakCount || 0, label: 'Streak' },
-                        { icon: <Trophy className="w-4 h-4 text-yellow-400" />, val: user.referralCount || 0, label: 'Invites' }
+                        { icon: <Zap className="w-3.5 h-3.5 text-yellow-300" />, val: user.credits || 0, label: 'Credits' },
+                        { icon: <Flame className="w-3.5 h-3.5 text-orange-400" />, val: user.streakCount || 0, label: 'Streak' },
+                        { icon: <Trophy className="w-3.5 h-3.5 text-yellow-400" />, val: user.referralCount || 0, label: 'Invites' }
                       ].map((stat, i) => (
-                        <div key={i} className="text-center p-3 bg-white/15 rounded-xl border border-white/10">
+                        <div key={i} className="text-center p-2 bg-white/15 rounded-xl border border-white/10">
                           {stat.icon}
-                          <p className="font-black text-xl mt-1 leading-none">{stat.val}</p>
-                          <p className="text-[7px] uppercase font-black tracking-widest opacity-70 mt-1">{stat.label}</p>
+                          <p className="font-black text-lg mt-0.5 leading-none">{stat.val}</p>
+                          <p className="text-[6px] uppercase font-black tracking-widest opacity-70 mt-0.5">{stat.label}</p>
                         </div>
                       ))}
                     </div>
                   </CardContent>
                 </Card>
               ) : (
-                <Card className="border-none shadow-xl rounded-[2rem] bg-slate-900 text-white overflow-hidden p-6 space-y-4">
-                  <div className="space-y-1">
-                    <h3 className="text-xl font-black tracking-tight">Ready to Rank?</h3>
-                    <p className="text-slate-400 font-medium text-xs">Join 5,000+ educators preparing for excellence.</p>
+                <Card className="border-none shadow-xl rounded-[2rem] bg-slate-900 text-white overflow-hidden p-5 space-y-3">
+                  <div className="space-y-0.5">
+                    <h3 className="text-lg font-black tracking-tight">Ready to Rank?</h3>
+                    <p className="text-slate-400 font-medium text-[10px]">Join 5,000+ educators preparing for excellence.</p>
                   </div>
                   <div className="space-y-2 pt-1">
-                    <Button onClick={loginWithGoogle} className="w-full h-12 bg-white text-slate-900 hover:bg-slate-100 rounded-xl font-black gap-2 text-sm shadow-xl transition-all">
+                    <Button onClick={loginWithGoogle} className="w-full h-10 bg-white text-slate-900 hover:bg-slate-100 rounded-xl font-black gap-2 text-xs shadow-xl transition-all">
                       <GoogleIcon /> Sign in with Google
                     </Button>
-                    <Button onClick={loginAnonymously} variant="outline" className="w-full h-10 border-slate-700 text-slate-300 hover:bg-slate-800 rounded-lg font-bold text-xs">
+                    <Button onClick={loginAnonymously} variant="outline" className="w-full h-9 border-slate-700 text-slate-300 hover:bg-slate-800 rounded-lg font-bold text-[10px]">
                       Try as Guest
                     </Button>
                   </div>
@@ -472,9 +473,9 @@ export default function LetsPrepApp() {
                   { label: 'Pass Rate', value: '92%', color: 'text-emerald-600' },
                   { label: 'Board Items', value: '10k+', color: 'text-blue-600' }
                 ].map((item, i) => (
-                  <div key={i} className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                    <span className={`text-xl font-black ${item.color}`}>{item.value}</span>
-                    <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">{item.label}</span>
+                  <div key={i} className="flex flex-col items-center justify-center p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                    <span className={`text-lg font-black ${item.color}`}>{item.value}</span>
+                    <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">{item.label}</span>
                   </div>
                 ))}
               </div>
@@ -486,7 +487,7 @@ export default function LetsPrepApp() {
           {/* Bottom Gamification Section */}
           <div className="space-y-6">
             <EventsSection />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <DailyTaskDashboard />
               <ReferralSystem />
             </div>
