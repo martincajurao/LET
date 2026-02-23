@@ -215,24 +215,24 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       <div className="flex-shrink-0">
         <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-1.5 sm:p-2 rounded-lg sm:rounded-xl shadow-sm border border-border sticky top-0 z-10 gap-1 sm:gap-2">
           <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
-            <div className="flex items-center gap-1 pr-1.5 sm:pr-2 border-r">
-              <Clock className="w-3 h-3 text-primary" />
-              <p className={`text-xs sm:text-sm font-mono font-bold tabular-nums ${timeLeft < 60 ? 'text-destructive animate-pulse' : ''}`}>
+<div className="flex items-center gap-2 pr-2 sm:pr-3 border-r">
+              <Clock className="w-4 h-4 text-primary" />
+              <p className={`text-sm sm:text-base font-mono font-bold tabular-nums ${timeLeft < 60 ? 'text-destructive animate-pulse' : ''}`}>
                 {formatTime(timeLeft)}
               </p>
             </div>
             <div className="flex items-center gap-1 truncate">
-              <Layers className="w-3 h-3 text-secondary-foreground shrink-0" />
-              <p className="text-[10px] sm:text-xs font-bold truncate">Phase {currentPhase.step}: {currentPhase.name}</p>
+              <Layers className="w-4 h-4 text-secondary-foreground shrink-0" />
+              <p className="text-xs sm:text-sm font-bold truncate">Phase {currentPhase.step}: {currentPhase.name}</p>
             </div>
           </div>
           <div className="flex-1 px-2 w-full order-first sm:order-none">
-            <Progress value={progress} className="h-1 rounded-full" />
+            <Progress value={progress} className="h-1.5 rounded-full" />
           </div>
-          <Button variant="default" size="sm" className="font-bold gap-1 h-8 px-2 sm:px-4 rounded-lg" onClick={() => setShowSubmitConfirm(true)}>
-            <Send className="w-3 h-3" />
-            <span className="hidden sm:inline text-xs">Finish Test</span>
-            <span className="sm:hidden text-xs">Submit</span>
+          <Button variant="default" size="sm" className="font-bold gap-1 h-9 px-3 sm:px-5 rounded-lg" onClick={() => setShowSubmitConfirm(true)}>
+            <Send className="w-4 h-4" />
+            <span className="hidden sm:inline text-sm">Finish Test</span>
+            <span className="sm:hidden text-sm">Submit</span>
           </Button>
         </div>
       </div>
@@ -243,36 +243,37 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
           {/* Question Area */}
           <div className="lg:col-span-3 h-full overflow-y-auto">
             <Card className="border-none shadow-md overflow-hidden rounded-lg h-fit">
-              <CardHeader className="bg-primary/5 py-2 px-2 sm:px-3 border-b border-primary/10">
-                <div className="flex flex-row justify-between items-center gap-1">
-                  <Badge variant="outline" className="bg-white border-primary/20 text-[8px] font-black uppercase tracking-widest w-fit">{currentQuestion.subject}</Badge>
-                  <Button variant="ghost" size="sm" onClick={toggleFlag} className={`h-6 px-1.5 rounded text-[9px] font-bold ${flags[currentQuestion.id] ? "text-orange-500 bg-orange-50" : "text-muted-foreground"}`}>
-                    <Flag className={`w-2.5 h-2.5 ${flags[currentQuestion.id] ? "fill-orange-500" : ""}`} />
+<CardHeader className="bg-primary/5 py-3 px-4 border-b border-primary/10">
+                <div className="flex flex-row justify-between items-center gap-2">
+                  <Badge variant="outline" className="bg-white border-primary/20 text-xs font-bold uppercase tracking-wider w-fit">{currentQuestion.subject}</Badge>
+                  <Button variant="ghost" size="sm" onClick={toggleFlag} className={`h-8 px-2 rounded text-sm font-bold ${flags[currentQuestion.id] ? "text-orange-500 bg-orange-50" : "text-muted-foreground"}`}>
+                    <Flag className={`w-4 h-4 ${flags[currentQuestion.id] ? "fill-orange-500" : ""}`} />
                   </Button>
                 </div>
-                <CardTitle className="text-xs sm:text-sm leading-tight font-headline tracking-tight">{currentQuestion.text}</CardTitle>
+                <CardTitle className="text-base sm:text-lg leading-tight font-headline tracking-tight">{currentQuestion.text}</CardTitle>
               </CardHeader>
-              <CardContent className="pt-2 pb-2 px-2">
-<RadioGroup value={answers[currentQuestion.id] || ""} onValueChange={handleAnswer} className={`grid ${shuffledOptions.some(o => o.length > 60) ? 'grid-cols-1' : 'grid-cols-2'} gap-1.5`}>
+              <CardContent className="pt-4 pb-4 px-4">
+<RadioGroup value={answers[currentQuestion.id] || ""} onValueChange={handleAnswer} className={`grid ${shuffledOptions.some(o => o.length > 60) ? 'grid-cols-1' : 'grid-cols-2'} gap-3`}>
                   {shuffledOptions.map((opt, idx) => (
                     <div key={idx} className="flex items-center">
                       <RadioGroupItem value={opt} id={`opt-${idx}`} className="sr-only" />
-                      <Label htmlFor={`opt-${idx}`} className={`flex flex-1 items-center p-2 rounded-lg border-2 cursor-pointer transition-all hover:bg-primary/5 text-xs ${answers[currentQuestion.id] === opt ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary/5" : "border-border bg-white"}`}>
-                        <span className={`w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full mr-1.5 text-[9px] font-black border-2 shrink-0 transition-colors ${answers[currentQuestion.id] === opt ? "bg-primary text-primary-foreground border-primary" : "border-border bg-muted text-muted-foreground"}`}>
+                      <Label htmlFor={`opt-${idx}`} className={`flex flex-1 items-center p-3 rounded-lg border-2 cursor-pointer transition-all hover:bg-primary/5 text-sm ${answers[currentQuestion.id] === opt ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary/5" : "border-border bg-white"}`}>
+                        <span className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full mr-2 text-xs font-bold border-2 shrink-0 transition-colors ${answers[currentQuestion.id] === opt ? "bg-primary text-primary-foreground border-primary" : "border-border bg-muted text-muted-foreground"}`}>
                           {String.fromCharCode(65 + idx)}
                         </span>
-                        <span className="text-[11px] sm:text-xs font-bold leading-tight line-clamp-2">{opt}</span>
+                        <span className="text-sm font-medium leading-relaxed">{opt}</span>
                       </Label>
                     </div>
                   ))}
                 </RadioGroup>
               </CardContent>
-              <CardFooter className="flex flex-wrap justify-center sm:justify-between bg-muted/20 p-1.5 sm:p-2 border-t gap-1">
-                <Button variant="outline" size="sm" className="font-bold rounded px-2 sm:px-3 flex-1 sm:flex-none h-8 text-xs" onClick={() => setCurrentIdx(prev => Math.max(0, prev - 1))} disabled={currentIdx === 0}>
+<CardFooter className="flex flex-wrap justify-center sm:justify-between bg-muted/20 p-2 sm:p-3 border-t gap-1">
+                <Button variant="outline" size="sm" className="font-bold rounded px-2 sm:px-4 flex-1 sm:flex-none h-8 text-xs" onClick={() => setCurrentIdx(prev => Math.max(0, prev - 1))} disabled={currentIdx === 0}>
                   <ChevronLeft className="w-3 h-3 mr-1" />
                   <span className="hidden sm:inline">Prev</span>
+                  <span className="sm:hidden">Prev</span>
                 </Button>
-                <Button variant="outline" size="sm" className="font-bold rounded px-2 sm:px-3 flex-1 sm:flex-none h-8 text-xs" onClick={handleNext} disabled={currentIdx === questions.length - 1}>
+                <Button variant="outline" size="sm" className="font-bold rounded px-2 sm:px-4 flex-1 sm:flex-none h-8 text-xs" onClick={handleNext} disabled={currentIdx === questions.length - 1}>
                   <span className="hidden sm:inline">Next</span>
                   <span className="sm:hidden">Next</span>
                   <ChevronRight className="w-3 h-3 ml-1" />
@@ -281,30 +282,61 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
             </Card>
           </div>
 
-          {/* Navigator - Fixed on lg screens */}
+{/* Navigator - Fixed on lg screens */}
           <div className="lg:col-span-1 hidden lg:block h-full">
-            <Card className="border-none shadow-md sticky top-0 rounded-lg overflow-hidden h-full">
+            <Card className="border-none shadow-md sticky top-0 rounded-lg overflow-hidden h-full flex flex-col">
               <CardHeader className="py-2 px-3 border-b bg-muted/20 flex-shrink-0">
-                <CardTitle className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Navigator</CardTitle>
-              </CardHeader>
-              <CardContent className="p-2 space-y-2 overflow-y-auto h-[calc(100%-50px)]">
-                {Object.entries(categorizedNavigator).map(([subject, data]) => (
-                  <div key={subject} className="space-y-1">
-                    <p className="text-[8px] font-black text-primary uppercase tracking-widest border-b border-primary/10 pb-0.5 truncate">{subject}</p>
-                    <div className="grid grid-cols-5 gap-0.5">
-                      {data.questions.map((q) => (
-                        <button
-                          key={q.id}
-                          onClick={() => setCurrentIdx(q.originalIndex)}
-                          className={`w-full aspect-square rounded text-[8px] font-black transition-all relative flex items-center justify-center shadow-sm ${currentIdx === q.originalIndex ? 'ring-1 ring-primary ring-offset-1 scale-105 z-10' : ''} ${answers[q.id] ? 'bg-primary text-primary-foreground' : 'bg-muted/50 text-muted-foreground'} ${flags[q.id] ? 'border border-orange-400' : ''}`}
-                        >
-                          {q.originalIndex + 1}
-                        </button>
-                      ))}
+                <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Navigator</CardTitle>
+                {/* Compact Legend */}
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {Object.keys(categorizedNavigator).slice(0, 3).map((subject, idx) => (
+                    <div key={subject} className="flex items-center gap-1">
+                      <div className={`w-2 h-2 rounded-full ${idx === 0 ? 'bg-blue-500' : idx === 1 ? 'bg-green-500' : 'bg-purple-500'}`} />
+                      <span className="text-[8px] text-muted-foreground truncate max-w-[60px]">{subject.split(' ')[0]}</span>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </CardHeader>
+              <CardContent className="p-2 overflow-y-auto flex-1">
+                {/* Compact Grid - 10 columns for 450 questions */}
+                <div className="grid grid-cols-8 gap-0.5">
+                  {questions.map((q, idx) => {
+                    const catIdx = Object.keys(categorizedNavigator).findIndex(cat => 
+                      cat.includes(q.subject) || (q.subject === 'Specialization' && cat.includes('Specialization'))
+                    );
+                    return (
+                      <button
+                        key={q.id}
+                        onClick={() => setCurrentIdx(idx)}
+                        title={`Q${idx + 1}`}
+                        className={`
+                          w-full aspect-square rounded text-[8px] font-bold transition-all relative flex items-center justify-center
+                          ${currentIdx === idx ? 'ring-1 ring-primary ring-offset-1 z-10' : ''}
+                          ${answers[q.id] ? (currentIdx === idx ? 'bg-primary text-primary-foreground' : 'bg-blue-100 text-blue-700') : 'bg-muted/40 text-muted-foreground'}
+                          ${flags[q.id] ? 'border border-orange-500' : ''}
+                        `}
+                        style={{
+                          backgroundColor: answers[q.id] 
+                            ? (currentIdx === idx ? undefined : catIdx === 0 ? '#dbeafe' : catIdx === 1 ? '#dcfce7' : '#f3e8ff')
+                            : undefined,
+                          color: answers[q.id] 
+                            ? (currentIdx === idx ? 'white' : catIdx === 0 ? '#1d4ed8' : catIdx === 1 ? '#15803d' : '#7e22ce')
+                            : undefined
+                        }}
+                      >
+                        {idx + 1}
+                      </button>
+                    );
+                  })}
+                </div>
               </CardContent>
+              {/* Quick Stats Footer */}
+              <CardFooter className="py-2 px-3 border-t bg-muted/20 flex-shrink-0">
+                <div className="flex justify-between text-[8px] font-medium text-muted-foreground w-full">
+                  <span>Answered: {Object.keys(answers).length}/{questions.length}</span>
+                  <span>Flagged: {Object.keys(flags).filter(k => flags[k]).length}</span>
+                </div>
+              </CardFooter>
             </Card>
           </div>
         </div>
