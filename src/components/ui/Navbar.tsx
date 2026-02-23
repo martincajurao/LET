@@ -48,7 +48,7 @@ export function Navbar() {
   };
 
   return (
-    <nav className="flex items-center justify-between px-6 py-4 bg-white border-b sticky top-0 z-[100] shadow-sm">
+    <nav className="flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md border-b sticky top-0 z-[100] shadow-sm glass">
       <div className="flex items-center gap-2">
         <Link href="/" className="text-xl font-black tracking-tighter text-slate-900 flex items-center gap-2">
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">

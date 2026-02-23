@@ -316,6 +316,54 @@ export default function LetsPrepApp() {
       ) : (
         <>
           <div className="max-w-7xl mx-auto px-3 md:px-4 py-6 md:py-8 space-y-8">
+            {/* Quick Stats Bar - Above the main grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              <Card className="border-none shadow-md rounded-2xl bg-white overflow-hidden">
+                <CardContent className="p-3 md:p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
+                    <Users className="w-5 h-5 md:w-6 md:h-6 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="text-lg md:text-xl font-black text-slate-800">2.5K+</p>
+                    <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Learners</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-none shadow-md rounded-2xl bg-white overflow-hidden">
+                <CardContent className="p-3 md:p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0">
+                    <BrainCircuit className="w-5 h-5 md:w-6 md:h-6 text-emerald-500" />
+                  </div>
+                  <div>
+                    <p className="text-lg md:text-xl font-black text-slate-800">50K+</p>
+                    <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Questions Solved</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-none shadow-md rounded-2xl bg-white overflow-hidden">
+                <CardContent className="p-3 md:p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-50 rounded-xl flex items-center justify-center shrink-0">
+                    <Trophy className="w-5 h-5 md:w-6 md:h-6 text-purple-500" />
+                  </div>
+                  <div>
+                    <p className="text-lg md:text-xl font-black text-slate-800">85%</p>
+                    <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg. Score</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-none shadow-md rounded-2xl bg-white overflow-hidden">
+                <CardContent className="p-3 md:p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-orange-50 rounded-xl flex items-center justify-center shrink-0">
+                    <Flame className="w-5 h-5 md:w-6 md:h-6 text-orange-500" />
+                  </div>
+                  <div>
+                    <p className="text-lg md:text-xl font-black text-slate-800">30%</p>
+                    <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pass Rate</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10">
               <Card className="lg:col-span-8 overflow-hidden border-none shadow-xl rounded-2xl lg:rounded-[2.5rem] bg-gradient-to-br from-white to-slate-50 group relative">
                 <CardHeader className="p-6 md:p-10 lg:p-12 space-y-4 md:space-y-6 lg:space-y-8 relative z-10">
@@ -324,37 +372,53 @@ export default function LetsPrepApp() {
                     <div className="flex items-center gap-1 text-orange-500 bg-orange-50 px-2 md:px-3 py-1 rounded-full"><Flame className="w-3 h-3 fill-current" /><span className="text-[9px] md:text-[10px] font-bold uppercase">Adaptive</span></div>
                   </div>
                   <div className="space-y-3 md:space-y-4">
-                    <h2 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1]">The <span className="text-primary italic">Ultimate</span> <br /> Teacher Prep.</h2>
-                    <p className="text-slate-500 font-medium md:text-lg">Master Gen Ed, Prof Ed, and your Majorship with high-fidelity AI-powered simulations.</p>
+                    <h2 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] animate-fade-in-up">The <span className="text-gradient italic">Ultimate</span> <br /> Teacher Prep.</h2>
+                    <p className="text-slate-500 font-medium md:text-lg animate-fade-in-up delay-200">Master Gen Ed, Prof Ed, and your Majorship with high-fidelity AI-powered simulations.</p>
                   </div>
-                  <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-12 md:h-16 px-6 md:px-10 rounded-xl md:rounded-2xl font-bold md:font-black text-sm md:text-lg gap-2 md:gap-3 shadow-lg md:shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all bg-primary hover:bg-primary/90 text-slate-900">
+                  <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-12 md:h-16 px-6 md:px-10 rounded-xl md:rounded-2xl font-bold md:font-black text-sm md:text-lg gap-2 md:gap-3 shadow-lg md:shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all bg-primary hover:bg-primary/90 text-slate-900 animate-fade-in-up delay-300 hover:animate-pulse-glow">
                     <Zap className="w-5 md:w-6 h-5 md:h-6 fill-current" /> <span className="hidden sm:inline">Start Full Simulation</span><span className="sm:hidden">Start Now</span>
                   </Button>
                 </CardHeader>
                 {/* Decorative elements */}
-                <div className="absolute top-0 right-0 w-24 h-24 md:w-40 md:h-40 lg:w-48 lg:h-48 bg-gradient-to-br from-primary/5 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 md:translate-x-1/2" />
-                <div className="absolute bottom-0 left-0 w-20 h-20 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-tr from-orange-100/50 to-transparent rounded-full translate-y-1/2 -translate-x-1/3 md:-translate-x-1/2" />
+                <div className="absolute top-0 right-0 w-24 h-24 md:w-40 md:h-40 lg:w-48 lg:h-48 bg-gradient-to-br from-primary/5 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 md:translate-x-1/2 animate-float" />
+                <div className="absolute bottom-0 left-0 w-20 h-20 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-tr from-orange-100/50 to-transparent rounded-full translate-y-1/2 -translate-x-1/3 md:-translate-x-1/2 animate-float delay-300" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse" />
               </Card>
 
               {/* User Stats & Leaderboard Column */}
               <div className="lg:col-span-4 space-y-4 lg:space-y-0 lg:flex lg:flex-col lg:gap-4">
                 {/* Login Card - Show when NOT logged in */}
                 {!user ? (
-                  <Card className="border-none shadow-lg rounded-2xl bg-gradient-to-br from-primary to-primary/90 text-primary-foreground overflow-hidden">
-                    <CardContent className="p-4 md:p-6 space-y-4">
-                      <div className="text-center">
-                        <p className="font-black text-lg md:text-xl">Welcome to LET Prep!</p>
-                        <p className="text-[10px] md:text-xs opacity-80">Sign in to track progress & earn rewards</p>
+                  <Card className="border-none shadow-xl rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white overflow-hidden relative">
+                    {/* Decorative elements */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/20 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
+                    <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-500/10 to-transparent rounded-full translate-y-1/2 -translate-x-1/2" />
+                    
+                    <CardContent className="p-5 md:p-6 space-y-4 relative z-10">
+                      <div className="text-center space-y-2">
+                        <div className="w-16 h-16 mx-auto bg-white/10 rounded-2xl flex items-center justify-center mb-2">
+                          <GraduationCap className="w-8 h-8 text-primary" />
+                        </div>
+                        <p className="font-black text-xl md:text-2xl">LET Prep Pro</p>
+                        <p className="text-xs md:text-sm text-slate-400">Master your board exam with AI-powered simulations</p>
                       </div>
-                      <Button onClick={loginWithGoogle} className="w-full h-12 bg-white text-primary hover:bg-slate-100 rounded-xl font-bold gap-2">
-                        <GoogleIcon /> Sign in with Google
-                      </Button>
-                      <Button onClick={loginWithFacebook} variant="outline" className="w-full h-12 border-white/30 text-white hover:bg-white/10 rounded-xl font-bold gap-2">
-                        <FacebookIcon /> Sign in with Facebook
-                      </Button>
-                      <Button onClick={loginAnonymously} variant="outline" className="w-full h-10 border-white/30 text-white hover:bg-white/10 rounded-xl font-bold text-sm">
-                        Continue as Guest
-                      </Button>
+                      
+                      <div className="space-y-2 pt-2">
+                        <Button onClick={loginWithGoogle} className="w-full h-12 bg-white text-slate-900 hover:bg-slate-100 rounded-xl font-bold gap-2 shadow-lg">
+                          <GoogleIcon /> Continue with Google
+                        </Button>
+                        <Button onClick={loginWithFacebook} variant="outline" className="w-full h-12 border-slate-600 text-white hover:bg-slate-800 rounded-xl font-bold gap-2">
+                          <FacebookIcon /> Sign in with Facebook
+                        </Button>
+                      </div>
+                      
+                      <div className="flex flex-wrap justify-center gap-2 pt-2">
+                        {["AI Explanations", "Progress Tracking", "Leaderboards"].map((feature, i) => (
+                          <Badge key={i} variant="secondary" className="bg-white/10 text-white border-none text-[10px] font-medium">
+                            {feature}
+                          </Badge>
+                        ))}
+                      </div>
                     </CardContent>
                   </Card>
                 ) : (
@@ -394,7 +458,11 @@ export default function LetsPrepApp() {
                     </CardContent>
                   </Card>
                 )}
-                <div className="hidden lg:block"><Leaderboard /></div>
+                
+                {/* Collapsible Leaderboard - Shows top 3 by default */}
+                <Card className="border-none shadow-lg rounded-2xl bg-white overflow-hidden">
+                  <Leaderboard />
+                </Card>
               </div>
 
               {/* Quick Actions - Mobile Only */}
@@ -416,7 +484,7 @@ export default function LetsPrepApp() {
               </div>
 
               {/* Events, Tasks & Referral */}
-              <div className="lg:col-span-12 space-y-6 md:space-y-8">
+              <div className="lg:col-span-12 space-y-8 md:space-y-10">
                 <EventsSection />
                 <DailyTaskDashboard />
                 <ReferralSystem />
@@ -424,23 +492,87 @@ export default function LetsPrepApp() {
             </div>
           </div>
 
-          {/* Simulation Tracks - Below the main grid */}
-          <div className="max-w-7xl mx-auto px-3 md:px-4 py-6 md:py-8 space-y-4 md:space-y-6">
-            <h3 className="text-2xl md:text-3xl font-black tracking-tight px-2 md:px-4">Simulation Tracks</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
+          {/* Simulation Tracks - Below the main grid with enhanced design */}
+          <div className="max-w-7xl mx-auto px-3 md:px-4 py-8 md:py-12 space-y-6 md:space-y-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-2 md:px-4">
+              <h3 className="text-2xl md:text-3xl font-black tracking-tight animate-fade-in-up">Simulation Tracks</h3>
+              <p className="text-sm text-slate-500 font-medium">Choose your exam category to begin</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               {[
-                { name: 'General Education', icon: <Languages className="w-5 md:w-6 h-5 md:h-6" />, color: 'bg-blue-50 text-blue-600', borderColor: 'border-blue-200', hoverBg: 'hover:bg-blue-500', id: 'General Education' },
-                { name: 'Professional Education', icon: <BookOpen className="w-5 md:w-6 h-5 md:h-6" />, color: 'bg-purple-50 text-purple-600', borderColor: 'border-purple-200', hoverBg: 'hover:bg-purple-500', id: 'Professional Education' },
-                { name: user?.majorship || 'Specialization', icon: <Star className="w-5 md:w-6 h-5 md:h-6" />, color: 'bg-emerald-50 text-emerald-600', borderColor: 'border-emerald-200', hoverBg: 'hover:bg-emerald-500', id: 'Specialization' }
+                { 
+                  name: 'General Education', 
+                  icon: <Languages className="w-6 md:w-7 h-6 md:h-7" />, 
+                  color: 'bg-blue-50 text-blue-600', 
+                  borderColor: 'border-blue-200', 
+                  hoverBg: 'hover:bg-blue-500', 
+                  bgGradient: 'from-blue-50 to-blue-100/50',
+                  id: 'General Education', 
+                  delay: 'delay-100',
+                  description: 'Language, Mathematics, Science & Humanities'
+                },
+                { 
+                  name: 'Professional Education', 
+                  icon: <BookOpen className="w-6 md:w-7 h-6 md:h-7" />, 
+                  color: 'bg-purple-50 text-purple-600', 
+                  borderColor: 'border-purple-200', 
+                  hoverBg: 'hover:bg-purple-500', 
+                  bgGradient: 'from-purple-50 to-purple-100/50',
+                  id: 'Professional Education', 
+                  delay: 'delay-200',
+                  description: 'Teaching Principles & Child Development'
+                },
+                { 
+                  name: user?.majorship || 'Specialization', 
+                  icon: <Star className="w-6 md:w-7 h-6 md:h-7" />, 
+                  color: 'bg-emerald-50 text-emerald-600', 
+                  borderColor: 'border-emerald-200', 
+                  hoverBg: 'hover:bg-emerald-500', 
+                  bgGradient: 'from-emerald-50 to-emerald-100/50',
+                  id: 'Specialization', 
+                  delay: 'delay-300',
+                  description: 'Your chosen major field of specialization'
+                }
               ].map((track, i) => (
-                <Card key={i} onClick={() => !loading && startExam(track.id as any)} className={`border-2 ${track.borderColor} shadow-md hover:shadow-xl transition-all rounded-2xl bg-white group cursor-pointer overflow-hidden flex flex-col`}>
-                  <CardHeader className="p-4 md:p-6 pb-2 md:pb-4">
-                    <div className={`w-12 h-12 md:w-16 md:h-16 ${track.color} rounded-xl md:rounded-2xl flex items-center justify-center mb-3 md:mb-4 shadow-sm border`}>{track.icon}</div>
-                    <h4 className="text-base md:text-xl font-bold md:font-black tracking-tight">{track.name}</h4>
+                <Card 
+                  key={i} 
+                  onClick={() => !loading && startExam(track.id as any)} 
+                  className={`
+                    border-2 ${track.borderColor} 
+                    shadow-md hover:shadow-2xl 
+                    transition-all rounded-2xl 
+                    bg-gradient-to-br ${track.bgGradient}
+                    group cursor-pointer 
+                    overflow-hidden flex flex-col 
+                    animate-fade-in-up ${track.delay} 
+                    hover:scale-[1.02] hover:-translate-y-1
+                    relative
+                  `}
+                >
+                  {/* Progress indicator badge */}
+                  <div className="absolute top-3 right-3">
+                    <Badge variant="outline" className="bg-white/80 backdrop-blur-sm text-[9px] font-black uppercase tracking-wider border-slate-200">
+                      Practice Now
+                    </Badge>
+                  </div>
+                  
+                  <CardHeader className="p-5 md:p-7 pb-3 md:pb-4">
+                    <div className={`w-14 h-14 md:w-16 md:h-16 ${track.color} rounded-2xl flex items-center justify-center mb-4 md:mb-5 shadow-sm border`}>
+                      {track.icon}
+                    </div>
+                    <h4 className="text-lg md:text-xl font-black tracking-tight group-hover:text-primary transition-colors">{track.name}</h4>
+                    <p className="text-xs md:text-sm font-medium text-slate-500 line-clamp-2">{track.description}</p>
                   </CardHeader>
-                  <CardFooter className="p-4 md:p-6 pt-0 mt-auto">
-                    <div className={`w-full justify-center font-bold text-xs md:text-sm h-10 md:h-12 px-4 md:px-6 rounded-xl flex items-center border-2 ${track.hoverBg} group-hover:text-white transition-all`}>
-                      Start <ChevronRight className="w-3 md:w-4 h-3 md:h-4 ml-1 md:ml-2" />
+                  <CardFooter className="p-5 md:p-7 pt-0 mt-auto">
+                    <div className={`
+                      w-full justify-center font-bold text-sm md:text-base 
+                      h-11 md:h-12 px-5 md:px-6 rounded-xl 
+                      flex items-center border-2 border-current
+                      ${track.hoverBg} group-hover:text-white 
+                      transition-all bg-white text-slate-700
+                      group-hover:shadow-lg
+                    `}>
+                      Start Practice <ChevronRight className="w-4 h-4 ml-2" />
                     </div>
                   </CardFooter>
                 </Card>
