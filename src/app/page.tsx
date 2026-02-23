@@ -345,9 +345,9 @@ export default function LetsPrepApp() {
         <>
           <div className="max-w-7xl mx-auto px-4 py-8 md:py-12 space-y-12">
             {/* Enhanced Hero Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              <div className="lg:col-span-8 space-y-8">
-                <Card className="overflow-hidden border-none shadow-2xl rounded-[2.5rem] lg:rounded-[3.5rem] bg-white relative group min-h-[400px] flex flex-col justify-center">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+              <div className="lg:col-span-8 space-y-10">
+                <Card className="overflow-hidden border-none shadow-2xl rounded-[2.5rem] lg:rounded-[3.5rem] bg-white relative group min-h-[420px] flex flex-col justify-center">
                   <div className="absolute inset-0 bg-mesh opacity-100" />
                   <div className="absolute top-10 right-10 w-24 h-24 bg-primary/20 blur-3xl rounded-full animate-float" />
                   <div className="absolute bottom-10 left-10 w-32 h-32 bg-secondary/20 blur-3xl rounded-full animate-float" style={{ animationDelay: '2s' }} />
@@ -384,15 +384,15 @@ export default function LetsPrepApp() {
                 </Card>
 
                 {/* Trust/Impact Section */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                   {[
                     { label: 'Questions', value: '10k+', color: 'text-blue-600' },
                     { label: 'Mock Tests', value: '5k+', color: 'text-purple-600' },
                     { label: 'Pass Rate', value: '92%', color: 'text-emerald-600' },
                     { label: 'AI Credits', value: '50k+', color: 'text-orange-600' }
                   ].map((item, i) => (
-                    <div key={i} className="flex flex-col items-center justify-center p-4 bg-white/50 rounded-2xl border border-slate-100 shadow-sm backdrop-blur-sm">
-                      <span className={`text-2xl font-black ${item.color}`}>{item.value}</span>
+                    <div key={i} className="flex flex-col items-center justify-center p-6 bg-white rounded-3xl border border-slate-100 shadow-sm transition-transform hover:scale-[1.02] cursor-default">
+                      <span className={`text-3xl font-black ${item.color} mb-1`}>{item.value}</span>
                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{item.label}</span>
                     </div>
                   ))}
@@ -400,7 +400,7 @@ export default function LetsPrepApp() {
               </div>
 
               {/* Sidebar Column */}
-              <div className="lg:col-span-4 space-y-6">
+              <div className="lg:col-span-4 space-y-8">
                 {user ? (
                   <Card className="border-none shadow-2xl rounded-[2.5rem] bg-gradient-to-br from-primary to-primary/80 text-primary-foreground overflow-hidden relative group">
                     <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -462,7 +462,7 @@ export default function LetsPrepApp() {
 
             {/* Simulation Tracks Grid */}
             <div className="space-y-8 pt-4">
-              <div className="flex items-center justify-between px-4">
+              <div className="flex items-center justify-between px-2">
                 <div className="space-y-1">
                   <h3 className="text-3xl font-black tracking-tight text-slate-900">Simulation Tracks</h3>
                   <p className="text-slate-500 font-medium text-sm uppercase tracking-widest">Focused Preparation Areas</p>
@@ -470,7 +470,7 @@ export default function LetsPrepApp() {
                 <Button variant="ghost" className="font-black text-primary gap-2">View All Tracks <ChevronRight className="w-4 h-4" /></Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {[
                   { name: 'General Education', icon: <Languages className="w-7 h-7" />, color: 'from-blue-500 to-blue-600', lightColor: 'bg-blue-50 text-blue-600', borderColor: 'border-blue-100', id: 'General Education', desc: 'Cover Humanities, Social Sciences, and Applied Sciences.' },
                   { name: 'Professional Education', icon: <BookOpen className="w-7 h-7" />, color: 'from-purple-500 to-purple-600', lightColor: 'bg-purple-50 text-purple-600', borderColor: 'border-purple-100', id: 'Professional Education', desc: 'Focus on Teaching Methodologies and Child Development.' },
@@ -497,10 +497,10 @@ export default function LetsPrepApp() {
             </div>
 
             {/* Gamification Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 pt-8">
               <div className="lg:col-span-12 space-y-12">
                 <EventsSection />
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                   <DailyTaskDashboard />
                   <ReferralSystem />
                 </div>
