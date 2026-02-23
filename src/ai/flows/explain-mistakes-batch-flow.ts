@@ -1,12 +1,11 @@
 
-'use server';
 /**
- * @fileOverview A Puter.js-powered Genkit flow for batched pedagogical explanations using GPT-5 Nano.
+ * @fileOverview A Puter.js-powered flow for batched pedagogical explanations using GPT-5 Nano.
+ * Note: This function runs in the browser environment since Puter is loaded via script tag.
  */
 
-import { ai } from '@/ai/genkit';
 import { puter } from '@/ai/puter';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const MistakeItemSchema = z.object({
   questionId: z.string(),
@@ -37,66 +36,60 @@ export type ExplainMistakesOutput = z.infer<typeof ExplainMistakesOutputSchema>;
 export async function explainMistakesBatch(
   input: ExplainMistakesInput
 ): Promise<ExplainMistakesOutput> {
-  return explainMistakesBatchFlow(input);
-}
+  try {
+    // Check if we're in browser environment and Puter is available
+    if (typeof window === 'undefined') {
+      return { explanations: [] };
+    }
 
-const explainMistakesBatchFlow = ai.defineFlow(
-  {
-    name: 'explainMistakesBatchFlow',
-    inputSchema: ExplainMistakesInputSchema,
-    outputSchema: ExplainMistakesOutputSchema,
-  },
-  async input => {
     if (input.mistakes.length === 0) return { explanations: [] };
     if (!puter || !puter.ai) throw new Error("AI not initialized");
 
+    const context = input.mistakes.map(m => `Q: ${m.text}\nCorrect: ${m.correctAnswer}\nUser: ${m.userAnswer}`).join('\n---\n');
+    
+    const response = await puter.ai.chat(`For each of these LET mistakes, provide a 1-sentence pedagogical explanation. 
+      Return a JSON array of objects with fields "questionId" and "aiExplanation".
+      
+      Mistakes:
+      ${context}
+      
+      ONLY return JSON array, nothing else.`, {
+      model: 'gpt-5-nano'
+    });
+
+    const rawText = response.toString() || "[]";
+    let parsed: any[] = [];
+    
     try {
-      const context = input.mistakes.map(m => `Q: ${m.text}\nCorrect: ${m.correctAnswer}\nUser: ${m.userAnswer}`).join('\n---\n');
-      
-      const response = await puter.ai.chat(`For each of these LET mistakes, provide a 1-sentence pedagogical explanation. 
-        Return a JSON array of objects with fields "questionId" and "aiExplanation".
-        
-        Mistakes:
-        ${context}
-        
-        ONLY return the JSON array, nothing else.`, {
-        model: 'gpt-5-nano'
-      });
-
-      const rawText = response.toString() || "[]";
-      let parsed: any[] = [];
-      
-      try {
-        const jsonStr = rawText.substring(rawText.indexOf('['), rawText.lastIndexOf(']') + 1);
-        parsed = JSON.parse(jsonStr);
-      } catch (e) {
-        try {
-          const jsonStr = rawText.substring(rawText.indexOf('{'), rawText.lastIndexOf('}') + 1);
-          const obj = JSON.parse(jsonStr);
-          parsed = obj.explanations || [obj];
-        } catch (innerE) {
-          parsed = [];
-        }
-      }
-
-      // Ensure every item has a questionId and matches schema
-      const sanitizedExplanations = input.mistakes.map((m, idx) => {
-        const aiItem = Array.isArray(parsed) ? (parsed[idx] || parsed.find((p: any) => p.questionId === m.questionId)) : null;
-        return {
-          questionId: m.questionId,
-          aiExplanation: aiItem?.aiExplanation || aiItem?.explanation || "Review the board-preferred standard for this track."
-        };
-      });
-
-      return { explanations: sanitizedExplanations };
+      const jsonStr = rawText.substring(rawText.indexOf('['), rawText.lastIndexOf(']') + 1);
+      parsed = JSON.parse(jsonStr);
     } catch (e) {
-      console.error("Puter Batch Explanation Error:", e);
-      return { 
-        explanations: input.mistakes.map(m => ({ 
-          questionId: m.questionId, 
-          aiExplanation: "Review the board-preferred standard for this track." 
-        })) 
-      };
+      try {
+        const jsonStr = rawText.substring(rawText.indexOf('{'), rawText.lastIndexOf('}') + 1);
+        const obj = JSON.parse(jsonStr);
+        parsed = obj.explanations || [obj];
+      } catch (innerE) {
+        parsed = [];
+      }
     }
+
+    // Ensure every item has a questionId and matches schema
+    const sanitizedExplanations = input.mistakes.map((m, idx) => {
+      const aiItem = Array.isArray(parsed) ? (parsed[idx] || parsed.find((p: any) => p.questionId === m.questionId)) : null;
+      return {
+        questionId: m.questionId,
+        aiExplanation: aiItem?.aiExplanation || aiItem?.explanation || "Review board-preferred standard for this track."
+      };
+    });
+
+    return { explanations: sanitizedExplanations };
+  } catch (e) {
+    console.error("Puter Batch Explanation Error:", e);
+    return { 
+      explanations: input.mistakes.map(m => ({ 
+        questionId: m.questionId, 
+        aiExplanation: "Review board-preferred standard for this track." 
+      })) 
+    };
   }
-);
+}

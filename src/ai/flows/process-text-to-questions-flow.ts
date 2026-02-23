@@ -1,11 +1,10 @@
-'use server';
 /**
- * @fileOverview A Puter.js-powered Genkit flow for structuring raw text into LET questions.
+ * @fileOverview A Puter.js-powered flow for structuring raw text into LET questions.
+ * Note: This function runs in the browser environment since Puter is loaded via script tag.
  */
 
-import { ai } from '@/ai/genkit';
 import { puter } from '@/ai/puter';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const ProcessTextToQuestionsInputSchema = z.object({
   rawText: z.string().describe("The raw text extracted from a PDF."),
@@ -26,44 +25,42 @@ const ProcessTextToQuestionsOutputSchema = z.object({
 export type ProcessTextToQuestionsOutput = z.infer<typeof ProcessTextToQuestionsOutputSchema>;
 
 export async function processTextToQuestions(input: ProcessTextToQuestionsInput): Promise<ProcessTextToQuestionsOutput> {
-  return processTextToQuestionsFlow(input);
-}
-
-const processTextToQuestionsFlow = ai.defineFlow(
-  {
-    name: 'processTextToQuestionsFlow',
-    inputSchema: ProcessTextToQuestionsInputSchema,
-    outputSchema: ProcessTextToQuestionsOutputSchema,
-  },
-  async (input) => {
-    try {
-      const prompt = `You are an expert content structurer for the LET exam.
-      Extract multiple-choice questions from the provided text and format them into structured JSON.
-      Each question must have exactly 4 options.
-      
-      Context:
-      Subject: ${input.subject || 'LET'}
-      Majorship: ${input.subCategory || 'General'}
-      
-      RAW TEXT:
-      ${input.rawText}
-      
-      Return a JSON object with a "questions" array.
-      ONLY return the JSON object.`;
-
-      const response = await puter.ai.run({
-        model: '@puter/llama-3-8b-instruct',
-        prompt,
-      });
-
-      const rawOutput = response.output || "{\"questions\": []}";
-      const jsonStr = rawOutput.substring(rawOutput.indexOf('{'), rawOutput.lastIndexOf('}') + 1);
-      const result = JSON.parse(jsonStr);
-
-      return { questions: result.questions || [] };
-    } catch (e: any) {
-      console.error("Process Text To Questions Error:", e);
+  try {
+    // Check if we're in browser environment and Puter is available
+    if (typeof window === 'undefined') {
       return { questions: [] };
     }
+
+    if (!puter || !puter.ai) {
+      throw new Error("Puter AI module not initialized. Make sure Puter script is loaded.");
+    }
+
+    const prompt = `You are an expert content structurer for LET exam.
+    Extract multiple-choice questions from provided text and format them into structured JSON.
+    Each question must have exactly 4 options.
+    
+    Context:
+    Subject: ${input.subject || 'LET'}
+    Majorship: ${input.subCategory || 'General'}
+    
+    RAW TEXT:
+    ${input.rawText}
+    
+    Return a JSON object with a "questions" array.
+    ONLY return JSON object.`;
+
+    const response = await puter.ai.run({
+      model: '@puter/llama-3-8b-instruct',
+      prompt,
+    });
+
+    const rawOutput = response.output || "{\"questions\": []}";
+    const jsonStr = rawOutput.substring(rawOutput.indexOf('{'), rawOutput.lastIndexOf('}') + 1);
+    const result = JSON.parse(jsonStr);
+
+    return { questions: result.questions || [] };
+  } catch (e: any) {
+    console.error("Process Text To Questions Error:", e);
+    return { questions: [] };
   }
-);
+}

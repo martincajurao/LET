@@ -1,12 +1,11 @@
 
-'use server';
 /**
- * @fileOverview A Puter.js-powered Genkit flow to explain specific LET questions with cost-control.
+ * @fileOverview A Puter.js-powered flow to explain specific LET questions with cost-control.
+ * Note: This function runs in the browser environment since Puter is loaded via script tag.
  */
 
-import { ai } from '@/ai/genkit';
 import { puter } from '@/ai/puter';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const ExplainQuestionInputSchema = z.object({
   questionText: z.string(),
@@ -24,24 +23,23 @@ const ExplainQuestionOutputSchema = z.object({
 export type ExplainQuestionOutput = z.infer<typeof ExplainQuestionOutputSchema>;
 
 export async function explainQuestion(input: ExplainQuestionInput): Promise<ExplainQuestionOutput> {
-  return explainQuestionFlow(input);
-}
+  try {
+    // Check if we're in browser environment and Puter is available
+    if (typeof window === 'undefined') {
+      return { explanation: "", error: "Question explanation is only available in browser environment" };
+    }
 
-const explainQuestionFlow = ai.defineFlow(
-  {
-    name: 'explainQuestionFlow',
-    inputSchema: ExplainQuestionInputSchema,
-    outputSchema: ExplainQuestionOutputSchema,
-  },
-  async (payload) => {
-    try {
-      // Cooldown and Daily Limits are handled on the client-side component 
-      // (ExamInterface) before calling this action, but in a production 
-      // environment, we would also verify them here using a server-side SDK.
+    if (!puter || !puter.ai) {
+      throw new Error("Puter AI module not initialized. Make sure Puter script is loaded.");
+    }
 
-      const { questionText, options, correctAnswer } = payload;
+    // Cooldown and Daily Limits are handled on the client-side component 
+    // (ExamInterface) before calling this action, but in a production 
+    // environment, we would also verify them here using a server-side SDK.
 
-      const response = await puter.ai.chat(`You are an expert LET review assistant. Explain briefly (max 250 words). Structure:
+    const { questionText, options, correctAnswer } = input;
+
+    const response = await puter.ai.chat(`You are an expert LET review assistant. Explain briefly (max 250 words). Structure:
 Correct Answer: (Answer)
 Why Correct: (Pedagogical reasoning)
 Why Others Wrong: (Contrast reasoning)
@@ -54,11 +52,10 @@ Correct Answer: ${correctAnswer}`, {
         model: 'gpt-5-nano'
       });
 
-      const explanation = response.toString() || "Explanation could not be generated.";
-      return { explanation };
-    } catch (e: any) {
-      console.error("Puter AI Explanation Error:", e);
-      return { explanation: "", error: e.message };
-    }
+    const explanation = response.toString() || "Explanation could not be generated.";
+    return { explanation };
+  } catch (e: any) {
+    console.error("Puter AI Explanation Error:", e);
+    return { explanation: "", error: e.message };
   }
-);
+}

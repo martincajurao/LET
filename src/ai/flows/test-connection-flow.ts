@@ -1,12 +1,11 @@
 
-'use server';
 /**
- * @fileOverview A Puter.js-powered Genkit flow to test the AI connection using GPT-5 Nano.
+ * @fileOverview A Puter.js-powered flow to test the AI connection using GPT-5 Nano.
+ * Note: This function runs in the browser environment since Puter is loaded via script tag.
  */
 
-import { ai } from '@/ai/genkit';
 import { puter } from '@/ai/puter';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const TestConnectionOutputSchema = z.object({
   success: z.boolean(),
@@ -17,36 +16,35 @@ const TestConnectionOutputSchema = z.object({
 export type TestConnectionOutput = z.infer<typeof TestConnectionOutputSchema>;
 
 export async function testAIConnection(): Promise<TestConnectionOutput> {
-  return testAIConnectionFlow();
-}
-
-const testAIConnectionFlow = ai.defineFlow(
-  {
-    name: 'testAIConnectionFlow',
-    outputSchema: TestConnectionOutputSchema,
-  },
-  async () => {
-    try {
-      if (!puter || !puter.ai) {
-        throw new Error("Puter AI module not initialized.");
-      }
-
-      const response = await puter.ai.chat("Say 'Puter AI (GPT-5 Nano) is online.' in 5 words or less.", {
-        model: 'gpt-5-nano'
-      });
-
-      return {
-        success: true,
-        message: response.toString() || "Connected.",
-        timestamp: Date.now(),
-      };
-    } catch (error: any) {
-      console.error("Puter Connection Test Error:", error);
+  try {
+    // Check if we're in browser environment and Puter is available
+    if (typeof window === 'undefined') {
       return {
         success: false,
-        message: `Failed: ${error.message || "Unknown error"}`,
+        message: "Puter AI is only available in browser environment",
         timestamp: Date.now(),
       };
     }
+
+    if (!puter || !puter.ai) {
+      throw new Error("Puter AI module not initialized. Make sure Puter script is loaded.");
+    }
+
+    const response = await puter.ai.chat("Say 'Puter AI (GPT-5 Nano) is online.' in 5 words or less.", {
+      model: 'gpt-5-nano'
+    });
+
+    return {
+      success: true,
+      message: response.toString() || "Connected.",
+      timestamp: Date.now(),
+    };
+  } catch (error: any) {
+    console.error("Puter Connection Test Error:", error);
+    return {
+      success: false,
+      message: `Failed: ${error.message || "Unknown error"}`,
+      timestamp: Date.now(),
+    };
   }
-);
+}
