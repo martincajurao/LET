@@ -1,0 +1,139 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Comprehensive user profile with gamification, credit, and referral data.",
+      "type": "object",
+      "properties": {
+        "majorship": { "type": "string" },
+        "onboardingComplete": { "type": "boolean" },
+        "credits": { "type": "integer", "default": 20 },
+        "isPro": { "type": "boolean", "default": false },
+        "dailyAdCount": { "type": "integer", "default": 0 },
+        "dailyAiUsage": { "type": "integer", "default": 0 },
+        "dailyQuestionsAnswered": { "type": "integer", "default": 0 },
+        "dailyTestsFinished": { "type": "integer", "default": 0 },
+        "dailyCreditEarned": { "type": "integer", "default": 0 },
+        "streakCount": { "type": "integer", "default": 0 },
+        "lastActiveDate": { "type": "number", "description": "Server timestamp of last activity." },
+        "lastTaskReset": { "type": "number", "description": "Server timestamp of last task reset." },
+        "referralCode": { "type": "string" },
+        "referredBy": { "type": "string" },
+        "referralCount": { "type": "integer", "default": 0 },
+        "referralCreditsEarned": { "type": "integer", "default": 0 },
+        "referralTier": { "type": "string", "enum": ["Bronze", "Silver", "Gold", "Platinum"], "default": "Bronze" }
+      }
+    },
+    "Question": {
+      "title": "Practice Question",
+      "description": "A question used in the LET practice tests.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "text": { "type": "string" },
+        "options": { "type": "array", "items": { "type": "string" } },
+        "correctAnswer": { "type": "string" },
+        "subject": { "type": "string" },
+        "subCategory": { "type": "string" },
+        "difficulty": { "type": "string", "enum": ["easy", "medium", "hard"] },
+        "explanation": { "type": "string" }
+      },
+      "required": ["id", "text", "options", "correctAnswer", "subject", "difficulty"]
+    },
+    "AIExplanation": {
+      "title": "AI Explanation",
+      "description": "Cached pedagogical explanation for a specific question.",
+      "type": "object",
+      "properties": {
+        "explanation": { "type": "string" },
+        "createdAt": { "type": "number" }
+      }
+    },
+    "ExamResult": {
+      "title": "Exam Result",
+      "description": "The result of a completed practice test session.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "overallScore": { "type": "number" },
+        "timeSpent": { "type": "number" },
+        "results": { "type": "array" },
+        "subjectBreakdown": { "type": "array" },
+        "aiSummary": { "type": "object" }
+      },
+      "required": ["userId", "timestamp", "overallScore", "timeSpent"]
+    },
+    "Event": {
+      "title": "Competition Event",
+      "description": "Time-based competition or weekly challenge.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "questionCount": { "type": "integer" },
+        "startTime": { "type": "number" },
+        "endTime": { "type": "number" },
+        "rewardType": { "type": "string" },
+        "rewardAmount": { "type": "integer" },
+        "isActive": { "type": "boolean" }
+      }
+    },
+    "EventParticipant": {
+      "title": "Event Participant",
+      "description": "Entry data for a user participating in an event.",
+      "type": "object",
+      "properties": {
+        "score": { "type": "number" },
+        "accuracy": { "type": "number" },
+        "timeSpent": { "type": "number" },
+        "submittedAt": { "type": "number" }
+      }
+    },
+    "SystemConfig": {
+      "title": "System Configuration",
+      "description": "Global application settings.",
+      "type": "object",
+      "properties": {
+        "timePerQuestion": { "type": "number", "default": 60 },
+        "limitGenEd": { "type": "number", "default": 10 },
+        "limitProfEd": { "type": "number", "default": 10 },
+        "limitSpec": { "type": "number", "default": 10 }
+      }
+    }
+  },
+  "auth": {
+    "providers": ["google.com"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User specific profile settings and gamification stats."
+    },
+    "/questions/{questionId}": {
+      "schema": "Question",
+      "description": "Global pool of practice questions."
+    },
+    "/ai_explanations/{questionId}": {
+      "schema": "AIExplanation",
+      "description": "Cached AI-generated explanations."
+    },
+    "/exam_results/{resultId}": {
+      "schema": "ExamResult",
+      "description": "Historical performance data."
+    },
+    "/events/{eventId}": {
+      "schema": "Event",
+      "description": "Time-based competition events."
+    },
+    "/event_leaderboard/{eventId}/participants/{userId}": {
+      "schema": "EventParticipant",
+      "description": "Leaderboard entries for specific events."
+    },
+    "/system_configs/{configId}": {
+      "schema": "SystemConfig",
+      "description": "Global app parameters."
+    }
+  }
+}

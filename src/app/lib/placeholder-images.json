@@ -1,0 +1,29 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-education",
+      "description": "A professional teacher in a modern classroom setting.",
+      "imageUrl": "https://picsum.photos/seed/let-hero/1200/600",
+      "imageHint": "teacher classroom"
+    },
+    {
+      "id": "gen-ed-icon",
+      "description": "General education concepts like mathematics and science.",
+      "imageUrl": "https://picsum.photos/seed/gen-ed/600/400",
+      "imageHint": "books globe"
+    },
+    {
+      "id": "prof-ed-icon",
+      "description": "Professional education and teaching methodologies.",
+      "imageUrl": "https://picsum.photos/seed/prof-ed/600/400",
+      "imageHint": "teaching methodology"
+    },
+    {
+      "id": "specialization-icon",
+      "description": "Specialized subject mastery for teachers.",
+      "imageUrl": "https://picsum.photos/seed/specialization/600/400",
+      "imageHint": "mathematics english"
+    }
+  ]
+}

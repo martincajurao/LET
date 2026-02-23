@@ -1,0 +1,106 @@
+
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useFirestore } from '@/firebase/index';
+import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Trophy, Medal, Star, Users, Loader2 } from "lucide-react";
+import { cn } from '@/lib/utils';
+
+interface LeaderboardEntry {
+  id: string;
+  displayName: string;
+  overallScore: number;
+}
+
+export function Leaderboard() {
+  const firestore = useFirestore();
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      if (!firestore) return;
+      try {
+        const q = query(collection(firestore, "exam_results"), orderBy("overallScore", "desc"), limit(10));
+        const snap = await getDocs(q);
+        const allResults = snap.docs.map(d => ({ id: d.id, ...d.data() } as LeaderboardEntry));
+        setLeaderboard(allResults);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeaderboard();
+  }, [firestore]);
+
+  return (
+    <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden">
+      <CardHeader className="bg-slate-50/50 p-8 border-b">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
+              <Trophy className="w-6 h-6 text-yellow-500" /> Elite Educators
+            </CardTitle>
+            <CardDescription className="text-xs font-bold uppercase tracking-widest text-slate-400">Monthly Ranking Leaderboard</CardDescription>
+          </div>
+          <Users className="w-8 h-8 text-slate-200" />
+        </div>
+      </CardHeader>
+      <CardContent className="p-8">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Loading Rankings...</p>
+          </div>
+        ) : leaderboard.length > 0 ? (
+          <div className="space-y-3">
+            {leaderboard.map((entry, idx) => {
+              const isTop3 = idx < 3;
+              const medalColors = [
+                'text-yellow-500 bg-yellow-50 border-yellow-100',
+                'text-slate-400 bg-slate-50 border-slate-100',
+                'text-orange-500 bg-orange-50 border-orange-100'
+              ];
+
+              return (
+                <div key={entry.id} className={cn(
+                  "flex items-center justify-between p-4 rounded-2xl border transition-all hover:scale-[1.01]",
+                  isTop3 ? "shadow-md bg-white border-primary/10" : "bg-white border-slate-50"
+                )}>
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      "w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm border-2",
+                      isTop3 ? medalColors[idx] : "bg-slate-50 text-slate-400 border-transparent"
+                    )}>
+                      {isTop3 ? <Medal className="w-5 h-5" /> : idx + 1}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-black text-slate-800">{entry.displayName || 'Anonymous'}</span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Board Simulation Level</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex flex-col items-end">
+                      <span className="text-lg font-black text-primary leading-none">{entry.overallScore}%</span>
+                      <span className="text-[8px] font-bold text-slate-400 uppercase">Rating</span>
+                    </div>
+                    {idx === 0 && <Star className="w-5 h-5 text-yellow-500 fill-current" />}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="py-20 text-center space-y-4 bg-slate-50 rounded-3xl border-2 border-dashed">
+            <Users className="w-12 h-12 text-slate-200 mx-auto" />
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No rankings recorded yet.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
