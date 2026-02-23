@@ -407,7 +407,7 @@ export default function LetsPrepApp() {
                         <Button onClick={loginWithGoogle} className="w-full h-12 bg-white text-slate-900 hover:bg-slate-100 rounded-xl font-bold gap-2 shadow-lg">
                           <GoogleIcon /> Continue with Google
                         </Button>
-                        <Button onClick={loginWithFacebook} variant="outline" className="w-full h-12 border-slate-600 text-white hover:bg-slate-800 rounded-xl font-bold gap-2">
+                        <Button onClick={loginWithFacebook} className="w-full h-12 bg-[#1877F2] hover:bg-[#1865C5] text-white rounded-xl font-bold gap-2 shadow-lg">
                           <FacebookIcon /> Sign in with Facebook
                         </Button>
                       </div>
