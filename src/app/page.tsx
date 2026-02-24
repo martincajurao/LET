@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   Dialog, 
   DialogContent, 
@@ -27,7 +29,11 @@ import {
   Facebook,
   ShieldCheck,
   CheckCircle2,
-  Languages
+  Languages,
+  User,
+  Ticket,
+  Moon,
+  Sun
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
@@ -39,9 +45,11 @@ import { fetchQuestionsFromFirestore } from "@/lib/db-seed";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
-type AppState = 'dashboard' | 'exam' | 'results' | 'registration';
+type AppState = 'dashboard' | 'exam' | 'results' | 'onboarding';
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array];
@@ -65,6 +73,7 @@ function LetsPrepContent() {
   const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook, bypassLogin } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { isDark, toggleDarkMode } = useTheme();
   const searchParams = useSearchParams();
   
   const [state, setState] = useState<AppState>('dashboard');
@@ -80,6 +89,13 @@ function LetsPrepContent() {
   const [timePerQuestion, setTimePerQuestion] = useState(60);
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
 
+  // Onboarding States
+  const [setupStep, setSetupStep] = useState(1);
+  const [nickname, setNickname] = useState("");
+  const [selectedMajorship, setSelectedMajorship] = useState("");
+  const [referralCode, setReferralCode] = useState("");
+  const [savingOnboarding, setSavingOnboarding] = useState(false);
+
   useEffect(() => {
     const startCat = searchParams.get('start');
     if (startCat && state === 'dashboard' && user) {
@@ -88,8 +104,10 @@ function LetsPrepContent() {
   }, [searchParams, user, state]);
 
   useEffect(() => {
-    if (user && !user.majorship && state === 'dashboard' && !user.uid.startsWith('bypass')) {
-      setState('registration');
+    if (user && !user.onboardingComplete && state === 'dashboard' && !user.uid.startsWith('bypass')) {
+      setState('onboarding');
+      if (user.displayName) setNickname(user.displayName);
+      if (user.majorship) setSelectedMajorship(user.majorship);
     }
   }, [user, state]);
 
@@ -203,6 +221,28 @@ function LetsPrepContent() {
     setTimeout(() => { setState('results'); setLoading(false); }, 500);
   };
 
+  const finishOnboarding = async () => {
+    if (!selectedMajorship || !nickname) {
+      toast({ title: "Missing Info", description: "Please provide a nickname and select your track." });
+      return;
+    }
+    setSavingOnboarding(true);
+    try {
+      await updateProfile({
+        displayName: nickname,
+        majorship: selectedMajorship,
+        referredBy: referralCode || undefined,
+        onboardingComplete: true
+      });
+      toast({ title: "Welcome!", description: "Account setup complete. Good luck, Educator!" });
+      setState('dashboard');
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Setup Error", description: e.message });
+    } finally {
+      setSavingOnboarding(false);
+    }
+  };
+
   if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   return (
@@ -254,20 +294,83 @@ function LetsPrepContent() {
         <div className="animate-md-slide-up h-full p-4">
           <ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} aiSummary={aiSummary} onRestart={() => setState('dashboard')} />
         </div>
-      ) : state === 'registration' ? (
-        <div className="min-h-[80vh] flex items-center justify-center p-6 animate-md-slide-up">
-          <Card className="w-full max-w-sm rounded-[3rem] bg-card border-none shadow-2xl p-8 text-center space-y-8">
-            <div className="space-y-2">
-              <div className="w-20 h-20 bg-primary/10 rounded-[2rem] flex items-center justify-center mx-auto">
-                <GraduationCap className="w-10 h-10 text-primary" />
+      ) : state === 'onboarding' ? (
+        <div className="min-h-[85vh] flex items-center justify-center p-4">
+          <Card className="w-full max-w-md rounded-[3rem] bg-card border-none shadow-2xl overflow-hidden animate-md-slide-up">
+            <div className="bg-primary/10 p-8 flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-card rounded-[1.5rem] flex items-center justify-center shadow-lg mb-4">
+                <ShieldCheck className="w-8 h-8 text-primary" />
               </div>
-              <h2 className="text-3xl font-black tracking-tight">Select Majorship</h2>
-              <p className="text-muted-foreground text-sm font-medium">This will calibrate your specialization track.</p>
+              <h2 className="text-2xl font-black tracking-tight text-foreground">Finalizing Profile</h2>
+              <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest mt-1">Professional Verification</p>
             </div>
-            <Select onValueChange={(val) => { updateProfile({ majorship: val }); setState('dashboard'); }}>
-              <SelectTrigger className="h-16 rounded-2xl font-black border-2 text-lg px-6"><SelectValue placeholder="Select your field..." /></SelectTrigger>
-              <SelectContent className="rounded-2xl">{MAJORSHIPS.map(m => <SelectItem key={m} value={m} className="font-bold py-4">{m}</SelectItem>)}</SelectContent>
-            </Select>
+            
+            <CardContent className="p-8 space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Leaderboard Nickname</Label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="e.g. Master Teacher" 
+                      className="pl-11 h-12 rounded-xl border-2 focus:ring-primary/20"
+                      value={nickname}
+                      onChange={(e) => setNickname(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Majorship Track</Label>
+                  <Select value={selectedMajorship} onValueChange={setSelectedMajorship}>
+                    <SelectTrigger className="h-12 rounded-xl border-2 px-4 font-bold">
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4 text-muted-foreground" />
+                        <SelectValue placeholder="Select your track..." />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {MAJORSHIPS.map(m => (
+                        <SelectItem key={m} value={m} className="font-bold py-3">{m}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Referral Code (Optional)</Label>
+                  <div className="relative">
+                    <Ticket className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Enter invite code" 
+                      className="pl-11 h-12 rounded-xl border-2 focus:ring-primary/20"
+                      value={referralCode}
+                      onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 mb-3 block">Simulation Mode</Label>
+                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border-2 border-dashed">
+                    <div className="flex items-center gap-3">
+                      {isDark ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-yellow-500" />}
+                      <span className="text-sm font-bold">{isDark ? 'Dark Mode' : 'Light Mode'}</span>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={toggleDarkMode} className="h-8 rounded-lg font-black text-[10px] uppercase">Toggle</Button>
+                  </div>
+                </div>
+              </div>
+
+              <Button 
+                onClick={finishOnboarding} 
+                disabled={savingOnboarding || !nickname || !selectedMajorship}
+                className="w-full h-14 rounded-2xl font-black text-lg shadow-xl shadow-primary/30 gap-3 transition-all active:scale-[0.98]"
+              >
+                {savingOnboarding ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5 fill-current" />}
+                Enter Learning Vault
+              </Button>
+            </CardContent>
           </Card>
         </div>
       ) : (
