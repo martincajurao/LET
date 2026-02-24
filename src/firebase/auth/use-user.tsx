@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
@@ -25,6 +24,7 @@ export interface UserProfile {
   credits?: number;
   xp?: number;
   level?: number;
+  lastRewardedRank?: number;
   isPro?: boolean;
   dailyAdCount?: number;
   lastAdXpTimestamp?: number;
@@ -89,7 +89,6 @@ function cleanFirestoreData(data: any): any {
   if (data === undefined) return null;
   if (data === null || typeof data !== 'object') return data;
   
-  // Guard against recursion on Firestore internal objects (Modular SDK v9+)
   if (data.constructor?.name === 'FieldValue' || (data._methodName && data._methodName.startsWith('FieldValue.'))) {
     return data;
   }
@@ -144,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               onboardingComplete: false,
               credits: 0,
               xp: 0,
-              level: 1,
+              lastRewardedRank: 1,
               isPro: false,
               dailyAdCount: 0,
               dailyAiUsage: 0,
@@ -270,7 +269,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       onboardingComplete: true,
       credits: 100,
       xp: 1500,
-      level: 2,
+      lastRewardedRank: 1,
       streakCount: 3,
       dailyAiUsage: 25,
       dailyQuestionsAnswered: 40,

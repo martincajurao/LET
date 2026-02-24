@@ -18,9 +18,9 @@ export const XP_REWARDS = {
   FINISH_FULL_SIM: 500,
   MISTAKE_REVIEW: 50,
   AD_WATCH_XP: 75,
-  // This is the maximum bonus available for a perfect Quick Fire session (5/5)
   QUICK_FIRE_COMPLETE: 125,
-  DAILY_STREAK_BONUS: 100
+  DAILY_STREAK_BONUS: 100,
+  RANK_UP_CREDITS: 25
 };
 
 export const COOLDOWNS = {

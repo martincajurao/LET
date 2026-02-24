@@ -48,6 +48,7 @@ import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
 import { QuickFireInterface } from "@/components/exam/QuickFireInterface";
 import { QuickFireResults } from "@/components/exam/QuickFireResults";
+import { RankUpDialog } from "@/components/ui/rank-up-dialog";
 import { Question, MAJORSHIPS } from "@/app/lib/mock-data";
 import { useUser, useFirestore } from "@/firebase";
 import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp, query, where, getCountFromServer } from "firebase/firestore";
@@ -114,7 +115,36 @@ function LetsPrepContent() {
   const [selectedMajorship, setSelectedMajorship] = useState("");
   const [savingOnboarding, setSavingOnboarding] = useState(false);
 
+  // Rank Up Celebration
+  const [showRankUp, setShowRankUp] = useState(false);
+  const [celebratedRank, setCelebratedRank] = useState(1);
+
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
+
+  // Rank-up logic listener
+  useEffect(() => {
+    if (!user || !firestore || user.uid.startsWith('bypass')) return;
+    
+    const currentRank = rankData?.rank || 1;
+    const lastRewarded = user.lastRewardedRank || 1;
+
+    if (currentRank > lastRewarded) {
+      const triggerCelebration = async () => {
+        setCelebratedRank(currentRank);
+        setShowRankUp(true);
+        try {
+          const userRef = doc(firestore, 'users', user.uid);
+          await updateDoc(userRef, {
+            lastRewardedRank: currentRank,
+            credits: increment(XP_REWARDS.RANK_UP_CREDITS)
+          });
+        } catch (e) {
+          console.error("Rank up reward sync failed:", e);
+        }
+      };
+      triggerCelebration();
+    }
+  }, [user, rankData?.rank, firestore]);
 
   useEffect(() => {
     const fetchRank = async () => {
@@ -300,6 +330,15 @@ function LetsPrepContent() {
   return (
     <div className="min-h-screen bg-background text-foreground font-body transition-all duration-300">
       <Toaster />
+      
+      {/* Celebration Overlays */}
+      <RankUpDialog 
+        isOpen={showRankUp} 
+        onClose={() => setShowRankUp(false)} 
+        rank={celebratedRank} 
+        reward={XP_REWARDS.RANK_UP_CREDITS} 
+      />
+
       <Dialog open={authIssue} onOpenChange={setAuthIssue}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm z-[1001]">
           <DialogHeader className="text-center">
