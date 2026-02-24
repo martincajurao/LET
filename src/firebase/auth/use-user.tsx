@@ -55,6 +55,7 @@ export interface UserProfile {
   lastAbuseWarning?: any;
   qualityScore?: number;
   lastQualityUpdate?: any;
+  unlockedTracks?: string[];
 }
 
 interface AuthContextType {
@@ -162,7 +163,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               referralCount: 0,
               referralCreditsEarned: 0,
               referralTier: 'Bronze',
-              dailyEventEntries: 1
+              dailyEventEntries: 1,
+              unlockedTracks: []
             };
             try {
               await setDoc(userDocRef, newUserProfile);
@@ -274,6 +276,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       dailyAiUsage: 25,
       dailyQuestionsAnswered: 40,
       dailyTestsFinished: 2,
+      unlockedTracks: []
     });
     setLoading(false);
   };

@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
@@ -267,9 +266,9 @@ function LetsPrepContent() {
 
   const startExam = async (category: string | 'all' | 'quickfire' = 'all') => {
     if (loading) return;
-    if (category !== 'quickfire' && user && !isTrackUnlocked(rankData?.rank || 1, category as string)) {
+    if (category !== 'quickfire' && user && !isTrackUnlocked(rankData?.rank || 1, category as string, user.unlockedTracks)) {
       const reqRank = category === 'all' ? UNLOCK_RANKS.FULL_SIMULATION : (category === 'Professional Education' ? UNLOCK_RANKS.PROFESSIONAL_ED : UNLOCK_RANKS.SPECIALIZATION);
-      toast({ title: "Mode Locked", description: `Requires Rank ${reqRank} (${getCareerRankTitle(reqRank)}).`, variant: "destructive" });
+      toast({ title: "Mode Locked", description: `Requires Rank ${reqRank} or early credit unlock.`, variant: "destructive" });
       return;
     }
 
@@ -422,7 +421,7 @@ function LetsPrepContent() {
       />
 
       <Dialog open={authIssue} onOpenChange={setAuthIssue}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm z-[1001]">
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm z-[1001] outline-none">
           <DialogHeader className="text-center">
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4"><ShieldCheck className="w-8 h-8 text-primary" /></div>
             <DialogTitle className="text-2xl font-black">Authentication Required</DialogTitle>
@@ -559,7 +558,7 @@ function LetsPrepContent() {
                       { id: 'Professional Education', name: 'Prof Ed', icon: <GraduationCap />, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Teaching Strategy', rnk: UNLOCK_RANKS.PROFESSIONAL_ED, title: getCareerRankTitle(UNLOCK_RANKS.PROFESSIONAL_ED) },
                       { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Subject Mastery', rnk: UNLOCK_RANKS.SPECIALIZATION, title: getCareerRankTitle(UNLOCK_RANKS.SPECIALIZATION) }
                     ].map((track, i) => {
-                      const isLocked = user && !isTrackUnlocked(rankData?.rank || 1, track.id);
+                      const isLocked = user && !isTrackUnlocked(rankData?.rank || 1, track.id, user.unlockedTracks);
                       return (
                         <Card key={i} onClick={() => !isLocked && startExam(track.id as any)} className={cn("group cursor-pointer border-2 transition-all rounded-[2rem] bg-card overflow-hidden active:scale-95 relative", isLocked ? "border-muted opacity-60" : "border-border/50 hover:border-primary")}>
                           {isLocked && (

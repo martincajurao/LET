@@ -5,9 +5,9 @@
 
 export const UNLOCK_RANKS = {
   GENERAL_ED: 1,
-  PROFESSIONAL_ED: 3,
-  SPECIALIZATION: 7,
-  FULL_SIMULATION: 12
+  PROFESSIONAL_ED: 2,
+  SPECIALIZATION: 3,
+  FULL_SIMULATION: 5
 };
 
 export const XP_REWARDS = {
@@ -76,7 +76,8 @@ export function getCareerRankTitle(rank: number): string {
   return getRankTierConfig(rank).title;
 }
 
-export function isTrackUnlocked(rank: number, track: string): boolean {
+export function isTrackUnlocked(rank: number, track: string, unlockedTracks: string[] = []): boolean {
+  if (unlockedTracks.includes(track)) return true;
   if (track === 'General Education' || track === 'Gen Ed') return rank >= UNLOCK_RANKS.GENERAL_ED;
   if (track === 'Professional Education' || track === 'Prof Ed') return rank >= UNLOCK_RANKS.PROFESSIONAL_ED;
   if (track === 'Specialization' || track === 'Major') return rank >= UNLOCK_RANKS.SPECIALIZATION;
