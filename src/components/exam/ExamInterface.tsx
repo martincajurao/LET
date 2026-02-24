@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -15,11 +15,8 @@ import {
   DialogDescription, 
   DialogFooter 
 } from "@/components/ui/dialog";
-import { Clock, ChevronLeft, ChevronRight, Flag, Send, Layers, Coffee, PlayCircle, Sparkles } from "lucide-react";
+import { Clock, ChevronLeft, ChevronRight, Flag, Layers, Send, AlertTriangle } from "lucide-react";
 import { Question } from "@/app/lib/mock-data";
-import { useUser, useFirestore } from '@/firebase';
-import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
-import { explainQuestion } from '@/ai/flows/explain-question';
 import { cn } from "@/lib/utils";
 
 interface ExamInterfaceProps {
@@ -28,30 +25,13 @@ interface ExamInterfaceProps {
   onComplete: (answers: Record<string, string>, timeSpent: number) => void;
 }
 
-const shuffleArray = <T,>(array: T[]): T[] => {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-};
-
 export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: ExamInterfaceProps) {
-  const { user } = useUser();
-  const firestore = useFirestore();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [flags, setFlags] = useState<Record<string, boolean>>({});
   const [timeLeft, setTimeLeft] = useState(questions.length * (timePerQuestion || 60));
   const [startTime] = useState(Date.now());
-  const [showBreakDialog, setShowBreakDialog] = useState(false);
-  const [isResting, setIsResting] = useState(false);
-  const [restTimer, setRestTimer] = useState(0);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
-  const [showExplanation, setShowExplanation] = useState(false);
-  const [explanation, setExplanation] = useState("");
-  const [explaining, setExplaining] = useState(false);
 
   const handleSubmit = useCallback(() => {
     const timeSpent = Math.floor((Date.now() - startTime) / 1000);
@@ -59,11 +39,13 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   }, [answers, startTime, onComplete]);
 
   useEffect(() => {
-    if (isResting) return;
-    if (timeLeft <= 0) { handleSubmit(); return; }
+    if (timeLeft <= 0) {
+      handleSubmit();
+      return;
+    }
     const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
     return () => clearInterval(timer);
-  }, [isResting, timeLeft, handleSubmit]);
+  }, [timeLeft, handleSubmit]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -73,74 +55,198 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
   const handleAnswer = (val: string) => {
     setAnswers(prev => ({ ...prev, [questions[currentIdx].id]: val }));
+    // Emit event for analytics/daily tasks
     window.dispatchEvent(new CustomEvent('questionAnswered'));
   };
 
   const currentQuestion = questions[currentIdx];
   const progress = ((currentIdx + 1) / (questions.length || 1)) * 100;
+  const answeredCount = Object.keys(answers).length;
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col space-y-4">
-      <header className="flex flex-col sm:flex-row justify-between items-center bg-card p-4 rounded-2xl shadow-sm border border-border gap-4 transition-colors duration-300">
+    <div className="fixed inset-0 z-[200] bg-background flex flex-col animate-in fade-in duration-300">
+      {/* Simulation Top Bar (Android Status Bar Style) */}
+      <header className="h-16 border-b bg-card/50 backdrop-blur-xl flex items-center justify-between px-4 sm:px-8 shrink-0">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 pr-4 border-r border-border">
-            <Clock className="w-5 h-5 text-primary" />
-            <span className={`text-lg font-mono font-bold ${timeLeft < 60 ? 'text-destructive animate-pulse' : 'text-foreground'}`}>{formatTime(timeLeft)}</span>
+          <div className={cn(
+            "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-colors",
+            timeLeft < 60 ? "bg-destructive/10 border-destructive text-destructive animate-pulse" : "bg-primary/10 border-primary/20 text-primary"
+          )}>
+            <Clock className="w-4 h-4" />
+            <span className="text-sm font-black font-mono">{formatTime(timeLeft)}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Layers className="w-5 h-5 text-muted-foreground" />
-            <span className="text-sm font-bold text-foreground">Phase: {currentQuestion?.subject}</span>
+          <div className="hidden sm:flex items-center gap-2 text-muted-foreground">
+            <Layers className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-widest">{currentQuestion?.subject}</span>
           </div>
         </div>
-        <Progress value={progress} className="flex-1 h-2 max-w-md" />
-        <Button onClick={() => setShowSubmitConfirm(true)} className="font-bold shadow-lg shadow-primary/20">Submit Simulation</Button>
+
+        <div className="flex-1 max-w-xs mx-4 hidden md:block">
+          <div className="flex justify-between mb-1">
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Overall Progress</span>
+            <span className="text-[10px] font-black text-primary">{Math.round(progress)}%</span>
+          </div>
+          <Progress value={progress} className="h-1.5" />
+        </div>
+
+        <Button 
+          variant="default" 
+          size="sm" 
+          onClick={() => setShowSubmitConfirm(true)}
+          className="font-black rounded-xl px-6 shadow-lg shadow-primary/20 bg-primary h-10"
+        >
+          <Send className="w-4 h-4 mr-2" />
+          Finish
+        </Button>
       </header>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 overflow-hidden">
-        <Card className="lg:col-span-3 bg-card border-none shadow-xl rounded-3xl overflow-y-auto">
-          <CardHeader className="border-b border-border bg-muted/5">
-            <div className="flex justify-between items-center mb-4">
-              <Badge variant="secondary" className="px-3 py-1 font-black uppercase text-[10px]">{currentQuestion?.subject}</Badge>
-              <Button variant="ghost" size="sm" onClick={() => setFlags(p => ({...p, [currentQuestion.id]: !p[currentQuestion.id]}))} className={cn("gap-2", flags[currentQuestion.id] && "text-orange-500")}>
+      {/* Main Simulation Area */}
+      <main className="flex-1 overflow-hidden flex flex-col md:flex-row">
+        {/* Content Section */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 pb-32">
+          <div className="max-w-3xl mx-auto space-y-6">
+            <div className="flex justify-between items-center">
+              <Badge variant="secondary" className="px-3 py-1 font-black uppercase text-[10px] tracking-widest bg-muted/50">
+                Item {currentIdx + 1} of {questions.length}
+              </Badge>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setFlags(p => ({...p, [currentQuestion.id]: !p[currentQuestion.id]}))}
+                className={cn("h-8 gap-2 rounded-lg", flags[currentQuestion.id] && "text-orange-500 bg-orange-500/10")}
+              >
                 <Flag className={cn("w-4 h-4", flags[currentQuestion.id] && "fill-current")} /> 
-                {flags[currentQuestion.id] ? "Flagged" : "Flag"}
+                <span className="text-xs font-bold">{flags[currentQuestion.id] ? "Flagged" : "Review Later"}</span>
               </Button>
             </div>
-            <CardTitle className="text-xl md:text-2xl font-black leading-tight text-foreground">{currentQuestion?.text}</CardTitle>
-          </CardHeader>
-          <CardContent className="p-8">
-            <RadioGroup value={answers[currentQuestion?.id] || ""} onValueChange={handleAnswer} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {currentQuestion?.options.map((opt, i) => (
-                <Label key={i} className={cn("flex items-center p-6 rounded-2xl border-2 cursor-pointer transition-all hover:bg-muted/10", answers[currentQuestion.id] === opt ? "border-primary bg-primary/5" : "border-border bg-card")}>
-                  <RadioGroupItem value={opt} className="sr-only" />
-                  <div className={cn("w-10 h-10 rounded-full border-2 flex items-center justify-center mr-4 font-black transition-colors", answers[currentQuestion.id] === opt ? "bg-primary border-primary text-primary-foreground" : "border-border bg-muted text-muted-foreground")}>{String.fromCharCode(65+i)}</div>
-                  <span className="font-bold text-foreground">{opt}</span>
-                </Label>
-              ))}
-            </RadioGroup>
-          </CardContent>
-          <CardFooter className="p-8 bg-muted/5 border-t border-border flex justify-between">
-            <Button variant="outline" onClick={() => setCurrentIdx(p => Math.max(0, p-1))} disabled={currentIdx === 0} className="rounded-xl px-8 border-border hover:bg-muted">Previous</Button>
-            <Button variant="outline" onClick={() => setCurrentIdx(p => Math.min(questions.length-1, p+1))} disabled={currentIdx === questions.length-1} className="rounded-xl px-8 border-border hover:bg-muted">Next Item</Button>
-          </CardFooter>
-        </Card>
 
-        <Card className="hidden lg:flex flex-col bg-card border-none shadow-xl rounded-3xl transition-colors duration-300">
-          <CardHeader className="border-b border-border"><CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">Navigator</CardTitle></CardHeader>
-          <CardContent className="p-4 flex-1 overflow-y-auto">
-            <div className="grid grid-cols-5 gap-2">
-              {questions.map((q, i) => (
-                <button key={q.id} onClick={() => setCurrentIdx(i)} className={cn("aspect-square rounded-lg text-xs font-bold border-2 transition-all", currentIdx === i ? "border-primary bg-primary text-primary-foreground" : answers[q.id] ? "border-primary/20 bg-primary/5 text-primary" : "border-border text-muted-foreground", flags[q.id] && "bg-orange-500/10 border-orange-500/50 text-orange-600")}>{i + 1}</button>
-              ))}
+            <div className="space-y-8">
+              <h2 className="text-xl md:text-3xl font-black leading-tight text-foreground tracking-tight">
+                {currentQuestion?.text}
+              </h2>
+
+              <RadioGroup 
+                value={answers[currentQuestion?.id] || ""} 
+                onValueChange={handleAnswer} 
+                className="grid grid-cols-1 gap-3"
+              >
+                {currentQuestion?.options.map((opt, i) => (
+                  <Label 
+                    key={i} 
+                    className={cn(
+                      "flex items-center p-5 md:p-6 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98]",
+                      answers[currentQuestion.id] === opt 
+                        ? "border-primary bg-primary/5 ring-4 ring-primary/10" 
+                        : "border-border bg-card hover:bg-muted/10"
+                    )}
+                  >
+                    <RadioGroupItem value={opt} className="sr-only" />
+                    <div className={cn(
+                      "w-10 h-10 md:w-12 md:h-12 rounded-full border-2 flex items-center justify-center mr-4 font-black transition-colors shrink-0",
+                      answers[currentQuestion.id] === opt 
+                        ? "bg-primary border-primary text-primary-foreground" 
+                        : "border-border bg-muted text-muted-foreground"
+                    )}>
+                      {String.fromCharCode(65+i)}
+                    </div>
+                    <span className="text-base md:text-lg font-bold text-foreground leading-snug">{opt}</span>
+                  </Label>
+                ))}
+              </RadioGroup>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
 
+        {/* Desktop Side Navigator */}
+        <aside className="hidden lg:flex w-72 border-l bg-muted/5 p-6 flex-col gap-6 overflow-y-auto">
+          <div className="space-y-1">
+            <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Navigator</h3>
+            <p className="text-[10px] font-medium text-muted-foreground">Jump to any question instantly.</p>
+          </div>
+          <div className="grid grid-cols-5 gap-2">
+            {questions.map((q, i) => (
+              <button 
+                key={q.id} 
+                onClick={() => setCurrentIdx(i)}
+                className={cn(
+                  "aspect-square rounded-xl text-xs font-black border-2 transition-all",
+                  currentIdx === i 
+                    ? "border-primary bg-primary text-primary-foreground shadow-lg" 
+                    : answers[q.id] 
+                      ? "border-primary/20 bg-primary/5 text-primary" 
+                      : "border-border text-muted-foreground hover:bg-muted",
+                  flags[q.id] && "border-orange-500/50 bg-orange-500/10 text-orange-600"
+                )}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+          <div className="mt-auto pt-6 border-t space-y-4">
+            <div className="flex justify-between items-center text-xs font-bold">
+              <span className="text-muted-foreground">Answered</span>
+              <span className="text-foreground">{answeredCount} / {questions.length}</span>
+            </div>
+            <Progress value={(answeredCount / questions.length) * 100} className="h-1.5" />
+          </div>
+        </aside>
+      </main>
+
+      {/* Mobile Sticky Navigation Footer */}
+      <footer className="h-20 shrink-0 border-t bg-card/80 backdrop-blur-xl flex items-center justify-between px-6 pb-safe-area shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+        <Button 
+          variant="outline" 
+          onClick={() => setCurrentIdx(p => Math.max(0, p-1))} 
+          disabled={currentIdx === 0}
+          className="rounded-xl px-6 h-12 font-black text-xs border-border"
+        >
+          <ChevronLeft className="w-4 h-4 mr-1" />
+          Back
+        </Button>
+
+        <div className="text-center md:hidden">
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Item</p>
+          <p className="text-sm font-black text-foreground">{currentIdx + 1} / {questions.length}</p>
+        </div>
+
+        <Button 
+          variant="outline" 
+          onClick={() => setCurrentIdx(p => Math.min(questions.length-1, p+1))} 
+          disabled={currentIdx === questions.length-1}
+          className="rounded-xl px-6 h-12 font-black text-xs border-border"
+        >
+          Next
+          <ChevronRight className="w-4 h-4 ml-1" />
+        </Button>
+      </footer>
+
+      {/* Submission Confirmation */}
       <Dialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
-        <DialogContent className="rounded-[2rem] bg-card border-none">
-          <DialogHeader><DialogTitle className="text-2xl font-black">Submit Simulation?</DialogTitle><DialogDescription>Your board readiness score will be calculated.</DialogDescription></DialogHeader>
-          <DialogFooter className="gap-2"><Button variant="outline" onClick={() => setShowSubmitConfirm(false)}>Review Items</Button><Button onClick={handleSubmit} className="font-black bg-primary">Finalize Simulation</Button></DialogFooter>
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm">
+          <DialogHeader className="text-center">
+            <div className="w-16 h-16 bg-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-8 h-8 text-orange-500" />
+            </div>
+            <DialogTitle className="text-2xl font-black">Finalize Simulation?</DialogTitle>
+            <DialogDescription className="text-muted-foreground font-medium">
+              You have answered <span className="text-foreground font-black">{answeredCount} out of {questions.length}</span> items. Once submitted, you cannot change your answers.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 pt-6">
+            <Button 
+              onClick={handleSubmit} 
+              className="h-14 rounded-2xl font-black text-lg shadow-lg shadow-primary/30"
+            >
+              Submit Now
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => setShowSubmitConfirm(false)} 
+              className="h-14 rounded-2xl font-bold text-muted-foreground"
+            >
+              Continue Reviewing
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
