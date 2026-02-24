@@ -64,7 +64,7 @@ export function Navbar() {
   };
 
   return (
-<nav className="flex items-center justify-between px-6 py-4 bg-card/80 backdrop-blur-md border-b sticky top-0 z-[100] shadow-sm transition-colors duration-300">
+    <nav className="flex items-center justify-between px-6 py-4 bg-card/80 backdrop-blur-md border-b sticky top-0 z-[100] shadow-sm transition-colors duration-300">
       <div className="flex items-center gap-2">
         <Link href="/" className="text-xl font-black tracking-tighter text-foreground flex items-center gap-2">
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
@@ -158,10 +158,10 @@ export function Navbar() {
       <Dialog open={showAdModal} onOpenChange={setShowAdModal}>
         <DialogContent className="rounded-[2rem] bg-card border-none shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="font-black">Earn AI Credits</DialogTitle>
-            <DialogDescription>Watch a short promotional video to earn +3 credits for AI explanations.</DialogDescription>
+            <DialogTitle className="font-black text-foreground">Earn AI Credits</DialogTitle>
+            <DialogDescription className="text-muted-foreground">Watch a short promotional video to earn +3 credits for AI explanations.</DialogDescription>
           </DialogHeader>
-          <div className="py-8 flex flex-col items-center justify-center bg-muted rounded-2xl border border-dashed">
+          <div className="py-8 flex flex-col items-center justify-center bg-muted rounded-2xl border border-dashed border-border">
             <Play className="w-12 h-12 text-primary opacity-40 mb-4" />
             <p className="text-xs font-bold text-muted-foreground">Daily limit: {user?.dailyAdCount || 0} / 5 ads</p>
           </div>
@@ -177,8 +177,8 @@ export function Navbar() {
       <Dialog open={showProModal} onOpenChange={setShowProModal}>
         <DialogContent className="rounded-[2.5rem] max-w-md bg-card border-none shadow-2xl">
           <DialogHeader className="pt-8">
-            <DialogTitle className="text-center text-3xl font-black">Go Professional</DialogTitle>
-            <DialogDescription className="text-center">Unlock the full power of AI for your board preparation.</DialogDescription>
+            <DialogTitle className="text-center text-3xl font-black text-foreground">Go Professional</DialogTitle>
+            <DialogDescription className="text-center text-muted-foreground">Unlock the full power of AI for your board preparation.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-6">
             {[

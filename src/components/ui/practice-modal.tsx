@@ -82,27 +82,27 @@ export function PracticeModal({ isOpen, onClose, onStartExam, loading = false }:
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl p-0 bg-slate-50 border-0 shadow-2xl practice-modal-overlay">
-        <DialogHeader className="border-b border-slate-200/50 bg-white p-6 pb-4 rounded-t-3xl">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl p-0 bg-background border-0 shadow-2xl practice-modal-overlay">
+        <DialogHeader className="border-b border-border/50 bg-card p-6 pb-4 rounded-t-3xl">
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle className="text-2xl font-black text-left bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+              <DialogTitle className="text-2xl font-black text-left bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
                 Choose Practice Mode
               </DialogTitle>
-              <p className="text-sm text-slate-500 mt-1">Select how you want to practice today</p>
+              <p className="text-sm text-muted-foreground mt-1">Select how you want to practice today</p>
             </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="rounded-full h-10 w-10 hover:bg-slate-100 transition-colors"
+              className="rounded-full h-10 w-10 hover:bg-muted transition-colors"
             >
-              <X className="h-5 w-5 text-slate-600" />
+              <X className="h-5 w-5 text-foreground" />
             </Button>
           </div>
         </DialogHeader>
 
-        <div className="p-6 space-y-6 bg-slate-50">
+        <div className="p-6 space-y-6 bg-background">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {practiceModes.map((mode) => (
               <Card
@@ -110,12 +110,11 @@ export function PracticeModal({ isOpen, onClose, onStartExam, loading = false }:
                 className={cn(
                   "border-2 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-2 group practice-mode-card",
                   mode.borderColor,
-                  "overflow-hidden bg-white rounded-2xl"
+                  "overflow-hidden bg-card rounded-2xl"
                 )}
                 onClick={() => !loading && handleStartPractice(mode.id)}
               >
                 <CardHeader className="pb-4 relative">
-                  {/* Android-style card header gradient */}
                   <div className={cn(
                     "absolute inset-0 bg-gradient-to-br opacity-10 rounded-t-2xl",
                     mode.id === 'all' ? 'from-primary/20 to-primary/5' :
@@ -134,19 +133,19 @@ export function PracticeModal({ isOpen, onClose, onStartExam, loading = false }:
                     <Badge variant="secondary" className={cn(
                       "text-[10px] font-bold px-3 py-1 shadow-md",
                       mode.id === 'all' ? 'bg-primary/20 text-primary border-primary/30' :
-                      mode.id === 'General Education' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                      mode.id === 'Professional Education' ? 'bg-purple-100 text-purple-700 border-purple-200' :
-                      'bg-emerald-100 text-emerald-700 border-emerald-200'
+                      mode.id === 'General Education' ? 'bg-blue-500/20 text-blue-600 border-blue-500/30' :
+                      mode.id === 'Professional Education' ? 'bg-purple-500/20 text-purple-600 border-purple-500/30' :
+                      'bg-emerald-500/20 text-emerald-600 border-emerald-500/30'
                     )}>
                       {mode.questions}
                     </Badge>
                   </div>
-                  <CardTitle className="text-xl font-black mt-4 group-hover:text-primary transition-colors">{mode.name}</CardTitle>
-                  <p className="text-sm text-slate-600 line-clamp-2 mt-1">{mode.description}</p>
+                  <CardTitle className="text-xl font-black mt-4 group-hover:text-primary transition-colors text-foreground">{mode.name}</CardTitle>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{mode.description}</p>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="flex items-center justify-between mt-4">
-                    <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-100 px-3 py-2 rounded-full">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted px-3 py-2 rounded-full">
                       <Clock className="w-4 h-4" />
                       <span className="font-medium">{mode.time}</span>
                     </div>
@@ -154,23 +153,13 @@ export function PracticeModal({ isOpen, onClose, onStartExam, loading = false }:
                       size="sm"
                       disabled={loading}
                       className={cn(
-                        "font-bold text-xs px-6 py-3 h-10 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 android-button",
+                        "font-bold text-xs px-6 py-3 h-10 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105",
                         mode.id === 'all' 
-                          ? "bg-primary hover:bg-primary/90 text-white shadow-primary/25 hover:shadow-primary/35" 
-                          : "bg-slate-900 hover:bg-slate-800 text-white shadow-slate-900/25 hover:shadow-slate-900/35"
+                          ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/25" 
+                          : "bg-foreground hover:bg-foreground/90 text-background shadow-foreground/25"
                       )}
                     >
-                      {loading ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-current border-t-transparent border-r-transparent loading-spinner rounded-full" />
-                          Starting...
-                        </>
-                      ) : (
-                        <>
-                          Start
-                          <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
-                        </>
-                      )}
+                      {loading ? "Starting..." : "Start"}
                     </Button>
                   </div>
                 </CardContent>
@@ -178,17 +167,17 @@ export function PracticeModal({ isOpen, onClose, onStartExam, loading = false }:
             ))}
           </div>
 
-          <div className="mt-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 shadow-lg">
+          <div className="mt-8 p-6 bg-primary/5 rounded-2xl border border-primary/20 shadow-lg">
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
-                <Languages className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
+                <Languages className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-black text-sm text-blue-900 flex items-center gap-2">
+                <h4 className="font-black text-sm text-foreground flex items-center gap-2">
                   Pro Tip
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                 </h4>
-                <p className="text-xs text-blue-700 mt-2 leading-relaxed">
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
                   Start with a Full Simulation to get a complete assessment of your readiness, 
                   then focus on specific areas that need improvement.
                 </p>

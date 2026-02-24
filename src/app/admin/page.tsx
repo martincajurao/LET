@@ -162,43 +162,43 @@ export default function AdminDashboard() {
       <header className="bg-card border-b sticky top-0 z-50 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/"><Button variant="ghost" size="sm" className="gap-2 font-bold"><ArrowLeft className="w-4 h-4" />Back</Button></Link>
-            <span className="text-lg font-black tracking-tight flex items-center gap-2"><Settings className="w-5 h-5 text-primary" /> Admin Panel</span>
+            <Link href="/"><Button variant="ghost" size="sm" className="gap-2 font-bold text-foreground hover:bg-muted"><ArrowLeft className="w-4 h-4" />Back</Button></Link>
+            <span className="text-lg font-black tracking-tight flex items-center gap-2 text-foreground"><Settings className="w-5 h-5 text-primary" /> Admin Panel</span>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="border-none shadow-sm bg-card"><CardHeader className="p-4"><CardDescription className="text-[10px] font-black uppercase">Total Pool</CardDescription><CardTitle className="text-xl font-black">{questions.length}</CardTitle></CardHeader></Card>
-          <Card className="border-none shadow-sm bg-card"><CardHeader className="p-4"><CardDescription className="text-[10px] font-black uppercase">Gen Ed</CardDescription><CardTitle className="text-xl font-black">{categoryCounts['General Education']}</CardTitle></CardHeader></Card>
-          <Card className="border-none shadow-sm bg-card"><CardHeader className="p-4"><CardDescription className="text-[10px] font-black uppercase">Prof Ed</CardDescription><CardTitle className="text-xl font-black">{categoryCounts['Professional Education']}</CardTitle></CardHeader></Card>
-          <Card className="border-none shadow-sm bg-card"><CardHeader className="p-4"><CardDescription className="text-[10px] font-black uppercase">Spec</CardDescription><CardTitle className="text-xl font-black">{categoryCounts['Specialization']}</CardTitle></CardHeader></Card>
+          <Card className="border-none shadow-sm bg-card"><CardHeader className="p-4"><CardDescription className="text-[10px] font-black uppercase text-muted-foreground">Total Pool</CardDescription><CardTitle className="text-xl font-black text-foreground">{questions.length}</CardTitle></CardHeader></Card>
+          <Card className="border-none shadow-sm bg-card"><CardHeader className="p-4"><CardDescription className="text-[10px] font-black uppercase text-muted-foreground">Gen Ed</CardDescription><CardTitle className="text-xl font-black text-foreground">{categoryCounts['General Education']}</CardTitle></CardHeader></Card>
+          <Card className="border-none shadow-sm bg-card"><CardHeader className="p-4"><CardDescription className="text-[10px] font-black uppercase text-muted-foreground">Prof Ed</CardDescription><CardTitle className="text-xl font-black text-foreground">{categoryCounts['Professional Education']}</CardTitle></CardHeader></Card>
+          <Card className="border-none shadow-sm bg-card"><CardHeader className="p-4"><CardDescription className="text-[10px] font-black uppercase text-muted-foreground">Spec</CardDescription><CardTitle className="text-xl font-black text-foreground">{categoryCounts['Specialization']}</CardTitle></CardHeader></Card>
         </div>
 
         <Tabs defaultValue="questions" className="space-y-6">
-          <TabsList className="bg-card border p-1 rounded-xl">
-            <TabsTrigger value="questions" className="font-bold">Manager</TabsTrigger>
-            <TabsTrigger value="pdf-import" className="font-bold flex items-center gap-2"><FileUp className="w-3.5 h-3.5" /> PDF Import</TabsTrigger>
-            <TabsTrigger value="users" className="font-bold flex items-center gap-2"><Users className="w-3.5 h-3.5" /> Users</TabsTrigger>
-            <TabsTrigger value="config" className="font-bold">Config</TabsTrigger>
+          <TabsList className="bg-card border p-1 rounded-xl border-border">
+            <TabsTrigger value="questions" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Manager</TabsTrigger>
+            <TabsTrigger value="pdf-import" className="font-bold flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><FileUp className="w-3.5 h-3.5" /> PDF Import</TabsTrigger>
+            <TabsTrigger value="users" className="font-bold flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Users className="w-3.5 h-3.5" /> Users</TabsTrigger>
+            <TabsTrigger value="config" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Config</TabsTrigger>
           </TabsList>
 
           <TabsContent value="questions" className="space-y-4">
             <div className="flex justify-between gap-4 flex-wrap items-center">
-              <div className="relative flex-1 max-w-sm"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder="Search..." className="pl-9 bg-card border-border" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} /></div>
+              <div className="relative flex-1 max-w-sm"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder="Search..." className="pl-9 bg-card border-border text-foreground" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} /></div>
               <div className="flex gap-2"><Button onClick={() => setIsDialogOpen(true)} className="font-black text-xs"><Plus className="w-4 h-4 mr-2" /> Add Item</Button></div>
             </div>
-            <Card className="overflow-hidden border-none shadow-sm rounded-xl bg-card">
+            <Card className="overflow-hidden border-none shadow-sm rounded-xl bg-card border border-border">
               <Table>
                 <TableHeader className="bg-muted/30">
-                  <TableRow><TableHead className="font-black uppercase text-[10px]">Track</TableHead><TableHead className="font-black uppercase text-[10px]">Question</TableHead><TableHead className="text-right font-black uppercase text-[10px]">Actions</TableHead></TableRow>
+                  <TableRow className="border-border"><TableHead className="font-black uppercase text-[10px] text-muted-foreground">Track</TableHead><TableHead className="font-black uppercase text-[10px] text-muted-foreground">Question</TableHead><TableHead className="text-right font-black uppercase text-[10px] text-muted-foreground">Actions</TableHead></TableRow>
                 </TableHeader>
                 <TableBody>
                   {questions.filter(q => q.text.toLowerCase().includes(searchQuery.toLowerCase())).map(q => (
                     <TableRow key={q.id} className="hover:bg-muted/10 border-border">
-                      <TableCell><Badge variant="outline" className="text-[10px] font-bold">{q.subject}</Badge></TableCell>
-                      <TableCell className="font-medium text-sm"><span className="line-clamp-1">{q.text}</span></TableCell>
+                      <TableCell><Badge variant="outline" className="text-[10px] font-bold text-foreground border-border">{q.subject}</Badge></TableCell>
+                      <TableCell className="font-medium text-sm text-foreground"><span className="line-clamp-1">{q.text}</span></TableCell>
                       <TableCell className="text-right flex justify-end gap-1">
                         <Button variant="ghost" size="icon" onClick={() => { setEditingQuestion(q); setIsDialogOpen(true); }}><Edit className="w-4 h-4 text-primary" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => handleDeleteQuestion(q.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
@@ -211,10 +211,10 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
-            <Card className="overflow-hidden border-none shadow-sm rounded-xl bg-card">
+            <Card className="overflow-hidden border-none shadow-sm rounded-xl bg-card border border-border">
               <Table>
                 <TableHeader className="bg-muted/30">
-                  <TableRow><TableHead className="font-black uppercase text-[10px]">User</TableHead><TableHead className="font-black uppercase text-[10px]">Credits</TableHead><TableHead className="font-black uppercase text-[10px]">Last Active</TableHead></TableRow>
+                  <TableRow className="border-border"><TableHead className="font-black uppercase text-[10px] text-muted-foreground">User</TableHead><TableHead className="font-black uppercase text-[10px] text-muted-foreground">Credits</TableHead><TableHead className="font-black uppercase text-[10px] text-muted-foreground">Last Active</TableHead></TableRow>
                 </TableHeader>
                 <TableBody>
                   {users.map(user => (

@@ -271,18 +271,18 @@ export default function LetsPrepApp() {
     <div className="min-h-screen bg-background text-foreground font-body pb-24 transition-colors duration-300">
       <Toaster />
       <Dialog open={authIssue} onOpenChange={setAuthIssue}>
-        <DialogContent className="rounded-[2rem] bg-card">
-          <DialogHeader><DialogTitle className="font-black">Authentication Required</DialogTitle></DialogHeader>
+        <DialogContent className="rounded-[2rem] bg-card border-border">
+          <DialogHeader><DialogTitle className="font-black text-foreground">Authentication Required</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-4">
             <Button onClick={loginWithGoogle} className="h-14 rounded-xl font-black gap-2"><GoogleIcon /> Sign in with Google</Button>
-            <Button onClick={loginWithFacebook} variant="outline" className="h-14 rounded-xl font-black gap-2"><FacebookIcon /> Sign in with Facebook</Button>
+            <Button onClick={loginWithFacebook} variant="outline" className="h-14 rounded-xl font-black gap-2 border-border"><FacebookIcon /> Sign in with Facebook</Button>
             <Button variant="secondary" onClick={loginAnonymously} className="h-14 rounded-xl font-black">Guest Access</Button>
           </div>
         </DialogContent>
       </Dialog>
       <Dialog open={loading}>
         <DialogContent className="sm:max-w-md border-none shadow-2xl bg-card rounded-[2rem]">
-          <DialogHeader><DialogTitle className="text-center font-black">{loadingMessage}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="text-center font-black text-foreground">{loadingMessage}</DialogTitle></DialogHeader>
           <div className="space-y-6 py-6 text-center">
             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center"><BrainCircuit className="w-6 h-6 text-primary animate-pulse" /></div>
             <Progress value={loadingStep} className="h-2" />
@@ -297,10 +297,10 @@ export default function LetsPrepApp() {
       ) : state === 'registration' ? (
         <div className="min-h-[60vh] flex items-center justify-center p-4">
           <Card className="max-w-md w-full rounded-[2.5rem] bg-card border-none shadow-xl">
-            <CardHeader className="text-center pt-10"><CardTitle className="text-2xl font-black">Choose Your Majorship</CardTitle></CardHeader>
+            <CardHeader className="text-center pt-10"><CardTitle className="text-2xl font-black text-foreground">Choose Your Majorship</CardTitle></CardHeader>
             <CardContent className="pb-12 pt-4 px-10">
               <Select onValueChange={(val) => { updateProfile({ majorship: val }); setState('dashboard'); }}>
-                <SelectTrigger className="h-14 rounded-2xl font-black"><SelectValue placeholder="Select track..." /></SelectTrigger>
+                <SelectTrigger className="h-14 rounded-2xl font-black border-border"><SelectValue placeholder="Select track..." /></SelectTrigger>
                 <SelectContent>{MAJORSHIPS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
               </Select>
             </CardContent>
@@ -338,7 +338,7 @@ export default function LetsPrepApp() {
                     <div className="flex items-center gap-1 text-orange-500 bg-orange-500/10 px-2 md:px-3 py-1 rounded-full"><Flame className="w-3 h-3 fill-current" /><span className="text-[9px] md:text-[10px] font-bold uppercase">Adaptive</span></div>
                   </div>
                   <div className="space-y-3 md:space-y-4">
-                    <h2 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] animate-fade-in-up">The <span className="text-gradient italic">Ultimate</span> <br /> Teacher Prep.</h2>
+                    <h2 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] animate-fade-in-up text-foreground">The <span className="text-gradient italic">Ultimate</span> <br /> Teacher Prep.</h2>
                     <p className="text-muted-foreground font-medium md:text-lg animate-fade-in-up delay-200">Master Gen Ed, Prof Ed, and your Majorship with high-fidelity AI-powered simulations.</p>
                   </div>
                   <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-12 md:h-16 px-6 md:px-10 rounded-xl md:rounded-2xl font-bold md:font-black text-sm md:text-lg gap-2 md:gap-3 shadow-lg md:shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all bg-primary hover:bg-primary/90 text-primary-foreground animate-fade-in-up delay-300 hover:animate-pulse-glow">
@@ -356,7 +356,7 @@ export default function LetsPrepApp() {
                       <div className="w-16 h-16 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center mb-2">
                         <GraduationCap className="w-8 h-8 text-primary" />
                       </div>
-                      <p className="font-black text-xl md:text-2xl">LET Prep Pro</p>
+                      <p className="font-black text-xl md:text-2xl text-foreground">LET Prep Pro</p>
                       <p className="text-xs md:text-sm text-muted-foreground">Master your board exam with AI-powered simulations</p>
                       <div className="space-y-2 pt-2">
                         <Button onClick={loginWithGoogle} className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-bold gap-2">
@@ -472,13 +472,13 @@ export default function LetsPrepApp() {
                   `}
                 >
                   <div className="absolute top-3 right-3">
-                    <Badge variant="outline" className="bg-background/80 backdrop-blur-sm text-[9px] font-black uppercase tracking-wider">
+                    <Badge variant="outline" className="bg-background/80 backdrop-blur-sm text-[9px] font-black uppercase tracking-wider text-foreground border-border">
                       Practice Now
                     </Badge>
                   </div>
                   
                   <CardHeader className="p-5 md:p-7 pb-3 md:pb-4">
-                    <div className={`w-14 h-14 md:w-16 md:h-16 ${track.color} rounded-2xl flex items-center justify-center mb-4 md:mb-5 shadow-sm border`}>
+                    <div className={`w-14 h-14 md:w-16 md:h-16 ${track.color} rounded-2xl flex items-center justify-center mb-4 md:mb-5 shadow-sm border border-border`}>
                       {track.icon}
                     </div>
                     <h4 className="text-lg md:text-xl font-black tracking-tight group-hover:text-primary transition-colors text-foreground">{track.name}</h4>

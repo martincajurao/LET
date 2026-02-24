@@ -99,7 +99,6 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
   const handleUnlockAnalysis = async () => {
     if (!user || !firestore) return;
     setUnlocking(true);
-    // Simulating Ad watching
     setTimeout(async () => {
       try {
         const userRef = doc(firestore, 'users', user.uid);
@@ -130,7 +129,6 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
     }
     if (generatingIds.has(q.id)) return;
     
-    // Check credits for non-pro users
     if (!user.isPro && (user.credits || 0) < 2) {
       toast({ variant: "destructive", title: "Insufficient AI Credits", description: "Complete daily tasks to earn more credits!" });
       return;
@@ -153,16 +151,14 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
       if (result.explanations && result.explanations.length > 0) {
         setLocalExplanations(prev => ({ ...prev, [q.id]: result.explanations[0].aiExplanation }));
         
-        // Deduct credits for non-pro users and track mistakes reviewed for daily tasks
         if (!user.isPro && firestore) {
           const userRef = doc(firestore, 'users', user.uid);
           await updateDoc(userRef, {
             credits: increment(-2),
             dailyAiUsage: increment(1),
-            mistakesReviewed: increment(1) // Track for daily tasks
+            mistakesReviewed: increment(1)
           });
         } else if (user.isPro && firestore) {
-          // Even for Pro users, track mistakes reviewed for daily tasks
           const userRef = doc(firestore, 'users', user.uid);
           await updateDoc(userRef, {
             mistakesReviewed: increment(1)
@@ -185,12 +181,12 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-24">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-8 rounded-[2.5rem] shadow-sm border">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-card p-8 rounded-[2.5rem] shadow-sm border">
         <div className="space-y-1">
           <Badge className="bg-primary/10 text-primary border-primary/20 px-3 py-0.5 text-[10px] font-black uppercase tracking-[0.2em] mb-2">
             Simulation Report
           </Badge>
-          <h1 className="text-3xl font-black font-headline tracking-tight leading-none">Overall Performance</h1>
+          <h1 className="text-3xl font-black font-headline tracking-tight leading-none text-foreground">Overall Performance</h1>
           <p className="text-muted-foreground text-sm font-medium">Verified analytical results based on LET board standards.</p>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
@@ -208,7 +204,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className={cn(
           "lg:col-span-1 border-none shadow-sm flex flex-col items-center justify-center p-8 rounded-[2.5rem]",
-          stats.isPassed ? "bg-emerald-50/50 border border-emerald-100" : "bg-orange-50/50 border border-orange-100"
+          stats.isPassed ? "bg-emerald-500/10 border border-emerald-500/20" : "bg-orange-500/10 border border-orange-500/20"
         )}>
           <div className="relative w-40 h-40 flex items-center justify-center mb-6">
             <ResponsiveContainer width="100%" height="100%">
@@ -230,7 +226,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-3xl font-black tracking-tight">{stats.overallScore}%</span>
+              <span className="text-3xl font-black tracking-tight text-foreground">{stats.overallScore}%</span>
               <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">Accuracy</span>
             </div>
           </div>
@@ -242,26 +238,26 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
           </div>
 
           <div className="w-full grid grid-cols-2 gap-3">
-            <div className="p-4 bg-white rounded-2xl border shadow-sm text-center">
+            <div className="p-4 bg-card rounded-2xl border shadow-sm text-center">
               <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Correct</p>
-              <p className="text-xl font-black">{stats.correct}</p>
+              <p className="text-xl font-black text-foreground">{stats.correct}</p>
             </div>
-            <div className="p-4 bg-white rounded-2xl border shadow-sm text-center">
+            <div className="p-4 bg-card rounded-2xl border shadow-sm text-center">
               <p className="text-[10px] font-black uppercase tracking-widest text-destructive mb-1">Missed</p>
-              <p className="text-xl font-black">{stats.total - stats.correct}</p>
+              <p className="text-xl font-black text-foreground">{stats.total - stats.correct}</p>
             </div>
           </div>
         </Card>
 
-        <Card className="lg:col-span-2 border-none shadow-sm rounded-[2.5rem] bg-white p-8">
+        <Card className="lg:col-span-2 border-none shadow-sm rounded-[2.5rem] bg-card p-8">
           <CardHeader className="p-0 mb-8">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
                 <Target className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-lg font-black tracking-tight">Subject Breakdown</CardTitle>
-                <CardDescription className="text-xs font-medium">Proficiency analysis by simulation phase.</CardDescription>
+                <CardTitle className="text-lg font-black tracking-tight text-foreground">Subject Breakdown</CardTitle>
+                <CardDescription className="text-xs font-medium text-muted-foreground">Proficiency analysis by simulation phase.</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -271,7 +267,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                 <BarChart data={stats.subjectChartData} layout="vertical" margin={{ left: 60, right: 40 }}>
                   <XAxis type="number" domain={[0, 100]} hide />
                   <YAxis dataKey="name" type="category" width={120} style={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', fill: 'hsl(var(--muted-foreground))' }} />
-                  <Tooltip cursor={{ fill: 'hsl(var(--muted)/0.1)' }} />
+                  <Tooltip cursor={{ fill: 'hsl(var(--muted)/0.1)' }} contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))' }} />
                   <Bar dataKey="score" fill="hsl(var(--primary))" radius={[0, 10, 10, 0]} barSize={28}>
                     <LabelList dataKey="score" position="right" formatter={(val: number) => `${val}%`} className="fill-foreground font-black text-[10px]" />
                   </Bar>
@@ -283,11 +279,11 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
       </div>
 
       {!isUnlocked ? (
-        <Card className="border-none shadow-xl rounded-[2.5rem] bg-slate-900 text-white p-12 text-center relative overflow-hidden">
+        <Card className="border-none shadow-xl rounded-[2.5rem] bg-foreground text-background p-12 text-center relative overflow-hidden">
           <div className="absolute top-0 right-0 p-10 opacity-10"><Lock className="w-32 h-32" /></div>
           <CardHeader className="space-y-4">
             <CardTitle className="text-4xl font-black tracking-tight">Unlock Detailed Analysis</CardTitle>
-            <CardDescription className="text-slate-400 font-medium max-w-lg mx-auto text-lg">
+            <CardDescription className="text-muted-foreground font-medium max-w-lg mx-auto text-lg">
               Get access to AI pedagogical insights, strength/weakness breakdown, and mistake review by watching a short ad.
             </CardDescription>
           </CardHeader>
@@ -296,26 +292,26 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
               size="lg" 
               onClick={handleUnlockAnalysis} 
               disabled={unlocking}
-              className="h-16 px-12 rounded-2xl font-black text-xl gap-3 shadow-2xl bg-primary text-slate-900 hover:bg-primary/90 transition-transform active:scale-95"
+              className="h-16 px-12 rounded-2xl font-black text-xl gap-3 shadow-2xl bg-primary text-primary-foreground hover:bg-primary/90 transition-transform active:scale-95"
             >
               {unlocking ? <Loader2 className="w-6 h-6 animate-spin" /> : <Play className="w-6 h-6 fill-current" />}
               {unlocking ? "Verifying Ad..." : "Unlock Full Analysis"}
             </Button>
-            <p className="mt-6 text-xs text-slate-500 font-bold uppercase tracking-widest">Immediate Access for Pro Users</p>
+            <p className="mt-6 text-xs text-muted-foreground font-bold uppercase tracking-widest">Immediate Access for Pro Users</p>
           </CardContent>
         </Card>
       ) : (
         <>
           {aiSummary && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-8">
-              <Card className="lg:col-span-2 border-none shadow-sm bg-white overflow-hidden rounded-[2.5rem]">
+              <Card className="lg:col-span-2 border-none shadow-sm bg-card overflow-hidden rounded-[2.5rem]">
                 <div className="h-1.5 bg-primary w-full" />
                 <CardHeader className="flex flex-row items-center gap-4 p-8 pb-4">
                   <div className="p-3 bg-primary/10 rounded-2xl"><Trophy className="w-6 h-6 text-primary" /></div>
-                  <CardTitle className="text-xl font-black tracking-tight">Pedagogical Analysis</CardTitle>
+                  <CardTitle className="text-xl font-black tracking-tight text-foreground">Pedagogical Analysis</CardTitle>
                 </CardHeader>
                 <CardContent className="p-8 pt-4 space-y-6">
-                  <div className="p-6 bg-primary/5 rounded-[2rem] italic text-lg leading-relaxed border-l-4 border-primary font-medium text-slate-700">
+                  <div className="p-6 bg-primary/5 rounded-[2rem] italic text-lg leading-relaxed border-l-4 border-primary font-medium text-foreground">
                     "{aiSummary.summary}"
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -339,15 +335,15 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                 </CardContent>
               </Card>
 
-              <Card className="lg:col-span-1 border-none shadow-sm bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden">
-                <CardHeader className="p-0 mb-6"><CardTitle className="text-sm font-black uppercase tracking-widest text-slate-400">Actionable Roadmap</CardTitle></CardHeader>
-                <CardContent className="p-0 text-sm text-slate-300 font-medium leading-relaxed">{aiSummary.recommendations}</CardContent>
+              <Card className="lg:col-span-1 border-none shadow-sm bg-foreground rounded-[2.5rem] p-8 text-background relative overflow-hidden">
+                <CardHeader className="p-0 mb-6"><CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">Actionable Roadmap</CardTitle></CardHeader>
+                <CardContent className="p-0 text-sm font-medium leading-relaxed">{aiSummary.recommendations}</CardContent>
               </Card>
             </div>
           )}
 
           <div className="space-y-6">
-            <h2 className="text-2xl font-black font-headline tracking-tight flex items-center gap-3">
+            <h2 className="text-2xl font-black font-headline tracking-tight flex items-center gap-3 text-foreground">
               <BrainCircuit className="w-6 h-6 text-primary" /> Mistake Review & AI Tutor
             </h2>
             {totalMistakes > 0 ? (
@@ -356,14 +352,13 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                   <div key={subject} className="space-y-2">
                     <p className="text-[10px] font-black uppercase text-primary px-2">{subject}</p>
                     {mistakes.map((q) => (
-                      <AccordionItem key={q.id} value={q.id} className="border-none bg-white rounded-2xl px-2 overflow-hidden shadow-sm">
+                      <AccordionItem key={q.id} value={q.id} className="border-none bg-card rounded-2xl px-2 overflow-hidden shadow-sm">
                         <AccordionTrigger className="hover:no-underline py-4 px-4 text-left">
-                          <span className="text-xs font-bold line-clamp-1">{q.text}</span>
+                          <span className="text-xs font-bold line-clamp-1 text-foreground">{q.text}</span>
                         </AccordionTrigger>
                         <AccordionContent className="p-6 pt-0 space-y-4">
-                          {/* Show the question without highlighting correct answer - user must ask AI */}
-                          <div className="bg-slate-50 p-4 rounded-xl border">
-                            <p className="font-bold text-sm mb-3">{q.text}</p>
+                          <div className="bg-muted/30 p-4 rounded-xl border border-border">
+                            <p className="font-bold text-sm mb-3 text-foreground">{q.text}</p>
                             <div className="grid gap-2">
                               {q.options.map((opt, i) => {
                                 const isUserAnswer = opt === answers[q.id];
@@ -373,11 +368,11 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                                     className={cn(
                                       "p-3 rounded-lg border text-xs flex items-center gap-2",
                                       isUserAnswer 
-                                        ? "bg-orange-50 border-orange-200 text-orange-700 font-bold" 
-                                        : "bg-white opacity-70"
+                                        ? "bg-orange-500/10 border-orange-500/30 text-orange-600 font-bold" 
+                                        : "bg-card text-muted-foreground opacity-70"
                                     )}
                                   >
-                                    <span className="w-5 h-5 rounded-full border flex items-center justify-center text-[9px] shrink-0">
+                                    <span className="w-5 h-5 rounded-full border flex items-center justify-center text-[9px] shrink-0 border-border">
                                       {String.fromCharCode(65 + i)}
                                     </span>
                                     {opt}
@@ -386,10 +381,9 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                                 );
                               })}
                             </div>
-                            <p className="text-[10px] text-slate-400 mt-3 italic">Tap "Ask AI for Explanation" to reveal the correct answer and learn why.</p>
+                            <p className="text-[10px] text-muted-foreground mt-3 italic">Tap "Ask AI for Explanation" to reveal the correct answer and learn why.</p>
                           </div>
                           
-                          {/* AI Generation Animation */}
                           {!localExplanations[q.id] ? (
                             <Button 
                               onClick={() => handleGenerateExplanation(q)} 
@@ -404,18 +398,8 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                             >
                               {generatingIds.has(q.id) ? (
                                 <>
-                                  <div className="relative">
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    <div className="absolute inset-0 w-4 h-4 border-2 border-primary/30 rounded-full animate-ping" />
-                                  </div>
-                                  <span className="flex items-center gap-1">
-                                    Analyzing your mistake
-                                    <span className="flex gap-0.5">
-                                      <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                      <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                      <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                                    </span>
-                                  </span>
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  <span>Analyzing mistake...</span>
                                 </>
                               ) : (
                                 <>
@@ -427,7 +411,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                           ) : (
                             <div className="relative overflow-hidden">
                               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent animate-shimmer" />
-                              <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 italic text-sm text-slate-700 leading-relaxed relative">
+                              <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 italic text-sm text-foreground leading-relaxed relative">
                                 <div className="absolute top-0 left-0 w-1 h-full bg-primary rounded-l-xl" />
                                 <div className="flex items-start gap-2 mb-2">
                                   <MessageSquare className="w-4 h-4 text-primary shrink-0 mt-0.5" />
@@ -444,9 +428,9 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                 ))}
               </Accordion>
             ) : (
-              <div className="text-center py-20 bg-emerald-50/50 rounded-[3rem] border-2 border-dashed border-emerald-100">
+              <div className="text-center py-20 bg-emerald-500/5 rounded-[3rem] border-2 border-dashed border-emerald-500/20">
                 <Trophy className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
-                <h3 className="text-2xl font-black">Exceptional Mastery!</h3>
+                <h3 className="text-2xl font-black text-foreground">Exceptional Mastery!</h3>
               </div>
             )}
           </div>
