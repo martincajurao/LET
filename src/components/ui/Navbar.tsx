@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -90,7 +89,7 @@ export function Navbar() {
     { label: 'Home', icon: <Home className="w-4 h-4" />, href: '/' },
     { label: 'Daily Tasks', icon: <ListTodo className="w-4 h-4" />, href: '/tasks' },
     { label: 'Global Arena', icon: <Trophy className="w-4 h-4" />, href: '/events' },
-    { label: 'Settings', icon: <Settings className="w-4 h-4" />, href: '/profile?tab=account' },
+    { label: 'Notifications', icon: <Bell className="w-4 h-4" />, href: '#' },
   ];
 
   return (
