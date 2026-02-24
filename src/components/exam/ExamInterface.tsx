@@ -26,7 +26,8 @@ import {
   Coffee,
   Play,
   CheckCircle2,
-  BrainCircuit
+  BrainCircuit,
+  Timer
 } from "lucide-react";
 import { Question } from "@/app/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -85,6 +86,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   const handleAnswer = (val: string) => {
     const currentQ = groupedPhases[currentPhaseIdx].items[currentInPhaseIdx];
     setAnswers(prev => ({ ...prev, [currentQ.id]: val }));
+    // Dispatch event for daily task tracking if needed
     window.dispatchEvent(new CustomEvent('questionAnswered'));
   };
 
@@ -309,7 +311,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
           <div className="bg-muted/30 p-6 rounded-3xl border border-border/50 my-8 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Next Phase</span>
-              <Badge className="font-black">{groupedPhases[currentPhaseIdx + 1]?.subject}</Badge>
+              <Badge className="font-black bg-primary/20 text-primary border-none">{groupedPhases[currentPhaseIdx + 1]?.subject}</Badge>
             </div>
             <div className="flex items-center gap-3 text-sm font-medium text-foreground text-left">
               <Coffee className="w-5 h-5 text-orange-500 shrink-0" />
@@ -324,7 +326,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                 setCurrentPhaseIdx(prev => prev + 1);
                 setCurrentInPhaseIdx(0);
               }}
-              className="h-16 rounded-2xl font-black text-lg gap-3 shadow-2xl shadow-primary/30"
+              className="h-16 rounded-2xl font-black text-lg gap-3 shadow-2xl shadow-primary/30 active:scale-[0.98] transition-all"
             >
               <Play className="w-5 h-5 fill-current" />
               Continue to Next Phase
@@ -332,8 +334,9 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
             <Button 
               variant="outline" 
               onClick={() => setShowBreakScreen(false)}
-              className="h-14 rounded-2xl font-bold text-muted-foreground border-2"
+              className="h-14 rounded-2xl font-bold text-muted-foreground border-2 hover:bg-muted/50 transition-colors"
             >
+              <Timer className="w-4 h-4 mr-2" />
               Rest for a Moment
             </Button>
           </div>
