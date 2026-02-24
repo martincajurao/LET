@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useUser, useFirestore } from '@/firebase';
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ResultsOverviewProps {
   questions: Question[];
@@ -384,43 +385,88 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                             <p className="text-[10px] text-muted-foreground mt-3 italic">Tap "Ask AI for Explanation" to reveal the correct answer and learn why.</p>
                           </div>
                           
-                          {!localExplanations[q.id] ? (
-                            <Button 
-                              onClick={() => handleGenerateExplanation(q)} 
-                              disabled={generatingIds.has(q.id)} 
-                              size="sm" 
-                              className={cn(
-                                "w-full font-black gap-2 transition-all",
-                                generatingIds.has(q.id) 
-                                  ? "bg-primary/10 text-primary border-2 border-primary/20" 
-                                  : "hover:bg-primary/5"
-                              )}
-                            >
-                              {generatingIds.has(q.id) ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                  <span>Analyzing mistake...</span>
-                                </>
+                          <div className="space-y-4">
+                            <AnimatePresence mode="wait">
+                              {!localExplanations[q.id] ? (
+                                <motion.div
+                                  key="ask-button"
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  exit={{ opacity: 0 }}
+                                >
+                                  <Button 
+                                    onClick={() => handleGenerateExplanation(q)} 
+                                    disabled={generatingIds.has(q.id)} 
+                                    size="sm" 
+                                    className={cn(
+                                      "w-full font-black gap-2 transition-all h-12 rounded-xl",
+                                      generatingIds.has(q.id) 
+                                        ? "bg-primary/10 text-primary border-2 border-primary/20 animate-pulse" 
+                                        : "hover:bg-primary/5 active:scale-[0.98]"
+                                    )}
+                                  >
+                                    {generatingIds.has(q.id) ? (
+                                      <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span>Analyzing mistake...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Sparkles className="w-4 h-4" />
+                                        Ask AI for Explanation (2 AI Credits)
+                                      </>
+                                    )}
+                                  </Button>
+                                </motion.div>
                               ) : (
-                                <>
-                                  <Sparkles className="w-4 h-4" />
-                                  Ask AI for Explanation (2 AI Credits)
-                                </>
+                                <motion.div
+                                  key="explanation-result"
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                  className="relative overflow-hidden"
+                                >
+                                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-shimmer" />
+                                  <div className="bg-primary/5 p-5 rounded-xl border border-primary/20 italic text-sm text-foreground leading-relaxed relative">
+                                    <div className="absolute top-0 left-0 w-1 h-full bg-primary rounded-l-xl" />
+                                    <div className="flex items-start gap-2 mb-3">
+                                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                        <MessageSquare className="w-3.5 h-3.5 text-primary" />
+                                      </div>
+                                      <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mt-1">AI Pedagogical Tutor</span>
+                                    </div>
+                                    <motion.p
+                                      initial={{ opacity: 0 }}
+                                      animate={{ opacity: 1 }}
+                                      transition={{ delay: 0.2 }}
+                                    >
+                                      "{localExplanations[q.id]}"
+                                    </motion.p>
+                                  </div>
+                                </motion.div>
                               )}
-                            </Button>
-                          ) : (
-                            <div className="relative overflow-hidden">
-                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent animate-shimmer" />
-                              <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 italic text-sm text-foreground leading-relaxed relative">
-                                <div className="absolute top-0 left-0 w-1 h-full bg-primary rounded-l-xl" />
-                                <div className="flex items-start gap-2 mb-2">
-                                  <MessageSquare className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                                  <span className="text-[10px] font-black text-primary uppercase tracking-widest">AI Explanation</span>
+                            </AnimatePresence>
+
+                            {generatingIds.has(q.id) && (
+                              <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="bg-muted/20 h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2"
+                              >
+                                <div className="flex gap-1">
+                                  {[0, 1, 2].map((i) => (
+                                    <motion.div
+                                      key={i}
+                                      className="w-1.5 h-1.5 bg-primary rounded-full"
+                                      animate={{ y: [0, -5, 0] }}
+                                      transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.1 }}
+                                    />
+                                  ))}
                                 </div>
-                                "{localExplanations[q.id]}"
-                              </div>
-                            </div>
-                          )}
+                                <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Generating Insight</span>
+                              </motion.div>
+                            )}
+                          </div>
                         </AccordionContent>
                       </AccordionItem>
                     ))}
