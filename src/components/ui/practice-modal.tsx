@@ -220,14 +220,14 @@ export function PracticeModal({
                         <Button
                           onClick={(e) => handleUnlockEarly(e, mode.id, mode.unlockCost)}
                           disabled={unlockingId === mode.id}
-                          className="w-full h-11 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 bg-foreground text-background hover:bg-foreground/90 shadow-lg"
+                          className="w-full h-11 rounded-xl font-black text-[9px] uppercase tracking-widest gap-2 bg-foreground text-background hover:bg-foreground/90 shadow-lg"
                         >
                           {unlockingId === mode.id ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
                           ) : (
                             <>
-                              <Lock className="w-3.5 h-3.5" />
-                              Unlock Early: {mode.unlockCost}c
+                              <Coins className="w-3.5 h-3.5 text-yellow-400 fill-current" />
+                              Unlock with AI Credit: {mode.unlockCost}c
                             </>
                           )}
                         </Button>
