@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -25,7 +24,8 @@ import {
   Menu,
   Home,
   ListTodo,
-  Trophy
+  Trophy,
+  Crown
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -44,6 +44,7 @@ import {
   DialogFooter 
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/hooks/use-theme';
@@ -157,18 +158,28 @@ export function Navbar() {
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 p-0.5 rounded-full hover:bg-muted transition-all outline-none focus:ring-2 focus:ring-primary/20">
+                  <button className="flex items-center gap-2 p-0.5 rounded-full hover:bg-muted transition-all outline-none focus:ring-2 focus:ring-primary/20 relative">
                     <Avatar className="w-9 h-9 border-2 border-background shadow-md">
                       {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || "User"} />}
                       <AvatarFallback className="text-xs font-black bg-primary/10 text-primary uppercase">
                         {user.displayName?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
+                    {user.isPro && (
+                      <div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-0.5 shadow-sm border border-background">
+                        <Crown className="w-2.5 h-2.5 text-yellow-900" />
+                      </div>
+                    )}
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-64 mt-2 rounded-2xl border bg-card shadow-2xl p-2" align="end">
                   <div className="p-3 mb-2 bg-muted/30 rounded-xl">
-                    <p className="text-sm font-black truncate">{user.displayName}</p>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <p className="text-sm font-black truncate">{user.displayName}</p>
+                      {user.isPro && (
+                        <Badge className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20 text-[8px] font-black uppercase px-1.5 py-0">PRO</Badge>
+                      )}
+                    </div>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">{user.email}</p>
                   </div>
                   <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground px-3 py-2">Simulation Hub</DropdownMenuLabel>

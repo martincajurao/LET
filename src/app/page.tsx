@@ -33,7 +33,9 @@ import {
   User,
   Ticket,
   Moon,
-  Sun
+  Sun,
+  Crown,
+  Shield
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
@@ -379,8 +381,8 @@ function LetsPrepContent() {
             {[
               { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user?.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
               { icon: <Flame className="w-4 h-4 text-orange-500" />, label: 'Streak', value: user?.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' },
-              { icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />, label: 'Pass Rate', value: '92%', color: 'text-emerald-500 bg-emerald-500/10' },
-              { icon: <Trophy className="w-4 h-4 text-emerald-500" />, label: 'Rank', value: '#12', color: 'text-emerald-500 bg-emerald-500/10' }
+              { icon: user?.isPro ? <Crown className="w-4 h-4 text-yellow-600" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user?.isPro ? 'Platinum' : 'Standard', color: user?.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
+              { icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />, label: 'Pass Rate', value: '92%', color: 'text-emerald-500 bg-emerald-500/10' }
             ].map((stat, i) => (
               <div key={i} className="bg-card border border-border/50 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
                 <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0", stat.color)}>{stat.icon}</div>
