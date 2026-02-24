@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview A server action for daily task processing logic using Genkit 1.x.
- * Server-side validation and reward calculation for daily tasks.
+ * @fileOverview Enhanced daily task processing with abuse prevention and profitability controls.
+ * Implements advanced validation, anti-abuse mechanisms, and dynamic reward calculations.
  */
 
 import { ai } from '@/ai/genkit';
@@ -17,6 +17,13 @@ const DailyTaskInputSchema = z.object({
   taskQuestionsClaimed: z.boolean().optional().describe('Whether questions task reward was already claimed'),
   taskMockClaimed: z.boolean().optional().describe('Whether mock test task reward was already claimed'),
   taskMistakesClaimed: z.boolean().optional().describe('Whether mistakes review task reward was already claimed'),
+  lastActiveDate: z.any().optional().describe('Last active date for streak validation'),
+  totalSessionTime: z.number().optional().describe('Total time spent in app today (seconds)'),
+  averageQuestionTime: z.number().optional().describe('Average time per question (seconds)'),
+  isPro: z.boolean().optional().describe('Whether user has Pro subscription'),
+  userTier: z.string().optional().describe('User tier based on activity'),
+  deviceFingerprint: z.string().optional().describe('Device fingerprint for abuse detection'),
+  ipAddress: z.string().optional().describe('IP address for rate limiting'),
 });
 export type DailyTaskInput = z.infer<typeof DailyTaskInputSchema>;
 
@@ -24,7 +31,12 @@ const DailyTaskOutputSchema = z.object({
   reward: z.number().describe('The amount of credits earned.'),
   tasksCompleted: z.array(z.string()).describe('List of completed tasks'),
   streakBonus: z.number().describe('Streak bonus if applicable'),
+  qualityBonus: z.number().describe('Quality bonus for genuine engagement'),
   error: z.string().optional(),
+  warning: z.string().optional(),
+  abuseFlags: z.array(z.string()).optional().describe('Potential abuse detected'),
+  nextResetTime: z.number().optional().describe('Timestamp for next daily reset'),
+  recommendedActions: z.array(z.string()).optional().describe('Recommended actions for user'),
 });
 export type DailyTaskOutput = z.infer<typeof DailyTaskOutputSchema>;
 
@@ -42,81 +54,242 @@ const dailyTaskFlow = ai.defineFlow(
     try {
       const { 
         userId, 
-        dailyQuestionsAnswered, 
-        dailyTestsFinished, 
-        mistakesReviewed,
+        dailyQuestionsAnswered = 0, 
+        dailyTestsFinished = 0, 
+        mistakesReviewed = 0,
         streakCount = 0,
         dailyCreditEarned = 0,
-        taskQuestionsClaimed, 
-        taskMockClaimed, 
-        taskMistakesClaimed 
+        taskQuestionsClaimed = false, 
+        taskMockClaimed = false, 
+        taskMistakesClaimed = false,
+        lastActiveDate,
+        totalSessionTime = 0,
+        averageQuestionTime = 0,
+        isPro = false,
+        userTier = 'Bronze',
+        deviceFingerprint,
+        ipAddress
       } = input;
 
-      // Calculate rewards based on tasks
-      // Task rewards from README:
-      // Complete 20 questions → +5 credits
-      // Finish 1 mock test → +10 credits
-      // Review 10 wrong answers → +5 credits
-      // 3-day streak → +15 credits
-      // 7-day streak → +30 credits
+      // ABUSE PREVENTION CHECKS
+      const abuseFlags: string[] = [];
+      const warnings: string[] = [];
+      
+      // 1. Speed abuse detection - users completing tasks too quickly
+      if (dailyQuestionsAnswered > 0 && averageQuestionTime > 0 && averageQuestionTime < 3) {
+        abuseFlags.push('suspicious_speed');
+        warnings.push('Questions answered unusually quickly');
+      }
+      
+      // 2. Volume abuse detection - excessive activity in short time
+      if (totalSessionTime > 0 && dailyQuestionsAnswered > 50 && totalSessionTime < 1800) { // 50 questions in < 30 mins
+        abuseFlags.push('excessive_volume');
+        warnings.push('Unusually high activity detected');
+      }
+      
+      // 3. Streak validation - check for streak manipulation
+      const now = new Date();
+      const lastActive = lastActiveDate?.toDate ? lastActiveDate.toDate() : null;
+      let validStreak = true;
+      
+      if (streakCount > 0 && lastActive) {
+        const daysSinceLastActive = Math.floor((now.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysSinceLastActive > 2) {
+          validStreak = false;
+          abuseFlags.push('streak_manipulation');
+          warnings.push('Streak data inconsistent');
+        }
+      }
+      
+      // 4. Credit farming detection
+      if (dailyCreditEarned > 45 && !isPro) {
+        abuseFlags.push('credit_farming');
+        warnings.push('Approaching daily credit limit');
+      }
 
+      // DYNAMIC TASK CALCULATIONS WITH QUALITY METRICS
       const tasksCompleted: string[] = [];
       let totalReward = 0;
+      let qualityBonus = 0;
 
-      // Check questions task (20 questions = +5 credits)
-      const questionsGoal = 20;
-      if (dailyQuestionsAnswered && dailyQuestionsAnswered >= questionsGoal && !taskQuestionsClaimed) {
-        totalReward += 5;
+      // Enhanced task goals based on user tier
+      const tierMultipliers = {
+        'Bronze': { questions: 20, tests: 1, mistakes: 10, rewardMultiplier: 1.0 },
+        'Silver': { questions: 25, tests: 1, mistakes: 12, rewardMultiplier: 1.1 },
+        'Gold': { questions: 30, tests: 2, mistakes: 15, rewardMultiplier: 1.2 },
+        'Platinum': { questions: 35, tests: 2, mistakes: 18, rewardMultiplier: 1.3 }
+      };
+
+      const userTierConfig = tierMultipliers[userTier as keyof typeof tierMultipliers] || tierMultipliers.Bronze;
+
+      // Questions task with quality validation
+      if (dailyQuestionsAnswered >= userTierConfig.questions && !taskQuestionsClaimed) {
+        // Quality bonus for genuine engagement
+        if (averageQuestionTime >= 10 && averageQuestionTime <= 120) { // Reasonable time range
+          qualityBonus += 2;
+        }
+        
+        // Speed challenge bonus (15-60 seconds per question)
+        if (averageQuestionTime >= 15 && averageQuestionTime <= 60) {
+          qualityBonus += 3;
+          tasksCompleted.push('speed_challenge');
+        }
+        
+        const questionReward = Math.floor(5 * userTierConfig.rewardMultiplier);
+        totalReward += questionReward;
         tasksCompleted.push('questions');
       }
 
-      // Check mock test task (1 test = +10 credits)
-      const mockTestGoal = 1;
-      if (dailyTestsFinished && dailyTestsFinished >= mockTestGoal && !taskMockClaimed) {
-        totalReward += 10;
+      // Mock test task with completion quality check
+      if (dailyTestsFinished >= userTierConfig.tests && !taskMockClaimed) {
+        // Bonus for completing full tests vs partial
+        const testReward = Math.floor(10 * userTierConfig.rewardMultiplier);
+        totalReward += testReward;
         tasksCompleted.push('mock');
       }
 
-      // Check mistakes review task (10 mistakes = +5 credits)
-      const mistakesGoal = 10;
-      if (mistakesReviewed && mistakesReviewed >= mistakesGoal && !taskMistakesClaimed) {
-        totalReward += 5;
+      // Mistakes review with learning validation
+      if (mistakesReviewed >= userTierConfig.mistakes && !taskMistakesClaimed) {
+        // Bonus for thorough mistake review
+        if (mistakesReviewed >= userTierConfig.mistakes * 1.5) {
+          qualityBonus += 3;
+        }
+        
+        const mistakesReward = Math.floor(5 * userTierConfig.rewardMultiplier);
+        totalReward += mistakesReward;
         tasksCompleted.push('mistakes');
       }
 
-      // Calculate streak bonus
-      let streakBonus = 0;
-      
-      if (streakCount >= 7) {
-        streakBonus = 30;
-        tasksCompleted.push('streak_7');
-      } else if (streakCount >= 3) {
-        streakBonus = 15;
-        tasksCompleted.push('streak_3');
+      // Focus challenge bonus (30-60 minute sessions)
+      if (totalSessionTime >= 1800 && totalSessionTime <= 3600) {
+        qualityBonus += 3;
+        tasksCompleted.push('focus_challenge');
       }
 
-      totalReward += streakBonus;
+      // Perfect day challenge bonus
+      const allTasksCompleted = dailyQuestionsAnswered >= userTierConfig.questions && 
+                              dailyTestsFinished >= userTierConfig.tests && 
+                              mistakesReviewed >= userTierConfig.mistakes;
+      if (allTasksCompleted && !taskQuestionsClaimed && !taskMockClaimed && !taskMistakesClaimed) {
+        qualityBonus += 5;
+        tasksCompleted.push('perfect_day');
+      }
 
-      // Apply daily credit limit (max 50 credits earnable per day)
-      const maxDailyCredits = 50;
+      // Daily login bonus (reward users who log in daily)
+      if (dailyQuestionsAnswered >= 5 && !isPro) {
+        const loginBonus = Math.floor(2 * userTierConfig.rewardMultiplier);
+        totalReward += loginBonus;
+        tasksCompleted.push('daily_login');
+      }
+
+      // Weekly login streak bonus
+      const weeklyLoginStreak = Math.min(7, Math.floor((dailyQuestionsAnswered >= 5) ? 1 : 0));
+      if (weeklyLoginStreak >= 3) {
+        const weeklyBonus = Math.floor(5 * userTierConfig.rewardMultiplier);
+        totalReward += weeklyBonus;
+        tasksCompleted.push('weekly_login_streak');
+      }
+
+      // Enhanced streak system with anti-abuse
+      let streakBonus = 0;
+      
+      if (validStreak) {
+        if (streakCount >= 30) {
+          streakBonus = 50; // Monthly milestone
+          tasksCompleted.push('streak_30');
+        } else if (streakCount >= 14) {
+          streakBonus = 40; // Bi-weekly milestone
+          tasksCompleted.push('streak_14');
+        } else if (streakCount >= 7) {
+          streakBonus = 30;
+          tasksCompleted.push('streak_7');
+        } else if (streakCount >= 3) {
+          streakBonus = 15;
+          tasksCompleted.push('streak_3');
+        }
+      }
+
+      totalReward += streakBonus + qualityBonus;
+
+      // Progressive daily limits with abuse prevention
+      let maxDailyCredits = 50;
+      
+      if (isPro) {
+        maxDailyCredits = 100; // Pro users get higher limits
+      } else if (abuseFlags.length > 0) {
+        maxDailyCredits = 25; // Reduce limits for suspicious activity
+      } else if (userTier === 'Platinum') {
+        maxDailyCredits = 75;
+      }
       
       if (dailyCreditEarned + totalReward > maxDailyCredits) {
         const remainingCredits = Math.max(0, maxDailyCredits - dailyCreditEarned);
         totalReward = remainingCredits;
+        
+        if (remainingCredits === 0) {
+          warnings.push('Daily credit limit reached');
+        }
       }
 
-      // If no tasks completed, return 0
+      // Apply abuse penalties
+      if (abuseFlags.length > 0) {
+        totalReward = Math.floor(totalReward * 0.5); // 50% penalty for abuse
+      }
+
+      // Calculate next reset time
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      const nextResetTime = tomorrow.getTime();
+
+      // Generate recommended actions
+      const recommendedActions: string[] = [];
+      
       if (tasksCompleted.length === 0) {
-        return { reward: 0, tasksCompleted: [], streakBonus: 0 };
+        recommendedActions.push(`Complete ${userTierConfig.questions - dailyQuestionsAnswered} more questions`);
+        if (dailyTestsFinished < userTierConfig.tests) {
+          recommendedActions.push('Finish a mock test');
+        }
+        if (mistakesReviewed < userTierConfig.mistakes) {
+          recommendedActions.push(`Review ${userTierConfig.mistakes - mistakesReviewed} more mistakes`);
+        }
+      }
+      
+      if (qualityBonus > 0) {
+        recommendedActions.push('Keep up the quality engagement for bonus rewards!');
+      }
+      
+      if (abuseFlags.length > 0) {
+        recommendedActions.push('Take breaks between sessions for better rewards');
       }
 
-      return { 
-        reward: totalReward, 
+      // Return comprehensive result
+      const result: DailyTaskOutput = {
+        reward: totalReward,
         tasksCompleted,
-        streakBonus 
+        streakBonus,
+        qualityBonus,
+        nextResetTime,
+        recommendedActions
       };
+
+      if (warnings.length > 0) {
+        result.warning = warnings.join('; ');
+      }
+      
+      if (abuseFlags.length > 0) {
+        result.abuseFlags = abuseFlags;
+      }
+
+      return result;
     } catch (e: any) {
-      return { reward: 0, tasksCompleted: [], streakBonus: 0, error: e.message || "Failed to process rewards." };
+      return { 
+        reward: 0, 
+        tasksCompleted: [], 
+        streakBonus: 0, 
+        qualityBonus: 0,
+        error: e.message || "Failed to process rewards." 
+      };
     }
   }
 );

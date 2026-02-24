@@ -22,6 +22,9 @@ import { firebaseConfig } from '@/firebase/config';
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 
+// Navigation path helper - avoids JSX parsing issues with > characters
+const getNavPath = () => "Firebase Console > Auth > Settings > Authorized Domains";
+
 export default function TestAuthPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,6 +73,8 @@ export default function TestAuthPage() {
     await signOut(auth);
   };
 
+  const navPath = getNavPath();
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
       <Card className="max-w-xl w-full border-none shadow-2xl rounded-[2rem] overflow-hidden">
@@ -104,7 +109,7 @@ export default function TestAuthPage() {
                 {error.includes('Unauthorized Domain') && (
                   <div className="mt-4 p-4 bg-white/10 rounded-xl border border-white/20">
                     <p className="font-black mb-1">REQUIRED ACTION:</p>
-                    <p>Go to <strong>Firebase Console > Auth > Settings > Authorized Domains</strong> and add the hostname: <strong>{hostname}</strong></p>
+                    <p>{"Go to " + navPath + " and add the hostname: " + hostname}</p>
                   </div>
                 )}
               </AlertDescription>

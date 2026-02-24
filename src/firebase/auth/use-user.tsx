@@ -42,6 +42,14 @@ export interface UserProfile {
   mistakesReviewed?: number;
   lastExplanationRequest?: number;
   dailyEventEntries?: number;
+  // Enhanced fields for abuse prevention and quality tracking
+  userTier?: string;
+  totalSessionTime?: number;
+  averageQuestionTime?: number;
+  deviceFingerprints?: string[];
+  lastAbuseWarning?: any;
+  qualityScore?: number;
+  lastQualityUpdate?: any;
 }
 
 interface AuthContextType {

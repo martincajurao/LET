@@ -153,12 +153,19 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
       if (result.explanations && result.explanations.length > 0) {
         setLocalExplanations(prev => ({ ...prev, [q.id]: result.explanations[0].aiExplanation }));
         
-        // Deduct credits for non-pro users
+        // Deduct credits for non-pro users and track mistakes reviewed for daily tasks
         if (!user.isPro && firestore) {
           const userRef = doc(firestore, 'users', user.uid);
           await updateDoc(userRef, {
             credits: increment(-2),
-            dailyAiUsage: increment(1)
+            dailyAiUsage: increment(1),
+            mistakesReviewed: increment(1) // Track for daily tasks
+          });
+        } else if (user.isPro && firestore) {
+          // Even for Pro users, track mistakes reviewed for daily tasks
+          const userRef = doc(firestore, 'users', user.uid);
+          await updateDoc(userRef, {
+            mistakesReviewed: increment(1)
           });
         }
       } else {

@@ -93,6 +93,15 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
   const handleAnswer = (val: string) => {
     setAnswers(prev => ({ ...prev, [questions[currentIdx].id]: val }));
+    
+    // Emit event for daily task tracking
+    window.dispatchEvent(new CustomEvent('questionAnswered', {
+      detail: {
+        questionId: questions[currentIdx].id,
+        answerTime: Date.now() - startTime,
+        questionIndex: currentIdx
+      }
+    }));
   };
 
   const toggleFlag = () => {
@@ -125,6 +134,13 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       if (cachedDoc.exists()) {
         setExplanation(cachedDoc.data().explanation);
         setShowExplanation(true);
+        
+        // Even for cached explanations, track mistakes reviewed for daily tasks
+        const userRef = doc(firestore, 'users', user.uid);
+        await updateDoc(userRef, {
+          mistakesReviewed: increment(1)
+        });
+        
         setExplaining(false);
         return;
       }
@@ -149,10 +165,16 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       const userRef = doc(firestore, 'users', user.uid);
       
       if (!user.isPro) {
-        updateDoc(userRef, {
+        await updateDoc(userRef, {
           credits: increment(-2),
           dailyAiUsage: increment(1),
-          lastExplanationRequest: Date.now()
+          lastExplanationRequest: Date.now(),
+          mistakesReviewed: increment(1)
+        });
+      } else {
+        // Even for Pro users, track mistakes reviewed
+        await updateDoc(userRef, {
+          mistakesReviewed: increment(1)
         });
       }
 
@@ -215,7 +237,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       <div className="flex-shrink-0">
         <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-1.5 sm:p-2 rounded-lg sm:rounded-xl shadow-sm border border-border sticky top-0 z-10 gap-1 sm:gap-2">
           <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
-<div className="flex items-center gap-2 pr-2 sm:pr-3 border-r">
+            <div className="flex items-center gap-2 pr-2 sm:pr-3 border-r">
               <Clock className="w-4 h-4 text-primary" />
               <p className={`text-sm sm:text-base font-mono font-bold tabular-nums ${timeLeft < 60 ? 'text-destructive animate-pulse' : ''}`}>
                 {formatTime(timeLeft)}
@@ -243,7 +265,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
           {/* Question Area */}
           <div className="lg:col-span-3 h-full overflow-y-auto">
             <Card className="border-none shadow-md overflow-hidden rounded-lg h-fit">
-<CardHeader className="bg-primary/5 py-3 px-4 border-b border-primary/10">
+              <CardHeader className="bg-primary/5 py-3 px-4 border-b border-primary/10">
                 <div className="flex flex-row justify-between items-center gap-2">
                   <Badge variant="outline" className="bg-white border-primary/20 text-xs font-bold uppercase tracking-wider w-fit">{currentQuestion.subject}</Badge>
                   <Button variant="ghost" size="sm" onClick={toggleFlag} className={`h-8 px-2 rounded text-sm font-bold ${flags[currentQuestion.id] ? "text-orange-500 bg-orange-50" : "text-muted-foreground"}`}>
@@ -253,7 +275,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                 <CardTitle className="text-base sm:text-lg leading-tight font-headline tracking-tight">{currentQuestion.text}</CardTitle>
               </CardHeader>
               <CardContent className="pt-4 pb-4 px-4">
-<RadioGroup value={answers[currentQuestion.id] || ""} onValueChange={handleAnswer} className={`grid ${shuffledOptions.some(o => o.length > 60) ? 'grid-cols-1' : 'grid-cols-2'} gap-3`}>
+                <RadioGroup value={answers[currentQuestion.id] || ""} onValueChange={handleAnswer} className={`grid ${shuffledOptions.some(o => o.length > 60) ? 'grid-cols-1' : 'grid-cols-2'} gap-3`}>
                   {shuffledOptions.map((opt, idx) => (
                     <div key={idx} className="flex items-center">
                       <RadioGroupItem value={opt} id={`opt-${idx}`} className="sr-only" />
@@ -267,7 +289,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   ))}
                 </RadioGroup>
               </CardContent>
-<CardFooter className="flex flex-wrap justify-center sm:justify-between bg-muted/20 p-2 sm:p-3 border-t gap-1">
+              <CardFooter className="flex flex-wrap justify-center sm:justify-between bg-muted/20 p-2 sm:p-3 border-t gap-1">
                 <Button variant="outline" size="sm" className="font-bold rounded px-2 sm:px-4 flex-1 sm:flex-none h-8 text-xs" onClick={() => setCurrentIdx(prev => Math.max(0, prev - 1))} disabled={currentIdx === 0}>
                   <ChevronLeft className="w-3 h-3 mr-1" />
                   <span className="hidden sm:inline">Prev</span>
@@ -282,7 +304,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
             </Card>
           </div>
 
-{/* Navigator - Fixed on lg screens */}
+          {/* Navigator - Fixed on lg screens */}
           <div className="lg:col-span-1 hidden lg:block h-full">
             <Card className="border-none shadow-md sticky top-0 rounded-lg overflow-hidden h-full flex flex-col">
               <CardHeader className="py-2 px-3 border-b bg-muted/20 flex-shrink-0">

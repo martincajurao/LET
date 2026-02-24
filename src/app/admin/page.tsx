@@ -22,7 +22,12 @@ import {
   Brain,
   Type,
   FileCheck,
-  Database
+  Database,
+  Users,
+  RotateCcw,
+  UserCheck,
+  UserX,
+  Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -57,8 +62,12 @@ import {
   updateDoc, 
   getDoc,
   setDoc,
-  writeBatch
+  writeBatch,
+  query,
+  orderBy,
+  limit as queryLimit
 } from "firebase/firestore";
+import { serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Question, MAJORSHIPS, SUBJECTS } from "@/app/lib/mock-data";
@@ -98,6 +107,11 @@ export default function AdminDashboard() {
   const [aiSubCategory, setAiSubCategory] = useState("");
   const [extractedPreview, setExtractedPreview] = useState<Partial<Question>[]>([]);
   const [seeding, setSeeding] = useState(false);
+
+  // User management states
+  const [users, setUsers] = useState<any[]>([]);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [resettingUserTask, setResettingUserTask] = useState<string | null>(null);
 
   const fetchData = async () => {
     if (!firestore) return;
@@ -422,6 +436,65 @@ export default function AdminDashboard() {
     }
   };
 
+  // User management functions
+  const fetchUsers = async () => {
+    if (!firestore) return;
+    try {
+      const usersQuery = query(
+        collection(firestore, "users"),
+        orderBy("lastActiveDate", "desc"),
+        queryLimit(50)
+      );
+      const usersSnap = await getDocs(usersQuery);
+      const usersList = usersSnap.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setUsers(usersList);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      toast({ variant: "destructive", title: "Error", description: "Failed to fetch users." });
+    }
+  };
+
+  const handleResetUserDailyTasks = async (userId: string, userEmail: string) => {
+    if (!firestore || !confirm(`Reset daily tasks for ${userEmail}? This will clear their progress for today.`)) return;
+    
+    setResettingUserTask(userId);
+    try {
+      const userRef = doc(firestore, "users", userId);
+      await updateDoc(userRef, {
+        dailyQuestionsAnswered: 0,
+        dailyTestsFinished: 0,
+        mistakesReviewed: 0,
+        taskQuestionsClaimed: false,
+        taskMockClaimed: false,
+        taskMistakesClaimed: false,
+        dailyCreditEarned: 0,
+        lastTaskReset: serverTimestamp()
+      });
+      
+      toast({ 
+        title: "Daily Tasks Reset", 
+        description: `Successfully reset daily tasks for ${userEmail}` 
+      });
+      
+      // Refresh users list
+      fetchUsers();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message });
+    } finally {
+      setResettingUserTask(null);
+    }
+  };
+
+  // Fetch users when component mounts
+  useEffect(() => {
+    if (firestore) {
+      fetchUsers();
+    }
+  }, [firestore]);
+
   const filteredQuestions = questions.filter(q => {
     const matchesSearch = (q.text || "").toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSubject = filterSubject === "all" || q.subject === filterSubject;
@@ -463,6 +536,9 @@ export default function AdminDashboard() {
             <TabsTrigger value="questions" className="font-bold">Question Manager</TabsTrigger>
             <TabsTrigger value="pdf-import" className="font-bold flex items-center gap-2">
               <FileUp className="w-3.5 h-3.5" /> Manual PDF Ingestion
+            </TabsTrigger>
+            <TabsTrigger value="users" className="font-bold flex items-center gap-2">
+              <Users className="w-3.5 h-3.5" /> User Management
             </TabsTrigger>
             <TabsTrigger value="config" className="font-bold">System Config</TabsTrigger>
           </TabsList>
@@ -723,6 +799,153 @@ export default function AdminDashboard() {
                 )}
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-6">
+            <div className="flex justify-between gap-4 flex-wrap items-center">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search users by email..." 
+                  className="pl-9" 
+                  value={userSearchQuery} 
+                  onChange={(e) => setUserSearchQuery(e.target.value)} 
+                />
+              </div>
+              <Button 
+                variant="outline" 
+                onClick={fetchUsers} 
+                className="gap-2 font-black text-xs"
+              >
+                <RefreshCw className="w-4 h-4" /> Refresh Users
+              </Button>
+            </div>
+
+            <Card className="overflow-hidden border-none shadow-sm rounded-xl bg-white">
+              <Table>
+                <TableHeader className="bg-muted/30">
+                  <TableRow>
+                    <TableHead className="font-black uppercase text-[10px]">User</TableHead>
+                    <TableHead className="font-black uppercase text-[10px]">Daily Progress</TableHead>
+                    <TableHead className="font-black uppercase text-[10px]">Credits</TableHead>
+                    <TableHead className="font-black uppercase text-[10px]">Streak</TableHead>
+                    <TableHead className="font-black uppercase text-[10px]">Last Active</TableHead>
+                    <TableHead className="text-right font-black uppercase text-[10px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users
+                    .filter(user => 
+                      user.email?.toLowerCase().includes(userSearchQuery.toLowerCase())
+                    )
+                    .map(user => {
+                      const dailyProgress = Math.round(
+                        ((user.dailyQuestionsAnswered || 0) / 20 * 30) + 
+                        ((user.dailyTestsFinished || 0) / 1 * 40) + 
+                        ((user.mistakesReviewed || 0) / 10 * 30)
+                      );
+                      const hasClaimedRewards = user.taskQuestionsClaimed && user.taskMockClaimed && user.taskMistakesClaimed;
+                      
+                      return (
+                        <TableRow key={user.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                <UserCheck className="w-4 h-4 text-primary" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-slate-800">{user.email || 'Unknown'}</p>
+                                <p className="text-[10px] text-slate-500">ID: {user.id?.slice(0, 8)}...</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-slate-600">Progress</span>
+                                <div className="flex-1 bg-slate-100 rounded-full h-1.5">
+                                  <div 
+                                    className="bg-primary h-1.5 rounded-full transition-all" 
+                                    style={{ width: `${Math.min(dailyProgress, 100)}%` }} 
+                                  />
+                                </div>
+                                <span className="text-xs font-black text-primary">{Math.min(dailyProgress, 100)}%</span>
+                              </div>
+                              <div className="flex gap-3 text-[9px] text-slate-500">
+                                <span>Q: {user.dailyQuestionsAnswered || 0}/20</span>
+                                <span>T: {user.dailyTestsFinished || 0}/1</span>
+                                <span>M: {user.mistakesReviewed || 0}/10</span>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-slate-800">{user.credits || 0}</span>
+                                <Badge variant={hasClaimedRewards ? "secondary" : "outline"} className="text-[8px]">
+                                  {hasClaimedRewards ? "Claimed" : "Available"}
+                                </Badge>
+                              </div>
+                              <p className="text-[9px] text-slate-500">Today: +{user.dailyCreditEarned || 0}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <Calendar className="w-3 h-3 text-orange-600" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-black text-slate-800">{user.streakCount || 0}</p>
+                                <p className="text-[9px] text-slate-500">days</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <p className="text-xs text-slate-600">
+                              {user.lastActiveDate ? 
+                                new Date(user.lastActiveDate?.toDate?.() || user.lastActiveDate).toLocaleDateString() : 
+                                'Never'
+                              }
+                            </p>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleResetUserDailyTasks(user.id, user.email || 'Unknown')}
+                              disabled={resettingUserTask === user.id}
+                              className="gap-2 font-black text-xs"
+                            >
+                              {resettingUserTask === user.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <RotateCcw className="w-3 h-3" />
+                              )}
+                              Reset Tasks
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  {users.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-12 text-muted-foreground font-medium">
+                        No users found in the system.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {users.filter(user => 
+                    user.email?.toLowerCase().includes(userSearchQuery.toLowerCase())
+                  ).length === 0 && userSearchQuery && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-12 text-muted-foreground font-medium">
+                        No users found matching "{userSearchQuery}".
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </Card>
           </TabsContent>
 
           <TabsContent value="config" className="space-y-6">
