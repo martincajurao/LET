@@ -217,20 +217,20 @@ export function PracticeModal({
                   <CardContent className="pt-0 relative z-10">
                     <div className="flex items-center justify-between mt-4">
                       {!isUnlocked ? (
-                        <Button
+                        <button
                           onClick={(e) => handleUnlockEarly(e, mode.id, mode.unlockCost)}
                           disabled={unlockingId === mode.id}
-                          className="w-full h-11 rounded-xl font-black text-[9px] uppercase tracking-widest gap-2 bg-foreground text-background hover:bg-foreground/90 shadow-lg"
+                          className="w-full h-12 rounded-2xl font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-2 bg-gradient-to-b from-yellow-400 to-orange-500 text-white shadow-[0_4px_0_rgb(154,52,18)] transition-all hover:brightness-110 active:shadow-none active:translate-y-[4px] disabled:opacity-50 disabled:grayscale"
                         >
                           {unlockingId === mode.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <Loader2 className="w-4 h-4 animate-spin" />
                           ) : (
                             <>
-                              <Coins className="w-3.5 h-3.5 text-yellow-400 fill-current" />
-                              Unlock with <span className="text-yellow-400 mx-0.5 text-[11px] font-black">{mode.unlockCost}</span> AI credit
+                              <Coins className="w-4 h-4 text-white fill-current drop-shadow-sm" />
+                              <span className="drop-shadow-sm">Unlock with <span className="text-white text-base font-black ml-0.5">{mode.unlockCost}</span> AI credit</span>
                             </>
                           )}
-                        </Button>
+                        </button>
                       ) : (
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-lg">
@@ -253,7 +253,7 @@ export function PracticeModal({
                       )}
                     </div>
                     {!isUnlocked && (
-                      <p className="text-[8px] font-bold text-muted-foreground uppercase text-center mt-3 tracking-wider">
+                      <p className="text-[8px] font-bold text-muted-foreground uppercase text-center mt-4 tracking-wider">
                         Or reach Rank {mode.reqRank} ({getCareerRankTitle(mode.reqRank)})
                       </p>
                     )}
