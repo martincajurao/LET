@@ -39,7 +39,6 @@ interface ExamInterfaceProps {
 }
 
 export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: ExamInterfaceProps) {
-  // Group questions by subject to handle phases
   const groupedPhases = useMemo(() => {
     const phases: { subject: string; items: Question[] }[] = [];
     questions.forEach(q => {
@@ -62,12 +61,17 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [showBreakScreen, setShowBreakScreen] = useState(false);
+  
+  // Resting State
+  const [isResting, setIsResting] = useState(false);
+  const [restSeconds, setRestSeconds] = useState(0);
 
   const handleSubmit = useCallback(() => {
     const timeSpent = Math.floor((Date.now() - startTime) / 1000);
     onComplete(answers, timeSpent);
   }, [answers, startTime, onComplete]);
 
+  // Main Exam Timer
   useEffect(() => {
     if (timeLeft <= 0) {
       handleSubmit();
@@ -77,31 +81,45 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     return () => clearInterval(timer);
   }, [timeLeft, handleSubmit]);
 
+  // Rest Stopwatch Timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isResting && showBreakScreen) {
+      interval = setInterval(() => {
+        setRestSeconds(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isResting, showBreakScreen]);
+
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  const formatRestTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
   const handleAnswer = (val: string) => {
     const currentQ = groupedPhases[currentPhaseIdx].items[currentInPhaseIdx];
     setAnswers(prev => ({ ...prev, [currentQ.id]: val }));
-    // Dispatch event for daily task tracking
     window.dispatchEvent(new CustomEvent('questionAnswered'));
   };
 
   const handleNext = () => {
     const currentPhase = groupedPhases[currentPhaseIdx];
     if (currentInPhaseIdx < currentPhase.items.length - 1) {
-      // Still questions in current phase, proceed normally
       setCurrentInPhaseIdx(prev => prev + 1);
     } else {
-      // Last question in current phase reached, check for more phases
       if (currentPhaseIdx < groupedPhases.length - 1) {
-        // Trigger break screen specifically via Next button logic
+        setIsResting(false);
+        setRestSeconds(0);
         setShowBreakScreen(true);
       } else {
-        // Absolute last question of final phase, show submission confirmation
         setShowSubmitConfirm(true);
       }
     }
@@ -321,7 +339,8 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
             <Button 
               onClick={() => {
                 setShowBreakScreen(false);
-                // Advance to first question of next phase
+                setIsResting(false);
+                setRestSeconds(0);
                 setCurrentPhaseIdx(prev => prev + 1);
                 setCurrentInPhaseIdx(0);
               }}
@@ -332,11 +351,23 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
             </Button>
             <Button 
               variant="outline" 
-              onClick={() => setShowBreakScreen(false)}
-              className="h-14 rounded-2xl font-bold text-muted-foreground border-2 hover:bg-muted/50 transition-colors"
+              onClick={() => setIsResting(true)}
+              className={cn(
+                "h-14 rounded-2xl font-bold border-2 transition-all",
+                isResting ? "text-orange-600 bg-orange-50 border-orange-200" : "text-muted-foreground hover:bg-muted/50"
+              )}
             >
-              <Timer className="w-4 h-4 mr-2" />
-              Rest for a Moment
+              {isResting ? (
+                <>
+                  <Timer className="w-4 h-4 mr-2 animate-pulse" />
+                  Resting: {formatRestTime(restSeconds)}
+                </>
+              ) : (
+                <>
+                  <Timer className="w-4 h-4 mr-2" />
+                  Rest for a Moment
+                </>
+              )}
             </Button>
           </div>
         </DialogContent>
