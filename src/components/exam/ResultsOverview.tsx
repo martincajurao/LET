@@ -24,6 +24,25 @@ interface ResultsOverviewProps {
   onRestart: () => void;
 }
 
+/**
+ * A helper component to simulate a typewriter typing effect for AI text.
+ */
+function TypewriterText({ text, speed = 15 }: { text: string; speed?: number }) {
+  const [displayedText, setDisplayedText] = useState("");
+  
+  useEffect(() => {
+    let i = 0;
+    const interval = setInterval(() => {
+      setDisplayedText(text.substring(0, i));
+      i++;
+      if (i > text.length) clearInterval(interval);
+    }, speed);
+    return () => clearInterval(interval);
+  }, [text, speed]);
+
+  return <span>{displayedText}</span>;
+}
+
 export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRestart }: ResultsOverviewProps) {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -313,7 +332,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                 </CardHeader>
                 <CardContent className="p-8 pt-4 space-y-6">
                   <div className="p-6 bg-primary/5 rounded-[2rem] italic text-lg leading-relaxed border-l-4 border-primary font-medium text-foreground">
-                    "{aiSummary.summary}"
+                    <TypewriterText text={aiSummary.summary} />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-3">
@@ -338,7 +357,9 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
 
               <Card className="lg:col-span-1 border-none shadow-sm bg-foreground rounded-[2.5rem] p-8 text-background relative overflow-hidden">
                 <CardHeader className="p-0 mb-6"><CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">Actionable Roadmap</CardTitle></CardHeader>
-                <CardContent className="p-0 text-sm font-medium leading-relaxed">{aiSummary.recommendations}</CardContent>
+                <CardContent className="p-0 text-sm font-medium leading-relaxed">
+                  <TypewriterText text={aiSummary.recommendations} />
+                </CardContent>
               </Card>
             </div>
           )}
@@ -440,7 +461,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                                       animate={{ opacity: 1 }}
                                       transition={{ delay: 0.2 }}
                                     >
-                                      "{localExplanations[q.id]}"
+                                      <TypewriterText text={localExplanations[q.id]} />
                                     </motion.p>
                                   </div>
                                 </motion.div>
