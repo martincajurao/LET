@@ -127,7 +127,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
   const handleBack = () => {
     if (currentInPhaseIdx > 0) {
-      setCurrentInPhaseIdx(prev => prev - 1);
+      setCurrentInPhaseIdx(prev => prev + 1);
     } else if (currentPhaseIdx > 0) {
       const prevPhaseIdx = currentPhaseIdx - 1;
       setCurrentPhaseIdx(prevPhaseIdx);
@@ -200,7 +200,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
             </div>
 
             <div className="space-y-8">
-              <h2 className="text-xl md:text-3xl font-black leading-tight text-foreground tracking-tight">
+              <h2 className="text-xl md:text-xl font-black leading-tight text-foreground tracking-tight">
                 {currentQuestion.text}
               </h2>
 
@@ -213,7 +213,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   <Label 
                     key={i} 
                     className={cn(
-                      "flex items-center p-3 md:p-4 rounded-xl border-2 cursor-pointer transition-all active:scale-[0.98]",
+                      "flex items-center p-3 md:p-3 rounded-xl border-2 cursor-pointer transition-all active:scale-[0.98]",
                       answers[currentQuestion.id] === opt 
                         ? "border-primary bg-primary/5 ring-4 ring-primary/10" 
                         : "border-border bg-card hover:bg-muted/10"
@@ -221,14 +221,14 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   >
                     <RadioGroupItem value={opt} className="sr-only" />
                     <div className={cn(
-                      "w-8 h-8 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center mr-3 font-black transition-colors shrink-0",
+                      "w-8 h-8 rounded-full border-2 flex items-center justify-center mr-3 font-black transition-colors shrink-0",
                       answers[currentQuestion.id] === opt 
                         ? "bg-primary border-primary text-primary-foreground" 
                         : "border-border bg-muted text-muted-foreground"
                     )}>
                       {String.fromCharCode(65+i)}
                     </div>
-                    <span className="text-sm md:text-base font-bold text-foreground leading-snug">{opt}</span>
+                    <span className="text-sm md:text-sm font-bold text-foreground leading-snug">{opt}</span>
                   </Label>
                 ))}
               </RadioGroup>
