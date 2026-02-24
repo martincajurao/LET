@@ -124,7 +124,18 @@ export default function ProfilePage() {
             <CardContent className="px-10 pb-10 -mt-20 relative">
               <div className="flex flex-col md:flex-row md:items-end gap-6 mb-10">
                 <div className="relative"><Avatar className="w-40 h-40 border-[6px] border-card shadow-2xl rounded-[3rem]"><AvatarImage src={user.photoURL || ""} /><AvatarFallback className="text-5xl font-black bg-muted text-muted-foreground">{user.displayName?.charAt(0) || "U"}</AvatarFallback></Avatar>{user.isPro && (<div className="absolute -bottom-2 -right-2 w-12 h-12 bg-yellow-400 rounded-2xl flex items-center justify-center border-4 border-card shadow-xl"><Trophy className="w-6 h-6 text-yellow-900" /></div>)}</div>
-                <div className="flex-1 space-y-3 mb-2"><div className="flex items-center gap-4"><h1 className="text-4xl font-black tracking-tighter text-foreground">{user.displayName}</h1><Badge variant="secondary" className="bg-primary/10 text-primary border-none px-4 py-1 font-black uppercase text-[10px] tracking-widest">{user.isPro ? 'Platinum Educator' : 'Aspiring Professional'}</Badge></div><div className="flex items-center gap-6 text-muted-foreground font-medium text-sm"><span className="flex items-center gap-2"><Mail className="w-4 h-4 opacity-40" /> {user.email}</span><span className="flex items-center gap-2"><GraduationCap className="w-4 h-4 opacity-40" /> {user.majorship || 'Generalist'}</span></div></div>
+                <div className="flex-1 space-y-3 mb-2">
+                  <div className="flex items-center gap-4">
+                    <h1 className="text-4xl font-black tracking-tighter text-foreground">{user.displayName}</h1>
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-none px-4 py-1 font-black uppercase text-[10px] tracking-widest">
+                      {rankData?.title}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-6 text-muted-foreground font-medium text-sm">
+                    <span className="flex items-center gap-2"><Mail className="w-4 h-4 opacity-40" /> {user.email}</span>
+                    <span className="flex items-center gap-2"><GraduationCap className="w-4 h-4 opacity-40" /> {user.majorship || 'Generalist'}</span>
+                  </div>
+                </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[

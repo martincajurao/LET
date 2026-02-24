@@ -172,7 +172,9 @@ export function Navbar() {
                   </Badge>
                 )}
               </div>
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Professional Simulation</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                {rankData?.title || 'Professional Simulation'}
+              </span>
             </div>
           </Link>
         </div>
@@ -270,11 +272,7 @@ export function Navbar() {
                   <div className="p-3 mb-2 bg-muted/30 rounded-xl">
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <p className="text-sm font-black truncate">{user.displayName}</p>
-                      {user.isPro ? (
-                        <Badge className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20 text-[8px] font-black uppercase px-1.5 py-0">PLATINUM</Badge>
-                      ) : (
-                        <Badge className="bg-blue-500/10 text-blue-700 border-blue-500/20 text-[8px] font-black uppercase px-1.5 py-0">FREE</Badge>
-                      )}
+                      <Badge className="bg-primary/10 text-primary border-primary/20 text-[8px] font-black uppercase px-1.5 py-0">{rankData?.title}</Badge>
                     </div>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">{user.email}</p>
                   </div>
