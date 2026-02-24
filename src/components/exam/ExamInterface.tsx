@@ -93,15 +93,15 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   const handleNext = () => {
     const currentPhase = groupedPhases[currentPhaseIdx];
     if (currentInPhaseIdx < currentPhase.items.length - 1) {
-      // Still questions in current phase
+      // Still questions in current phase, proceed normally
       setCurrentInPhaseIdx(prev => prev + 1);
     } else {
-      // Last question in current phase reached
+      // Last question in current phase reached, check for more phases
       if (currentPhaseIdx < groupedPhases.length - 1) {
-        // There are more phases, show the break screen
+        // Trigger break screen specifically via Next button logic
         setShowBreakScreen(true);
       } else {
-        // Absolute last question of last phase, show finish confirmation
+        // Absolute last question of final phase, show submission confirmation
         setShowSubmitConfirm(true);
       }
     }
@@ -111,7 +111,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     if (currentInPhaseIdx > 0) {
       setCurrentInPhaseIdx(prev => prev - 1);
     } else if (currentPhaseIdx > 0) {
-      // Go back to previous phase
       const prevPhaseIdx = currentPhaseIdx - 1;
       setCurrentPhaseIdx(prevPhaseIdx);
       setCurrentInPhaseIdx(groupedPhases[prevPhaseIdx].items.length - 1);
@@ -121,7 +120,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   const currentPhase = groupedPhases[currentPhaseIdx];
   const currentQuestion = currentPhase?.items[currentInPhaseIdx];
   
-  // Calculate total progress
   const totalItemsBeforePhase = groupedPhases.slice(0, currentPhaseIdx).reduce((acc, p) => acc + p.items.length, 0);
   const overallCurrentIdx = totalItemsBeforePhase + currentInPhaseIdx;
   const progress = ((overallCurrentIdx + 1) / (questions.length || 1)) * 100;
@@ -131,7 +129,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
   return (
     <div className="fixed inset-0 z-[200] bg-background flex flex-col animate-in fade-in duration-300">
-      {/* Simulation Top Bar */}
       <header className="h-16 border-b bg-card/50 backdrop-blur-xl flex items-center justify-between px-4 sm:px-8 shrink-0">
         <div className="flex items-center gap-4">
           <div className={cn(
@@ -166,9 +163,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </Button>
       </header>
 
-      {/* Main Simulation Area */}
       <main className="flex-1 overflow-hidden flex flex-col md:flex-row">
-        {/* Content Section */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 pb-32">
           <div className="max-w-3xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
@@ -223,7 +218,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
           </div>
         </div>
 
-        {/* Desktop Side Navigator */}
         <aside className="hidden lg:flex w-72 border-l bg-muted/5 p-6 flex-col gap-6 overflow-y-auto">
           <div className="space-y-1">
             <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Simulation Map</h3>
@@ -271,7 +265,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </aside>
       </main>
 
-      {/* Mobile Sticky Navigation Footer */}
       <footer className="h-20 shrink-0 border-t bg-card/80 backdrop-blur-xl flex items-center justify-between px-6 pb-safe-area shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
         <Button 
           variant="outline" 
