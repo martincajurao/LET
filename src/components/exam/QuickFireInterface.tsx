@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -9,11 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { 
   Zap, 
-  Clock, 
-  ChevronRight, 
   X, 
   Timer,
-  LayoutGrid,
   BrainCircuit
 } from "lucide-react";
 import { Question } from "@/app/lib/mock-data";
@@ -63,30 +59,34 @@ export function QuickFireInterface({ questions, onComplete, onExit }: QuickFireI
   const progress = ((currentIdx + 1) / questions.length) * 100;
   const currentQuestion = questions[currentIdx];
 
+  if (!currentQuestion) return null;
+
   return (
     <div className="fixed inset-0 z-[200] bg-background flex flex-col overflow-hidden">
-      <header className="h-16 border-b bg-primary/5 flex items-center justify-between px-6 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
-            <Zap className="w-5 h-5 text-primary-foreground fill-current" />
+      {/* Thinner, Android-style Header */}
+      <header className="h-14 border-b bg-card/50 backdrop-blur-md flex items-center justify-between px-4 shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shadow-md">
+            <Zap className="w-4 h-4 text-primary-foreground fill-current" />
           </div>
-          <span className="font-black tracking-tight text-sm uppercase">Quick Fire Challenge</span>
+          <span className="font-black tracking-tight text-[10px] uppercase text-muted-foreground">Quick Fire</span>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div className={cn(
-            "flex items-center gap-2 px-3 py-1 rounded-full border bg-card shadow-sm",
+            "flex items-center gap-1.5 px-2 py-1 rounded-full border bg-background",
             timeLeft < 20 ? "border-rose-500 text-rose-500 animate-pulse" : "border-border"
           )}>
-            <Timer className="w-4 h-4" />
-            <span className="font-black font-mono text-sm">{Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span>
+            <Timer className="w-3.5 h-3.5" />
+            <span className="font-black font-mono text-xs">{Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span>
           </div>
-          <Button variant="ghost" size="icon" onClick={onExit} className="rounded-full hover:bg-rose-500/10 hover:text-rose-500">
-            <X className="w-5 h-5" />
+          <Button variant="ghost" size="icon" onClick={onExit} className="h-8 w-8 rounded-full">
+            <X className="w-4 h-4" />
           </Button>
         </div>
       </header>
 
+      {/* Tighter Progress Bar */}
       <div className="h-1 w-full bg-muted">
         <motion.div 
           className="h-full bg-primary"
@@ -96,55 +96,58 @@ export function QuickFireInterface({ questions, onComplete, onExit }: QuickFireI
         />
       </div>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8">
-        <div className="max-w-2xl w-full space-y-8">
+      {/* Main Content: Compact and Focused */}
+      <main className="flex-1 flex flex-col p-4 md:p-6 overflow-y-auto">
+        <div className="max-w-lg mx-auto w-full flex-1 flex flex-col">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIdx}
-              initial={{ x: 50, opacity: 0 }}
+              initial={{ x: 20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -50, opacity: 0 }}
-              className="space-y-8"
+              exit={{ x: -20, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6"
             >
               <div className="flex justify-center">
-                <Badge variant="secondary" className="px-4 py-1.5 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] bg-primary/10 text-primary border-none">
-                  Item {currentIdx + 1} of {questions.length} • {currentQuestion.subject}
+                <Badge variant="secondary" className="px-2 py-0.5 rounded-lg font-black uppercase text-[9px] tracking-widest bg-primary/10 text-primary border-none">
+                  Item {currentIdx + 1}/5 • {currentQuestion.subject}
                 </Badge>
               </div>
 
-              <h2 className="text-2xl md:text-3xl font-black text-center leading-tight tracking-tight px-4">
+              <h2 className="text-lg md:text-xl font-black text-center leading-snug tracking-tight text-foreground px-2">
                 {currentQuestion.text}
               </h2>
 
               <RadioGroup 
                 value={answers[currentQuestion.id] || ""} 
                 onValueChange={handleAnswer}
-                className="grid grid-cols-1 gap-3"
+                className="grid grid-cols-1 gap-2"
               >
                 {currentQuestion.options.map((opt, i) => (
                   <motion.div
                     key={i}
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
+                    initial={{ y: 10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: i * 0.05 }}
                   >
                     <Label 
                       className={cn(
-                        "flex items-center p-5 rounded-2xl border-2 cursor-pointer transition-all",
+                        "flex items-center p-3.5 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98]",
                         answers[currentQuestion.id] === opt 
-                          ? "border-primary bg-primary/5 ring-4 ring-primary/10" 
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/10" 
                           : "border-border bg-card hover:bg-muted/10"
                       )}
                     >
                       <RadioGroupItem value={opt} className="sr-only" />
                       <div className={cn(
-                        "w-10 h-10 rounded-xl border-2 flex items-center justify-center mr-4 font-black transition-colors shrink-0",
+                        "w-8 h-8 rounded-xl border-2 flex items-center justify-center mr-3 font-black text-xs transition-colors shrink-0",
                         answers[currentQuestion.id] === opt 
                           ? "bg-primary border-primary text-primary-foreground" 
                           : "border-border bg-muted text-muted-foreground"
                       )}>
                         {String.fromCharCode(65+i)}
                       </div>
-                      <span className="text-lg font-bold text-foreground">{opt}</span>
+                      <span className="text-sm font-bold text-foreground leading-tight">{opt}</span>
                     </Label>
                   </motion.div>
                 ))}
@@ -154,10 +157,11 @@ export function QuickFireInterface({ questions, onComplete, onExit }: QuickFireI
         </div>
       </main>
 
-      <footer className="p-8 flex justify-center bg-gradient-to-t from-background to-transparent">
-        <div className="flex items-center gap-2 text-muted-foreground font-black text-[10px] uppercase tracking-widest opacity-40">
-          <BrainCircuit className="w-4 h-4" />
-          <span>Professional Analytical Teaser</span>
+      {/* Minimal Footer */}
+      <footer className="p-4 flex justify-center border-t bg-card/30 backdrop-blur-sm">
+        <div className="flex items-center gap-2 text-muted-foreground font-black text-[8px] uppercase tracking-widest opacity-50">
+          <BrainCircuit className="w-3 h-3" />
+          <span>Analytical Teaser</span>
         </div>
       </footer>
     </div>
