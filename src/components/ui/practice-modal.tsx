@@ -220,7 +220,7 @@ export function PracticeModal({
                         <button
                           onClick={(e) => handleUnlockEarly(e, mode.id, mode.unlockCost)}
                           disabled={unlockingId === mode.id}
-                          className="w-full h-14 rounded-2xl font-bold text-[10px] uppercase tracking-wide flex items-center justify-between px-4 bg-gradient-to-r from-yellow-500 to-orange-600 text-white shadow-[0_4px_0_#9a3412] transition-all hover:brightness-110 active:shadow-none active:translate-y-[4px] disabled:opacity-50 disabled:grayscale group"
+                          className="w-full h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-between px-4 bg-primary text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:grayscale group"
                         >
                           {unlockingId === mode.id ? (
                             <div className="w-full flex justify-center">
@@ -228,10 +228,10 @@ export function PracticeModal({
                             </div>
                           ) : (
                             <>
-                              <span className="opacity-90 font-black">Unlock Mode</span>
-                              <div className="bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-white/30 flex items-center gap-2 shadow-inner">
+                              <span className="font-black">Unlock Mode</span>
+                              <div className="bg-background/20 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 flex items-center gap-2 shadow-inner">
                                 <span className="font-black text-sm">{mode.unlockCost}</span>
-                                <Coins className="w-4 h-4 text-yellow-200 fill-current" />
+                                <Coins className="w-4 h-4 text-yellow-500 fill-current" />
                                 <span className="text-[8px] font-black opacity-80">AI CREDIT</span>
                               </div>
                             </>
