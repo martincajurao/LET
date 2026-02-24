@@ -16,7 +16,6 @@ import {
 import { 
   GraduationCap, 
   BrainCircuit, 
-  Languages,
   ChevronRight,
   Zap,
   Trophy,
@@ -27,7 +26,8 @@ import {
   Smartphone,
   Facebook,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  Languages
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
@@ -210,7 +210,7 @@ function LetsPrepContent() {
       <Toaster />
       
       <Dialog open={authIssue} onOpenChange={setAuthIssue}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm">
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm z-[1001]">
           <DialogHeader className="text-center">
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <ShieldCheck className="w-8 h-8 text-primary" />
@@ -229,7 +229,7 @@ function LetsPrepContent() {
       </Dialog>
 
       <Dialog open={loading}>
-        <DialogContent className="max-w-[300px] border-none shadow-2xl bg-card rounded-[2.5rem] p-8">
+        <DialogContent className="max-w-[300px] border-none shadow-2xl bg-card rounded-[2.5rem] p-8 z-[1001]">
           <DialogHeader>
             <DialogTitle className="sr-only">Initializing Simulation</DialogTitle>
           </DialogHeader>

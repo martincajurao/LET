@@ -14,7 +14,6 @@ import {
   DialogHeader, 
   DialogTitle, 
   DialogDescription, 
-  DialogFooter 
 } from "@/components/ui/dialog";
 import { 
   Clock, 
@@ -27,10 +26,8 @@ import {
   Coffee,
   Play,
   CheckCircle2,
-  BrainCircuit,
   Timer,
   LayoutGrid,
-  Info
 } from "lucide-react";
 import { Question } from "@/app/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -146,6 +143,10 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   const progress = ((overallCurrentIdx + 1) / (questions.length || 1)) * 100;
   const answeredCount = Object.keys(answers).length;
 
+  const getPhaseAnsweredCount = (phaseIdx: number) => {
+    return groupedPhases[phaseIdx].items.filter(q => !!answers[q.id]).length;
+  };
+
   if (!currentQuestion) return null;
 
   return (
@@ -167,7 +168,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
         <div className="flex-1 max-w-xs mx-4 hidden md:block">
           <div className="flex justify-between mb-1">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Phase {currentPhaseIdx + 1} of {groupedPhases.length}</span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground">Overall Progress</span>
             <span className="text-[10px] font-black text-primary">{Math.round(progress)}%</span>
           </div>
           <Progress value={progress} className="h-1.5" />
@@ -189,7 +190,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
           <div className="max-w-3xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
               <Badge variant="secondary" className="px-3 py-1 font-black uppercase text-[10px] tracking-widest bg-muted/50">
-                Item {currentInPhaseIdx + 1} of {currentPhase.items.length} in Phase
+                Item {currentInPhaseIdx + 1} of {currentPhase.items.length} in {currentPhase.subject}
               </Badge>
               <Button 
                 variant="ghost" 
@@ -203,7 +204,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
             </div>
 
             <div className="space-y-8">
-              <h2 className="text-xl md:text-xl font-black leading-tight text-foreground tracking-tight">
+              <h2 className="text-xl md:text-lg font-black leading-tight text-foreground tracking-tight">
                 {currentQuestion.text}
               </h2>
 
@@ -216,7 +217,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   <Label 
                     key={i} 
                     className={cn(
-                      "flex items-center p-3 md:p-3 rounded-xl border-2 cursor-pointer transition-all active:scale-[0.98]",
+                      "flex items-center p-3 md:p-2.5 rounded-xl border-2 cursor-pointer transition-all active:scale-[0.98]",
                       answers[currentQuestion.id] === opt 
                         ? "border-primary bg-primary/5 ring-4 ring-primary/10" 
                         : "border-border bg-card hover:bg-muted/10"
@@ -231,7 +232,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                     )}>
                       {String.fromCharCode(65+i)}
                     </div>
-                    <span className="text-sm md:text-sm font-bold text-foreground leading-snug">{opt}</span>
+                    <span className="text-sm md:text-xs font-bold text-foreground leading-snug">{opt}</span>
                   </Label>
                 ))}
               </RadioGroup>
@@ -245,23 +246,28 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
               <h3 className="text-xs font-black uppercase tracking-widest text-foreground">Simulation Map</h3>
               <LayoutGrid className="w-4 h-4 text-muted-foreground" />
             </div>
-            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">450 Items Capacity</p>
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{questions.length} Items Total</p>
           </div>
           
           <ScrollArea className="flex-1">
             <div className="p-6 space-y-8">
               {groupedPhases.map((phase, pIdx) => (
                 <div key={pIdx} className="space-y-4">
-                  <div className="flex items-center gap-2 sticky top-0 bg-background/80 backdrop-blur-sm py-1 z-10">
-                    <div className={cn(
-                      "w-2 h-2 rounded-full",
-                      currentPhaseIdx === pIdx ? "bg-primary animate-pulse" : currentPhaseIdx > pIdx ? "bg-emerald-500" : "bg-muted"
-                    )} />
-                    <span className={cn(
-                      "text-[10px] font-black uppercase tracking-widest",
-                      currentPhaseIdx === pIdx ? "text-foreground" : "text-muted-foreground"
-                    )}>
-                      {phase.subject}
+                  <div className="flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-sm py-1.5 z-10 border-b border-border/50 px-1">
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        "w-2 h-2 rounded-full",
+                        currentPhaseIdx === pIdx ? "bg-primary animate-pulse" : currentPhaseIdx > pIdx ? "bg-emerald-500" : "bg-muted"
+                      )} />
+                      <span className={cn(
+                        "text-[10px] font-black uppercase tracking-widest",
+                        currentPhaseIdx === pIdx ? "text-foreground" : "text-muted-foreground"
+                      )}>
+                        {phase.subject}
+                      </span>
+                    </div>
+                    <span className="text-[9px] font-black text-muted-foreground">
+                      {getPhaseAnsweredCount(pIdx)}/{phase.items.length}
                     </span>
                   </div>
                   <div className="grid grid-cols-6 gap-1.5">
@@ -328,7 +334,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
       {/* Phase Transition / Break Screen */}
       <Dialog open={showBreakScreen} onOpenChange={setShowBreakScreen}>
-        <DialogContent className="rounded-[3rem] bg-card border-none shadow-2xl p-10 max-w-md text-center">
+        <DialogContent className="rounded-[3rem] bg-card border-none shadow-2xl p-10 max-w-md text-center z-[1001]">
           <DialogHeader>
             <div className="w-20 h-20 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="w-10 h-10 text-emerald-500" />
@@ -392,7 +398,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
       {/* Submission Confirmation */}
       <Dialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm">
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm z-[1001]">
           <DialogHeader className="text-center">
             <div className="w-16 h-16 bg-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-8 h-8 text-orange-500" />
