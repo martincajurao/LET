@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -45,7 +46,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
 
 export function Navbar() {
-  const { user, logout, loginWithGoogle, loginWithFacebook, loginAnonymously } = useUser();
+  const { user, logout, loginWithGoogle, loginWithFacebook, bypassLogin } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const { isDark, toggleDarkMode } = useTheme();
@@ -179,7 +180,7 @@ export function Navbar() {
             <Button onClick={() => { loginWithFacebook(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-bold gap-3 shadow-lg bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none">
               <Facebook className="w-5 h-5 fill-current" /> Continue with Facebook
             </Button>
-            <Button variant="outline" onClick={() => { loginAnonymously(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-bold border-2">
+            <Button variant="outline" onClick={() => { bypassLogin(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-bold border-2">
               Guest Simulation
             </Button>
           </div>

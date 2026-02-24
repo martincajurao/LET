@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { 
   Dialog, 
   DialogContent, 
-  DialogHeader,
+  DialogHeader, 
   DialogTitle, 
   DialogDescription,
 } from "@/components/ui/dialog";
@@ -63,7 +63,7 @@ function sanitizeData(data: any): any {
 }
 
 function LetsPrepContent() {
-  const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook, loginAnonymously } = useUser();
+  const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook, bypassLogin } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -191,12 +191,14 @@ function LetsPrepContent() {
       lastActiveDate: serverTimestamp()
     });
 
-    await addDoc(collection(firestore, "exam_results"), resultsData);
-    await updateDoc(doc(firestore, 'users', user.uid), {
-      dailyQuestionsAnswered: increment(currentQuestions.length),
-      dailyTestsFinished: increment(1),
-      lastActiveDate: serverTimestamp()
-    });
+    if (!user.uid.startsWith('bypass')) {
+      await addDoc(collection(firestore, "exam_results"), resultsData);
+      await updateDoc(doc(firestore, 'users', user.uid), {
+        dailyQuestionsAnswered: increment(currentQuestions.length),
+        dailyTestsFinished: increment(1),
+        lastActiveDate: serverTimestamp()
+      });
+    }
 
     setLoadingStep(100);
     setTimeout(() => { setState('results'); setLoading(false); }, 500);
@@ -222,7 +224,7 @@ function LetsPrepContent() {
             <Button onClick={loginWithFacebook} className="h-12 rounded-xl font-bold gap-2 shadow-lg bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none">
               <Facebook className="w-4 h-4 fill-current" /> Continue with Facebook
             </Button>
-            <Button variant="outline" onClick={loginAnonymously} className="h-12 rounded-xl font-bold border-2">Guest Simulation</Button>
+            <Button variant="outline" onClick={bypassLogin} className="h-12 rounded-xl font-bold border-2">Guest Simulation</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -275,7 +277,7 @@ function LetsPrepContent() {
             {[
               { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user?.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
               { icon: <Flame className="w-4 h-4 text-orange-500" />, label: 'Streak', value: user?.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' },
-              { icon: <CheckCircle2 className="w-4 h-4 text-blue-500" />, label: 'Accuracy', value: '85%', color: 'text-blue-500 bg-blue-500/10' },
+              { icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />, label: 'Pass Rate', value: '92%', color: 'text-emerald-500 bg-emerald-500/10' },
               { icon: <Trophy className="w-4 h-4 text-emerald-500" />, label: 'Rank', value: '#12', color: 'text-emerald-500 bg-emerald-500/10' }
             ].map((stat, i) => (
               <div key={i} className="bg-card border border-border/50 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
