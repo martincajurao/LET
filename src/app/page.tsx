@@ -382,9 +382,13 @@ function LetsPrepContent() {
   };
 
   if (authLoading) return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      className="fixed inset-0 z-[2000] flex items-center justify-center bg-background bg-gradient-to-b from-background via-background to-primary/5"
+    >
       <EducationalLoader message="Synchronizing Educator Session" />
-    </div>
+    </motion.div>
   );
 
   const displayStats = user ? [
