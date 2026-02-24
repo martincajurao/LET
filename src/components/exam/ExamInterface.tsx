@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -129,7 +128,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
   const handleBack = () => {
     if (currentInPhaseIdx > 0) {
-      setCurrentInPhaseIdx(prev => prev - 1);
+      setCurrentInPhaseIdx(prev => prev + 1);
     } else if (currentPhaseIdx > 0) {
       const prevPhaseIdx = currentPhaseIdx - 1;
       setCurrentPhaseIdx(prevPhaseIdx);
@@ -152,106 +151,105 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   if (!currentQuestion) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] bg-background flex flex-col overflow-hidden">
-      <header className="h-16 border-b bg-card/50 backdrop-blur-xl flex items-center justify-between px-4 sm:px-8 shrink-0 z-50">
-        <div className="flex items-center gap-4">
-          <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className={cn(
-              "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-colors",
-              timeLeft < 60 ? "bg-destructive/10 border-destructive text-destructive animate-pulse" : "bg-primary/10 border-primary/20 text-primary"
-            )}>
-            <Clock className="w-4 h-4" />
-            <span className="text-sm font-black font-mono">{formatTime(timeLeft)}</span>
-          </motion.div>
+    <div className="fixed inset-0 z-[200] bg-background flex flex-col overflow-hidden animate-in fade-in duration-300">
+      {/* Android-Native Header */}
+      <header className="h-14 border-b bg-card/80 backdrop-blur-md flex items-center justify-between px-4 shrink-0 z-50">
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            "flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-all",
+            timeLeft < 60 ? "bg-rose-500/10 border-rose-500 text-rose-600 animate-pulse" : "bg-primary/10 border-primary/20 text-primary"
+          )}>
+            <Timer className="w-3.5 h-3.5" />
+            <span className="text-xs font-black font-mono tracking-tight">{formatTime(timeLeft)}</span>
+          </div>
           <div className="hidden sm:flex items-center gap-2 text-muted-foreground">
-            <Layers className="w-4 h-4" />
-            <span className="text-xs font-black uppercase tracking-[0.2em]">{currentPhase.subject}</span>
+            <Layers className="w-3.5 h-3.5" />
+            <span className="text-[10px] font-black uppercase tracking-[0.15em] line-clamp-1">{currentPhase.subject}</span>
           </div>
         </div>
 
-        <div className="flex-1 max-w-xs mx-4 hidden md:block">
+        <div className="flex-1 max-w-[140px] mx-4 md:max-w-xs">
           <div className="flex justify-between mb-1">
-            <span className="text-[10px] font-black uppercase text-muted-foreground">Overall Progress</span>
-            <span className="text-[10px] font-black text-primary">{Math.round(progress)}%</span>
+            <span className="text-[8px] font-black uppercase text-muted-foreground">Progress</span>
+            <span className="text-[8px] font-black text-primary">{Math.round(progress)}%</span>
           </div>
-          <Progress value={progress} className="h-1.5 transition-all duration-500" />
+          <Progress value={progress} className="h-1 rounded-full transition-all duration-500" />
         </div>
 
         <Button 
-          variant="default" 
+          variant="ghost" 
           size="sm" 
           onClick={() => setShowSubmitConfirm(true)}
-          className="font-black rounded-xl px-6 shadow-lg shadow-primary/20 bg-primary h-10 hover:scale-105 active:scale-95 transition-all"
+          className="font-black text-[10px] uppercase tracking-widest text-primary h-9 rounded-xl hover:bg-primary/5 active:scale-95 transition-all"
         >
-          <Send className="w-4 h-4 mr-2" />
+          <Send className="w-3.5 h-3.5 mr-1.5" />
           Finish
         </Button>
       </header>
 
-      <main className="flex-1 overflow-hidden flex flex-col md:row-reverse lg:flex-row">
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 pb-32 relative">
-          <div className="max-w-3xl mx-auto">
+      <main className="flex-1 overflow-hidden flex flex-col lg:flex-row">
+        {/* Question Area */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 relative no-scrollbar">
+          <div className="max-w-2xl mx-auto w-full">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentQuestion.id}
-                initial={{ x: 20, opacity: 0 }}
+                initial={{ x: 10, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -20, opacity: 0 }}
-                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                className="space-y-6 md:space-y-8"
+                exit={{ x: -10, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-6"
               >
                 <div className="flex justify-between items-center">
-                  <Badge variant="secondary" className="px-3 py-1 font-black uppercase text-[10px] tracking-widest bg-muted/50 border-none">
-                    Item {currentInPhaseIdx + 1} of {currentPhase.items.length} in {currentPhase.subject}
+                  <Badge variant="secondary" className="px-2.5 py-0.5 font-black uppercase text-[9px] tracking-widest bg-muted/50 border-none rounded-lg">
+                    {currentPhase.subject} • {currentInPhaseIdx + 1}/{currentPhase.items.length}
                   </Badge>
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     onClick={() => setFlags(p => ({...p, [currentQuestion.id]: !p[currentQuestion.id]}))}
-                    className={cn("h-8 gap-2 rounded-lg transition-colors", flags[currentQuestion.id] && "text-orange-500 bg-orange-500/10")}
+                    className={cn("h-8 px-2 gap-1.5 rounded-lg transition-colors", flags[currentQuestion.id] && "text-orange-500 bg-orange-500/10")}
                   >
-                    <Flag className={cn("w-4 h-4", flags[currentQuestion.id] && "fill-current")} /> 
-                    <span className="text-xs font-bold">{flags[currentQuestion.id] ? "Flagged" : "Review Later"}</span>
+                    <Flag className={cn("w-3.5 h-3.5", flags[currentQuestion.id] && "fill-current")} /> 
+                    <span className="text-[10px] font-bold uppercase tracking-wider">{flags[currentQuestion.id] ? "Flagged" : "Review"}</span>
                   </Button>
                 </div>
 
-                <div className="space-y-8">
-                  <h2 className="text-xl md:text-lg font-black leading-tight text-foreground tracking-tight">
+                <div className="space-y-6">
+                  <h2 className="text-lg md:text-xl font-black leading-snug text-foreground tracking-tight">
                     {currentQuestion.text}
                   </h2>
 
                   <RadioGroup 
                     value={answers[currentQuestion.id] || ""} 
                     onValueChange={handleAnswer} 
-                    className="grid grid-cols-1 gap-2 md:gap-1.5"
+                    className="grid grid-cols-1 gap-2.5"
                   >
                     {currentQuestion.options.map((opt, i) => (
                       <motion.div
                         key={i}
-                        initial={{ y: 10, opacity: 0 }}
+                        initial={{ y: 8, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: i * 0.05 + 0.1 }}
+                        transition={{ delay: i * 0.04 }}
                       >
                         <Label 
                           className={cn(
-                            "flex items-center p-3 md:p-2.5 rounded-xl border-2 cursor-pointer transition-all active:scale-[0.98]",
+                            "flex items-center p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] group",
                             answers[currentQuestion.id] === opt 
-                              ? "border-primary bg-primary/5 ring-4 ring-primary/10" 
+                              ? "border-primary bg-primary/5 ring-2 ring-primary/10 shadow-sm" 
                               : "border-border bg-card hover:bg-muted/10"
                           )}
                         >
                           <RadioGroupItem value={opt} className="sr-only" />
                           <div className={cn(
-                            "w-8 h-8 md:w-7 md:h-7 rounded-full border-2 flex items-center justify-center mr-3 font-black transition-colors shrink-0",
+                            "w-8 h-8 rounded-xl border-2 flex items-center justify-center mr-3.5 font-black text-xs transition-colors shrink-0",
                             answers[currentQuestion.id] === opt 
                               ? "bg-primary border-primary text-primary-foreground" 
-                              : "border-border bg-muted text-muted-foreground"
+                              : "border-border bg-muted/50 text-muted-foreground"
                           )}>
                             {String.fromCharCode(65+i)}
                           </div>
-                          <span className="text-sm md:text-xs font-bold text-foreground leading-snug">{opt}</span>
+                          <span className="text-sm font-bold text-foreground leading-tight">{opt}</span>
                         </Label>
                       </motion.div>
                     ))}
@@ -262,37 +260,38 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
           </div>
         </div>
 
-        <aside className="hidden lg:flex w-80 border-l bg-muted/5 flex-col overflow-hidden">
-          <div className="p-6 border-b bg-card/50">
+        {/* Sidebar Simulation Map (Hidden on mobile, specialized for Desktop) */}
+        <aside className="hidden lg:flex w-72 border-l bg-muted/5 flex-col overflow-hidden">
+          <div className="p-5 border-b bg-card/50">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-xs font-black uppercase tracking-widest text-foreground">Simulation Map</h3>
-              <LayoutGrid className="w-4 h-4 text-muted-foreground" />
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground">Simulation Map</h3>
+              <LayoutGrid className="w-3.5 h-3.5 text-muted-foreground" />
             </div>
-            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{questions.length} Items Total</p>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{questions.length} Total Items</p>
           </div>
           
           <ScrollArea className="flex-1">
-            <div className="p-6 space-y-8">
+            <div className="p-5 space-y-6">
               {groupedPhases.map((phase, pIdx) => (
-                <div key={pIdx} className="space-y-4">
-                  <div className="flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-sm py-1.5 z-10 border-b border-border/50 px-1">
+                <div key={pIdx} className="space-y-3">
+                  <div className="flex items-center justify-between sticky top-0 bg-background/90 backdrop-blur-sm py-1 z-10 border-b border-border/50">
                     <div className="flex items-center gap-2">
                       <div className={cn(
-                        "w-2 h-2 rounded-full",
+                        "w-1.5 h-1.5 rounded-full",
                         currentPhaseIdx === pIdx ? "bg-primary animate-pulse" : currentPhaseIdx > pIdx ? "bg-emerald-500" : "bg-muted"
                       )} />
                       <span className={cn(
-                        "text-[10px] font-black uppercase tracking-widest",
+                        "text-[9px] font-black uppercase tracking-widest truncate max-w-[120px]",
                         currentPhaseIdx === pIdx ? "text-foreground" : "text-muted-foreground"
                       )}>
                         {phase.subject}
                       </span>
                     </div>
-                    <span className="text-[9px] font-black text-muted-foreground">
+                    <span className="text-[8px] font-black text-muted-foreground">
                       {getPhaseAnsweredCount(pIdx)}/{phase.items.length}
                     </span>
                   </div>
-                  <div className="grid grid-cols-6 gap-1.5">
+                  <div className="grid grid-cols-5 gap-1.5">
                     {phase.items.map((q, i) => (
                       <motion.button 
                         key={q.id} 
@@ -303,13 +302,13 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                           setCurrentInPhaseIdx(i);
                         }}
                         className={cn(
-                          "aspect-square rounded-lg text-[9px] font-black border transition-all flex items-center justify-center",
+                          "aspect-square rounded-lg text-[8px] font-black border transition-all flex items-center justify-center",
                           currentPhaseIdx === pIdx && currentInPhaseIdx === i 
                             ? "border-primary bg-primary text-primary-foreground shadow-md z-10" 
                             : answers[q.id] 
-                              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600" 
+                              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600" 
                               : "border-border text-muted-foreground hover:bg-muted/50",
-                          flags[q.id] && ! (currentPhaseIdx === pIdx && currentInPhaseIdx === i) && "border-orange-500/50 bg-orange-500/10 text-orange-600"
+                          flags[q.id] && ! (currentPhaseIdx === pIdx && currentInPhaseIdx === i) && "border-orange-500/40 bg-orange-500/5 text-orange-600"
                         )}
                       >
                         {i + 1}
@@ -321,73 +320,74 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
             </div>
           </ScrollArea>
 
-          <div className="p-4 border-t bg-card/50 text-[9px] font-bold text-muted-foreground grid grid-cols-2 gap-2">
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Answered</div>
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-primary" /> Current</div>
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-orange-500" /> Flagged</div>
-            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-border" /> Remaining</div>
+          <div className="p-4 border-t bg-card/50 text-[8px] font-black uppercase tracking-widest text-muted-foreground grid grid-cols-2 gap-2">
+            <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Answered</div>
+            <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-primary" /> Current</div>
+            <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-orange-500" /> Flagged</div>
+            <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-border" /> Remaining</div>
           </div>
         </aside>
       </main>
 
-      <footer className="h-20 shrink-0 border-t bg-card/80 backdrop-blur-xl flex items-center justify-between px-6 pb-safe-area shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50">
+      {/* Android-Native Bottom Navigation Bar */}
+      <footer className="h-16 shrink-0 border-t bg-card/90 backdrop-blur-xl flex items-center justify-between px-6 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50">
         <Button 
-          variant="outline" 
+          variant="ghost" 
           onClick={handleBack} 
           disabled={currentPhaseIdx === 0 && currentInPhaseIdx === 0}
-          className="rounded-xl px-6 h-12 font-black text-xs border-border hover:bg-muted/50 active:scale-95 transition-all"
+          className="rounded-xl px-4 h-10 font-black text-[10px] uppercase tracking-wider hover:bg-muted/50 transition-all"
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
           Back
         </Button>
 
-        <div className="text-center md:hidden">
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Item</p>
-          <p className="text-sm font-black text-foreground">{overallCurrentIdx + 1} / {questions.length}</p>
+        <div className="text-center">
+          <p className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground leading-none mb-1">Item</p>
+          <p className="text-xs font-black text-foreground">{overallCurrentIdx + 1} / {questions.length}</p>
         </div>
 
         <Button 
           variant="default" 
           onClick={handleNext} 
-          className="rounded-xl px-8 h-12 font-black text-xs shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+          className="rounded-xl px-6 h-10 font-black text-[10px] uppercase tracking-wider shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
         >
           {currentPhaseIdx === groupedPhases.length - 1 && currentInPhaseIdx === currentPhase.items.length - 1 ? 'Finish' : 'Next'}
           <ChevronRight className="w-4 h-4 ml-1" />
         </Button>
       </footer>
 
-      {/* Phase Transition / Break Screen */}
+      {/* Phase Transition / Break Screen (MD3 Style) */}
       <Dialog open={showBreakScreen} onOpenChange={setShowBreakScreen}>
-        <DialogContent className="rounded-[3rem] bg-card border-none shadow-2xl p-10 max-w-md text-center z-[1001] overflow-hidden">
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-[340px] text-center z-[1001] overflow-hidden">
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
+            initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="space-y-6"
           >
             <DialogHeader>
-              <div className="w-20 h-20 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
-                <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+              <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
               </div>
-              <DialogTitle className="text-3xl font-black tracking-tight mb-2">Phase Complete!</DialogTitle>
-              <DialogDescription className="text-muted-foreground font-medium text-lg leading-relaxed">
-                You have finished the <span className="text-foreground font-black">{currentPhase.subject}</span> track.
+              <DialogTitle className="text-xl font-black tracking-tight mb-1">Phase Complete!</DialogTitle>
+              <DialogDescription className="text-muted-foreground font-medium text-xs">
+                Professional track <span className="text-foreground font-black">{currentPhase.subject}</span> finalized.
               </DialogDescription>
             </DialogHeader>
             
-            <div className="bg-muted/30 p-6 rounded-3xl border border-border/50 my-8 space-y-4">
+            <div className="bg-muted/30 p-4 rounded-2xl border border-border/50 my-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Next Phase</span>
-                <Badge className="font-black bg-primary/20 text-primary border-none">
-                  {groupedPhases[currentPhaseIdx + 1]?.subject || 'Finalizing'}
+                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Next Up</span>
+                <Badge className="font-black text-[9px] uppercase bg-primary/20 text-primary border-none">
+                  {groupedPhases[currentPhaseIdx + 1]?.subject || 'Calibration'}
                 </Badge>
               </div>
-              <div className="flex items-center gap-3 text-sm font-medium text-foreground text-left">
-                <Coffee className="w-5 h-5 text-orange-500 shrink-0" />
-                <p>Research suggests a short break improves analytical focus by 15%.</p>
+              <div className="flex items-center gap-2 text-[10px] font-bold text-foreground text-left leading-snug">
+                <Coffee className="w-4 h-4 text-orange-500 shrink-0" />
+                <p>A 2-minute break restores analytical calibration by 15%.</p>
               </div>
             </div>
 
-            <div className="grid gap-3">
+            <div className="grid gap-2">
               <Button 
                 onClick={() => {
                   setShowBreakScreen(false);
@@ -396,28 +396,28 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   setCurrentPhaseIdx(prev => prev + 1);
                   setCurrentInPhaseIdx(0);
                 }}
-                className="h-16 rounded-2xl font-black text-lg gap-3 shadow-2xl shadow-primary/30 active:scale-[0.98] transition-all"
+                className="h-14 rounded-2xl font-black text-sm uppercase tracking-widest gap-2 shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
               >
-                <Play className="w-5 h-5 fill-current" />
-                Continue to Next Phase
+                <Play className="w-4 h-4 fill-current" />
+                Next Phase
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => setIsResting(true)}
                 className={cn(
-                  "h-14 rounded-2xl font-bold border-2 transition-all",
+                  "h-12 rounded-xl font-bold text-[10px] uppercase tracking-wider border-2 transition-all",
                   isResting ? "text-orange-600 bg-orange-50 border-orange-200" : "text-muted-foreground hover:bg-muted/50"
                 )}
               >
                 {isResting ? (
                   <>
-                    <Timer className="w-4 h-4 mr-2 animate-pulse" />
+                    <Timer className="w-3.5 h-3.5 mr-2 animate-pulse" />
                     Resting: {formatRestTime(restSeconds)}
                   </>
                 ) : (
                   <>
-                    <Timer className="w-4 h-4 mr-2" />
-                    Rest for a Moment
+                    <Timer className="w-3.5 h-3.5 mr-2" />
+                    Take a Break
                   </>
                 )}
               </Button>
@@ -426,34 +426,34 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </DialogContent>
       </Dialog>
 
-      {/* Submission Confirmation */}
+      {/* Submission Confirmation (Compact Dialog) */}
       <Dialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm z-[1001]">
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-[320px] z-[1001]">
           <motion.div
-            initial={{ y: 20, opacity: 0 }}
+            initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             className="space-y-4"
           >
             <DialogHeader className="text-center">
-              <div className="w-16 h-16 bg-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle className="w-8 h-8 text-orange-500" />
+              <div className="w-14 h-14 bg-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-7 h-7 text-orange-500" />
               </div>
-              <DialogTitle className="text-2xl font-black">Finalize Simulation?</DialogTitle>
-              <DialogDescription className="text-muted-foreground font-medium">
-                You have answered <span className="text-foreground font-black">{answeredCount} out of {questions.length}</span> items. Once submitted, your answers will be calibrated by AI.
+              <DialogTitle className="text-xl font-black">Finish Now?</DialogTitle>
+              <DialogDescription className="text-muted-foreground font-medium text-xs">
+                You've completed <span className="text-foreground font-black">{answeredCount}/{questions.length}</span> items. Submit for professional calibration?
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-2 pt-4">
+            <div className="grid gap-2 pt-2">
               <Button 
                 onClick={handleSubmit} 
-                className="h-12 rounded-xl font-bold shadow-lg shadow-primary/30 active:scale-95 transition-all"
+                className="h-12 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-primary/20 active:scale-95 transition-all"
               >
                 Submit Simulation
               </Button>
               <Button 
                 variant="ghost" 
                 onClick={() => setShowSubmitConfirm(false)} 
-                className="h-12 rounded-xl font-bold text-muted-foreground"
+                className="h-10 rounded-xl font-bold text-[10px] uppercase tracking-widest text-muted-foreground"
               >
                 Review Items
               </Button>
