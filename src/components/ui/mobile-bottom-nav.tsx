@@ -128,7 +128,6 @@ export function MobileBottomNav({ currentView, onViewChange, onStartExam, isSign
     return pathname.includes(item.id);
   };
 
-  // Always show navbar
   return (
     <div 
       className={cn(
@@ -139,22 +138,12 @@ export function MobileBottomNav({ currentView, onViewChange, onStartExam, isSign
         paddingBottom: 'env(safe-area-inset-bottom, 20px)',
       }}
     >
-      {/* Navigation container - increased height to accommodate FAB */}
+      {/* Navigation container */}
       <div 
-        className={cn(
-          "relative mx-2 mb-2 rounded-2xl",
-          isDark ? "bg-slate-900" : "bg-white"
-        )}
-        style={{ 
-          boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
-          height: '80px'
-        }}
+        className="relative mx-2 mb-2 rounded-2xl bg-card shadow-2xl transition-colors duration-300"
+        style={{ height: '80px' }}
       >
-        {/* Navigation items */}
-        <div 
-          className="relative grid grid-cols-5 items-center h-full"
-        >
-          {/* Left side nav items */}
+        <div className="relative grid grid-cols-5 items-center h-full">
           {leftNavItems.map((item) => {
             const active = isActive(item);
             return (
@@ -163,11 +152,7 @@ export function MobileBottomNav({ currentView, onViewChange, onStartExam, isSign
                 onClick={() => handleNavClick(item)}
                 className={cn(
                   'flex flex-col items-center justify-center gap-0.5 relative h-full transition-colors',
-                  active 
-                    ? 'text-primary' 
-                    : isDark
-                      ? 'text-slate-400'
-                      : 'text-slate-400'
+                  active ? 'text-primary' : 'text-muted-foreground'
                 )}
               >
                 {item.icon}
@@ -179,59 +164,36 @@ export function MobileBottomNav({ currentView, onViewChange, onStartExam, isSign
             );
           })}
 
-          {/* FAB - Center Button - Refactored Design with full visibility */}
           <div className="flex items-start justify-center" style={{ paddingTop: '8px' }}>
             <button
               onClick={handleStartExam}
               className="relative group"
-              style={{ 
-                width: '56px',
-                height: '56px',
-              }}
+              style={{ width: '56px', height: '56px' }}
             >
-              {/* Outer glow ring */}
               <div 
                 className="absolute inset-0 rounded-full opacity-50 group-hover:opacity-70 transition-opacity"
                 style={{
-                  background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                  background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%)',
                   filter: 'blur(10px)',
                 }}
               />
-              
-              {/* Main FAB circle */}
               <div 
                 className="w-full h-full rounded-full flex items-center justify-center transition-transform duration-200 group-hover:scale-105 group-active:scale-95"
                 style={{ 
-                  background: 'linear-gradient(180deg, #22C55E 0%, #16A34A 100%)',
-                  boxShadow: '0 6px 20px rgba(34, 197, 94, 0.5), inset 0 2px 0 rgba(255,255,255,0.3)',
+                  background: 'linear-gradient(180deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%)',
+                  boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
                 }}
               >
-                {/* Play icon - properly centered */}
-                <svg 
-                  className="w-6 h-6 text-white" 
-                  fill="currentColor" 
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-6 h-6 text-primary-foreground" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
               </div>
-              
-              {/* Highlight reflection */}
-              <div 
-                className="absolute top-1 left-3 right-6 h-2.5 rounded-full opacity-40"
-                style={{
-                  background: 'linear-gradient(90deg, rgba(255,255,255,0.9), transparent)',
-                }}
-              />
-              
-              {/* Label */}
-              <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-black text-white whitespace-nowrap drop-shadow-md">
-                PRACTICE
+              <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-black text-foreground whitespace-nowrap uppercase">
+                Practice
               </span>
             </button>
           </div>
 
-          {/* Right side nav items */}
           {rightNavItems.map((item) => {
             const active = isActive(item);
             return (
@@ -240,20 +202,13 @@ export function MobileBottomNav({ currentView, onViewChange, onStartExam, isSign
                 onClick={() => handleNavClick(item)}
                 className={cn(
                   'flex flex-col items-center justify-center gap-0.5 relative h-full transition-colors',
-                  active 
-                    ? 'text-primary' 
-                    : isDark
-                      ? 'text-slate-400'
-                      : 'text-slate-400'
+                  active ? 'text-primary' : 'text-muted-foreground'
                 )}
               >
                 {item.icon}
                 <span className="text-[10px] font-medium">{item.label}</span>
                 {active && (
                   <div className="absolute top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-primary rounded-full" />
-                )}
-                {item.id === 'community' && (
-                  <div className="absolute top-2 right-1/3 w-2 h-2 bg-red-500 rounded-full" />
                 )}
               </button>
             );
@@ -264,25 +219,14 @@ export function MobileBottomNav({ currentView, onViewChange, onStartExam, isSign
   );
 }
 
-// Dark mode toggle component - now uses global ThemeContext
 export function DarkModeToggle() {
   const { isDark, toggleDarkMode } = useTheme();
-  
   return (
     <button
       onClick={toggleDarkMode}
-      className={cn(
-        "absolute top-4 right-4 z-50 p-2 rounded-full transition-all duration-200",
-        isDark 
-          ? "bg-slate-700 hover:bg-slate-600 text-yellow-300" 
-          : "bg-slate-200 hover:bg-slate-300 text-slate-600"
-      )}
+      className="absolute top-4 right-4 z-50 p-2 rounded-full bg-muted hover:bg-accent transition-colors"
     >
-      {isDark ? (
-        <Moon className="w-4 h-4" />
-      ) : (
-        <Sun className="w-4 h-4" />
-      )}
+      {isDark ? <Moon className="w-4 h-4 text-yellow-300" /> : <Sun className="w-4 h-4 text-slate-600" />}
     </button>
   );
 }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -31,10 +30,7 @@ export function ReferralSystem() {
     setIsCopying(true);
     if (referralCode) {
       navigator.clipboard.writeText(referralCode);
-      toast({
-        title: "Code Copied",
-        description: "Share this code with your colleagues!",
-      });
+      toast({ title: "Code Copied", description: "Share this code with your colleagues!" });
     }
     setTimeout(() => setIsCopying(false), 2000);
   };
@@ -48,79 +44,62 @@ export function ReferralSystem() {
   if (!user) return null;
 
   return (
-    <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden">
-      <CardHeader className="bg-slate-50/50 p-8 border-b">
+    <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden transition-colors duration-300">
+      <CardHeader className="bg-muted/30 p-8 border-b">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center">
-            <Users className="w-8 h-8 text-emerald-600" />
+          <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center">
+            <Users className="w-8 h-8 text-accent-foreground" />
           </div>
           <div className="space-y-1">
             <CardTitle className="text-2xl font-black tracking-tight">Referral Dashboard</CardTitle>
-            <CardDescription>Invite colleagues to LET's Prep and earn professional AI credits together.</CardDescription>
+            <CardDescription className="text-muted-foreground">Invite colleagues and earn AI credits together.</CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent className="p-8 space-y-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-4">
-            <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Your Unique Invite Code</Label>
+            <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">Your Unique Invite Code</Label>
             <div className="flex gap-2">
-              <div className="flex-1 bg-slate-50 border-2 border-dashed rounded-2xl h-16 flex items-center justify-center font-black text-2xl tracking-widest text-slate-800">
+              <div className="flex-1 bg-muted/20 border-2 border-dashed rounded-2xl h-16 flex items-center justify-center font-black text-2xl tracking-widest text-foreground">
                 {referralCode || "------"}
               </div>
-              <Button onClick={handleCopyCode} disabled={isCopying} variant="outline" className="h-16 w-16 rounded-2xl border-2">
+              <Button onClick={handleCopyCode} disabled={isCopying} variant="outline" className="h-16 w-16 rounded-2xl border-2 border-border bg-card">
                 {isCopying ? <Loader2 className="w-6 h-6 animate-spin text-primary" /> : <Copy className="w-6 h-6" />}
               </Button>
             </div>
-            <p className="text-[10px] font-medium text-slate-500 italic">
-              Referrer gets +10 Credits. New user gets +5 Credits after their first mock test.
-            </p>
+            <p className="text-[10px] font-medium text-muted-foreground italic">Referrer gets +10 Credits. New user gets +5 Credits after first simulation.</p>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-emerald-50/50 rounded-3xl p-6 border border-emerald-100 flex flex-col items-center justify-center text-center space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Total Referrals</span>
-              <span className="text-3xl font-black text-emerald-700">{user?.referralCount || 0}</span>
+            <div className="bg-accent/10 rounded-3xl p-6 border border-accent/20 flex flex-col items-center justify-center text-center space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-accent-foreground">Total Referrals</span>
+              <span className="text-3xl font-black text-foreground">{user?.referralCount || 0}</span>
             </div>
-            <div className="bg-primary/5 rounded-3xl p-6 border border-primary/10 flex flex-col items-center justify-center text-center space-y-2">
+            <div className="bg-primary/10 rounded-3xl p-6 border border-primary/20 flex flex-col items-center justify-center text-center space-y-2">
               <span className="text-[10px] font-black uppercase tracking-widest text-primary">Credits Earned</span>
               <span className="text-3xl font-black text-primary">{user?.referralCreditsEarned || 0}</span>
             </div>
           </div>
         </div>
-
         <div className="space-y-6">
-          <div className="flex items-center gap-2">
-            <Star className="w-5 h-5 text-yellow-500" />
-            <h4 className="text-sm font-black uppercase tracking-widest text-slate-800">Growth Milestones</h4>
-          </div>
+          <div className="flex items-center gap-2"><Star className="w-5 h-5 text-yellow-500" /><h4 className="text-sm font-black uppercase tracking-widest text-foreground">Growth Milestones</h4></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {milestones.map((m, idx) => {
               const isAchieved = (user?.referralCount || 0) >= m.count;
               return (
                 <div key={idx} className={cn(
                   "p-6 rounded-2xl border-2 flex items-center gap-4 transition-all",
-                  isAchieved ? "bg-emerald-50 border-emerald-200" : "bg-white border-slate-100 grayscale opacity-60"
+                  isAchieved ? "bg-accent/10 border-accent/20" : "bg-muted/10 border-border opacity-60"
                 )}>
-                  <div className="w-10 h-10 rounded-xl bg-white shadow-sm border flex items-center justify-center shrink-0">
-                    {m.icon}
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 leading-none mb-1">{m.count} Referrals</p>
-                    <p className="text-sm font-black text-slate-800">{m.reward}</p>
-                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-card shadow-sm border flex items-center justify-center shrink-0">{m.icon}</div>
+                  <div><p className="text-[10px] font-black uppercase text-muted-foreground leading-none mb-1">{m.count} Referrals</p><p className="text-sm font-black text-foreground">{m.reward}</p></div>
                   {isAchieved && <CheckCircle2 className="w-5 h-5 text-emerald-500 ml-auto" />}
                 </div>
               );
             })}
           </div>
         </div>
-
-        <div className="pt-4 flex justify-center">
-            <Button variant="secondary" className="gap-2 font-black h-12 px-10 rounded-xl">
-                <Share2 className="w-4 h-4" /> Share with Friends
-            </Button>
-        </div>
+        <div className="pt-4 flex justify-center"><Button variant="secondary" className="gap-2 font-black h-12 px-10 rounded-xl"><Share2 className="w-4 h-4" /> Share with Friends</Button></div>
       </CardContent>
     </Card>
   );

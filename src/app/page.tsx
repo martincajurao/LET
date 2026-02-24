@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -11,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle, 
   DialogDescription,
-  DialogFooter 
 } from "@/components/ui/dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { 
@@ -20,19 +19,14 @@ import {
   Languages,
   ChevronRight,
   Clock,
-  CheckCircle2,
-  ShieldCheck,
   Zap,
   Target,
-  BarChart3,
-  BookOpen,
   Trophy,
   Flame,
   Star,
   Users,
-  LogOut,
   Loader2,
-  LayoutDashboard
+  BookOpen
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
@@ -44,7 +38,6 @@ import { fetchQuestionsFromFirestore } from "@/lib/db-seed";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import Link from 'next/link';
 import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
 import { ReferralSystem } from '@/components/ui/referral-system';
 import { Leaderboard } from '@/components/ui/leaderboard';
@@ -96,7 +89,7 @@ function sanitizeData(data: any): any {
 }
 
 export default function LetsPrepApp() {
-  const { user, loading: authLoading, logout, updateProfile, loginWithGoogle, loginWithFacebook, loginAnonymously } = useUser();
+  const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook, loginAnonymously } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   
@@ -134,15 +127,6 @@ export default function LetsPrepApp() {
     });
     return () => unsub();
   }, [firestore]);
-
-  useEffect(() => {
-    const handleOpenPractice = () => {
-      startExam('all');
-    };
-    
-    window.addEventListener('openPracticeModal', handleOpenPractice);
-    return () => window.removeEventListener('openPracticeModal', handleOpenPractice);
-  }, [user, firestore, loading, limits]);
 
   const startExam = async (category: string | 'all' = 'all') => {
     if (loading) return;
@@ -283,8 +267,8 @@ export default function LetsPrepApp() {
 
   if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
-return (
-    <div className="min-h-screen bg-background text-foreground font-body pb-24">
+  return (
+    <div className="min-h-screen bg-background text-foreground font-body pb-24 transition-colors duration-300">
       <Toaster />
       <Dialog open={authIssue} onOpenChange={setAuthIssue}>
         <DialogContent className="rounded-[2rem] bg-card">
@@ -312,7 +296,7 @@ return (
         <div className="max-w-7xl mx-auto p-4 md:p-8"><ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} aiSummary={aiSummary} onRestart={() => setState('dashboard')} /></div>
       ) : state === 'registration' ? (
         <div className="min-h-[60vh] flex items-center justify-center p-4">
-          <Card className="max-w-md w-full rounded-[2.5rem] bg-card">
+          <Card className="max-w-md w-full rounded-[2.5rem] bg-card border-none shadow-xl">
             <CardHeader className="text-center pt-10"><CardTitle className="text-2xl font-black">Choose Your Majorship</CardTitle></CardHeader>
             <CardContent className="pb-12 pt-4 px-10">
               <Select onValueChange={(val) => { updateProfile({ majorship: val }); setState('dashboard'); }}>
@@ -326,50 +310,24 @@ return (
         <>
           <div className="max-w-7xl mx-auto px-3 md:px-4 py-6 md:py-8 space-y-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              <Card className="border-none shadow-md rounded-2xl bg-card overflow-hidden">
-                <CardContent className="p-3 md:p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
-                    <Users className="w-5 h-5 md:w-6 md:h-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-lg md:text-xl font-black text-foreground">2.5K+</p>
-                    <p className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Active Learners</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-none shadow-md rounded-2xl bg-card overflow-hidden">
-                <CardContent className="p-3 md:p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-secondary/10 rounded-xl flex items-center justify-center shrink-0">
-                    <BrainCircuit className="w-5 h-5 md:w-6 md:h-6 text-secondary" />
-                  </div>
-                  <div>
-                    <p className="text-lg md:text-xl font-black text-foreground">50K+</p>
-                    <p className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Questions Solved</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-none shadow-md rounded-2xl bg-card overflow-hidden">
-                <CardContent className="p-3 md:p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-yellow-500/10 rounded-xl flex items-center justify-center shrink-0">
-                    <Trophy className="w-5 h-5 md:w-6 md:h-6 text-yellow-500" />
-                  </div>
-                  <div>
-                    <p className="text-lg md:text-xl font-black text-foreground">85%</p>
-                    <p className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Avg. Score</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-none shadow-md rounded-2xl bg-card overflow-hidden">
-                <CardContent className="p-3 md:p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-orange-500/10 rounded-xl flex items-center justify-center shrink-0">
-                    <Flame className="w-5 h-5 md:w-6 md:h-6 text-orange-500" />
-                  </div>
-                  <div>
-                    <p className="text-lg md:text-xl font-black text-foreground">30%</p>
-                    <p className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Pass Rate</p>
-                  </div>
-                </CardContent>
-              </Card>
+              {[
+                { icon: <Users className="w-5 md:w-6 h-5 md:h-6 text-primary" />, label: 'Active Learners', value: '2.5K+', color: 'bg-primary/10' },
+                { icon: <BrainCircuit className="w-5 md:w-6 h-5 md:h-6 text-secondary" />, label: 'Questions Solved', value: '50K+', color: 'bg-secondary/10' },
+                { icon: <Trophy className="w-5 md:w-6 h-5 md:h-6 text-yellow-500" />, label: 'Avg. Score', value: '85%', color: 'bg-yellow-500/10' },
+                { icon: <Flame className="w-5 md:w-6 h-5 md:h-6 text-orange-500" />, label: 'Pass Rate', value: '30%', color: 'bg-orange-500/10' }
+              ].map((stat, i) => (
+                <Card key={i} className="border-none shadow-md rounded-2xl bg-card overflow-hidden">
+                  <CardContent className="p-3 md:p-4 flex items-center gap-3">
+                    <div className={`w-10 h-10 md:w-12 md:h-12 ${stat.color} rounded-xl flex items-center justify-center shrink-0`}>
+                      {stat.icon}
+                    </div>
+                    <div>
+                      <p className="text-lg md:text-xl font-black text-foreground">{stat.value}</p>
+                      <p className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{stat.label}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10">
@@ -377,7 +335,7 @@ return (
                 <CardHeader className="p-6 md:p-10 lg:p-12 space-y-4 md:space-y-6 lg:space-y-8 relative z-10">
                   <div className="flex flex-wrap items-center gap-2 md:gap-3">
                     <Badge variant="secondary" className="font-bold text-[9px] md:text-[10px] uppercase px-3 md:px-4 py-1 bg-primary/10 text-primary border-none">LET Board Simulation</Badge>
-                    <div className="flex items-center gap-1 text-orange-500 bg-orange-50 dark:bg-orange-950 px-2 md:px-3 py-1 rounded-full"><Flame className="w-3 h-3 fill-current" /><span className="text-[9px] md:text-[10px] font-bold uppercase">Adaptive</span></div>
+                    <div className="flex items-center gap-1 text-orange-500 bg-orange-500/10 px-2 md:px-3 py-1 rounded-full"><Flame className="w-3 h-3 fill-current" /><span className="text-[9px] md:text-[10px] font-bold uppercase">Adaptive</span></div>
                   </div>
                   <div className="space-y-3 md:space-y-4">
                     <h2 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] animate-fade-in-up">The <span className="text-gradient italic">Ultimate</span> <br /> Teacher Prep.</h2>
@@ -387,33 +345,31 @@ return (
                     <Zap className="w-5 md:w-6 h-5 md:h-6 fill-current" /> <span className="hidden sm:inline">Start Full Simulation</span><span className="sm:hidden">Start Now</span>
                   </Button>
                 </CardHeader>
-                <div className="absolute top-0 right-0 w-24 h-24 md:w-40 md:h-40 lg:w-48 lg:h-48 bg-gradient-to-br from-primary/5 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 md:translate-x-1/2 animate-float" />
-                <div className="absolute bottom-0 left-0 w-20 h-20 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-tr from-secondary/10 to-transparent rounded-full translate-y-1/2 -translate-x-1/3 md:-translate-x-1/2 animate-float delay-300" />
+                <div className="absolute top-0 right-0 w-24 h-24 md:w-40 md:h-40 lg:w-48 lg:h-48 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/3 md:translate-x-1/2 animate-float" />
+                <div className="absolute bottom-0 left-0 w-20 h-20 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-secondary/10 rounded-full translate-y-1/2 -translate-x-1/3 md:-translate-x-1/2 animate-float delay-300" />
               </Card>
 
-              <div className="lg:col-span-4 space-y-4 lg:space-y-0 lg:flex lg:flex-col lg:gap-4">
+              <div className="lg:col-span-4 space-y-4">
                 {!user ? (
-                  <Card className="border-none shadow-xl rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white overflow-hidden relative">
-                    <CardContent className="p-5 md:p-6 space-y-4 relative z-10">
-                      <div className="text-center space-y-2">
-                        <div className="w-16 h-16 mx-auto bg-white/10 rounded-2xl flex items-center justify-center mb-2">
-                          <GraduationCap className="w-8 h-8 text-primary" />
-                        </div>
-                        <p className="font-black text-xl md:text-2xl">LET Prep Pro</p>
-                        <p className="text-xs md:text-sm text-slate-400">Master your board exam with AI-powered simulations</p>
+                  <Card className="border-none shadow-xl rounded-2xl bg-card overflow-hidden relative border-2 border-primary/20">
+                    <CardContent className="p-5 md:p-6 space-y-4 relative z-10 text-center">
+                      <div className="w-16 h-16 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center mb-2">
+                        <GraduationCap className="w-8 h-8 text-primary" />
                       </div>
+                      <p className="font-black text-xl md:text-2xl">LET Prep Pro</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">Master your board exam with AI-powered simulations</p>
                       <div className="space-y-2 pt-2">
-                        <Button onClick={loginWithGoogle} className="w-full h-12 bg-white text-slate-900 hover:bg-slate-100 rounded-xl font-bold gap-2 shadow-lg">
+                        <Button onClick={loginWithGoogle} className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-bold gap-2">
                           <GoogleIcon /> Continue with Google
                         </Button>
-                        <Button onClick={loginWithFacebook} className="w-full h-12 bg-[#1877F2] hover:bg-[#1865C5] text-white rounded-xl font-bold gap-2 shadow-lg">
+                        <Button onClick={loginWithFacebook} variant="outline" className="w-full h-12 border-primary text-primary hover:bg-primary/5 rounded-xl font-bold gap-2">
                           <FacebookIcon /> Sign in with Facebook
                         </Button>
                       </div>
                     </CardContent>
                   </Card>
                 ) : (
-                  <Card className="border-none shadow-lg rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground overflow-hidden">
+                  <Card className="border-none shadow-lg rounded-2xl bg-primary text-primary-foreground overflow-hidden">
                     <CardContent className="p-4 md:p-6">
                       <div className="flex items-center justify-between mb-3 md:mb-4">
                         <div className="flex items-center gap-2 md:gap-3">
@@ -448,9 +404,7 @@ return (
                     </CardContent>
                   </Card>
                 )}
-                <Card className="border-none shadow-lg rounded-2xl bg-card overflow-hidden">
-                  <Leaderboard />
-                </Card>
+                <Leaderboard />
               </div>
 
               <div className="lg:col-span-12 space-y-8 md:space-y-10">

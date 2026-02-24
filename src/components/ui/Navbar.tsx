@@ -64,7 +64,7 @@ export function Navbar() {
   };
 
   return (
-<nav className="flex items-center justify-between px-6 py-4 bg-card/80 backdrop-blur-md border-b sticky top-0 z-[100] shadow-sm">
+<nav className="flex items-center justify-between px-6 py-4 bg-card/80 backdrop-blur-md border-b sticky top-0 z-[100] shadow-sm transition-colors duration-300">
       <div className="flex items-center gap-2">
         <Link href="/" className="text-xl font-black tracking-tighter text-foreground flex items-center gap-2">
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
@@ -104,7 +104,7 @@ export function Navbar() {
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-2 bg-muted px-3 py-2 rounded-2xl border border-border cursor-pointer hover:bg-accent transition-colors" onClick={() => setShowAdModal(true)}>
+            <div className="flex items-center gap-2 bg-muted px-3 py-2 rounded-2xl border border-border cursor-pointer hover:bg-accent/10 transition-colors" onClick={() => setShowAdModal(true)}>
               <Coins className="w-4 h-4 text-yellow-500 fill-current" />
               <div className="flex flex-col">
                 <span className="text-sm font-black text-foreground leading-none">{user.credits ?? 0}</span>
@@ -113,7 +113,7 @@ export function Navbar() {
             </div>
 
             {!user.isPro && (
-              <Button size="sm" variant="outline" className="hidden md:flex border-primary text-primary font-black rounded-xl gap-2 hover:bg-primary/5" onClick={() => setShowProModal(true)}>
+              <Button size="sm" variant="outline" className="hidden md:flex border-primary text-primary font-black rounded-xl gap-2 hover:bg-primary/10" onClick={() => setShowProModal(true)}>
                 <Zap className="w-3 h-3 fill-current" /> GO PRO
               </Button>
             )}
@@ -142,13 +142,13 @@ export function Navbar() {
               <DropdownMenuContent className="w-56 mt-2 rounded-2xl border bg-card shadow-2xl" align="end">
                 <DropdownMenuLabel className="font-black text-xs uppercase tracking-widest text-muted-foreground p-4 pb-2">Account</DropdownMenuLabel>
                 <DropdownMenuItem asChild>
-                  <Link href="/profile" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl"><User className="w-4 h-4 text-primary" /> Profile</Link>
+                  <Link href="/profile" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted"><User className="w-4 h-4 text-primary" /> Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/profile?tab=history" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl"><History className="w-4 h-4 text-secondary" /> History</Link>
+                  <Link href="/profile?tab=history" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted"><History className="w-4 h-4 text-secondary" /> History</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="mx-2" />
-                <DropdownMenuItem onClick={logout} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl text-destructive hover:text-destructive"><LogOut className="w-4 h-4" /> Sign Out</DropdownMenuItem>
+                <DropdownMenuItem onClick={logout} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl text-destructive hover:bg-destructive/10"><LogOut className="w-4 h-4" /> Sign Out</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </>
@@ -156,7 +156,7 @@ export function Navbar() {
       </div>
 
       <Dialog open={showAdModal} onOpenChange={setShowAdModal}>
-        <DialogContent className="rounded-[2rem] bg-card">
+        <DialogContent className="rounded-[2rem] bg-card border-none shadow-2xl">
           <DialogHeader>
             <DialogTitle className="font-black">Earn AI Credits</DialogTitle>
             <DialogDescription>Watch a short promotional video to earn +3 credits for AI explanations.</DialogDescription>
@@ -175,7 +175,7 @@ export function Navbar() {
       </Dialog>
 
       <Dialog open={showProModal} onOpenChange={setShowProModal}>
-        <DialogContent className="rounded-[2.5rem] max-w-md bg-card">
+        <DialogContent className="rounded-[2.5rem] max-w-md bg-card border-none shadow-2xl">
           <DialogHeader className="pt-8">
             <DialogTitle className="text-center text-3xl font-black">Go Professional</DialogTitle>
             <DialogDescription className="text-center">Unlock the full power of AI for your board preparation.</DialogDescription>
