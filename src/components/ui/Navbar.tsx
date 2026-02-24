@@ -52,15 +52,19 @@ import { doc, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
-import { getLevelData } from '@/lib/xp-system';
+import { getLevelData, XP_REWARDS } from '@/lib/xp-system';
+import { NotificationsModal } from './notifications-modal';
+import { useRouter } from 'next/navigation';
 
 export function Navbar() {
   const { user, logout, loginWithGoogle, loginWithFacebook, bypassLogin } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const router = useRouter();
   const { isDark, toggleDarkMode } = useTheme();
   const [showAdModal, setShowAdModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showAlertsModal, setShowAlertsModal] = useState(false);
   const [watchingAd, setWatchingAd] = useState(false);
 
   const levelData = user ? getLevelData(user.xp || 0) : null;
@@ -72,11 +76,13 @@ export function Navbar() {
       try {
         const userRef = doc(firestore, 'users', user.uid);
         await updateDoc(userRef, {
-          credits: increment(5),
-          dailyAdCount: increment(1)
+          credits: increment(2),
+          xp: increment(XP_REWARDS.AD_WATCH_XP),
+          lastAdXpTimestamp: Date.now()
         });
-        toast({ title: "Reward Granted", description: "+5 AI Credits added to your vault." });
+        toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +2 Credits added.` });
         setShowAdModal(false);
+        setShowAlertsModal(false);
       } catch (e) {
         toast({ variant: "destructive", title: "Sync Failed", description: "Could not grant reward." });
       } finally {
@@ -89,7 +95,7 @@ export function Navbar() {
     { label: 'Home', icon: <Home className="w-4 h-4" />, href: '/' },
     { label: 'Daily Tasks', icon: <ListTodo className="w-4 h-4" />, href: '/tasks' },
     { label: 'Global Arena', icon: <Trophy className="w-4 h-4" />, href: '/events' },
-    { label: 'Notifications', icon: <Bell className="w-4 h-4" />, href: '#' },
+    { label: 'Notifications', icon: <Bell className="w-4 h-4" />, href: '#', onClick: () => setShowAlertsModal(true) },
   ];
 
   return (
@@ -138,10 +144,17 @@ export function Navbar() {
                     <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground px-3 py-2">Quick Navigation</DropdownMenuLabel>
                     {navItems.map((item) => (
                       <DropdownMenuItem key={item.label} asChild>
-                        <Link href={item.href} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
-                          <div className="text-primary">{item.icon}</div>
-                          {item.label}
-                        </Link>
+                        {item.onClick ? (
+                          <div onClick={item.onClick} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
+                            <div className="text-primary">{item.icon}</div>
+                            {item.label}
+                          </div>
+                        ) : (
+                          <Link href={item.href} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
+                            <div className="text-primary">{item.icon}</div>
+                            {item.label}
+                          </Link>
+                        )}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
@@ -289,6 +302,14 @@ export function Navbar() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <NotificationsModal 
+        isOpen={showAlertsModal}
+        onClose={() => setShowAlertsModal(false)}
+        onStartQuickFire={() => router.push('/?start=quickfire')}
+        onWatchAd={handleWatchAd}
+        isWatchingAd={watchingAd}
+      />
     </>
   );
 }

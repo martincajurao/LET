@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -10,11 +9,15 @@ import {
   Trophy, 
   Zap,
   Target,
-  Bell
+  Bell,
+  Loader2
 } from 'lucide-react';
 import { PracticeModal } from './practice-modal';
-import { useFirestore } from '@/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { NotificationsModal } from './notifications-modal';
+import { useFirestore, useUser } from '@/firebase';
+import { doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { XP_REWARDS } from '@/lib/xp-system';
 
 interface NavItem {
   id: string;
@@ -36,11 +39,15 @@ function NavContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
   
   const [isPracticeOpen, setIsPracticeOpen] = useState(false);
+  const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
+  const [watchingAd, setWatchingAd] = useState(false);
 
   useEffect(() => {
     if (!firestore) return;
@@ -76,14 +83,39 @@ function NavContent() {
       setIsPracticeOpen(true);
       return;
     }
+    if (item.id === 'notifications') {
+      setIsAlertsOpen(true);
+      return;
+    }
     router.push(item.href);
+  };
+
+  const handleWatchAd = async () => {
+    if (!user || !firestore) return;
+    setWatchingAd(true);
+    setTimeout(async () => {
+      try {
+        const userRef = doc(firestore, 'users', user.uid);
+        await updateDoc(userRef, {
+          credits: increment(2),
+          xp: increment(XP_REWARDS.AD_WATCH_XP),
+          lastAdXpTimestamp: Date.now()
+        });
+        toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +2 Credits added.` });
+        setIsAlertsOpen(false);
+      } catch (e) {
+        toast({ variant: "destructive", title: "Sync Failed", description: "Could not grant reward." });
+      } finally {
+        setWatchingAd(false);
+      }
+    }, 3000);
   };
 
   const isActive = (item: NavItem) => {
     if (item.id === 'home' && pathname === '/') return true;
     if (item.id === 'tasks' && pathname === '/tasks') return true;
     if (item.id === 'events' && pathname === '/events') return true;
-    if (item.id === 'notifications' && pathname === '/notifications') return true;
+    if (item.id === 'notifications' && isAlertsOpen) return true;
     return false;
   };
 
@@ -145,6 +177,14 @@ function NavContent() {
         onClose={() => setIsPracticeOpen(false)} 
         onStartExam={(cat) => router.push(`/?start=${cat}`)}
         limits={limits}
+      />
+
+      <NotificationsModal 
+        isOpen={isAlertsOpen}
+        onClose={() => setIsAlertsOpen(false)}
+        onStartQuickFire={() => router.push('/?start=quickfire')}
+        onWatchAd={handleWatchAd}
+        isWatchingAd={watchingAd}
       />
     </>
   );
