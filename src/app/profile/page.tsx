@@ -110,7 +110,15 @@ export default function ProfilePage() {
                     <h1 className="text-3xl font-black tracking-tight">{user.displayName}</h1>
                     {user.isPro && <div className="w-8 h-8 bg-yellow-400 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-400/20"><Trophy className="w-4 h-4 text-yellow-900" /></div>}
                   </div>
-                  <p className="text-sm text-muted-foreground font-medium flex items-center gap-4"><span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 opacity-40" /> {user.email}</span><span className="flex items-center gap-1.5"><GraduationCap className="w-3.5 h-3.5 opacity-40" /> {user.majorship}</span></p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Badge variant="outline" className="h-6 px-3 font-black text-[10px] border-primary/20 text-primary bg-primary/5 rounded-lg uppercase tracking-wider">
+                      {rankData?.title} (Rank {rankData?.rank})
+                    </Badge>
+                    <p className="text-sm text-muted-foreground font-medium flex items-center gap-4">
+                      <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 opacity-40" /> {user.email}</span>
+                      <span className="flex items-center gap-1.5"><GraduationCap className="w-3.5 h-3.5 opacity-40" /> {user.majorship}</span>
+                    </p>
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -118,11 +126,11 @@ export default function ProfilePage() {
                   { icon: <History className="w-4 h-4" />, label: 'Sessions', value: stats.total },
                   { icon: <Target className="w-4 h-4 text-primary" />, label: 'Avg Accuracy', value: `${stats.avg}%` },
                   { icon: <Trophy className="w-4 h-4 text-yellow-500" />, label: 'Best Track', value: `${stats.best}%` },
-                  { icon: <Zap className="w-4 h-4 text-emerald-500" />, label: 'Rank', value: rankData?.title }
+                  { icon: <Zap className="w-4 h-4 text-emerald-500" />, label: `Rank ${rankData?.rank || 1}`, value: rankData?.title }
                 ].map((stat, i) => (
                   <div key={i} className="p-4 bg-muted/20 rounded-2xl border border-border/50 text-center space-y-1">
                     <div className="flex justify-center mb-1">{stat.icon}</div>
-                    <p className="text-base font-black leading-none">{stat.value}</p>
+                    <p className="text-sm font-black leading-none line-clamp-1">{stat.value}</p>
                     <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</p>
                   </div>
                 ))}
