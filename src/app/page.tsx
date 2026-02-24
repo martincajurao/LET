@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
@@ -173,8 +174,8 @@ function LetsPrepContent() {
   const startExam = async (category: string | 'all' = 'all') => {
     if (loading) return;
     
-    // Check Lock Requirements
-    if (user && !isTrackUnlocked(levelData?.level || 1, category)) {
+    // Check Lock Requirements (Quickfire is always unlocked)
+    if (category !== 'quickfire' && user && !isTrackUnlocked(levelData?.level || 1, category)) {
       toast({ 
         title: "Mode Locked", 
         description: `This simulation track requires Level ${category === 'all' ? 12 : (category === 'Professional Education' ? 3 : 7)}. Keep earning XP!`,
@@ -217,7 +218,24 @@ function LetsPrepContent() {
           }
         }
       } else if (category === 'quickfire') {
-        finalQuestions = shuffleArray(questionPool).slice(0, 5);
+        // Implement Guaranteed Mix from All Categories
+        const genEdPool = questionPool.filter(q => q.subject === 'General Education');
+        const profEdPool = questionPool.filter(q => q.subject === 'Professional Education');
+        const specPool = questionPool.filter(q => q.subject === 'Specialization');
+
+        const selection: Question[] = [];
+        
+        // Try to pick 1 from each category first
+        if (genEdPool.length > 0) selection.push(shuffleArray(genEdPool)[0]);
+        if (profEdPool.length > 0) selection.push(shuffleArray(profEdPool)[0]);
+        if (specPool.length > 0) selection.push(shuffleArray(specPool)[0]);
+
+        // Fill remaining slots with random questions from the entire bank
+        const selectedIds = new Set(selection.map(q => q.id));
+        const remainingPool = questionPool.filter(q => !selectedIds.has(q.id));
+        const extras = shuffleArray(remainingPool).slice(0, 5 - selection.length);
+        
+        finalQuestions = shuffleArray([...selection, ...extras]);
       } else {
         const pool = questionPool.filter(q => {
           const target = category === 'Major' ? 'Specialization' : category;
@@ -537,7 +555,7 @@ function LetsPrepContent() {
                         className="h-12 rounded-xl font-black text-xs gap-2 shadow-lg shadow-primary/20"
                       >
                         {quickFireCooldown > 0 ? <Timer className="w-4 h-4" /> : <BellRing className="w-4 h-4" />}
-                        {quickFireCooldown > 0 ? formatCooldown(quickFireCooldown) : "Quick Fire Challenge"}
+                        {quickFireCooldown > 0 ? formatCooldown(quickFireCooldown) : "Mixed Brain Teaser"}
                       </Button>
                     </div>
                   </CardContent>
