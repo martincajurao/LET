@@ -8,9 +8,9 @@ import {
   Home, 
   ListTodo, 
   Trophy, 
-  Settings,
   Zap,
-  Target
+  Target,
+  Bell
 } from 'lucide-react';
 import { PracticeModal } from './practice-modal';
 import { useFirestore } from '@/firebase';
@@ -27,15 +27,14 @@ const navItems: NavItem[] = [
   { id: 'home', label: 'Home', icon: <Home className="w-5 h-5" />, href: '/' },
   { id: 'tasks', label: 'Tasks', icon: <ListTodo className="w-5 h-5" />, href: '/tasks' },
   { id: 'practice', label: 'Practice', icon: <Target className="w-6 h-6" />, href: '#' },
-  { id: 'events', label: 'Events', icon: <Trophy className="w-5 h-5" />, href: '/events' },
-  { id: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" />, href: '/profile?tab=account' }
+  { id: 'events', label: 'Arena', icon: <Trophy className="w-5 h-5" />, href: '/events' },
+  { id: 'notifications', label: 'Alerts', icon: <Bell className="w-5 h-5" />, href: '#' }
 ];
 
 function NavContent() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const tab = searchParams ? searchParams.get('tab') : null;
   const firestore = useFirestore();
   
   const [isPracticeOpen, setIsPracticeOpen] = useState(false);
@@ -84,7 +83,7 @@ function NavContent() {
     if (item.id === 'home' && pathname === '/') return true;
     if (item.id === 'tasks' && pathname === '/tasks') return true;
     if (item.id === 'events' && pathname === '/events') return true;
-    if (item.id === 'settings' && tab === 'account') return true;
+    if (item.id === 'notifications' && pathname === '/notifications') return true;
     return false;
   };
 
