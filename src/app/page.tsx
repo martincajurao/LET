@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -13,14 +13,12 @@ import {
   DialogTitle, 
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { 
   GraduationCap, 
   BrainCircuit, 
   Languages,
   ChevronRight,
   Zap,
-  Target,
   Trophy,
   Flame,
   Star,
@@ -29,8 +27,7 @@ import {
   Smartphone,
   Facebook,
   ShieldCheck,
-  CheckCircle2,
-  ArrowUpRight
+  CheckCircle2
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
@@ -42,10 +39,6 @@ import { fetchQuestionsFromFirestore } from "@/lib/db-seed";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
-import { ReferralSystem } from '@/components/ui/referral-system';
-import { Leaderboard } from '@/components/ui/leaderboard';
-import { EventsSection } from '@/components/ui/EventsSection';
 import { cn } from "@/lib/utils";
 
 type AppState = 'dashboard' | 'exam' | 'results' | 'registration';
@@ -289,9 +282,9 @@ export default function LetsPrepApp() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             {/* Main Content */}
-            <div className="lg:col-span-8 space-y-6">
+            <div className="space-y-6">
               {/* Hero Banner */}
               <Card className="overflow-hidden border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-primary/20 via-card to-background relative p-8 md:p-12">
                 <div className="relative z-10 space-y-6">
@@ -334,18 +327,6 @@ export default function LetsPrepApp() {
                 </div>
               </div>
 
-              {/* Events Section Anchor */}
-              <div id="events">
-                <EventsSection />
-              </div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="lg:col-span-4 space-y-6">
-              <DailyTaskDashboard />
-              <Leaderboard />
-              <ReferralSystem />
-              
               <Card className="border-none shadow-lg rounded-[2rem] bg-foreground text-background p-6">
                 <CardHeader className="p-0 mb-4">
                   <CardTitle className="text-lg font-black tracking-tight flex items-center gap-2">

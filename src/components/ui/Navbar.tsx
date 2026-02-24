@@ -89,17 +89,14 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
-          {!user ? (
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-muted" onClick={toggleDarkMode}>
-                {isDark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-slate-600" />}
-              </Button>
-              <Button onClick={() => setShowAuthModal(true)} className="font-bold rounded-2xl h-10 px-6 shadow-md shadow-primary/20">Sign In</Button>
-            </div>
-          ) : (
-            <>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-muted" onClick={toggleDarkMode}>
+              {isDark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-slate-600" />}
+            </Button>
+            
+            {user && (
               <div 
-                className="flex items-center gap-2 bg-muted/40 hover:bg-accent/10 px-4 py-2 rounded-2xl border border-border/50 cursor-pointer transition-all active:scale-95 group"
+                className="flex items-center gap-2 bg-muted/40 hover:bg-accent/10 px-3 sm:px-4 py-2 rounded-2xl border border-border/50 cursor-pointer transition-all active:scale-95 group"
                 onClick={() => setShowAdModal(true)}
               >
                 <div className="w-5 h-5 rounded-full bg-yellow-500/10 flex items-center justify-center">
@@ -108,11 +105,14 @@ export function Navbar() {
                 <span className="text-sm font-black text-foreground">{user.credits ?? 0}</span>
                 <Zap className="w-3 h-3 text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
               </div>
+            )}
+          </div>
 
+          {!user ? (
+            <Button onClick={() => setShowAuthModal(true)} className="font-bold rounded-2xl h-10 px-6 shadow-md shadow-primary/20">Sign In</Button>
+          ) : (
+            <>
               <div className="hidden md:flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10" onClick={toggleDarkMode}>
-                  {isDark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5" />}
-                </Button>
                 <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 relative">
                   <Bell className="w-5 h-5 text-muted-foreground" />
                   <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full border-2 border-background" />

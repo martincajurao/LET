@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
   Home, 
-  BarChart3, 
+  ListTodo, 
   Trophy, 
   Settings,
   Zap,
@@ -22,9 +22,9 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'home', label: 'Home', icon: <Home className="w-5 h-5" />, href: '/' },
-  { id: 'progress', label: 'Progress', icon: <BarChart3 className="w-5 h-5" />, href: '/profile' },
+  { id: 'tasks', label: 'Tasks', icon: <ListTodo className="w-5 h-5" />, href: '/tasks' },
   { id: 'practice', label: 'Practice', icon: <Target className="w-6 h-6" />, href: '#' },
-  { id: 'events', label: 'Events', icon: <Trophy className="w-5 h-5" />, href: '/#events' },
+  { id: 'events', label: 'Events', icon: <Trophy className="w-5 h-5" />, href: '/events' },
   { id: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" />, href: '/profile?tab=account' }
 ];
 
@@ -57,23 +57,13 @@ function NavContent() {
       setIsPracticeOpen(true);
       return;
     }
-    
-    if (item.id === 'events') {
-      if (pathname === '/') {
-        const element = document.getElementById('events');
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-          return;
-        }
-      }
-    }
-    
     router.push(item.href);
   };
 
   const isActive = (item: NavItem) => {
     if (item.id === 'home' && pathname === '/') return true;
-    if (item.id === 'progress' && pathname === '/profile' && tab !== 'account') return true;
+    if (item.id === 'tasks' && pathname === '/tasks') return true;
+    if (item.id === 'events' && pathname === '/events') return true;
     if (item.id === 'settings' && tab === 'account') return true;
     return false;
   };
