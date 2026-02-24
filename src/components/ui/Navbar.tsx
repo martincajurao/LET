@@ -57,7 +57,7 @@ import { NotificationsModal } from './notifications-modal';
 import { useRouter } from 'next/navigation';
 
 export function Navbar() {
-  const { user, logout, loginWithGoogle, loginWithFacebook, bypassLogin } = useUser();
+  const { user, loading, logout, loginWithGoogle, loginWithFacebook, bypassLogin } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
@@ -98,6 +98,9 @@ export function Navbar() {
     const interval = setInterval(calculateAvailable, 10000); // Check every 10s
     return () => clearInterval(interval);
   }, [user]);
+
+  // Prevent Navbar from flashing during initialization splash
+  if (loading) return null;
 
   const handleWatchAd = async () => {
     if (!user || !firestore) return;
