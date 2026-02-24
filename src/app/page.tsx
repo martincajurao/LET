@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
@@ -95,6 +96,59 @@ function sanitizeData(data: any): any {
   }
   return sanitized;
 }
+
+const EducationalLoader = ({ message }: { message?: string }) => (
+  <div className="flex flex-col items-center justify-center gap-8 animate-in fade-in duration-700">
+    <div className="relative">
+      <motion.div 
+        animate={{ rotate: 360 }}
+        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+        className="w-32 h-32 border-2 border-dashed border-primary/20 rounded-full absolute -inset-4"
+      />
+      <motion.div 
+        animate={{ rotate: -360 }}
+        transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+        className="w-32 h-32 border-2 border-dashed border-primary/10 rounded-full absolute -inset-4 scale-110"
+      />
+      
+      <div className="w-24 h-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center relative z-10 shadow-2xl shadow-primary/10 overflow-hidden">
+        <motion.div
+          animate={{ 
+            y: [0, -6, 0],
+            rotate: [0, 3, -3, 0]
+          }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <GraduationCap className="w-12 h-12 text-primary" />
+        </motion.div>
+        
+        <motion.div
+          animate={{ 
+            opacity: [0, 1, 0],
+            scale: [0.5, 1.2, 0.5],
+            x: [0, 15, -5, 0],
+            y: [0, -10, 15, 0]
+          }}
+          transition={{ duration: 3, repeat: Infinity }}
+          className="absolute top-4 right-4"
+        >
+          <Sparkles className="w-5 h-5 text-yellow-500 fill-current" />
+        </motion.div>
+      </div>
+    </div>
+    
+    {message && (
+      <div className="space-y-3 text-center">
+        <p className="font-black text-xl tracking-tight text-foreground">{message}</p>
+        <div className="flex items-center justify-center gap-2">
+          <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+          <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+        </div>
+      </div>
+    )}
+  </div>
+);
 
 function LetsPrepContent() {
   const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook, bypassLogin } = useUser();
@@ -327,7 +381,11 @@ function LetsPrepContent() {
     return mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
   };
 
-  if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+  if (authLoading) return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <EducationalLoader message="Synchronizing Educator Session" />
+    </div>
+  );
 
   const displayStats = user ? [
     { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user?.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
@@ -369,18 +427,20 @@ function LetsPrepContent() {
       </Dialog>
 
       <Dialog open={loading}>
-        <DialogContent className="max-w-[280px] border-none shadow-2xl bg-card rounded-[2rem] p-8 z-[1001]">
+        <DialogContent className="max-w-[320px] border-none shadow-2xl bg-card rounded-[2.5rem] p-10 z-[1001] outline-none">
           <DialogHeader className="sr-only">
             <DialogTitle>Loading Session</DialogTitle>
             <DialogDescription>Please wait while we calibrate your professional simulation.</DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col items-center gap-6">
-            <div className="relative">
-              <div className="w-20 h-20 bg-primary/10 rounded-full animate-ping absolute inset-0" />
-              <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center relative z-10"><BrainCircuit className="w-10 h-10 text-primary animate-pulse" /></div>
+          <div className="space-y-8">
+            <EducationalLoader message={loadingMessage} />
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                <span>Calibrating Simulation</span>
+                <span>{loadingStep}%</span>
+              </div>
+              <Progress value={loadingStep} className="h-2 w-full rounded-full" />
             </div>
-            <p className="font-bold text-center text-lg">{loadingMessage}</p>
-            <Progress value={loadingStep} className="h-1.5 w-full rounded-full" />
           </div>
         </DialogContent>
       </Dialog>
