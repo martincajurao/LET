@@ -456,7 +456,7 @@ function LetsPrepContent() {
                     <CardContent className="p-6 pt-0 space-y-4">
                       <div className="space-y-2">
                         <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
-                          <span className="text-muted-foreground">{user.xp || 0} XP</span>
+                          <span className="text-muted-foreground">{rankData?.xpInRank || 0} XP</span>
                           <span className="text-muted-foreground">{rankData?.nextRankXp} XP</span>
                         </div>
                         <Progress value={rankData?.progress} className="h-2 rounded-full" />
@@ -494,8 +494,10 @@ function LetsPrepContent() {
                         <Card key={i} onClick={() => !isLocked && startExam(track.id as any)} className={cn("group cursor-pointer border-2 transition-all rounded-[2rem] bg-card overflow-hidden active:scale-95 relative", isLocked ? "border-muted opacity-60" : "border-border/50 hover:border-primary")}>
                           {isLocked && (
                             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/40 backdrop-blur-[1px] p-4 text-center">
-                              <Lock className="w-6 h-6 text-muted-foreground mb-1" />
-                              <span className="text-[9px] font-bold uppercase text-muted-foreground leading-tight">Rank {track.rnk} <br />({track.title})</span>
+                              <div className="bg-card/90 p-2 rounded-xl border shadow-sm flex flex-col items-center">
+                                <Lock className="w-4 h-4 text-muted-foreground mb-1" />
+                                <span className="text-[8px] font-black uppercase text-muted-foreground leading-tight">Rank {track.rnk} <br />({track.title})</span>
+                              </div>
                             </div>
                           )}
                           <CardContent className="p-6 space-y-4">

@@ -281,7 +281,7 @@ export function Navbar() {
                     <div className="px-3 py-2 space-y-2">
                       <div className="flex justify-between items-center text-[10px] font-black uppercase">
                         <span className="text-muted-foreground">{rankData?.title}</span>
-                        <span className="text-primary">{user.xp || 0} XP</span>
+                        <span className="text-primary">{rankData?.xpInRank || 0} / {rankData?.nextRankXp} XP</span>
                       </div>
                       <Progress value={rankData?.progress} className="h-1.5" />
                     </div>

@@ -126,7 +126,7 @@ export default function ProfilePage() {
                   { icon: <History className="w-4 h-4" />, label: 'Sessions', value: stats.total },
                   { icon: <Target className="w-4 h-4 text-primary" />, label: 'Avg Accuracy', value: `${stats.avg}%` },
                   { icon: <Trophy className="w-4 h-4 text-yellow-500" />, label: 'Best Track', value: `${stats.best}%` },
-                  { icon: <Zap className="w-4 h-4 text-emerald-500" />, label: `Rank ${rankData?.rank || 1}`, value: rankData?.title }
+                  { icon: <Zap className="w-4 h-4 text-emerald-500" />, label: `Rank ${rankData?.rank || 1}`, value: `${rankData?.xpInRank || 0}/${rankData?.nextRankXp} XP` }
                 ].map((stat, i) => (
                   <div key={i} className="p-4 bg-muted/20 rounded-2xl border border-border/50 text-center space-y-1">
                     <div className="flex justify-center mb-1">{stat.icon}</div>
