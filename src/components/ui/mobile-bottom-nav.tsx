@@ -155,11 +155,11 @@ function NavContent() {
       try {
         const userRef = doc(firestore, 'users', user.uid);
         await updateDoc(userRef, {
-          credits: increment(2),
+          credits: increment(5),
           xp: increment(XP_REWARDS.AD_WATCH_XP),
           lastAdXpTimestamp: Date.now()
         });
-        toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +2 Credits added.` });
+        toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added.` });
         setIsAlertsOpen(false);
       } catch (e) {
         toast({ variant: "destructive", title: "Sync Failed", description: "Could not grant reward." });

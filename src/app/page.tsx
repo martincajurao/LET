@@ -72,15 +72,27 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return shuffled;
 };
 
+/**
+ * Safely cleans data for Firestore by removing undefined values 
+ * while protecting Firestore internal objects like FieldValue.
+ */
 function sanitizeData(data: any): any {
   if (data === undefined) return null;
   if (data === null || typeof data !== 'object') return data;
+  
   if (data.constructor?.name === 'FieldValue' || (data._methodName && data._methodName.startsWith('FieldValue.'))) {
     return data;
   }
+
   if (Array.isArray(data)) return data.map(sanitizeData);
+  
   const sanitized: any = {};
-  for (const key in data) { sanitized[key] = sanitizeData(data[key]); }
+  for (const key in data) {
+    const val = sanitizeData(data[key]);
+    if (val !== undefined) {
+      sanitized[key] = val;
+    }
+  }
   return sanitized;
 }
 

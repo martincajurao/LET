@@ -30,13 +30,17 @@ export const COOLDOWNS = {
  * Requirements and rewards scale based on academic title groups.
  */
 const CAREER_TIERS = [
-  { minRank: 1,  maxRank: 4,  title: "Novice Candidate",     req: 500,   reward: 10 },
-  { minRank: 5,  maxRank: 9,  title: "Aspiring Professional", req: 1000,  reward: 25 },
-  { minRank: 10, maxRank: 14, title: "Subject Specialist",   req: 2000,  reward: 50 },
-  { minRank: 15, maxRank: 19, title: "Senior Educator",      req: 3500,  reward: 80 },
-  { minRank: 20, maxRank: 24, title: "Master Candidate",     req: 5000,  reward: 150 },
-  { minRank: 25, maxRank: 29, title: "Elite Academic",       req: 7500,  reward: 250 },
-  { minRank: 30, maxRank: 99, title: "Master Emeritus",      req: 10000, reward: 500 },
+  { minRank: 1,  maxRank: 3,  title: "Novice Candidate",     req: 400,   reward: 10 },
+  { minRank: 4,  maxRank: 6,  title: "Junior Intern",        req: 600,   reward: 15 },
+  { minRank: 7,  maxRank: 9,  title: "Aspiring Professional", req: 1000,  reward: 25 },
+  { minRank: 10, maxRank: 12, title: "Qualified Educator",   req: 1500,  reward: 40 },
+  { minRank: 13, maxRank: 15, title: "Subject Specialist",   req: 2000,  reward: 60 },
+  { minRank: 16, maxRank: 18, title: "Lead Instructor",      req: 3000,  reward: 80 },
+  { minRank: 19, maxRank: 21, title: "Senior Educator",      req: 4000,  reward: 120 },
+  { minRank: 22, maxRank: 24, title: "Master Candidate",     req: 5500,  reward: 200 },
+  { minRank: 25, maxRank: 27, title: "Elite Academic",       req: 7500,  reward: 350 },
+  { minRank: 28, maxRank: 30, title: "Distinguished Scholar",req: 10000, reward: 500 },
+  { minRank: 31, maxRank: 99, title: "Master Emeritus",      req: 15000, reward: 1000 },
 ];
 
 export function getRankTierConfig(rank: number) {

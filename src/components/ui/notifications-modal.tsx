@@ -22,7 +22,7 @@ import {
   ChevronRight,
   Flame
 } from 'lucide-react';
-import { COOLDOWNS } from '@/lib/xp-system';
+import { COOLDOWNS, XP_REWARDS } from '@/lib/xp-system';
 import { cn } from '@/lib/utils';
 
 interface NotificationsModalProps {
@@ -98,7 +98,7 @@ export function NotificationsModal({
                 </div>
                 <div>
                   <p className="font-black text-sm">Mixed Brain Teaser</p>
-                  <p className="text-[10px] font-medium text-muted-foreground">+125 XP Potential</p>
+                  <p className="text-[10px] font-medium text-muted-foreground">+{XP_REWARDS.QUICK_FIRE_COMPLETE} XP Potential</p>
                 </div>
               </div>
               {qfAvailable ? (
@@ -139,7 +139,7 @@ export function NotificationsModal({
                 </div>
                 <div>
                   <p className="font-black text-sm">Professional Insight</p>
-                  <p className="text-[10px] font-medium text-muted-foreground">+50 XP & +5 Credits</p>
+                  <p className="text-[10px] font-medium text-muted-foreground">+{XP_REWARDS.AD_WATCH_XP} XP & +5 Credits</p>
                 </div>
               </div>
               {adAvailable ? (
