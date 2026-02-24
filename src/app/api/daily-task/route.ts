@@ -1,4 +1,3 @@
-
 import { processDailyTasks } from '@/ai/flows/daily-task';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -47,6 +46,7 @@ export async function POST(req: NextRequest) {
       mistakesReviewed,
       streakCount,
       dailyCreditEarned,
+      taskLoginClaimed,
       taskQuestionsClaimed,
       taskMockClaimed,
       taskMistakesClaimed,
@@ -112,6 +112,7 @@ export async function POST(req: NextRequest) {
       mistakesReviewed: mistakesReviewed || 0,
       streakCount: streakCount || 0,
       dailyCreditEarned: dailyCreditEarned || 0,
+      taskLoginClaimed: taskLoginClaimed || false,
       taskQuestionsClaimed: taskQuestionsClaimed || false,
       taskMockClaimed: taskMockClaimed || false,
       taskMistakesClaimed: taskMistakesClaimed || false,

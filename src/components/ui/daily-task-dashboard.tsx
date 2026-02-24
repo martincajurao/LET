@@ -5,7 +5,7 @@ import { useUser } from '@/firebase/auth/use-user';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, Coins, Trophy, Flame, Loader2, BookOpen, Target, Clock, Star, Gift, TrendingUp } from "lucide-react";
+import { CheckCircle2, Coins, Trophy, Flame, Loader2, BookOpen, Target, Clock, Star, Gift, TrendingUp, Key } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore } from '@/firebase';
@@ -75,21 +75,22 @@ export function DailyTaskDashboard() {
         if (!userDoc.exists()) return;
         const userData = userDoc.data();
         const lastReset = userData?.lastTaskReset?.toDate ? userData.lastTaskReset.toDate() : null;
-        if (lastReset) {
-          const now = new Date();
-          const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
-          if (hoursSinceReset >= 24) {
-            await updateDoc(userRef, {
-              dailyQuestionsAnswered: 0,
-              dailyTestsFinished: 0,
-              mistakesReviewed: 0,
-              taskQuestionsClaimed: false,
-              taskMockClaimed: false,
-              taskMistakesClaimed: false,
-              lastTaskReset: serverTimestamp()
-            });
-            toast({ title: "🔄 Daily Tasks Reset!", description: "Your daily tasks have been refreshed." });
-          }
+        
+        const now = new Date();
+        const resetNeeded = !lastReset || (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60) >= 24;
+
+        if (resetNeeded) {
+          await updateDoc(userRef, {
+            dailyQuestionsAnswered: 0,
+            dailyTestsFinished: 0,
+            mistakesReviewed: 0,
+            taskLoginClaimed: false,
+            taskQuestionsClaimed: false,
+            taskMockClaimed: false,
+            taskMistakesClaimed: false,
+            lastTaskReset: serverTimestamp()
+          });
+          toast({ title: "🔄 Daily Tasks Reset!", description: "Your daily missions have been refreshed." });
         }
       } catch (error) {
         console.error('Error checking daily task reset:', error);
@@ -99,6 +100,14 @@ export function DailyTaskDashboard() {
   }, [user, firestore]);
 
   const tasks: Task[] = [
+    {
+      id: 'login',
+      title: 'Daily Entrance',
+      description: 'Access your simulation vault',
+      reward: 20, goal: 1, current: user ? 1 : 0, // Always 1 if user is logged in
+      isClaimed: !!user?.taskLoginClaimed,
+      icon: <Key className="w-5 h-5" />, color: 'text-emerald-600', bgColor: 'bg-emerald-500/10'
+    },
     { 
       id: 'questions', 
       title: 'Answer Questions', 
@@ -146,6 +155,7 @@ export function DailyTaskDashboard() {
           mistakesReviewed: user.mistakesReviewed || 0,
           streakCount: user.streakCount || 0,
           dailyCreditEarned: user.dailyCreditEarned || 0,
+          taskLoginClaimed: !!user.taskLoginClaimed,
           taskQuestionsClaimed: !!user.taskQuestionsClaimed,
           taskMockClaimed: !!user.taskMockClaimed,
           taskMistakesClaimed: !!user.taskMistakesClaimed,
@@ -163,12 +173,15 @@ export function DailyTaskDashboard() {
         await updateDoc(userRef, {
           credits: increment(result.reward),
           dailyCreditEarned: increment(result.reward),
+          taskLoginClaimed: result.tasksCompleted.includes('login') || !!user.taskLoginClaimed,
           taskQuestionsClaimed: result.tasksCompleted.includes('questions') || !!user.taskQuestionsClaimed,
           taskMockClaimed: result.tasksCompleted.includes('mock') || !!user.taskMockClaimed,
           taskMistakesClaimed: result.tasksCompleted.includes('mistakes') || !!user.taskMistakesClaimed,
           lastActiveDate: serverTimestamp()
         });
         toast({ title: "🎉 Rewards Claimed!", description: `You earned ${result.reward} AI Credits` });
+      } else if (result.error) {
+        toast({ variant: "destructive", title: "Claim Failed", description: result.error });
       }
     } catch (e: any) {
       toast({ variant: "destructive", title: "Error", description: "Could not process rewards." });
@@ -186,7 +199,7 @@ export function DailyTaskDashboard() {
               <Target className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <CardTitle className="text-xl md:text-2xl font-black tracking-tight">Daily Tasks</CardTitle>
+              <CardTitle className="text-xl md:text-2xl font-black tracking-tight">Daily Missions</CardTitle>
               <CardDescription className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Practice to earn credits</CardDescription>
             </div>
           </div>
@@ -226,10 +239,14 @@ export function DailyTaskDashboard() {
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    {task.isClaimed ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : isComplete ? <Star className="w-5 h-5 text-amber-500 fill-current" /> : <span className="text-xs font-medium text-muted-foreground">{task.current}/{task.goal}</span>}
+                    <div className="flex items-center gap-1.5 bg-yellow-500/10 px-2 py-0.5 rounded-lg border border-yellow-500/20">
+                      <Coins className="w-3 h-3 text-yellow-600" />
+                      <span className="text-[10px] font-black text-yellow-700">+{task.reward}</span>
+                    </div>
+                    {task.isClaimed ? <CheckCircle2 className="w-5 h-5 text-emerald-500 mt-1" /> : isComplete ? <Star className="w-5 h-5 text-amber-500 fill-current mt-1" /> : <span className="text-xs font-medium text-muted-foreground mt-1">{task.current}/{task.goal}</span>}
                   </div>
                 </div>
-                <div className="mt-3"><Progress value={progress} className="h-1.5 rounded-full" /></div>
+                {!task.isClaimed && <div className="mt-3"><Progress value={progress} className="h-1.5 rounded-full" /></div>}
               </div>
             );
           })}
@@ -237,10 +254,10 @@ export function DailyTaskDashboard() {
         <Button 
           onClick={handleClaimReward} 
           disabled={!user || claiming || !canClaimAny} 
-          className="w-full h-14 rounded-2xl font-bold text-base gap-3"
+          className="w-full h-14 rounded-2xl font-black text-lg gap-3 shadow-xl shadow-primary/30"
         >
           {claiming ? <Loader2 className="w-5 h-5 animate-spin" /> : canClaimAny ? <Gift className="w-5 h-5" /> : <TrendingUp className="w-5 h-5" />}
-          {claiming ? 'Processing...' : canClaimAny ? `Claim ${totalEarnedToday} Credits` : 'Keep Practicing'}
+          {claiming ? 'Processing...' : canClaimAny ? `Claim ${totalEarnedToday} Credits` : 'Mission in Progress'}
         </Button>
       </CardContent>
     </Card>

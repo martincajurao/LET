@@ -36,6 +36,7 @@ export interface UserProfile {
   referralCount?: number;
   referralCreditsEarned?: number;
   referralTier?: string;
+  taskLoginClaimed?: boolean;
   taskQuestionsClaimed?: boolean;
   taskMockClaimed?: boolean;
   taskMistakesClaimed?: boolean;
@@ -110,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               email: firebaseUser.email,
               photoURL: firebaseUser.photoURL,
               onboardingComplete: false,
-              credits: 20,
+              credits: 0, // Starts at 0, claimed via login bonus
               isPro: false,
               dailyAdCount: 0,
               dailyAiUsage: 0,
@@ -121,6 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               lastActiveDate: serverTimestamp(),
               lastTaskReset: serverTimestamp(),
               referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+              taskLoginClaimed: false,
               taskQuestionsClaimed: false,
               taskMockClaimed: false,
               taskMistakesClaimed: false,

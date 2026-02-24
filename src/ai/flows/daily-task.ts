@@ -14,6 +14,7 @@ const DailyTaskInputSchema = z.object({
   mistakesReviewed: z.number().optional().describe('Number of wrong answers reviewed today'),
   streakCount: z.number().optional().describe('Current streak count'),
   dailyCreditEarned: z.number().optional().describe('Credits earned today'),
+  taskLoginClaimed: z.boolean().optional().describe('Whether login reward was already claimed'),
   taskQuestionsClaimed: z.boolean().optional().describe('Whether questions task reward was already claimed'),
   taskMockClaimed: z.boolean().optional().describe('Whether mock test task reward was already claimed'),
   taskMistakesClaimed: z.boolean().optional().describe('Whether mistakes review task reward was already claimed'),
@@ -59,6 +60,7 @@ const dailyTaskFlow = ai.defineFlow(
         mistakesReviewed = 0,
         streakCount = 0,
         dailyCreditEarned = 0,
+        taskLoginClaimed = false,
         taskQuestionsClaimed = false, 
         taskMockClaimed = false, 
         taskMistakesClaimed = false,
@@ -102,7 +104,7 @@ const dailyTaskFlow = ai.defineFlow(
       }
       
       // 4. Credit farming detection
-      if (dailyCreditEarned > 45 && !isPro) {
+      if (dailyCreditEarned > 100 && !isPro) { // Limit increased to account for login bonus
         abuseFlags.push('credit_farming');
         warnings.push('Approaching daily credit limit');
       }
@@ -122,7 +124,14 @@ const dailyTaskFlow = ai.defineFlow(
 
       const userTierConfig = tierMultipliers[userTier as keyof typeof tierMultipliers] || tierMultipliers.Bronze;
 
-      // Questions task with quality validation
+      // 0. Daily Login Reward (This replaces the initial signup credits)
+      if (!taskLoginClaimed) {
+        const loginReward = 20; // 20 credits for the login mission
+        totalReward += loginReward;
+        tasksCompleted.push('login');
+      }
+
+      // 1. Questions task with quality validation
       if (dailyQuestionsAnswered >= userTierConfig.questions && !taskQuestionsClaimed) {
         // Quality bonus for genuine engagement
         if (averageQuestionTime >= 10 && averageQuestionTime <= 120) { // Reasonable time range
@@ -140,7 +149,7 @@ const dailyTaskFlow = ai.defineFlow(
         tasksCompleted.push('questions');
       }
 
-      // Mock test task with completion quality check
+      // 2. Mock test task with completion quality check
       if (dailyTestsFinished >= userTierConfig.tests && !taskMockClaimed) {
         // Bonus for completing full tests vs partial
         const testReward = Math.floor(10 * userTierConfig.rewardMultiplier);
@@ -148,7 +157,7 @@ const dailyTaskFlow = ai.defineFlow(
         tasksCompleted.push('mock');
       }
 
-      // Mistakes review with learning validation
+      // 3. Mistakes review with learning validation
       if (mistakesReviewed >= userTierConfig.mistakes && !taskMistakesClaimed) {
         // Bonus for thorough mistake review
         if (mistakesReviewed >= userTierConfig.mistakes * 1.5) {
@@ -160,34 +169,19 @@ const dailyTaskFlow = ai.defineFlow(
         tasksCompleted.push('mistakes');
       }
 
-      // Focus challenge bonus (30-60 minute sessions)
+      // 4. Focus challenge bonus (30-60 minute sessions)
       if (totalSessionTime >= 1800 && totalSessionTime <= 3600) {
         qualityBonus += 3;
         tasksCompleted.push('focus_challenge');
       }
 
-      // Perfect day challenge bonus
+      // 5. Perfect day challenge bonus
       const allTasksCompleted = dailyQuestionsAnswered >= userTierConfig.questions && 
                               dailyTestsFinished >= userTierConfig.tests && 
                               mistakesReviewed >= userTierConfig.mistakes;
       if (allTasksCompleted && !taskQuestionsClaimed && !taskMockClaimed && !taskMistakesClaimed) {
         qualityBonus += 5;
         tasksCompleted.push('perfect_day');
-      }
-
-      // Daily login bonus (reward users who log in daily)
-      if (dailyQuestionsAnswered >= 5 && !isPro) {
-        const loginBonus = Math.floor(2 * userTierConfig.rewardMultiplier);
-        totalReward += loginBonus;
-        tasksCompleted.push('daily_login');
-      }
-
-      // Weekly login streak bonus
-      const weeklyLoginStreak = Math.min(7, Math.floor((dailyQuestionsAnswered >= 5) ? 1 : 0));
-      if (weeklyLoginStreak >= 3) {
-        const weeklyBonus = Math.floor(5 * userTierConfig.rewardMultiplier);
-        totalReward += weeklyBonus;
-        tasksCompleted.push('weekly_login_streak');
       }
 
       // Enhanced streak system with anti-abuse
@@ -212,14 +206,14 @@ const dailyTaskFlow = ai.defineFlow(
       totalReward += streakBonus + qualityBonus;
 
       // Progressive daily limits with abuse prevention
-      let maxDailyCredits = 50;
+      let maxDailyCredits = 100;
       
       if (isPro) {
-        maxDailyCredits = 100; // Pro users get higher limits
+        maxDailyCredits = 200; // Pro users get higher limits
       } else if (abuseFlags.length > 0) {
-        maxDailyCredits = 25; // Reduce limits for suspicious activity
+        maxDailyCredits = 50; // Reduce limits for suspicious activity
       } else if (userTier === 'Platinum') {
-        maxDailyCredits = 75;
+        maxDailyCredits = 150;
       }
       
       if (dailyCreditEarned + totalReward > maxDailyCredits) {
@@ -246,6 +240,9 @@ const dailyTaskFlow = ai.defineFlow(
       const recommendedActions: string[] = [];
       
       if (tasksCompleted.length === 0) {
+        if (!taskLoginClaimed) {
+          recommendedActions.push('Claim your Daily Login Bonus');
+        }
         recommendedActions.push(`Complete ${userTierConfig.questions - dailyQuestionsAnswered} more questions`);
         if (dailyTestsFinished < userTierConfig.tests) {
           recommendedActions.push('Finish a mock test');
