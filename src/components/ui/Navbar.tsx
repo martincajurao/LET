@@ -67,12 +67,14 @@ export function Navbar() {
   const [showAlertsModal, setShowAlertsModal] = useState(false);
   const [watchingAd, setWatchingAd] = useState(false);
   const [availableTasksCount, setAvailableTasksCount] = useState(0);
+  const [claimableTasksCount, setClaimableTasksCount] = useState(0);
 
   const levelData = user ? getLevelData(user.xp || 0) : null;
 
   useEffect(() => {
     if (!user) {
       setAvailableTasksCount(0);
+      setClaimableTasksCount(0);
       return;
     }
 
@@ -81,6 +83,15 @@ export function Navbar() {
       const adAvailable = (user.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP <= now;
       const qfAvailable = (user.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE <= now;
       setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
+
+      // Calculate claimable daily missions
+      let claimableCount = 0;
+      const qGoal = user.userTier === 'Platinum' ? 35 : 20;
+      if (!user.taskLoginClaimed) claimableCount++;
+      if ((user.dailyQuestionsAnswered || 0) >= qGoal && !user.taskQuestionsClaimed) claimableCount++;
+      if ((user.dailyTestsFinished || 0) >= 1 && !user.taskMockClaimed) claimableCount++;
+      if ((user.mistakesReviewed || 0) >= 10 && !user.taskMistakesClaimed) claimableCount++;
+      setClaimableTasksCount(claimableCount);
     };
 
     calculateAvailable();
@@ -112,7 +123,20 @@ export function Navbar() {
 
   const navItems = [
     { label: 'Home', icon: <Home className="w-4 h-4" />, href: '/' },
-    { label: 'Daily Tasks', icon: <ListTodo className="w-4 h-4" />, href: '/tasks' },
+    { 
+      label: 'Daily Tasks', 
+      icon: (
+        <div className="relative">
+          <ListTodo className="w-4 h-4" />
+          {claimableTasksCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-primary text-primary-foreground text-[7px] font-black rounded-full flex items-center justify-center border border-card shadow-sm">
+              {claimableTasksCount}
+            </span>
+          )}
+        </div>
+      ), 
+      href: '/tasks' 
+    },
     { label: 'Global Arena', icon: <Trophy className="w-4 h-4" />, href: '/events' },
     { 
       label: 'Notifications', 

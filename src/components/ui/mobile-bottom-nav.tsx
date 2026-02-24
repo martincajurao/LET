@@ -41,6 +41,7 @@ function NavContent() {
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
   const [watchingAd, setWatchingAd] = useState(false);
   const [availableTasksCount, setAvailableTasksCount] = useState(0);
+  const [claimableTasksCount, setClaimableTasksCount] = useState(0);
 
   useEffect(() => {
     if (!firestore) return;
@@ -60,6 +61,7 @@ function NavContent() {
   useEffect(() => {
     if (!user) {
       setAvailableTasksCount(0);
+      setClaimableTasksCount(0);
       return;
     }
 
@@ -68,6 +70,15 @@ function NavContent() {
       const adAvailable = (user.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP <= now;
       const qfAvailable = (user.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE <= now;
       setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
+
+      // Calculate claimable daily missions
+      let claimableCount = 0;
+      const qGoal = user.userTier === 'Platinum' ? 35 : 20;
+      if (!user.taskLoginClaimed) claimableCount++;
+      if ((user.dailyQuestionsAnswered || 0) >= qGoal && !user.taskQuestionsClaimed) claimableCount++;
+      if ((user.dailyTestsFinished || 0) >= 1 && !user.taskMockClaimed) claimableCount++;
+      if ((user.mistakesReviewed || 0) >= 10 && !user.taskMistakesClaimed) claimableCount++;
+      setClaimableTasksCount(claimableCount);
     };
 
     calculateAvailable();
@@ -91,7 +102,21 @@ function NavContent() {
 
   const navItems: NavItem[] = useMemo(() => [
     { id: 'home', label: 'Home', icon: <Home className="w-5 h-5" />, href: '/' },
-    { id: 'tasks', label: 'Tasks', icon: <ListTodo className="w-5 h-5" />, href: '/tasks' },
+    { 
+      id: 'tasks', 
+      label: 'Tasks', 
+      icon: (
+        <div className="relative">
+          <ListTodo className="w-5 h-5" />
+          {claimableTasksCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-[9px] font-black rounded-full flex items-center justify-center border-2 border-card shadow-sm">
+              {claimableTasksCount}
+            </span>
+          )}
+        </div>
+      ), 
+      href: '/tasks' 
+    },
     { id: 'practice', label: 'Practice', icon: <Target className="w-6 h-6" />, href: '#' },
     { id: 'events', label: 'Arena', icon: <Trophy className="w-5 h-5" />, href: '/events' },
     { 
@@ -109,7 +134,7 @@ function NavContent() {
       ), 
       href: '#' 
     }
-  ], [availableTasksCount]);
+  ], [availableTasksCount, claimableTasksCount]);
 
   const handleNavClick = (item: NavItem) => {
     if (item.id === 'practice') {
