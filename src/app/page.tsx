@@ -254,11 +254,11 @@ function LetsPrepContent() {
     { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user?.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
     { icon: <Flame className="w-4 h-4 text-orange-500" />, label: 'Streak', value: user?.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' },
     { icon: user?.isPro ? <Crown className="w-4 h-4 text-yellow-600" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user?.isPro ? 'Platinum' : 'Standard', color: user?.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
-    { icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />, label: 'Pass Rate', value: '92%', color: 'text-emerald-500 bg-emerald-500/10' }
+    { icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />, label: 'Pass Rate', value: '82%', color: 'text-emerald-500 bg-emerald-500/10' }
   ] : [
     { icon: <Users className="w-4 h-4 text-blue-500" />, label: 'Community', value: '1.7K+', color: 'text-blue-500 bg-blue-500/5' },
-    { icon: <BookOpen className="w-4 h-4 text-purple-500" />, label: 'Items Mastered', value: '15K+', color: 'text-purple-500 bg-purple-500/5' },
-    { icon: <LayoutGrid className="w-4 h-4 text-pink-500" />, label: 'Questions', value: '25K+', color: 'text-pink-500 bg-pink-500/5' },
+    { icon: <BookOpen className="w-4 h-4 text-purple-500" />, label: 'Items Mastered', value: '12.5K+', color: 'text-purple-500 bg-purple-500/5' },
+    { icon: <LayoutGrid className="w-4 h-4 text-pink-500" />, label: 'Question Bank', value: '3.5K+', color: 'text-pink-500 bg-pink-500/5' },
     { icon: <Trophy className="w-4 h-4 text-yellow-500" />, label: 'Board Ready', value: '82%', color: 'text-yellow-500 bg-yellow-500/5' }
   ];
 
@@ -455,8 +455,8 @@ function LetsPrepContent() {
                 </CardHeader>
                 <CardContent className="p-0 grid grid-cols-1 md:grid-cols-3 gap-8">
                   <div className="space-y-1">
-                    <p className="text-4xl font-black text-primary">15K+</p>
-                    <p className="text-xs font-bold uppercase tracking-widest opacity-60">Practice Items Mastered</p>
+                    <p className="text-4xl font-black text-primary">3.5K+</p>
+                    <p className="text-xs font-bold uppercase tracking-widest opacity-60">Verified Practice Items</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-4xl font-black text-secondary">82%</p>
