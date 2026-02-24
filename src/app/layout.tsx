@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import '../styles/mobile-nav.css';
 import { FirebaseClientProvider } from '@/firebase';
@@ -8,8 +8,22 @@ import { MobileBottomNav } from '@/components/ui/mobile-bottom-nav';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
-  title: "LET's Prep - Licensure Examination for Teachers Practice",
-  description: 'Simulate the LET experience with adaptive testing and performance analysis.',
+  title: "LET's Prep - Professional Teacher Practice",
+  description: 'Simulate the LET experience with Android-native fluidity and AI pedagogical analysis.',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: "LET's Prep"
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#a7d9ed',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover'
 };
 
 export default function RootLayout({
@@ -23,8 +37,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
-        <Script src="https://js.puter.com/v2/" strategy="afterInteractive" />
-        {/* Prevent flash of unstyled content */}
+        <Script src="https://js.puter.com/v2/" strategy="beforeInteractive" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -41,11 +54,13 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-body antialiased pb-20 md:pb-16">
+      <body className="font-body antialiased selection:bg-primary/30 selection:text-primary-foreground min-h-screen">
         <ThemeProvider>
           <FirebaseClientProvider>
             <Navbar />
-            {children}
+            <main className="pb-24 md:pb-8">
+              {children}
+            </main>
             <MobileBottomNav />
           </FirebaseClientProvider>
         </ThemeProvider>

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useUser, useFirestore } from '@/firebase/index';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Link from 'next/link';
-import { Coins, GraduationCap, ChevronDown, User, History, LogOut, Zap, Play, Loader2, CheckCircle2, Moon, Sun } from 'lucide-react';
+import { Coins, GraduationCap, ChevronDown, User, History, LogOut, Zap, Play, Loader2, CheckCircle2, Moon, Sun, Bell, Settings } from 'lucide-react';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -18,30 +18,15 @@ import { Button } from "@/components/ui/button";
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/hooks/use-theme';
+import { cn } from '@/lib/utils';
 
 export function Navbar() {
-  const { user, logout, loginWithGoogle, loginWithFacebook } = useUser();
+  const { user, logout, loginWithGoogle } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const { isDark, toggleDarkMode } = useTheme();
   const [showAdModal, setShowAdModal] = useState(false);
   const [watchingAd, setWatchingAd] = useState(false);
-  const [showProModal, setShowProModal] = useState(false);
-
-  const GoogleIcon = () => (
-    <svg className="w-4 h-4" viewBox="0 0 24 24">
-      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
-      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-    </svg>
-  );
-
-  const FacebookIcon = () => (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-      <path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-    </svg>
-  );
 
   const handleWatchAd = async () => {
     if (!user || !firestore) return;
@@ -53,10 +38,10 @@ export function Navbar() {
           credits: increment(3),
           dailyAdCount: increment(1)
         });
-        toast({ title: "Ad Complete", description: "You earned +3 AI Credits!" });
+        toast({ title: "Reward Granted", description: "+3 Credits added to your account." });
         setShowAdModal(false);
       } catch (e) {
-        toast({ variant: "destructive", title: "Error", description: "Failed to grant reward." });
+        toast({ variant: "destructive", title: "Sync Failed", description: "Could not grant reward." });
       } finally {
         setWatchingAd(false);
       }
@@ -64,91 +49,86 @@ export function Navbar() {
   };
 
   return (
-    <nav className="flex items-center justify-between px-6 py-4 bg-card/80 backdrop-blur-md border-b sticky top-0 z-[100] shadow-sm transition-colors duration-300">
+    <nav className="h-16 flex items-center justify-between px-4 md:px-8 bg-background/80 backdrop-blur-xl border-b sticky top-0 z-[100] transition-all duration-300 shadow-sm">
       <div className="flex items-center gap-2">
-        <Link href="/" className="text-xl font-black tracking-tighter text-foreground flex items-center gap-2">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="w-10 h-10 bg-primary rounded-[1rem] flex items-center justify-center shadow-lg shadow-primary/25 transition-transform group-active:scale-95">
             <GraduationCap className="text-primary-foreground w-6 h-6" />
           </div>
-          <span className="hidden md:inline">LET's Prep</span>
+          <div className="hidden sm:block">
+            <span className="text-lg font-black tracking-tight text-foreground block leading-none">LET's Prep</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Professional Simulation</span>
+          </div>
         </Link>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         {!user ? (
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="w-10 h-10 rounded-full bg-transparent border-border hover:bg-muted"
-              onClick={() => loginWithGoogle?.()}
-            >
-              <GoogleIcon />
+            <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-muted" onClick={toggleDarkMode}>
+              {isDark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-slate-600" />}
             </Button>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="w-10 h-10 rounded-full bg-transparent border-border hover:bg-muted"
-              onClick={() => loginWithFacebook?.()}
-            >
-              <FacebookIcon />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="w-10 h-10 rounded-full bg-transparent border-border hover:bg-muted"
-              onClick={toggleDarkMode}
-            >
-              {isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-foreground" />}
-            </Button>
+            <Button onClick={loginWithGoogle} className="font-bold rounded-2xl h-10 px-6 shadow-md shadow-primary/20">Sign In</Button>
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-2 bg-muted px-3 py-2 rounded-2xl border border-border cursor-pointer hover:bg-accent/10 transition-colors" onClick={() => setShowAdModal(true)}>
-              <Coins className="w-4 h-4 text-yellow-500 fill-current" />
-              <div className="flex flex-col">
-                <span className="text-sm font-black text-foreground leading-none">{user.credits ?? 0}</span>
-                <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Credits</span>
+            <div 
+              className="flex items-center gap-2 bg-muted/40 hover:bg-accent/10 px-4 py-2 rounded-2xl border border-border/50 cursor-pointer transition-all active:scale-95 group"
+              onClick={() => setShowAdModal(true)}
+            >
+              <div className="w-5 h-5 rounded-full bg-yellow-500/10 flex items-center justify-center">
+                <Coins className="w-3.5 h-3.5 text-yellow-600 fill-current" />
               </div>
+              <span className="text-sm font-black text-foreground">{user.credits ?? 0}</span>
+              <Zap className="w-3 h-3 text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
             </div>
 
-            {!user.isPro && (
-              <Button size="sm" variant="outline" className="hidden md:flex border-primary text-primary font-black rounded-xl gap-2 hover:bg-primary/10" onClick={() => setShowProModal(true)}>
-                <Zap className="w-3 h-3 fill-current" /> GO PRO
+            <div className="hidden md:flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10" onClick={toggleDarkMode}>
+                {isDark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5" />}
               </Button>
-            )}
-
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="w-10 h-10 rounded-full bg-transparent border-border hover:bg-muted"
-              onClick={toggleDarkMode}
-            >
-              {isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-foreground" />}
-            </Button>
+              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 relative">
+                <Bell className="w-5 h-5 text-muted-foreground" />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full border-2 border-background" />
+              </Button>
+            </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 p-1 pr-3 rounded-full hover:bg-muted transition-all outline-none">
-                  <Avatar className="w-10 h-10 border-2 border-background shadow-md">
-                    {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />}
-                    <AvatarFallback className="text-[10px] font-black bg-primary/10 text-primary">
+                <button className="flex items-center gap-2 p-0.5 rounded-full hover:bg-muted transition-all outline-none focus:ring-2 focus:ring-primary/20">
+                  <Avatar className="w-9 h-9 border-2 border-background shadow-md">
+                    {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || "User"} />}
+                    <AvatarFallback className="text-xs font-black bg-primary/10 text-primary uppercase">
                       {user.displayName?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
-                  <ChevronDown className="w-3 h-3 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 mt-2 rounded-2xl border bg-card shadow-2xl" align="end">
-                <DropdownMenuLabel className="font-black text-xs uppercase tracking-widest text-muted-foreground p-4 pb-2">Account</DropdownMenuLabel>
+              <DropdownMenuContent className="w-64 mt-2 rounded-2xl border bg-card shadow-2xl p-2" align="end">
+                <div className="p-3 mb-2 bg-muted/30 rounded-xl">
+                  <p className="text-sm font-black truncate">{user.displayName}</p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">{user.email}</p>
+                </div>
+                <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground px-3 py-2">Simulation Hub</DropdownMenuLabel>
                 <DropdownMenuItem asChild>
-                  <Link href="/profile" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted"><User className="w-4 h-4 text-primary" /> Profile</Link>
+                  <Link href="/profile" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
+                    <User className="w-4 h-4 text-primary" /> Profile Overview
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/profile?tab=history" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted"><History className="w-4 h-4 text-secondary" /> History</Link>
+                  <Link href="/profile?tab=history" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
+                    <History className="w-4 h-4 text-emerald-500" /> Analysis Vault
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="mx-2" />
-                <DropdownMenuItem onClick={logout} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl text-destructive hover:bg-destructive/10"><LogOut className="w-4 h-4" /> Sign Out</DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile?tab=account" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
+                    <Settings className="w-4 h-4 text-slate-500" /> Account Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-2 bg-border/50" />
+                <DropdownMenuItem onClick={logout} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl text-destructive hover:bg-destructive/10 transition-colors">
+                  <LogOut className="w-4 h-4" /> Sign Out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </>
@@ -156,48 +136,33 @@ export function Navbar() {
       </div>
 
       <Dialog open={showAdModal} onOpenChange={setShowAdModal}>
-        <DialogContent className="rounded-[2rem] bg-card border-none shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-black text-foreground">Earn AI Credits</DialogTitle>
-            <DialogDescription className="text-muted-foreground">Watch a short promotional video to earn +3 credits for AI explanations.</DialogDescription>
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl max-w-[380px]">
+          <DialogHeader className="space-y-3">
+            <div className="w-16 h-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-2">
+              <Zap className="w-8 h-8 text-primary" />
+            </div>
+            <DialogTitle className="text-2xl font-black text-center">Refill AI Credits</DialogTitle>
+            <DialogDescription className="text-center text-muted-foreground font-medium">
+              Watch a quick tutorial or educational promo to earn <span className="text-primary font-black">+3 Credits</span>.
+            </DialogDescription>
           </DialogHeader>
-          <div className="py-8 flex flex-col items-center justify-center bg-muted rounded-2xl border border-dashed border-border">
-            <Play className="w-12 h-12 text-primary opacity-40 mb-4" />
-            <p className="text-xs font-bold text-muted-foreground">Daily limit: {user?.dailyAdCount || 0} / 5 ads</p>
+          <div className="py-10 flex flex-col items-center justify-center bg-muted/30 rounded-[2rem] border-2 border-dashed border-border/50">
+            <Play className="w-14 h-14 text-primary opacity-20 mb-4" />
+            <div className="flex flex-col items-center">
+              <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Daily Allowance</p>
+              <p className="text-lg font-black text-foreground">{user?.dailyAdCount || 0} / 5</p>
+            </div>
           </div>
-          <DialogFooter>
-            <Button className="w-full font-black rounded-xl h-12" onClick={handleWatchAd} disabled={watchingAd || (user?.dailyAdCount || 0) >= 5}>
-              {watchingAd ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Play className="w-4 h-4 mr-2" />}
-              {watchingAd ? "Streaming Ad..." : "Watch and Earn +3 Credits"}
+          <DialogFooter className="flex-col gap-3">
+            <Button 
+              className="w-full h-14 font-black rounded-2xl text-lg gap-3 shadow-lg shadow-primary/30 active:scale-[0.98] transition-all" 
+              onClick={handleWatchAd} 
+              disabled={watchingAd || (user?.dailyAdCount || 0) >= 5}
+            >
+              {watchingAd ? <Loader2 className="w-6 h-6 animate-spin" /> : <Play className="w-6 h-6 fill-current" />}
+              {watchingAd ? "Connecting..." : "Watch & Earn +3"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showProModal} onOpenChange={setShowProModal}>
-        <DialogContent className="rounded-[2.5rem] max-w-md bg-card border-none shadow-2xl">
-          <DialogHeader className="pt-8">
-            <DialogTitle className="text-center text-3xl font-black text-foreground">Go Professional</DialogTitle>
-            <DialogDescription className="text-center text-muted-foreground">Unlock the full power of AI for your board preparation.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-6">
-            {[
-              "Unlimited AI explanations",
-              "Instant performance analytics",
-              "No promotional ads",
-              "Priority AI access",
-              "Special Profile badge"
-            ].map((benefit, i) => (
-              <div key={i} className="flex items-center gap-3 px-6 py-3 bg-primary/5 rounded-xl border border-primary/10">
-                <CheckCircle2 className="w-5 h-5 text-primary" />
-                <span className="text-sm font-bold text-foreground">{benefit}</span>
-              </div>
-            ))}
-          </div>
-          <DialogFooter className="pb-8">
-            <Button className="w-full h-14 rounded-2xl font-black text-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/20">
-              Upgrade to Pro — $9.99/mo
-            </Button>
+            <Button variant="ghost" className="w-full font-bold text-muted-foreground" onClick={() => setShowAdModal(false)}>Maybe Later</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
