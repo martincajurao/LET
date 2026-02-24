@@ -88,6 +88,7 @@ export function DailyTaskDashboard() {
             taskQuestionsClaimed: false,
             taskMockClaimed: false,
             taskMistakesClaimed: false,
+            dailyCreditEarned: 0,
             lastTaskReset: serverTimestamp()
           });
           toast({ title: "🔄 Daily Tasks Reset!", description: "Your daily missions have been refreshed." });
@@ -103,15 +104,15 @@ export function DailyTaskDashboard() {
     {
       id: 'login',
       title: 'Daily Entrance',
-      description: 'Access your simulation vault',
-      reward: 20, goal: 1, current: user ? 1 : 0, // Always 1 if user is logged in
+      description: 'Access simulation vault (Refills 1 Insight)',
+      reward: 5, goal: 1, current: user ? 1 : 0,
       isClaimed: !!user?.taskLoginClaimed,
       icon: <Key className="w-5 h-5" />, color: 'text-emerald-600', bgColor: 'bg-emerald-500/10'
     },
     { 
       id: 'questions', 
       title: 'Answer Questions', 
-      description: 'Complete practice questions',
+      description: 'Complete items to build readiness',
       reward: 5, goal: 20, current: user?.dailyQuestionsAnswered || 0,
       isClaimed: !!user?.taskQuestionsClaimed,
       icon: <Target className="w-5 h-5" />, color: 'text-blue-600', bgColor: 'bg-blue-500/10'
@@ -119,7 +120,7 @@ export function DailyTaskDashboard() {
     { 
       id: 'mock', 
       title: 'Mock Exam', 
-      description: 'Take a full simulation test',
+      description: 'Finish a high-fidelity simulation',
       reward: 10, goal: 1, current: user?.dailyTestsFinished || 0,
       isClaimed: !!user?.taskMockClaimed,
       icon: <Trophy className="w-5 h-5" />, color: 'text-amber-600', bgColor: 'bg-amber-500/10'
@@ -127,7 +128,7 @@ export function DailyTaskDashboard() {
     { 
       id: 'mistakes', 
       title: 'Review Mistakes', 
-      description: 'Learn from wrong answers',
+      description: 'Learn from analytical feedback',
       reward: 5, goal: 10, current: user?.mistakesReviewed || 0,
       isClaimed: !!user?.taskMistakesClaimed,
       icon: <BookOpen className="w-5 h-5" />, color: 'text-rose-600', bgColor: 'bg-rose-500/10'
@@ -179,7 +180,7 @@ export function DailyTaskDashboard() {
           taskMistakesClaimed: result.tasksCompleted.includes('mistakes') || !!user.taskMistakesClaimed,
           lastActiveDate: serverTimestamp()
         });
-        toast({ title: "🎉 Rewards Claimed!", description: `You earned ${result.reward} AI Credits` });
+        toast({ title: "🎉 Mission Accomplished!", description: `Earned ${result.reward} AI Credits.` });
       } else if (result.error) {
         toast({ variant: "destructive", title: "Claim Failed", description: result.error });
       }
@@ -199,8 +200,8 @@ export function DailyTaskDashboard() {
               <Target className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <CardTitle className="text-xl md:text-2xl font-black tracking-tight">Daily Missions</CardTitle>
-              <CardDescription className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Practice to earn credits</CardDescription>
+              <CardTitle className="text-xl md:text-2xl font-black tracking-tight">Daily Mission</CardTitle>
+              <CardDescription className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Master the curriculum</CardDescription>
             </div>
           </div>
           <div className="flex items-center gap-3 bg-primary px-4 py-2 rounded-2xl shadow-lg shadow-primary/20">
@@ -213,7 +214,7 @@ export function DailyTaskDashboard() {
         </div>
         <div className="mt-4 space-y-2">
           <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            <span>Progress</span>
+            <span>Daily Progress</span>
             <span className="text-primary">{Math.round(totalProgress)}%</span>
           </div>
           <Progress value={totalProgress} className="h-3 rounded-full bg-muted" />
@@ -235,7 +236,7 @@ export function DailyTaskDashboard() {
                     <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center shadow-sm", task.bgColor, task.color)}>{task.icon}</div>
                     <div className="space-y-0.5">
                       <p className="text-sm font-bold text-foreground">{task.title}</p>
-                      <p className="text-[10px] font-medium text-muted-foreground">{task.description}</p>
+                      <p className="text-[10px] font-medium text-muted-foreground line-clamp-1">{task.description}</p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
@@ -257,7 +258,7 @@ export function DailyTaskDashboard() {
           className="w-full h-14 rounded-2xl font-black text-lg gap-3 shadow-xl shadow-primary/30"
         >
           {claiming ? <Loader2 className="w-5 h-5 animate-spin" /> : canClaimAny ? <Gift className="w-5 h-5" /> : <TrendingUp className="w-5 h-5" />}
-          {claiming ? 'Processing...' : canClaimAny ? `Claim ${totalEarnedToday} Credits` : 'Mission in Progress'}
+          {claiming ? 'Synchronizing...' : canClaimAny ? `Claim ${totalEarnedToday} Credits` : 'Keep Practicing'}
         </Button>
       </CardContent>
     </Card>

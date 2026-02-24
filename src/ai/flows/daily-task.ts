@@ -104,7 +104,7 @@ const dailyTaskFlow = ai.defineFlow(
       }
       
       // 4. Credit farming detection
-      if (dailyCreditEarned > 100 && !isPro) { // Limit increased to account for login bonus
+      if (dailyCreditEarned > 80 && !isPro) { // Tightened for profitability
         abuseFlags.push('credit_farming');
         warnings.push('Approaching daily credit limit');
       }
@@ -124,24 +124,17 @@ const dailyTaskFlow = ai.defineFlow(
 
       const userTierConfig = tierMultipliers[userTier as keyof typeof tierMultipliers] || tierMultipliers.Bronze;
 
-      // 0. Daily Login Reward (This replaces the initial signup credits)
+      // 0. Daily Login Reward (Calibrated for Profitability)
       if (!taskLoginClaimed) {
-        const loginReward = 20; // 20 credits for the login mission
+        const loginReward = 5; // Reduced from 20 to 5 (enough for 1 AI explanation)
         totalReward += loginReward;
         tasksCompleted.push('login');
       }
 
       // 1. Questions task with quality validation
       if (dailyQuestionsAnswered >= userTierConfig.questions && !taskQuestionsClaimed) {
-        // Quality bonus for genuine engagement
-        if (averageQuestionTime >= 10 && averageQuestionTime <= 120) { // Reasonable time range
+        if (averageQuestionTime >= 10 && averageQuestionTime <= 120) { 
           qualityBonus += 2;
-        }
-        
-        // Speed challenge bonus (15-60 seconds per question)
-        if (averageQuestionTime >= 15 && averageQuestionTime <= 60) {
-          qualityBonus += 3;
-          tasksCompleted.push('speed_challenge');
         }
         
         const questionReward = Math.floor(5 * userTierConfig.rewardMultiplier);
@@ -149,17 +142,15 @@ const dailyTaskFlow = ai.defineFlow(
         tasksCompleted.push('questions');
       }
 
-      // 2. Mock test task with completion quality check
+      // 2. Mock test task
       if (dailyTestsFinished >= userTierConfig.tests && !taskMockClaimed) {
-        // Bonus for completing full tests vs partial
         const testReward = Math.floor(10 * userTierConfig.rewardMultiplier);
         totalReward += testReward;
         tasksCompleted.push('mock');
       }
 
-      // 3. Mistakes review with learning validation
+      // 3. Mistakes review
       if (mistakesReviewed >= userTierConfig.mistakes && !taskMistakesClaimed) {
-        // Bonus for thorough mistake review
         if (mistakesReviewed >= userTierConfig.mistakes * 1.5) {
           qualityBonus += 3;
         }
@@ -184,21 +175,20 @@ const dailyTaskFlow = ai.defineFlow(
         tasksCompleted.push('perfect_day');
       }
 
-      // Enhanced streak system with anti-abuse
+      // Enhanced streak system
       let streakBonus = 0;
-      
       if (validStreak) {
         if (streakCount >= 30) {
-          streakBonus = 50; // Monthly milestone
+          streakBonus = 50; 
           tasksCompleted.push('streak_30');
         } else if (streakCount >= 14) {
-          streakBonus = 40; // Bi-weekly milestone
+          streakBonus = 30; // Reduced for economy balance
           tasksCompleted.push('streak_14');
         } else if (streakCount >= 7) {
-          streakBonus = 30;
+          streakBonus = 20;
           tasksCompleted.push('streak_7');
         } else if (streakCount >= 3) {
-          streakBonus = 15;
+          streakBonus = 10;
           tasksCompleted.push('streak_3');
         }
       }
@@ -206,14 +196,14 @@ const dailyTaskFlow = ai.defineFlow(
       totalReward += streakBonus + qualityBonus;
 
       // Progressive daily limits with abuse prevention
-      let maxDailyCredits = 100;
+      let maxDailyCredits = 80; // Standardized limit
       
       if (isPro) {
-        maxDailyCredits = 200; // Pro users get higher limits
+        maxDailyCredits = 200; 
       } else if (abuseFlags.length > 0) {
-        maxDailyCredits = 50; // Reduce limits for suspicious activity
+        maxDailyCredits = 30; 
       } else if (userTier === 'Platinum') {
-        maxDailyCredits = 150;
+        maxDailyCredits = 120;
       }
       
       if (dailyCreditEarned + totalReward > maxDailyCredits) {
@@ -221,64 +211,36 @@ const dailyTaskFlow = ai.defineFlow(
         totalReward = remainingCredits;
         
         if (remainingCredits === 0) {
-          warnings.push('Daily credit limit reached');
+          warnings.push('Daily earning limit reached');
         }
       }
 
       // Apply abuse penalties
       if (abuseFlags.length > 0) {
-        totalReward = Math.floor(totalReward * 0.5); // 50% penalty for abuse
+        totalReward = Math.floor(totalReward * 0.2); // 80% penalty for abuse
       }
 
-      // Calculate next reset time
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(0, 0, 0, 0);
       const nextResetTime = tomorrow.getTime();
 
-      // Generate recommended actions
       const recommendedActions: string[] = [];
-      
       if (tasksCompleted.length === 0) {
-        if (!taskLoginClaimed) {
-          recommendedActions.push('Claim your Daily Login Bonus');
-        }
+        if (!taskLoginClaimed) recommendedActions.push('Claim your Daily Login Bonus');
         recommendedActions.push(`Complete ${userTierConfig.questions - dailyQuestionsAnswered} more questions`);
-        if (dailyTestsFinished < userTierConfig.tests) {
-          recommendedActions.push('Finish a mock test');
-        }
-        if (mistakesReviewed < userTierConfig.mistakes) {
-          recommendedActions.push(`Review ${userTierConfig.mistakes - mistakesReviewed} more mistakes`);
-        }
-      }
-      
-      if (qualityBonus > 0) {
-        recommendedActions.push('Keep up the quality engagement for bonus rewards!');
-      }
-      
-      if (abuseFlags.length > 0) {
-        recommendedActions.push('Take breaks between sessions for better rewards');
       }
 
-      // Return comprehensive result
-      const result: DailyTaskOutput = {
+      return {
         reward: totalReward,
         tasksCompleted,
         streakBonus,
         qualityBonus,
         nextResetTime,
-        recommendedActions
+        recommendedActions,
+        warning: warnings.length > 0 ? warnings.join('; ') : undefined,
+        abuseFlags: abuseFlags.length > 0 ? abuseFlags : undefined
       };
-
-      if (warnings.length > 0) {
-        result.warning = warnings.join('; ');
-      }
-      
-      if (abuseFlags.length > 0) {
-        result.abuseFlags = abuseFlags;
-      }
-
-      return result;
     } catch (e: any) {
       return { 
         reward: 0, 

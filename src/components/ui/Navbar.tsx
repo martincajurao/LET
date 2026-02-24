@@ -63,14 +63,15 @@ export function Navbar() {
   const handleWatchAd = async () => {
     if (!user || !firestore) return;
     setWatchingAd(true);
+    // Simulate high-value ad engagement for profitability
     setTimeout(async () => {
       try {
         const userRef = doc(firestore, 'users', user.uid);
         await updateDoc(userRef, {
-          credits: increment(3),
+          credits: increment(5), // Increased to 5 to match the cost of 1 AI explanation
           dailyAdCount: increment(1)
         });
-        toast({ title: "Reward Granted", description: "+3 Credits added to your account." });
+        toast({ title: "Reward Granted", description: "+5 AI Credits added to your vault." });
         setShowAdModal(false);
       } catch (e) {
         toast({ variant: "destructive", title: "Sync Failed", description: "Could not grant reward." });
@@ -108,9 +109,9 @@ export function Navbar() {
               <div className="hidden md:block">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-muted">
+                    <button className="flex items-center gap-2 p-1 px-3 rounded-full hover:bg-muted transition-all border border-transparent hover:border-border">
                       <Menu className="w-5 h-5 text-foreground" />
-                    </Button>
+                    </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56 mt-2 rounded-2xl border bg-card shadow-2xl p-2" align="end">
                     <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground px-3 py-2">Quick Navigation</DropdownMenuLabel>
@@ -149,13 +150,6 @@ export function Navbar() {
             <Button onClick={() => setShowAuthModal(true)} className="font-bold rounded-2xl h-10 px-6 shadow-md shadow-primary/20">Sign In</Button>
           ) : (
             <>
-              <div className="hidden md:flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 relative">
-                  <Bell className="w-5 h-5 text-muted-foreground" />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full border-2 border-background" />
-                </Button>
-              </div>
-
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 p-0.5 rounded-full hover:bg-muted transition-all outline-none focus:ring-2 focus:ring-primary/20 relative">
@@ -246,24 +240,24 @@ export function Navbar() {
             </div>
             <DialogTitle className="text-2xl font-black text-center">Refill AI Credits</DialogTitle>
             <DialogDescription className="text-center text-muted-foreground font-medium">
-              Watch a quick tutorial or educational promo to earn <span className="text-primary font-black">+3 Credits</span>.
+              Watch a professional tutorial or academic promo to earn <span className="text-primary font-black">+5 Credits</span>.
             </DialogDescription>
           </DialogHeader>
           <div className="py-10 flex flex-col items-center justify-center bg-muted/30 rounded-[2rem] border-2 border-dashed border-border/50">
             <Play className="w-14 h-14 text-primary opacity-20 mb-4" />
             <div className="flex flex-col items-center">
               <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Daily Allowance</p>
-              <p className="text-lg font-black text-foreground">{user?.dailyAdCount || 0} / 5</p>
+              <p className="text-lg font-black text-foreground">{user?.dailyAdCount || 0} / 10</p>
             </div>
           </div>
           <DialogFooter className="flex-col gap-3">
             <Button 
               className="w-full h-14 font-black rounded-2xl text-lg gap-3 shadow-lg shadow-primary/30 active:scale-[0.98] transition-all" 
               onClick={handleWatchAd} 
-              disabled={watchingAd || (user?.dailyAdCount || 0) >= 5}
+              disabled={watchingAd || (user?.dailyAdCount || 0) >= 10}
             >
               {watchingAd ? <Loader2 className="w-6 h-6 animate-spin" /> : <Play className="w-6 h-6 fill-current" />}
-              {watchingAd ? "Connecting..." : "Watch & Earn +3"}
+              {watchingAd ? "Connecting..." : "Watch & Earn +5"}
             </Button>
             <Button variant="ghost" className="w-full font-bold text-muted-foreground" onClick={() => setShowAdModal(false)}>Maybe Later</Button>
           </DialogFooter>
