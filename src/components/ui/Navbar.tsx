@@ -129,7 +129,7 @@ export function Navbar() {
         <div className="relative">
           <ListTodo className="w-4 h-4" />
           {claimableTasksCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-primary text-primary-foreground text-[7px] font-black rounded-full flex items-center justify-center border border-card shadow-sm">
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-primary text-primary-foreground text-[7px] font-black rounded-full flex items-center justify-center border border-card shadow-sm animate-bounce">
               {claimableTasksCount}
             </span>
           )}
@@ -144,7 +144,7 @@ export function Navbar() {
         <div className="relative">
           <Bell className="w-4 h-4" />
           {availableTasksCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-primary text-primary-foreground text-[8px] font-black rounded-full flex items-center justify-center border border-card shadow-sm">
+            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary text-primary-foreground text-[8px] font-black rounded-full flex items-center justify-center border border-card shadow-sm animate-bounce">
               {availableTasksCount}
             </span>
           )}
@@ -311,7 +311,7 @@ export function Navbar() {
       </nav>
 
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm">
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-sm">
           <DialogHeader className="text-center">
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <ShieldCheck className="w-8 h-8 text-primary" />
