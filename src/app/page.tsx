@@ -46,6 +46,7 @@ import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
 import { ReferralSystem } from '@/components/ui/referral-system';
 import { Leaderboard } from '@/components/ui/leaderboard';
 import { EventsSection } from '@/components/ui/EventsSection';
+import { cn } from "@/lib/utils";
 
 type AppState = 'dashboard' | 'exam' | 'results' | 'registration';
 
@@ -86,7 +87,6 @@ export default function LetsPrepApp() {
   const [timePerQuestion, setTimePerQuestion] = useState(60);
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
 
-  // Handle external starts (from bottom nav)
   useEffect(() => {
     const startCat = searchParams.get('start');
     if (startCat && state === 'dashboard' && user) {
@@ -268,7 +268,6 @@ export default function LetsPrepApp() {
         </div>
       ) : (
         <div className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
-          {/* Quick Stats Overlay */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user?.credits || 0, color: 'bg-yellow-500/10' },
@@ -287,7 +286,6 @@ export default function LetsPrepApp() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Main Content Area */}
             <div className="lg:col-span-8 space-y-6">
               <Card className="overflow-hidden border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-primary/20 via-card to-background relative p-8 md:p-12">
                 <div className="relative z-10 space-y-6">
@@ -332,13 +330,11 @@ export default function LetsPrepApp() {
               <EventsSection />
             </div>
 
-            {/* Sidebar / Social Features */}
             <div className="lg:col-span-4 space-y-6">
               <DailyTaskDashboard />
               <Leaderboard />
               <ReferralSystem />
               
-              {/* Trust & Impact Box */}
               <Card className="border-none shadow-lg rounded-[2rem] bg-foreground text-background p-6">
                 <CardHeader className="p-0 mb-4">
                   <CardTitle className="text-lg font-black tracking-tight flex items-center gap-2">

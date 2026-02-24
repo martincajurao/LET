@@ -20,6 +20,7 @@ import { Question } from "@/app/lib/mock-data";
 import { useUser, useFirestore } from '@/firebase';
 import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { explainQuestion } from '@/ai/flows/explain-question';
+import { cn } from "@/lib/utils";
 
 interface ExamInterfaceProps {
   questions: Question[];
@@ -100,7 +101,10 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
           <CardHeader className="border-b border-border bg-muted/5">
             <div className="flex justify-between items-center mb-4">
               <Badge variant="secondary" className="px-3 py-1 font-black uppercase text-[10px]">{currentQuestion?.subject}</Badge>
-              <Button variant="ghost" size="sm" onClick={() => setFlags(p => ({...p, [currentQuestion.id]: !p[currentQuestion.id]}))} className={cn("gap-2", flags[currentQuestion.id] && "text-orange-500")}><Flag className={cn("w-4 h-4", flags[currentQuestion.id] && "fill-current")} /> {flags[currentQuestion.id] ? "Flagged" : "Flag"}</Button>
+              <Button variant="ghost" size="sm" onClick={() => setFlags(p => ({...p, [currentQuestion.id]: !p[currentQuestion.id]}))} className={cn("gap-2", flags[currentQuestion.id] && "text-orange-500")}>
+                <Flag className={cn("w-4 h-4", flags[currentQuestion.id] && "fill-current")} /> 
+                {flags[currentQuestion.id] ? "Flagged" : "Flag"}
+              </Button>
             </div>
             <CardTitle className="text-xl md:text-2xl font-black leading-tight text-foreground">{currentQuestion?.text}</CardTitle>
           </CardHeader>
