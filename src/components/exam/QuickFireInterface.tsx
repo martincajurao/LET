@@ -27,6 +27,12 @@ export function QuickFireInterface({ questions, onComplete, onExit }: QuickFireI
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [startTime] = useState(Date.now());
   const [timeLeft, setTimeLeft] = useState(120); // 2 minutes for 5 items
+  const [selectedOption, setSelectedOption] = useState<string>("");
+
+  // Clear selection whenever the question index changes
+  useEffect(() => {
+    setSelectedOption("");
+  }, [currentIdx]);
 
   const handleSubmit = useCallback(() => {
     const timeSpent = Math.floor((Date.now() - startTime) / 1000);
@@ -43,15 +49,21 @@ export function QuickFireInterface({ questions, onComplete, onExit }: QuickFireI
   }, [timeLeft, handleSubmit]);
 
   const handleAnswer = (val: string) => {
-    const currentQ = questions[currentIdx];
-    setAnswers(prev => ({ ...prev, [currentQ.id]: val }));
+    if (selectedOption) return; // Prevent multiple clicks during transition
     
-    // Auto-advance after small delay for flow
+    setSelectedOption(val);
+    const currentQ = questions[currentIdx];
+    const newAnswers = { ...answers, [currentQ.id]: val };
+    setAnswers(newAnswers);
+    
+    // Auto-advance after small delay for visual feedback of the selection
     setTimeout(() => {
       if (currentIdx < questions.length - 1) {
         setCurrentIdx(prev => prev + 1);
       } else {
-        handleSubmit();
+        // Complete the session using the latest answers directly to avoid state lag
+        const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+        onComplete(newAnswers, timeSpent);
       }
     }, 400);
   };
@@ -119,7 +131,7 @@ export function QuickFireInterface({ questions, onComplete, onExit }: QuickFireI
               </h2>
 
               <RadioGroup 
-                value={answers[currentQuestion.id] || ""} 
+                value={selectedOption} 
                 onValueChange={handleAnswer}
                 className="grid grid-cols-1 gap-2"
               >
@@ -133,7 +145,7 @@ export function QuickFireInterface({ questions, onComplete, onExit }: QuickFireI
                     <Label 
                       className={cn(
                         "flex items-center p-3.5 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98]",
-                        answers[currentQuestion.id] === opt 
+                        selectedOption === opt 
                           ? "border-primary bg-primary/5 ring-2 ring-primary/10" 
                           : "border-border bg-card hover:bg-muted/10"
                       )}
@@ -141,7 +153,7 @@ export function QuickFireInterface({ questions, onComplete, onExit }: QuickFireI
                       <RadioGroupItem value={opt} className="sr-only" />
                       <div className={cn(
                         "w-8 h-8 rounded-xl border-2 flex items-center justify-center mr-3 font-black text-xs transition-colors shrink-0",
-                        answers[currentQuestion.id] === opt 
+                        selectedOption === opt 
                           ? "bg-primary border-primary text-primary-foreground" 
                           : "border-border bg-muted text-muted-foreground"
                       )}>
