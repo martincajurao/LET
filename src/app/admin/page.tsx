@@ -285,6 +285,20 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    if (!firestore || !confirm("Permanently delete this user's professional profile? This cannot be undone.")) return;
+    setIsUpdatingUser(true);
+    try {
+      await deleteDoc(doc(firestore, "users", userId));
+      toast({ title: "Profile Deleted", description: "The user record has been removed from the system." });
+      fetchUsers();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Deletion Failed", description: error.message });
+    } finally {
+      setIsUpdatingUser(false);
+    }
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   return (
@@ -420,7 +434,10 @@ export default function AdminDashboard() {
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator className="bg-border/50" />
-                            <DropdownMenuItem className="font-bold gap-3 rounded-lg py-2.5 text-destructive focus:bg-destructive/10 focus:text-destructive">
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="font-bold gap-3 rounded-lg py-2.5 text-destructive focus:bg-destructive/10 focus:text-destructive"
+                            >
                               <Trash2 className="w-4 h-4" /> Delete Profile
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -596,9 +613,9 @@ export default function AdminDashboard() {
                               if (!extractedRawText || !aiSubject) return;
                               setAiProcessing(true);
                               try {
-                                const questions = await processTextToQuestions(extractedRawText, aiSubject, aiSubCategory || undefined);
-                                setExtractedPreview(questions);
-                                toast({ title: "Processing Complete", description: `Found ${questions.length} valid items.` });
+                                const questions = await processTextToQuestions({ rawText: extractedRawText, subject: aiSubject, subCategory: aiSubCategory || undefined });
+                                setExtractedPreview(questions.questions);
+                                toast({ title: "Processing Complete", description: `Found ${questions.questions.length} valid items.` });
                               } catch (error: any) {
                                 toast({ variant: "destructive", title: "Error", description: error.message });
                               } finally {
