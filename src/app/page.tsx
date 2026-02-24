@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
@@ -52,7 +53,7 @@ import { QuickFireResults } from "@/components/exam/QuickFireResults";
 import { Question, MAJORSHIPS } from "@/app/lib/mock-data";
 import { PersonalizedPerformanceSummaryOutput } from "@/ai/flows/personalized-performance-summary-flow";
 import { useUser, useFirestore } from "@/firebase";
-import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp, query, where, getCountFromServer } from "firebase/firestore";
 import { fetchQuestionsFromFirestore, seedInitialQuestions } from "@/lib/db-seed";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
@@ -103,6 +104,9 @@ function LetsPrepContent() {
   const [timePerQuestion, setTimePerQuestion] = useState(60);
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
 
+  // Ranking state
+  const [userRank, setUserRank] = useState<string | number>('---');
+
   // Intervals & XP states
   const [adCooldown, setAdCooldown] = useState(0);
   const [quickFireCooldown, setQuickFireCooldown] = useState(0);
@@ -115,6 +119,21 @@ function LetsPrepContent() {
   const [savingOnboarding, setSavingOnboarding] = useState(false);
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
+
+  // Handle Leaderboard Ranking
+  useEffect(() => {
+    const fetchRank = async () => {
+      if (!firestore || !user?.xp || user.uid.startsWith('bypass')) return;
+      try {
+        const q = query(collection(firestore, 'users'), where('xp', '>', user.xp));
+        const snapshot = await getCountFromServer(q);
+        setUserRank(`#${snapshot.data().count + 1}`);
+      } catch (e) {
+        console.error("Rank fetch error:", e);
+      }
+    };
+    fetchRank();
+  }, [firestore, user?.xp, user?.uid]);
 
   // Handle Cooldowns
   useEffect(() => {
@@ -373,7 +392,7 @@ function LetsPrepContent() {
 
   const displayStats = user ? [
     { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user?.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
-    { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Academic Title', value: rankData?.title, color: 'text-primary bg-primary/10' },
+    { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Arena Rank', value: userRank, color: 'text-primary bg-primary/10' },
     { icon: user?.isPro ? <Crown className="w-4 h-4 text-yellow-600" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user?.isPro ? 'Platinum' : 'FREE', color: user?.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
     { icon: <Flame className="w-4 h-4 text-orange-500" />, label: 'Streak', value: user?.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' }
   ] : [
