@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -46,7 +45,7 @@ type AppState = 'dashboard' | 'exam' | 'results' | 'registration';
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array];
-  for (i = shuffled.length - 1; i > 0; i--) {
+  for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
