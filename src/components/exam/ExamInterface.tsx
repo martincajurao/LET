@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -31,6 +32,7 @@ import {
 } from "lucide-react";
 import { Question } from "@/app/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ExamInterfaceProps {
   questions: Question[];
@@ -150,16 +152,19 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   if (!currentQuestion) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] bg-background flex flex-col animate-in fade-in duration-300">
-      <header className="h-16 border-b bg-card/50 backdrop-blur-xl flex items-center justify-between px-4 sm:px-8 shrink-0">
+    <div className="fixed inset-0 z-[200] bg-background flex flex-col overflow-hidden">
+      <header className="h-16 border-b bg-card/50 backdrop-blur-xl flex items-center justify-between px-4 sm:px-8 shrink-0 z-50">
         <div className="flex items-center gap-4">
-          <div className={cn(
-            "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-colors",
-            timeLeft < 60 ? "bg-destructive/10 border-destructive text-destructive animate-pulse" : "bg-primary/10 border-primary/20 text-primary"
-          )}>
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className={cn(
+              "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-colors",
+              timeLeft < 60 ? "bg-destructive/10 border-destructive text-destructive animate-pulse" : "bg-primary/10 border-primary/20 text-primary"
+            )}>
             <Clock className="w-4 h-4" />
             <span className="text-sm font-black font-mono">{formatTime(timeLeft)}</span>
-          </div>
+          </motion.div>
           <div className="hidden sm:flex items-center gap-2 text-muted-foreground">
             <Layers className="w-4 h-4" />
             <span className="text-xs font-black uppercase tracking-[0.2em]">{currentPhase.subject}</span>
@@ -171,72 +176,89 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
             <span className="text-[10px] font-black uppercase text-muted-foreground">Overall Progress</span>
             <span className="text-[10px] font-black text-primary">{Math.round(progress)}%</span>
           </div>
-          <Progress value={progress} className="h-1.5" />
+          <Progress value={progress} className="h-1.5 transition-all duration-500" />
         </div>
 
         <Button 
           variant="default" 
           size="sm" 
           onClick={() => setShowSubmitConfirm(true)}
-          className="font-black rounded-xl px-6 shadow-lg shadow-primary/20 bg-primary h-10"
+          className="font-black rounded-xl px-6 shadow-lg shadow-primary/20 bg-primary h-10 hover:scale-105 active:scale-95 transition-all"
         >
           <Send className="w-4 h-4 mr-2" />
           Finish
         </Button>
       </header>
 
-      <main className="flex-1 overflow-hidden flex flex-col md:flex-row">
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 pb-32">
-          <div className="max-w-3xl mx-auto space-y-6">
-            <div className="flex justify-between items-center">
-              <Badge variant="secondary" className="px-3 py-1 font-black uppercase text-[10px] tracking-widest bg-muted/50">
-                Item {currentInPhaseIdx + 1} of {currentPhase.items.length} in {currentPhase.subject}
-              </Badge>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setFlags(p => ({...p, [currentQuestion.id]: !p[currentQuestion.id]}))}
-                className={cn("h-8 gap-2 rounded-lg", flags[currentQuestion.id] && "text-orange-500 bg-orange-500/10")}
+      <main className="flex-1 overflow-hidden flex flex-col md:row-reverse lg:flex-row">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 pb-32 relative">
+          <div className="max-w-3xl mx-auto">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentQuestion.id}
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -20, opacity: 0 }}
+                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                className="space-y-6 md:space-y-8"
               >
-                <Flag className={cn("w-4 h-4", flags[currentQuestion.id] && "fill-current")} /> 
-                <span className="text-xs font-bold">{flags[currentQuestion.id] ? "Flagged" : "Review Later"}</span>
-              </Button>
-            </div>
-
-            <div className="space-y-8">
-              <h2 className="text-xl md:text-lg font-black leading-tight text-foreground tracking-tight">
-                {currentQuestion.text}
-              </h2>
-
-              <RadioGroup 
-                value={answers[currentQuestion.id] || ""} 
-                onValueChange={handleAnswer} 
-                className="grid grid-cols-1 gap-2"
-              >
-                {currentQuestion.options.map((opt, i) => (
-                  <Label 
-                    key={i} 
-                    className={cn(
-                      "flex items-center p-3 md:p-2.5 rounded-xl border-2 cursor-pointer transition-all active:scale-[0.98]",
-                      answers[currentQuestion.id] === opt 
-                        ? "border-primary bg-primary/5 ring-4 ring-primary/10" 
-                        : "border-border bg-card hover:bg-muted/10"
-                    )}
+                <div className="flex justify-between items-center">
+                  <Badge variant="secondary" className="px-3 py-1 font-black uppercase text-[10px] tracking-widest bg-muted/50 border-none">
+                    Item {currentInPhaseIdx + 1} of {currentPhase.items.length} in {currentPhase.subject}
+                  </Badge>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setFlags(p => ({...p, [currentQuestion.id]: !p[currentQuestion.id]}))}
+                    className={cn("h-8 gap-2 rounded-lg transition-colors", flags[currentQuestion.id] && "text-orange-500 bg-orange-500/10")}
                   >
-                    <RadioGroupItem value={opt} className="sr-only" />
-                    <div className={cn(
-                      "w-8 h-8 rounded-full border-2 flex items-center justify-center mr-3 font-black transition-colors shrink-0",
-                      answers[currentQuestion.id] === opt 
-                        ? "bg-primary border-primary text-primary-foreground" 
-                        : "border-border bg-muted text-muted-foreground"
-                    )}>
-                      {String.fromCharCode(65+i)}
-                    </div>
-                    <span className="text-sm md:text-xs font-bold text-foreground leading-snug">{opt}</span>
-                  </Label>
-                ))}
-              </RadioGroup>
-            </div>
+                    <Flag className={cn("w-4 h-4", flags[currentQuestion.id] && "fill-current")} /> 
+                    <span className="text-xs font-bold">{flags[currentQuestion.id] ? "Flagged" : "Review Later"}</span>
+                  </Button>
+                </div>
+
+                <div className="space-y-8">
+                  <h2 className="text-xl md:text-lg font-black leading-tight text-foreground tracking-tight">
+                    {currentQuestion.text}
+                  </h2>
+
+                  <RadioGroup 
+                    value={answers[currentQuestion.id] || ""} 
+                    onValueChange={handleAnswer} 
+                    className="grid grid-cols-1 gap-2 md:gap-1.5"
+                  >
+                    {currentQuestion.options.map((opt, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ y: 10, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: i * 0.05 + 0.1 }}
+                      >
+                        <Label 
+                          className={cn(
+                            "flex items-center p-3 md:p-2.5 rounded-xl border-2 cursor-pointer transition-all active:scale-[0.98]",
+                            answers[currentQuestion.id] === opt 
+                              ? "border-primary bg-primary/5 ring-4 ring-primary/10" 
+                              : "border-border bg-card hover:bg-muted/10"
+                          )}
+                        >
+                          <RadioGroupItem value={opt} className="sr-only" />
+                          <div className={cn(
+                            "w-8 h-8 md:w-7 md:h-7 rounded-full border-2 flex items-center justify-center mr-3 font-black transition-colors shrink-0",
+                            answers[currentQuestion.id] === opt 
+                              ? "bg-primary border-primary text-primary-foreground" 
+                              : "border-border bg-muted text-muted-foreground"
+                          )}>
+                            {String.fromCharCode(65+i)}
+                          </div>
+                          <span className="text-sm md:text-xs font-bold text-foreground leading-snug">{opt}</span>
+                        </Label>
+                      </motion.div>
+                    ))}
+                  </RadioGroup>
+                </div>
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
 
@@ -272,8 +294,10 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   </div>
                   <div className="grid grid-cols-6 gap-1.5">
                     {phase.items.map((q, i) => (
-                      <button 
+                      <motion.button 
                         key={q.id} 
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => {
                           setCurrentPhaseIdx(pIdx);
                           setCurrentInPhaseIdx(i);
@@ -281,7 +305,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                         className={cn(
                           "aspect-square rounded-lg text-[9px] font-black border transition-all flex items-center justify-center",
                           currentPhaseIdx === pIdx && currentInPhaseIdx === i 
-                            ? "border-primary bg-primary text-primary-foreground shadow-md scale-110 z-10" 
+                            ? "border-primary bg-primary text-primary-foreground shadow-md z-10" 
                             : answers[q.id] 
                               ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600" 
                               : "border-border text-muted-foreground hover:bg-muted/50",
@@ -289,7 +313,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                         )}
                       >
                         {i + 1}
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 </div>
@@ -306,12 +330,12 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </aside>
       </main>
 
-      <footer className="h-20 shrink-0 border-t bg-card/80 backdrop-blur-xl flex items-center justify-between px-6 pb-safe-area shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+      <footer className="h-20 shrink-0 border-t bg-card/80 backdrop-blur-xl flex items-center justify-between px-6 pb-safe-area shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50">
         <Button 
           variant="outline" 
           onClick={handleBack} 
           disabled={currentPhaseIdx === 0 && currentInPhaseIdx === 0}
-          className="rounded-xl px-6 h-12 font-black text-xs border-border"
+          className="rounded-xl px-6 h-12 font-black text-xs border-border hover:bg-muted/50 active:scale-95 transition-all"
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
           Back
@@ -325,7 +349,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         <Button 
           variant="default" 
           onClick={handleNext} 
-          className="rounded-xl px-8 h-12 font-black text-xs shadow-lg shadow-primary/20"
+          className="rounded-xl px-8 h-12 font-black text-xs shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
         >
           {currentPhaseIdx === groupedPhases.length - 1 && currentInPhaseIdx === currentPhase.items.length - 1 ? 'Finish' : 'Next'}
           <ChevronRight className="w-4 h-4 ml-1" />
@@ -334,95 +358,107 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
       {/* Phase Transition / Break Screen */}
       <Dialog open={showBreakScreen} onOpenChange={setShowBreakScreen}>
-        <DialogContent className="rounded-[3rem] bg-card border-none shadow-2xl p-10 max-w-md text-center z-[1001]">
-          <DialogHeader>
-            <div className="w-20 h-20 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+        <DialogContent className="rounded-[3rem] bg-card border-none shadow-2xl p-10 max-w-md text-center z-[1001] overflow-hidden">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="space-y-6"
+          >
+            <DialogHeader>
+              <div className="w-20 h-20 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+              </div>
+              <DialogTitle className="text-3xl font-black tracking-tight mb-2">Phase Complete!</DialogTitle>
+              <DialogDescription className="text-muted-foreground font-medium text-lg leading-relaxed">
+                You have finished the <span className="text-foreground font-black">{currentPhase.subject}</span> track.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="bg-muted/30 p-6 rounded-3xl border border-border/50 my-8 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Next Phase</span>
+                <Badge className="font-black bg-primary/20 text-primary border-none">
+                  {groupedPhases[currentPhaseIdx + 1]?.subject || 'Finalizing'}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-3 text-sm font-medium text-foreground text-left">
+                <Coffee className="w-5 h-5 text-orange-500 shrink-0" />
+                <p>Research suggests a short break improves analytical focus by 15%.</p>
+              </div>
             </div>
-            <DialogTitle className="text-3xl font-black tracking-tight mb-2">Phase Complete!</DialogTitle>
-            <DialogDescription className="text-muted-foreground font-medium text-lg leading-relaxed">
-              You have finished the <span className="text-foreground font-black">{currentPhase.subject}</span> track.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="bg-muted/30 p-6 rounded-3xl border border-border/50 my-8 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Next Phase</span>
-              <Badge className="font-black bg-primary/20 text-primary border-none">
-                {groupedPhases[currentPhaseIdx + 1]?.subject || 'Finalizing'}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-3 text-sm font-medium text-foreground text-left">
-              <Coffee className="w-5 h-5 text-orange-500 shrink-0" />
-              <p>Research suggests a short break improves analytical focus by 15%.</p>
-            </div>
-          </div>
 
-          <div className="grid gap-3">
-            <Button 
-              onClick={() => {
-                setShowBreakScreen(false);
-                setIsResting(false);
-                setRestSeconds(0);
-                setCurrentPhaseIdx(prev => prev + 1);
-                setCurrentInPhaseIdx(0);
-              }}
-              className="h-16 rounded-2xl font-black text-lg gap-3 shadow-2xl shadow-primary/30 active:scale-[0.98] transition-all"
-            >
-              <Play className="w-5 h-5 fill-current" />
-              Continue to Next Phase
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsResting(true)}
-              className={cn(
-                "h-14 rounded-2xl font-bold border-2 transition-all",
-                isResting ? "text-orange-600 bg-orange-50 border-orange-200" : "text-muted-foreground hover:bg-muted/50"
-              )}
-            >
-              {isResting ? (
-                <>
-                  <Timer className="w-4 h-4 mr-2 animate-pulse" />
-                  Resting: {formatRestTime(restSeconds)}
-                </>
-              ) : (
-                <>
-                  <Timer className="w-4 h-4 mr-2" />
-                  Rest for a Moment
-                </>
-              )}
-            </Button>
-          </div>
+            <div className="grid gap-3">
+              <Button 
+                onClick={() => {
+                  setShowBreakScreen(false);
+                  setIsResting(false);
+                  setRestSeconds(0);
+                  setCurrentPhaseIdx(prev => prev + 1);
+                  setCurrentInPhaseIdx(0);
+                }}
+                className="h-16 rounded-2xl font-black text-lg gap-3 shadow-2xl shadow-primary/30 active:scale-[0.98] transition-all"
+              >
+                <Play className="w-5 h-5 fill-current" />
+                Continue to Next Phase
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setIsResting(true)}
+                className={cn(
+                  "h-14 rounded-2xl font-bold border-2 transition-all",
+                  isResting ? "text-orange-600 bg-orange-50 border-orange-200" : "text-muted-foreground hover:bg-muted/50"
+                )}
+              >
+                {isResting ? (
+                  <>
+                    <Timer className="w-4 h-4 mr-2 animate-pulse" />
+                    Resting: {formatRestTime(restSeconds)}
+                  </>
+                ) : (
+                  <>
+                    <Timer className="w-4 h-4 mr-2" />
+                    Rest for a Moment
+                  </>
+                )}
+              </Button>
+            </div>
+          </motion.div>
         </DialogContent>
       </Dialog>
 
       {/* Submission Confirmation */}
       <Dialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm z-[1001]">
-          <DialogHeader className="text-center">
-            <div className="w-16 h-16 bg-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="w-8 h-8 text-orange-500" />
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="space-y-4"
+          >
+            <DialogHeader className="text-center">
+              <div className="w-16 h-16 bg-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-8 h-8 text-orange-500" />
+              </div>
+              <DialogTitle className="text-2xl font-black">Finalize Simulation?</DialogTitle>
+              <DialogDescription className="text-muted-foreground font-medium">
+                You have answered <span className="text-foreground font-black">{answeredCount} out of {questions.length}</span> items. Once submitted, your answers will be calibrated by AI.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-2 pt-4">
+              <Button 
+                onClick={handleSubmit} 
+                className="h-12 rounded-xl font-bold shadow-lg shadow-primary/30 active:scale-95 transition-all"
+              >
+                Submit Simulation
+              </Button>
+              <Button 
+                variant="ghost" 
+                onClick={() => setShowSubmitConfirm(false)} 
+                className="h-12 rounded-xl font-bold text-muted-foreground"
+              >
+                Review Items
+              </Button>
             </div>
-            <DialogTitle className="text-2xl font-black">Finalize Simulation?</DialogTitle>
-            <DialogDescription className="text-muted-foreground font-medium">
-              You have answered <span className="text-foreground font-black">{answeredCount} out of {questions.length}</span> items. Once submitted, your answers will be calibrated by AI.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-2 pt-4">
-            <Button 
-              onClick={handleSubmit} 
-              className="h-12 rounded-xl font-bold shadow-lg shadow-primary/30"
-            >
-              Submit Simulation
-            </Button>
-            <Button 
-              variant="ghost" 
-              onClick={() => setShowSubmitConfirm(false)} 
-              className="h-12 rounded-xl font-bold text-muted-foreground"
-            >
-              Review Items
-            </Button>
-          </div>
+          </motion.div>
         </DialogContent>
       </Dialog>
     </div>
