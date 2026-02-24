@@ -26,7 +26,6 @@ function checkRateLimit(userId: string, deviceFingerprint?: string): { allowed: 
 
 // IP-based abuse detection
 function detectIPAbuse(ipAddress: string): { suspicious: boolean; reason?: string } {
-  // In production, maintain a database of suspicious IPs
   const suspiciousIPs = ['127.0.0.1']; // Example
   
   if (suspiciousIPs.includes(ipAddress)) {
@@ -125,7 +124,6 @@ export async function POST(req: NextRequest) {
       ipAddress: clientIP
     });
 
-    // Log abuse flags for monitoring (in production, send to monitoring service)
     if (result.abuseFlags && result.abuseFlags.length > 0) {
       console.warn(`Abuse detected for user ${userId}:`, {
         flags: result.abuseFlags,
@@ -135,7 +133,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Add security headers
     const headers = new Headers({
       'Content-Type': 'application/json',
       'X-Content-Type-Options': 'nosniff',
@@ -153,7 +150,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Health check endpoint
 export async function GET() {
   return NextResponse.json({ 
     status: 'healthy',

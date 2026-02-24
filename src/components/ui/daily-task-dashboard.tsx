@@ -5,7 +5,7 @@ import { useUser } from '@/firebase/auth/use-user';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, Coins, Trophy, Flame, Loader2, BookOpen, Target, Clock, Star, Gift, TrendingUp, Key } from "lucide-react";
+import { CheckCircle2, Coins, Trophy, Flame, Loader2, BookOpen, Target, Clock, Star, Gift, TrendingUp, Key, ShieldAlert } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore } from '@/firebase';
@@ -32,6 +32,7 @@ export function DailyTaskDashboard() {
   const [deviceFingerprint, setDeviceFingerprint] = useState('');
   const [sessionStartTime, setSessionStartTime] = useState(Date.now());
   const [questionTimes, setQuestionTimes] = useState<number[]>([]);
+  const [abuseWarning, setAbuseWarning] = useState<string | null>(null);
 
   useEffect(() => {
     const generateFingerprint = () => {
@@ -48,7 +49,7 @@ export function DailyTaskDashboard() {
         navigator.language,
         screen.width + 'x' + screen.height,
         new Date().getTimezoneOffset(),
-        canvas.toDataURL()
+        canvas ? canvas.toDataURL() : 'no-canvas'
       ].join('|');
       setDeviceFingerprint(btoa(fingerprint).substring(0, 16));
     };
@@ -104,7 +105,7 @@ export function DailyTaskDashboard() {
     {
       id: 'login',
       title: 'Daily Entrance',
-      description: 'Access simulation vault (Refills 1 Insight)',
+      description: 'Access simulation vault',
       reward: 5, goal: 1, current: user ? 1 : 0,
       isClaimed: !!user?.taskLoginClaimed,
       icon: <Key className="w-5 h-5" />, color: 'text-emerald-600', bgColor: 'bg-emerald-500/10'
@@ -142,6 +143,8 @@ export function DailyTaskDashboard() {
   const handleClaimReward = async () => {
     if (!user || !firestore || claiming) return;
     setClaiming(true);
+    setAbuseWarning(null);
+    
     try {
       const averageQuestionTime = questionTimes.length > 0 ? questionTimes.reduce((a, b) => a + b, 0) / questionTimes.length : 0;
       const totalSessionTime = (Date.now() - sessionStartTime) / 1000;
@@ -168,10 +171,12 @@ export function DailyTaskDashboard() {
           deviceFingerprint
         }),
       });
+      
       const result = await response.json();
+      
       if (result.reward > 0) {
         const userRef = doc(firestore, 'users', user.uid);
-        await updateDoc(userRef, {
+        const updateData: any = {
           credits: increment(result.reward),
           dailyCreditEarned: increment(result.reward),
           taskLoginClaimed: result.tasksCompleted.includes('login') || !!user.taskLoginClaimed,
@@ -179,8 +184,19 @@ export function DailyTaskDashboard() {
           taskMockClaimed: result.tasksCompleted.includes('mock') || !!user.taskMockClaimed,
           taskMistakesClaimed: result.tasksCompleted.includes('mistakes') || !!user.taskMistakesClaimed,
           lastActiveDate: serverTimestamp()
-        });
+        };
+        
+        if (result.abuseFlags) {
+          updateData.abuseFlags = result.abuseFlags;
+          updateData.lastAbuseWarning = serverTimestamp();
+        }
+        
+        await updateDoc(userRef, updateData);
         toast({ title: "🎉 Mission Accomplished!", description: `Earned ${result.reward} AI Credits.` });
+        
+        if (result.warning) {
+          setAbuseWarning(result.warning);
+        }
       } else if (result.error) {
         toast({ variant: "destructive", title: "Claim Failed", description: result.error });
       }
@@ -212,6 +228,14 @@ export function DailyTaskDashboard() {
             </div>
           </div>
         </div>
+        
+        {abuseWarning && (
+          <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3 animate-pulse">
+            <ShieldAlert className="w-5 h-5 text-destructive shrink-0" />
+            <p className="text-[10px] font-black text-destructive uppercase tracking-widest leading-tight">{abuseWarning}</p>
+          </div>
+        )}
+
         <div className="mt-4 space-y-2">
           <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
             <span>Daily Progress</span>

@@ -126,7 +126,7 @@ const dailyTaskFlow = ai.defineFlow(
 
       // 0. Daily Login Reward (Calibrated for Profitability)
       if (!taskLoginClaimed) {
-        const loginReward = 5; // Reduced from 20 to 5 (enough for 1 AI explanation)
+        const loginReward = 5; 
         totalReward += loginReward;
         tasksCompleted.push('login');
       }
@@ -182,7 +182,7 @@ const dailyTaskFlow = ai.defineFlow(
           streakBonus = 50; 
           tasksCompleted.push('streak_30');
         } else if (streakCount >= 14) {
-          streakBonus = 30; // Reduced for economy balance
+          streakBonus = 30; 
           tasksCompleted.push('streak_14');
         } else if (streakCount >= 7) {
           streakBonus = 20;
@@ -196,7 +196,7 @@ const dailyTaskFlow = ai.defineFlow(
       totalReward += streakBonus + qualityBonus;
 
       // Progressive daily limits with abuse prevention
-      let maxDailyCredits = 80; // Standardized limit
+      let maxDailyCredits = 80; 
       
       if (isPro) {
         maxDailyCredits = 200; 
