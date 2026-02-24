@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
@@ -133,7 +132,7 @@ function LetsPrepContent() {
         toast({ title: "💎 Professional Insight Ready", description: "Your XP boost is now available in the dashboard!" });
       }
       if (qfTimeLeft === 0 && user.lastQuickFireTimestamp && (now - user.lastQuickFireTimestamp) < COOLDOWNS.QUICK_FIRE + 5000) {
-        toast({ title: "🔥 Brain Teaser Ready", description: "Earn +125 XP with a 5-item Quick Fire challenge!" });
+        toast({ title: "🔥 Brain Teaser Ready", description: "Earn score-based XP with a 5-item Quick Fire challenge!" });
       }
     }, 5000);
 
@@ -265,7 +264,9 @@ function LetsPrepContent() {
     if (currentQuestions.length > 5) {
       xpEarned += (currentQuestions.length >= 50 ? XP_REWARDS.FINISH_FULL_SIM : XP_REWARDS.FINISH_TRACK);
     } else {
-      xpEarned += XP_REWARDS.QUICK_FIRE_COMPLETE;
+      // Quick Fire: Bonus is strictly based on score (Accuracy %)
+      const accuracy = correctCount / (currentQuestions.length || 1);
+      xpEarned += Math.round(accuracy * XP_REWARDS.QUICK_FIRE_COMPLETE);
     }
 
     const resultsData = sanitizeData({
@@ -352,7 +353,7 @@ function LetsPrepContent() {
   const displayStats = user ? [
     { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user?.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
     { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Rank', value: `Lvl ${levelData?.level}`, color: 'text-primary bg-primary/10' },
-    { icon: user?.isPro ? <Crown className="w-4 h-4 text-yellow-600" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user?.isPro ? 'Platinum' : 'Standard', color: user?.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
+    { icon: user?.isPro ? <Crown className="w-4 h-4 text-yellow-600" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user?.isPro ? 'Platinum' : 'FREE', color: user?.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
     { icon: <Flame className="w-4 h-4 text-orange-500" />, label: 'Streak', value: user?.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' }
   ] : [
     { icon: <Users className="w-4 h-4 text-blue-500" />, label: 'Community', value: '1.7K+', color: 'text-blue-500 bg-blue-500/5' },
