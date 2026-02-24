@@ -76,11 +76,11 @@ export function Navbar() {
       try {
         const userRef = doc(firestore, 'users', user.uid);
         await updateDoc(userRef, {
-          credits: increment(2),
+          credits: increment(5),
           xp: increment(XP_REWARDS.AD_WATCH_XP),
           lastAdXpTimestamp: Date.now()
         });
-        toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +2 Credits added.` });
+        toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added.` });
         setShowAdModal(false);
         setShowAlertsModal(false);
       } catch (e) {
@@ -136,16 +136,21 @@ export function Navbar() {
               <div className="hidden md:block">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 p-1 px-3 rounded-full hover:bg-muted transition-all border border-transparent hover:border-border">
+                    <button className="flex items-center gap-2 p-1 px-3 rounded-full hover:bg-muted transition-all border border-transparent hover:border-border outline-none">
                       <Menu className="w-5 h-5 text-foreground" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56 mt-2 rounded-2xl border bg-card shadow-2xl p-2" align="end">
                     <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground px-3 py-2">Quick Navigation</DropdownMenuLabel>
                     {navItems.map((item) => (
-                      <DropdownMenuItem key={item.label} asChild>
+                      <DropdownMenuItem key={item.label} asChild onSelect={(e) => {
+                        if (item.onClick) {
+                          e.preventDefault();
+                          item.onClick();
+                        }
+                      }}>
                         {item.onClick ? (
-                          <div onClick={item.onClick} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
+                          <div className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
                             <div className="text-primary">{item.icon}</div>
                             {item.label}
                           </div>

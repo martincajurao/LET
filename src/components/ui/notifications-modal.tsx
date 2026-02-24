@@ -69,7 +69,7 @@ export function NotificationsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm sm:max-w-md overflow-hidden">
+      <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm sm:max-w-md overflow-hidden outline-none">
         <DialogHeader className="text-left space-y-2 mb-6">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center">
@@ -112,7 +112,11 @@ export function NotificationsModal({
             </div>
             <Button 
               disabled={!qfAvailable}
-              onClick={() => { onStartQuickFire(); onClose(); }}
+              onClick={(e) => { 
+                e.stopPropagation();
+                onStartQuickFire(); 
+                onClose(); 
+              }}
               className="w-full h-12 rounded-xl font-black text-xs gap-2 shadow-lg"
             >
               {qfAvailable ? "Begin Challenge" : `Locked: ${formatTime(qfTimeLeft)}`}
@@ -135,7 +139,7 @@ export function NotificationsModal({
                 </div>
                 <div>
                   <p className="font-black text-sm">Professional Insight</p>
-                  <p className="text-[10px] font-medium text-muted-foreground">+50 XP & +2 Credits</p>
+                  <p className="text-[10px] font-medium text-muted-foreground">+50 XP & +5 Credits</p>
                 </div>
               </div>
               {adAvailable ? (
@@ -150,7 +154,10 @@ export function NotificationsModal({
             <Button 
               variant={adAvailable ? "default" : "outline"}
               disabled={!adAvailable || isWatchingAd}
-              onClick={onWatchAd}
+              onClick={(e) => {
+                e.stopPropagation();
+                onWatchAd();
+              }}
               className={cn(
                 "w-full h-12 rounded-xl font-black text-xs gap-2 shadow-lg",
                 adAvailable ? "bg-yellow-500 hover:bg-yellow-600 text-white shadow-yellow-500/20" : ""

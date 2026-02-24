@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -88,6 +88,7 @@ function LetsPrepContent() {
   const { toast } = useToast();
   const { isDark, toggleDarkMode } = useTheme();
   const searchParams = useSearchParams();
+  const router = useRouter();
   
   const [state, setState] = useState<AppState>('dashboard');
   const [currentQuestions, setCurrentQuestions] = useState<Question[]>([]);
@@ -140,10 +141,14 @@ function LetsPrepContent() {
 
   useEffect(() => {
     const startCat = searchParams.get('start');
-    if (startCat && state === 'dashboard' && user) {
+    if (startCat && user) {
+      if (state !== 'dashboard') {
+        setState('dashboard');
+      }
       startExam(startCat as any);
+      router.replace('/');
     }
-  }, [searchParams, user, state]);
+  }, [searchParams, user, state, router]);
 
   useEffect(() => {
     if (user && !user.onboardingComplete && state === 'dashboard' && !user.uid.startsWith('bypass')) {
