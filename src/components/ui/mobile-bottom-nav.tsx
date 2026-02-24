@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
@@ -17,7 +17,7 @@ import { NotificationsModal } from './notifications-modal';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { XP_REWARDS } from '@/lib/xp-system';
+import { XP_REWARDS, COOLDOWNS } from '@/lib/xp-system';
 
 interface NavItem {
   id: string;
@@ -25,14 +25,6 @@ interface NavItem {
   icon: React.ReactNode;
   href: string;
 }
-
-const navItems: NavItem[] = [
-  { id: 'home', label: 'Home', icon: <Home className="w-5 h-5" />, href: '/' },
-  { id: 'tasks', label: 'Tasks', icon: <ListTodo className="w-5 h-5" />, href: '/tasks' },
-  { id: 'practice', label: 'Practice', icon: <Target className="w-6 h-6" />, href: '#' },
-  { id: 'events', label: 'Arena', icon: <Trophy className="w-5 h-5" />, href: '/events' },
-  { id: 'notifications', label: 'Alerts', icon: <Bell className="w-5 h-5" />, href: '#' }
-];
 
 function NavContent() {
   const pathname = usePathname();
@@ -48,6 +40,7 @@ function NavContent() {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
   const [watchingAd, setWatchingAd] = useState(false);
+  const [availableTasksCount, setAvailableTasksCount] = useState(0);
 
   useEffect(() => {
     if (!firestore) return;
@@ -65,6 +58,24 @@ function NavContent() {
   }, [firestore]);
 
   useEffect(() => {
+    if (!user) {
+      setAvailableTasksCount(0);
+      return;
+    }
+
+    const calculateAvailable = () => {
+      const now = Date.now();
+      const adAvailable = (user.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP <= now;
+      const qfAvailable = (user.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE <= now;
+      setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
+    };
+
+    calculateAvailable();
+    const interval = setInterval(calculateAvailable, 10000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       if (currentScrollY > lastScrollY && currentScrollY > 80) {
@@ -77,6 +88,28 @@ function NavContent() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
+
+  const navItems: NavItem[] = useMemo(() => [
+    { id: 'home', label: 'Home', icon: <Home className="w-5 h-5" />, href: '/' },
+    { id: 'tasks', label: 'Tasks', icon: <ListTodo className="w-5 h-5" />, href: '/tasks' },
+    { id: 'practice', label: 'Practice', icon: <Target className="w-6 h-6" />, href: '#' },
+    { id: 'events', label: 'Arena', icon: <Trophy className="w-5 h-5" />, href: '/events' },
+    { 
+      id: 'notifications', 
+      label: 'Alerts', 
+      icon: (
+        <div className="relative">
+          <Bell className="w-5 h-5" />
+          {availableTasksCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-[9px] font-black rounded-full flex items-center justify-center border-2 border-card shadow-sm animate-bounce">
+              {availableTasksCount}
+            </span>
+          )}
+        </div>
+      ), 
+      href: '#' 
+    }
+  ], [availableTasksCount]);
 
   const handleNavClick = (item: NavItem) => {
     if (item.id === 'practice') {

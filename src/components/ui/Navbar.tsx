@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser, useFirestore } from '@/firebase/index';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Link from 'next/link';
@@ -52,7 +52,7 @@ import { doc, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
-import { getLevelData, XP_REWARDS } from '@/lib/xp-system';
+import { getLevelData, XP_REWARDS, COOLDOWNS } from '@/lib/xp-system';
 import { NotificationsModal } from './notifications-modal';
 import { useRouter } from 'next/navigation';
 
@@ -66,8 +66,27 @@ export function Navbar() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAlertsModal, setShowAlertsModal] = useState(false);
   const [watchingAd, setWatchingAd] = useState(false);
+  const [availableTasksCount, setAvailableTasksCount] = useState(0);
 
   const levelData = user ? getLevelData(user.xp || 0) : null;
+
+  useEffect(() => {
+    if (!user) {
+      setAvailableTasksCount(0);
+      return;
+    }
+
+    const calculateAvailable = () => {
+      const now = Date.now();
+      const adAvailable = (user.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP <= now;
+      const qfAvailable = (user.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE <= now;
+      setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
+    };
+
+    calculateAvailable();
+    const interval = setInterval(calculateAvailable, 10000); // Check every 10s
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleWatchAd = async () => {
     if (!user || !firestore) return;
@@ -95,7 +114,21 @@ export function Navbar() {
     { label: 'Home', icon: <Home className="w-4 h-4" />, href: '/' },
     { label: 'Daily Tasks', icon: <ListTodo className="w-4 h-4" />, href: '/tasks' },
     { label: 'Global Arena', icon: <Trophy className="w-4 h-4" />, href: '/events' },
-    { label: 'Notifications', icon: <Bell className="w-4 h-4" />, href: '#', onClick: () => setShowAlertsModal(true) },
+    { 
+      label: 'Notifications', 
+      icon: (
+        <div className="relative">
+          <Bell className="w-4 h-4" />
+          {availableTasksCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-primary text-primary-foreground text-[8px] font-black rounded-full flex items-center justify-center border border-card shadow-sm">
+              {availableTasksCount}
+            </span>
+          )}
+        </div>
+      ), 
+      href: '#', 
+      onClick: () => setShowAlertsModal(true) 
+    },
   ];
 
   return (
