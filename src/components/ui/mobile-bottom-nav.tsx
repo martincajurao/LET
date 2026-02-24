@@ -31,7 +31,7 @@ function NavContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, loading: authLoading } = useUser();
   const { toast } = useToast();
   
   const [isPracticeOpen, setIsPracticeOpen] = useState(false);
@@ -151,6 +151,9 @@ function NavContent() {
     if (item.id === 'notifications' && isAlertsOpen) return true;
     return false;
   };
+
+  // Only show bottom navbar if user is signed in
+  if (authLoading || !user) return null;
 
   return (
     <>
