@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useUser, useFirestore } from '@/firebase/index';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Link from 'next/link';
-import { Coins, GraduationCap, ChevronDown, User, History, LogOut, Settings, Zap, Play, Loader2, CheckCircle2 } from 'lucide-react';
+import { Coins, GraduationCap, ChevronDown, User, History, LogOut, Zap, Play, Loader2, CheckCircle2, Moon, Sun } from 'lucide-react';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -17,11 +17,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { useTheme } from '@/hooks/use-theme';
 
 export function Navbar() {
   const { user, logout, loginWithGoogle, loginWithFacebook } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { isDark, toggleDarkMode } = useTheme();
   const [showAdModal, setShowAdModal] = useState(false);
   const [watchingAd, setWatchingAd] = useState(false);
   const [showProModal, setShowProModal] = useState(false);
@@ -44,7 +46,6 @@ export function Navbar() {
   const handleWatchAd = async () => {
     if (!user || !firestore) return;
     setWatchingAd(true);
-    // Simulate Ad viewing
     setTimeout(async () => {
       try {
         const userRef = doc(firestore, 'users', user.uid);
@@ -63,7 +64,7 @@ export function Navbar() {
   };
 
   return (
-    <nav className="flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md border-b sticky top-0 z-[100] shadow-sm glass">
+<nav className="flex items-center justify-between px-6 py-4 dark:bg-slate-900/80 bg-white/80 backdrop-blur-md border-b sticky top-0 z-[100] shadow-sm glass">
       <div className="flex items-center gap-2">
         <Link href="/" className="text-xl font-black tracking-tighter text-slate-900 flex items-center gap-2">
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
@@ -92,6 +93,14 @@ export function Navbar() {
             >
               <FacebookIcon />
             </Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="w-10 h-10 rounded-full bg-transparent border-slate-200 hover:bg-slate-50"
+              onClick={toggleDarkMode}
+            >
+              {isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-slate-600" />}
+            </Button>
           </div>
         ) : (
           <>
@@ -108,6 +117,15 @@ export function Navbar() {
                 <Zap className="w-3 h-3 fill-current" /> GO PRO
               </Button>
             )}
+
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="w-10 h-10 rounded-full bg-transparent border-slate-200 hover:bg-slate-50"
+              onClick={toggleDarkMode}
+            >
+              {isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-slate-600" />}
+            </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

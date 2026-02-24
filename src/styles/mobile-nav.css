@@ -1,0 +1,172 @@
+/* Android-style mobile bottom navigation animations */
+
+/* Bottom navigation entrance animation */
+@keyframes slideUpFromBottom {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Ripple effect for Android-style buttons */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Pulse animation for active indicators */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Floating animation for cards */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+/* Apply animations to mobile navigation */
+.mobile-bottom-nav {
+  animation: slideUpFromBottom 0.3s ease-out;
+}
+
+/* Enhanced hover effects for navigation items */
+.mobile-nav-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.mobile-nav-item::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s, height 0.3s, opacity 0.3s;
+}
+
+.mobile-nav-item:hover::before {
+  width: 40px;
+  height: 40px;
+  opacity: 0;
+  animation: ripple 0.6s ease-out;
+}
+
+/* Active state animations */
+.mobile-nav-item.active .nav-icon {
+  animation: pulse 2s infinite;
+}
+
+/* Safe area handling for different devices */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .mobile-bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Enhanced touch feedback */
+@media (hover: hover) {
+  .mobile-nav-item:hover {
+    transform: scale(0.95);
+  }
+  
+  .mobile-nav-item:active {
+    transform: scale(0.9);
+  }
+}
+
+/* Android Material Design elevation shadows */
+.mobile-nav-container {
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1),
+              0 -4px 8px rgba(0, 0, 0, 0.06),
+              0 -6px 12px rgba(0, 0, 0, 0.04);
+}
+
+/* Smooth transitions for all interactive elements */
+.mobile-nav-item,
+.nav-icon,
+.nav-label {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced badge animations */
+.notification-badge {
+  animation: pulse 2s infinite;
+}
+
+/* Modal entrance animation */
+.practice-modal-overlay {
+  animation: slideUpFromBottom 0.3s ease-out;
+}
+
+/* Card hover effects */
+.practice-mode-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.practice-mode-card:hover {
+  transform: translateY(-4px) scale(1.02);
+}
+
+/* Button press effects */
+.android-button:active {
+  transform: scale(0.95);
+  transition: transform 0.1s;
+}
+
+/* Loading states */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Gradient text effects */
+.gradient-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  text-fill-color: transparent;
+}
+
+/* Floating elements */
+.floating-element {
+  animation: float 3s ease-in-out infinite;
+}

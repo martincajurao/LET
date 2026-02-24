@@ -50,6 +50,7 @@ import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
 import { ReferralSystem } from '@/components/ui/referral-system';
 import { Leaderboard } from '@/components/ui/leaderboard';
 import { EventsSection } from '@/components/ui/EventsSection';
+import { MobileBottomNav } from '@/components/ui/mobile-bottom-nav';
 
 type AppState = 'dashboard' | 'exam' | 'results' | 'registration';
 
@@ -134,6 +135,16 @@ export default function LetsPrepApp() {
     });
     return () => unsub();
   }, [firestore]);
+
+  // Listen for openPracticeModal event from mobile bottom nav FAB
+  useEffect(() => {
+    const handleOpenPractice = () => {
+      startExam('all');
+    };
+    
+    window.addEventListener('openPracticeModal', handleOpenPractice);
+    return () => window.removeEventListener('openPracticeModal', handleOpenPractice);
+  }, [user, firestore, loading, limits]);
 
   const startExam = async (category: string | 'all' = 'all') => {
     if (loading) return;
@@ -274,8 +285,8 @@ export default function LetsPrepApp() {
 
   if (authLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
-  return (
-    <div className="min-h-screen bg-[#F8FAFC] font-body pb-20">
+return (
+    <div className="min-h-screen dark:bg-slate-950 bg-[#F8FAFC] font-body pb-24">
       <Toaster />
       <Dialog open={authIssue} onOpenChange={setAuthIssue}>
         <DialogContent className="rounded-[2rem]">
@@ -581,6 +592,9 @@ export default function LetsPrepApp() {
           </div>
         </>
       )}
+      
+      {/* Mobile Bottom Navigation - Only visible when user is signed in */}
+      <MobileBottomNav isSignedIn={!!user} />
     </div>
   );
 }
