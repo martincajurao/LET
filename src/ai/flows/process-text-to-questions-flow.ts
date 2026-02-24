@@ -32,7 +32,8 @@ export async function processTextToQuestions(input: ProcessTextToQuestionsInput)
     }
 
     if (!puter || !puter.ai) {
-      throw new Error("Puter AI module not initialized. Make sure Puter script is loaded.");
+      console.warn("Puter AI not available - returning empty questions");
+      return { questions: [] };
     }
 
     const prompt = `You are an expert content structurer for LET exam.
@@ -49,12 +50,11 @@ export async function processTextToQuestions(input: ProcessTextToQuestionsInput)
     Return a JSON object with a "questions" array.
     ONLY return JSON object.`;
 
-    const response = await puter.ai.run({
-      model: '@puter/llama-3-8b-instruct',
-      prompt,
+    const response = await puter.ai.chat(prompt, {
+      model: 'gpt-5-nano'
     });
 
-    const rawOutput = response.output || "{\"questions\": []}";
+    const rawOutput = response.toString() || "{\"questions\": []}";
     const jsonStr = rawOutput.substring(rawOutput.indexOf('{'), rawOutput.lastIndexOf('}') + 1);
     const result = JSON.parse(jsonStr);
 

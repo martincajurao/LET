@@ -30,7 +30,11 @@ export async function explainQuestion(input: ExplainQuestionInput): Promise<Expl
     }
 
     if (!puter || !puter.ai) {
-      throw new Error("Puter AI module not initialized. Make sure Puter script is loaded.");
+      console.warn("Puter AI not available - using fallback");
+      return { 
+        explanation: "AI explanation is temporarily unavailable. Please try again later when the service is restored.",
+        error: "AI not available"
+      };
     }
 
     // Cooldown and Daily Limits are handled on the client-side component 

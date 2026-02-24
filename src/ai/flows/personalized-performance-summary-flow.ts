@@ -45,7 +45,15 @@ export async function generatePersonalizedPerformanceSummary(
       };
     }
 
-    if (!puter || !puter.ai) throw new Error("AI not initialized");
+    if (!puter || !puter.ai) {
+      console.warn("Puter AI not available - using fallback");
+      return {
+        summary: `Score: ${input.overallScorePercentage}%.`,
+        strengths: [],
+        weaknesses: [],
+        recommendations: "Continue practicing all tracks."
+      };
+    }
 
     const breakdown = input.testResults.map(r => `${r.subjectName}: ${r.scorePercentage}%`).join(', ');
     

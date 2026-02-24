@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview A Puter.js-powered flow for adaptive question generation using GPT-5 Nano.
  * Note: This function runs in the browser environment since Puter is loaded via script tag.
@@ -44,7 +43,10 @@ export async function adaptiveQuestionSelection(input: AdaptiveQuestionSelection
       return { questions: [] };
     }
 
-    if (!puter || !puter.ai) throw new Error("AI not initialized");
+    if (!puter || !puter.ai) {
+      console.warn("Puter AI not available - using fallback");
+      return { questions: [] };
+    }
 
     const weakAreas = input.previousAttempts
       ?.filter(a => !a.isCorrect)

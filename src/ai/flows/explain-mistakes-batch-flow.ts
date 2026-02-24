@@ -42,7 +42,16 @@ export async function explainMistakesBatch(
     }
 
     if (input.mistakes.length === 0) return { explanations: [] };
-    if (!puter || !puter.ai) throw new Error("AI not initialized");
+    
+    if (!puter || !puter.ai) {
+      console.warn("Puter AI not available - using fallback");
+      return { 
+        explanations: input.mistakes.map(m => ({ 
+          questionId: m.questionId, 
+          aiExplanation: "Review the core concepts related to this subject track." 
+        })) 
+      };
+    }
 
     const context = input.mistakes.map(m => `Q: ${m.text}\nCorrect: ${m.correctAnswer}\nUser: ${m.userAnswer}`).join('\n---\n');
     

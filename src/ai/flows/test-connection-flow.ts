@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview A Puter.js-powered flow to test the AI connection using GPT-5 Nano.
  * Note: This function runs in the browser environment since Puter is loaded via script tag.
@@ -27,7 +26,12 @@ export async function testAIConnection(): Promise<TestConnectionOutput> {
     }
 
     if (!puter || !puter.ai) {
-      throw new Error("Puter AI module not initialized. Make sure Puter script is loaded.");
+      console.warn("Puter AI not available - using fallback");
+      return {
+        success: false,
+        message: "Puter AI module not initialized. Make sure Puter script is loaded.",
+        timestamp: Date.now(),
+      };
     }
 
     const response = await puter.ai.chat("Say 'Puter AI (GPT-5 Nano) is online.' in 5 words or less.", {

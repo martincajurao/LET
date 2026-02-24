@@ -75,7 +75,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   }, [isResting, timeLeft, handleSubmit]);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setInterval>;
     if (isResting) {
       timer = setInterval(() => {
         setRestTimer(prev => prev + 1);

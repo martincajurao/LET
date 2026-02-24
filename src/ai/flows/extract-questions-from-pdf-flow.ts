@@ -36,7 +36,8 @@ export async function extractQuestionsFromPdf(input: ExtractQuestionsInput): Pro
     }
 
     if (!puter || !puter.ai) {
-      throw new Error("Puter AI module not initialized. Make sure Puter script is loaded.");
+      console.warn("Puter AI not available - returning empty questions");
+      return { questions: [], error: "AI not available. Please try again later." };
     }
 
     // Step 1: Extract raw text using programmatic library (non-AI)
@@ -61,12 +62,11 @@ export async function extractQuestionsFromPdf(input: ExtractQuestionsInput): Pro
     
     ONLY return: JSON object.`;
 
-    const response = await puter.ai.run({
-      model: '@puter/llama-3-8b-instruct',
-      prompt,
+    const response = await puter.ai.chat(prompt, {
+      model: 'gpt-5-nano'
     });
 
-    const rawOutput = response.output || "{\"questions\": []}";
+    const rawOutput = response.toString() || "{\"questions\": []}";
     const jsonStr = rawOutput.substring(rawOutput.indexOf('{'), rawOutput.lastIndexOf('}') + 1);
     const result = JSON.parse(jsonStr);
 
