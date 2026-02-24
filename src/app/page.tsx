@@ -213,18 +213,21 @@ export default function LetsPrepApp() {
             <DialogTitle className="text-2xl font-black">Authentication Required</DialogTitle>
             <DialogDescription className="text-muted-foreground">Sign in to track your progress and earn credits.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-3 py-6">
-            <Button onClick={loginWithGoogle} className="h-14 rounded-2xl font-bold gap-3 shadow-lg"><Zap className="w-5 h-5 fill-current" /> Continue with Google</Button>
-            <Button onClick={loginWithFacebook} className="h-14 rounded-2xl font-bold gap-3 shadow-lg bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none">
-              <Facebook className="w-5 h-5 fill-current" /> Continue with Facebook
+          <div className="grid gap-2 py-4">
+            <Button onClick={loginWithGoogle} className="h-12 rounded-xl font-bold gap-2 shadow-lg"><Zap className="w-4 h-4 fill-current" /> Continue with Google</Button>
+            <Button onClick={loginWithFacebook} className="h-12 rounded-xl font-bold gap-2 shadow-lg bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none">
+              <Facebook className="w-4 h-4 fill-current" /> Continue with Facebook
             </Button>
-            <Button variant="outline" onClick={loginAnonymously} className="h-14 rounded-2xl font-bold border-2">Guest Simulation</Button>
+            <Button variant="outline" onClick={loginAnonymously} className="h-12 rounded-xl font-bold border-2">Guest Simulation</Button>
           </div>
         </DialogContent>
       </Dialog>
 
       <Dialog open={loading}>
         <DialogContent className="max-w-[300px] border-none shadow-2xl bg-card rounded-[2.5rem] p-8">
+          <DialogHeader>
+            <DialogTitle className="sr-only">Loading</DialogTitle>
+          </DialogHeader>
           <div className="flex flex-col items-center gap-6">
             <div className="relative">
               <div className="w-20 h-20 bg-primary/10 rounded-full animate-ping absolute inset-0" />

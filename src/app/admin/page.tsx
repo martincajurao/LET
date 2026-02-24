@@ -228,6 +228,253 @@ export default function AdminDashboard() {
               </Table>
             </Card>
           </TabsContent>
+
+          <TabsContent value="config" className="space-y-6">
+            <Card className="overflow-hidden border-none shadow-sm rounded-xl bg-card border border-border">
+              <CardHeader className="p-6">
+                <CardTitle className="text-lg font-black flex items-center gap-2"><Settings className="w-5 h-5 text-primary" /> Simulation Settings</CardTitle>
+                <CardDescription className="text-sm">Configure exam parameters and limits.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 pt-0 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-foreground">Time per Question (seconds)</label>
+                    <Input 
+                      type="number" 
+                      value={timePerQuestion} 
+                      onChange={(e) => setTimePerQuestion(parseInt(e.target.value) || 60)}
+                      className="bg-background border-border"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-foreground">Gen Ed Limit</label>
+                    <Input 
+                      type="number" 
+                      value={limits.limitGenEd} 
+                      onChange={(e) => setLimits({...limits, limitGenEd: parseInt(e.target.value) || 10})}
+                      className="bg-background border-border"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-foreground">Prof Ed Limit</label>
+                    <Input 
+                      type="number" 
+                      value={limits.limitProfEd} 
+                      onChange={(e) => setLimits({...limits, limitProfEd: parseInt(e.target.value) || 10})}
+                      className="bg-background border-border"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-foreground">Specialization Limit</label>
+                    <Input 
+                      type="number" 
+                      value={limits.limitSpec} 
+                      onChange={(e) => setLimits({...limits, limitSpec: parseInt(e.target.value) || 10})}
+                      className="bg-background border-border"
+                    />
+                  </div>
+                </div>
+                <Button 
+                  onClick={async () => {
+                    if (!firestore) return;
+                    setSavingSettings(true);
+                    try {
+                      await setDoc(doc(firestore, "system_configs", "global"), {
+                        timePerQuestion,
+                        limitGenEd: limits.limitGenEd,
+                        limitProfEd: limits.limitProfEd,
+                        limitSpec: limits.limitSpec,
+                        updatedAt: serverTimestamp()
+                      }, { merge: true });
+                      toast({ title: "Settings Saved", description: "Simulation settings have been updated." });
+                    } catch (error: any) {
+                      toast({ variant: "destructive", title: "Error", description: error.message });
+                    } finally {
+                      setSavingSettings(false);
+                    }
+                  }}
+                  disabled={savingSettings}
+                  className="font-black"
+                >
+                  {savingSettings ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  Save Settings
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden border-none shadow-sm rounded-xl bg-card border border-border">
+              <CardHeader className="p-6">
+                <CardTitle className="text-lg font-black flex items-center gap-2"><Database className="w-5 h-5 text-primary" /> Database Management</CardTitle>
+                <CardDescription className="text-sm">Manage question database and seeding.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 pt-0 space-y-4">
+                <div className="flex gap-3">
+                  <Button 
+                    onClick={async () => {
+                      if (!firestore) return;
+                      setSeeding(true);
+                      try {
+                        await seedInitialQuestions(firestore);
+                        toast({ title: "Seeding Complete", description: "Questions have been seeded to the database." });
+                        fetchData();
+                      } catch (error: any) {
+                        toast({ variant: "destructive", title: "Error", description: error.message });
+                      } finally {
+                        setSeeding(false);
+                      }
+                    }}
+                    disabled={seeding}
+                    className="font-bold"
+                  >
+                    {seeding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                    Seed Questions
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="pdf-import" className="space-y-6">
+            <Card className="overflow-hidden border-none shadow-sm rounded-xl bg-card border border-border">
+              <CardHeader className="p-6">
+                <CardTitle className="text-lg font-black flex items-center gap-2"><FileUp className="w-5 h-5 text-primary" /> PDF Question Import</CardTitle>
+                <CardDescription className="text-sm">Import questions from PDF documents using AI.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 pt-0 space-y-6">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-foreground">Subject</label>
+                      <Select value={aiSubject} onValueChange={setAiSubject}>
+                        <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select subject" /></SelectTrigger>
+                        <SelectContent>
+                          {SUBJECTS.map(s => <SelectItem key={s} value={s} className="font-bold">{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-foreground">Sub-category (Optional)</label>
+                      <Select value={aiSubCategory} onValueChange={setAiSubCategory}>
+                        <SelectTrigger className="bg-background border-border"><SelectValue placeholder="Select sub-category" /></SelectTrigger>
+                        <SelectContent>
+                          {MAJORSHIPS.map(m => <SelectItem key={m} value={m} className="font-bold">{m}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <input 
+                      type="file" 
+                      accept=".pdf"
+                      ref={pdfInputRef}
+                      onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+                      className="hidden"
+                    />
+                    <Button variant="outline" onClick={() => pdfInputRef.current?.click()} className="w-full font-bold border-dashed">
+                      <FileText className="w-4 h-4 mr-2" />
+                      {pdfFile ? pdfFile.name : "Select PDF File"}
+                    </Button>
+                  </div>
+
+                  {pdfFile && (
+                    <div className="space-y-4">
+                      <Button 
+                        onClick={async () => {
+                          if (!pdfFile) return;
+                          setExtractingRaw(true);
+                          try {
+                            const base64 = await new Promise<string>((resolve, reject) => {
+                              const reader = new FileReader();
+                              reader.onload = () => resolve(reader.result as string);
+                              reader.onerror = () => reject(new Error("Failed to read file"));
+                              reader.readAsDataURL(pdfFile);
+                            });
+                            const text = await extractRawTextFromPdf(base64);
+                            setExtractedRawText(text);
+                            toast({ title: "Extraction Complete", description: "PDF text extracted successfully." });
+                          } catch (error: any) {
+                            toast({ variant: "destructive", title: "Error", description: error.message });
+                          } finally {
+                            setExtractingRaw(false);
+                          }
+                        }}
+                        disabled={extractingRaw}
+                        className="font-bold w-full"
+                      >
+                        {extractingRaw ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Type className="w-4 h-4 mr-2" />}
+                        Extract Text
+                      </Button>
+
+                      {extractedRawText && (
+                        <div className="space-y-4">
+                          <div className="p-4 bg-muted/30 rounded-xl border border-border">
+                            <p className="text-xs font-bold text-muted-foreground mb-2">Preview (first 500 chars):</p>
+                            <p className="text-sm text-foreground line-clamp-3">{extractedRawText.slice(0, 500)}...</p>
+                          </div>
+                          <Button 
+                            onClick={async () => {
+                              if (!extractedRawText || !aiSubject) return;
+                              setAiProcessing(true);
+                              try {
+                                const questions = await processTextToQuestions(extractedRawText, aiSubject, aiSubCategory || undefined);
+                                setExtractedPreview(questions);
+                                toast({ title: "Processing Complete", description: `Generated ${questions.length} questions.` });
+                              } catch (error: any) {
+                                toast({ variant: "destructive", title: "Error", description: error.message });
+                              } finally {
+                                setAiProcessing(false);
+                              }
+                            }}
+                            disabled={aiProcessing}
+                            className="font-bold w-full"
+                          >
+                            {aiProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Brain className="w-4 h-4 mr-2" />}
+                            Generate Questions
+                          </Button>
+                        </div>
+                      )}
+
+                      {extractedPreview.length > 0 && (
+                        <div className="space-y-4">
+                          <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
+                            <p className="text-sm font-black text-primary">{extractedPreview.length} questions generated</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              onClick={async () => {
+                                if (!firestore || extractedPreview.length === 0) return;
+                                try {
+                                  const batch = writeBatch(firestore);
+                                  extractedPreview.forEach(q => {
+                                    const newId = crypto.randomUUID();
+                                    batch.set(doc(firestore, "questions", newId), { ...q, id: newId });
+                                  });
+                                  await batch.commit();
+                                  toast({ title: "Import Complete", description: `${extractedPreview.length} questions imported.` });
+                                  setExtractedPreview([]);
+                                  fetchData();
+                                } catch (error: any) {
+                                  toast({ variant: "destructive", title: "Error", description: error.message });
+                                }
+                              }}
+                              className="flex-1 font-bold"
+                            >
+                              <CheckCircle2 className="w-4 h-4 mr-2" />
+                              Import All
+                            </Button>
+                            <Button variant="outline" onClick={() => setExtractedPreview([])} className="font-bold">
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
     </div>

@@ -128,13 +128,13 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
               <RadioGroup 
                 value={answers[currentQuestion?.id] || ""} 
                 onValueChange={handleAnswer} 
-                className="grid grid-cols-1 gap-3"
+                className="grid grid-cols-1 gap-2"
               >
                 {currentQuestion?.options.map((opt, i) => (
                   <Label 
                     key={i} 
                     className={cn(
-                      "flex items-center p-5 md:p-6 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98]",
+                      "flex items-center p-3 md:p-4 rounded-xl border-2 cursor-pointer transition-all active:scale-[0.98]",
                       answers[currentQuestion.id] === opt 
                         ? "border-primary bg-primary/5 ring-4 ring-primary/10" 
                         : "border-border bg-card hover:bg-muted/10"
@@ -142,14 +142,14 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   >
                     <RadioGroupItem value={opt} className="sr-only" />
                     <div className={cn(
-                      "w-10 h-10 md:w-12 md:h-12 rounded-full border-2 flex items-center justify-center mr-4 font-black transition-colors shrink-0",
+                      "w-8 h-8 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center mr-3 font-black transition-colors shrink-0",
                       answers[currentQuestion.id] === opt 
                         ? "bg-primary border-primary text-primary-foreground" 
                         : "border-border bg-muted text-muted-foreground"
                     )}>
                       {String.fromCharCode(65+i)}
                     </div>
-                    <span className="text-base md:text-lg font-bold text-foreground leading-snug">{opt}</span>
+                    <span className="text-sm md:text-base font-bold text-foreground leading-snug">{opt}</span>
                   </Label>
                 ))}
               </RadioGroup>
@@ -232,17 +232,17 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
               You have answered <span className="text-foreground font-black">{answeredCount} out of {questions.length}</span> items. Once submitted, you cannot change your answers.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-3 pt-6">
+          <div className="grid gap-2 pt-4">
             <Button 
               onClick={handleSubmit} 
-              className="h-14 rounded-2xl font-black text-lg shadow-lg shadow-primary/30"
+              className="h-12 rounded-xl font-bold shadow-lg shadow-primary/30"
             >
               Submit Now
             </Button>
             <Button 
               variant="ghost" 
               onClick={() => setShowSubmitConfirm(false)} 
-              className="h-14 rounded-2xl font-bold text-muted-foreground"
+              className="h-12 rounded-xl font-bold text-muted-foreground"
             >
               Continue Reviewing
             </Button>
