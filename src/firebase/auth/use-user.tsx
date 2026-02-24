@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
@@ -9,7 +10,7 @@ import {
   signOut,
   signInAnonymously,
 } from 'firebase/auth';
-import { doc, onSnapshot, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDoc, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
 import { auth, firestore } from '../index';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -22,8 +23,12 @@ export interface UserProfile {
   majorship?: string;
   onboardingComplete?: boolean;
   credits?: number;
+  xp?: number;
+  level?: number;
   isPro?: boolean;
   dailyAdCount?: number;
+  lastAdXpTimestamp?: number;
+  lastQuickFireTimestamp?: number;
   dailyAiUsage?: number;
   dailyQuestionsAnswered?: number;
   dailyTestsFinished?: number;
@@ -43,7 +48,6 @@ export interface UserProfile {
   mistakesReviewed?: number;
   lastExplanationRequest?: number;
   dailyEventEntries?: number;
-  // Enhanced fields for abuse prevention and quality tracking
   userTier?: string;
   totalSessionTime?: number;
   averageQuestionTime?: number;
@@ -62,6 +66,7 @@ interface AuthContextType {
   bypassLogin: () => void;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
+  addXp: (amount: number) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -73,6 +78,7 @@ const AuthContext = createContext<AuthContextType>({
   bypassLogin: () => {},
   logout: async () => {},
   updateProfile: async () => {},
+  addXp: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -111,7 +117,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               email: firebaseUser.email,
               photoURL: firebaseUser.photoURL,
               onboardingComplete: false,
-              credits: 0, // Starts at 0, claimed via login bonus
+              credits: 0,
+              xp: 0,
+              level: 1,
               isPro: false,
               dailyAdCount: 0,
               dailyAiUsage: 0,
@@ -159,6 +167,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
   }, [toast, firestore, auth]);
+
+  const addXp = async (amount: number) => {
+    if (!user || !firestore) return;
+    try {
+      const userRef = doc(firestore, 'users', user.uid);
+      await updateDoc(userRef, {
+        xp: increment(amount)
+      });
+    } catch (e) {
+      console.error("XP Error:", e);
+    }
+  };
 
   const loginWithGoogle = async () => {
     if (!auth) return;
@@ -224,6 +244,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       majorship: 'Mathematics',
       onboardingComplete: true,
       credits: 100,
+      xp: 1500,
+      level: 2,
       streakCount: 3,
       dailyAiUsage: 25,
       dailyQuestionsAnswered: 40,
@@ -254,7 +276,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loginAnonymously, 
       bypassLogin, 
       logout, 
-      updateProfile 
+      updateProfile,
+      addXp
     }}>
       {children}
     </AuthContext.Provider>

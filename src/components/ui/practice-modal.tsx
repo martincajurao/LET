@@ -13,6 +13,7 @@ import {
   Star, 
   X, 
   Clock,
+  Lock
 } from 'lucide-react';
 import {
   Dialog,
@@ -21,6 +22,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { getLevelData, isTrackUnlocked, UNLOCK_LEVELS } from '@/lib/xp-system';
 
 interface PracticeModalProps {
   isOpen: boolean;
@@ -38,6 +40,7 @@ export function PracticeModal({
   limits = { limitGenEd: 10, limitProfEd: 10, limitSpec: 10 }
 }: PracticeModalProps) {
   const { user } = useUser();
+  const levelData = user ? getLevelData(user.xp || 0) : { level: 1 };
 
   const totalQuestions = limits.limitGenEd + limits.limitProfEd + limits.limitSpec;
 
@@ -50,7 +53,8 @@ export function PracticeModal({
       color: 'bg-primary text-primary-foreground',
       borderColor: 'border-primary',
       time: `~${Math.ceil(totalQuestions * 1.5)} minutes`,
-      questions: `${totalQuestions} items`
+      questions: `${totalQuestions} items`,
+      reqLevel: UNLOCK_LEVELS.FULL_SIMULATION
     },
     {
       id: 'General Education',
@@ -60,7 +64,8 @@ export function PracticeModal({
       color: 'bg-blue-500 text-white',
       borderColor: 'border-blue-500',
       time: `~${limits.limitGenEd} minutes`,
-      questions: `${limits.limitGenEd} items`
+      questions: `${limits.limitGenEd} items`,
+      reqLevel: UNLOCK_LEVELS.GENERAL_ED
     },
     {
       id: 'Professional Education',
@@ -70,7 +75,8 @@ export function PracticeModal({
       color: 'bg-purple-500 text-white',
       borderColor: 'border-purple-500',
       time: `~${limits.limitProfEd} minutes`,
-      questions: `${limits.limitProfEd} items`
+      questions: `${limits.limitProfEd} items`,
+      reqLevel: UNLOCK_LEVELS.PROFESSIONAL_ED
     },
     {
       id: 'Specialization',
@@ -80,11 +86,13 @@ export function PracticeModal({
       color: 'bg-emerald-500 text-white',
       borderColor: 'border-emerald-500',
       time: `~${limits.limitSpec} minutes`,
-      questions: `${limits.limitSpec} items`
+      questions: `${limits.limitSpec} items`,
+      reqLevel: UNLOCK_LEVELS.SPECIALIZATION
     }
   ];
 
-  const handleStartPractice = (category: string) => {
+  const handleStartPractice = (category: string, reqLevel: number) => {
+    if (levelData.level < reqLevel) return;
     onStartExam(category);
     onClose();
   };
@@ -113,67 +121,79 @@ export function PracticeModal({
 
         <div className="p-6 space-y-6 bg-background">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {practiceModes.map((mode) => (
-              <Card
-                key={mode.id}
-                className={cn(
-                  "border-2 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-2 group practice-mode-card",
-                  mode.borderColor,
-                  "overflow-hidden bg-card rounded-2xl"
-                )}
-                onClick={() => !loading && handleStartPractice(mode.id)}
-              >
-                <CardHeader className="pb-4 relative">
-                  <div className={cn(
-                    "absolute inset-0 bg-gradient-to-br opacity-10 rounded-t-2xl",
-                    mode.id === 'all' ? 'from-primary/20 to-primary/5' :
-                    mode.id === 'General Education' ? 'from-blue-500/20 to-blue-500/5' :
-                    mode.id === 'Professional Education' ? 'from-purple-500/20 to-purple-500/5' :
-                    'from-emerald-500/20 to-emerald-500/5'
-                  )} />
+            {practiceModes.map((mode) => {
+              const isLocked = levelData.level < mode.reqLevel;
+              return (
+                <Card
+                  key={mode.id}
+                  className={cn(
+                    "border-2 transition-all duration-300 relative overflow-hidden bg-card rounded-2xl",
+                    isLocked ? "border-muted opacity-70 grayscale cursor-not-allowed" : "cursor-pointer hover:shadow-xl hover:-translate-y-2 group " + mode.borderColor
+                  )}
+                  onClick={() => !loading && handleStartPractice(mode.id, mode.reqLevel)}
+                >
+                  {isLocked && (
+                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/20 backdrop-blur-[1px]">
+                      <div className="bg-card p-3 rounded-2xl shadow-xl flex flex-col items-center border border-border">
+                        <Lock className="w-6 h-6 text-muted-foreground mb-1" />
+                        <span className="text-[10px] font-black uppercase text-muted-foreground">Unlocks at Level {mode.reqLevel}</span>
+                      </div>
+                    </div>
+                  )}
                   
-                  <div className="flex items-start justify-between relative z-10">
+                  <CardHeader className="pb-4 relative">
                     <div className={cn(
-                      "w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-110",
-                      mode.color
-                    )}>
-                      {mode.icon}
+                      "absolute inset-0 bg-gradient-to-br opacity-10 rounded-t-2xl",
+                      mode.id === 'all' ? 'from-primary/20 to-primary/5' :
+                      mode.id === 'General Education' ? 'from-blue-500/20 to-blue-500/5' :
+                      mode.id === 'Professional Education' ? 'from-purple-500/20 to-purple-500/5' :
+                      'from-emerald-500/20 to-emerald-500/5'
+                    )} />
+                    
+                    <div className="flex items-start justify-between relative z-10">
+                      <div className={cn(
+                        "w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-transform",
+                        !isLocked && "group-hover:scale-110",
+                        mode.color
+                      )}>
+                        {mode.icon}
+                      </div>
+                      <Badge variant="secondary" className={cn(
+                        "text-[10px] font-bold px-3 py-1 shadow-md",
+                        mode.id === 'all' ? 'bg-primary/20 text-primary border-primary/30' :
+                        mode.id === 'General Education' ? 'bg-blue-500/20 text-blue-600 border-blue-500/30' :
+                        mode.id === 'Professional Education' ? 'from-purple-500/20 text-purple-600 border-purple-500/30' :
+                        'bg-emerald-500/20 text-emerald-600 border-emerald-500/30'
+                      )}>
+                        {mode.questions}
+                      </Badge>
                     </div>
-                    <Badge variant="secondary" className={cn(
-                      "text-[10px] font-bold px-3 py-1 shadow-md",
-                      mode.id === 'all' ? 'bg-primary/20 text-primary border-primary/30' :
-                      mode.id === 'General Education' ? 'bg-blue-500/20 text-blue-600 border-blue-500/30' :
-                      mode.id === 'Professional Education' ? 'from-purple-500/20 text-purple-600 border-purple-500/30' :
-                      'bg-emerald-500/20 text-emerald-600 border-emerald-500/30'
-                    )}>
-                      {mode.questions}
-                    </Badge>
-                  </div>
-                  <CardTitle className="text-xl font-black mt-4 group-hover:text-primary transition-colors text-foreground">{mode.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{mode.description}</p>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="flex items-center justify-between mt-4">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted px-3 py-2 rounded-full">
-                      <Clock className="w-4 h-4" />
-                      <span className="font-medium">{mode.time}</span>
+                    <CardTitle className="text-xl font-black mt-4 group-hover:text-primary transition-colors text-foreground">{mode.name}</CardTitle>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{mode.description}</p>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex items-center justify-between mt-4">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted px-3 py-2 rounded-full">
+                        <Clock className="w-4 h-4" />
+                        <span className="font-medium">{mode.time}</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        disabled={loading || isLocked}
+                        className={cn(
+                          "font-bold text-xs px-6 py-3 h-10 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105",
+                          mode.id === 'all' 
+                            ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/25" 
+                            : "bg-foreground hover:bg-foreground/90 text-background shadow-foreground/25"
+                        )}
+                      >
+                        {loading ? "Starting..." : isLocked ? "Locked" : "Start"}
+                      </Button>
                     </div>
-                    <Button
-                      size="sm"
-                      disabled={loading}
-                      className={cn(
-                        "font-bold text-xs px-6 py-3 h-10 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105",
-                        mode.id === 'all' 
-                          ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/25" 
-                          : "bg-foreground hover:bg-foreground/90 text-background shadow-foreground/25"
-                      )}
-                    >
-                      {loading ? "Starting..." : "Start"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           <div className="mt-8 p-6 bg-primary/5 rounded-2xl border border-primary/20 shadow-lg">
@@ -183,11 +203,11 @@ export function PracticeModal({
               </div>
               <div>
                 <h4 className="font-black text-sm text-foreground flex items-center gap-2">
-                  System Calibrated
+                  Academic Progression
                   <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                 </h4>
                 <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                  These item counts are customized based on the latest board examination standards set in your administrative settings.
+                  Advanced simulations are unlocked as you grow in your professional career. Earn XP by completing Brain Teasers and focused tracks.
                 </p>
               </div>
             </div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -26,7 +27,8 @@ import {
   ListTodo,
   Trophy,
   Crown,
-  Shield
+  Shield,
+  Star
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -46,10 +48,12 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
+import { getLevelData } from '@/lib/xp-system';
 
 export function Navbar() {
   const { user, logout, loginWithGoogle, loginWithFacebook, bypassLogin } = useUser();
@@ -60,15 +64,16 @@ export function Navbar() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [watchingAd, setWatchingAd] = useState(false);
 
+  const levelData = user ? getLevelData(user.xp || 0) : null;
+
   const handleWatchAd = async () => {
     if (!user || !firestore) return;
     setWatchingAd(true);
-    // Simulate high-value ad engagement for profitability
     setTimeout(async () => {
       try {
         const userRef = doc(firestore, 'users', user.uid);
         await updateDoc(userRef, {
-          credits: increment(5), // Increased to 5 to match the cost of 1 AI explanation
+          credits: increment(5),
           dailyAdCount: increment(1)
         });
         toast({ title: "Reward Granted", description: "+5 AI Credits added to your vault." });
@@ -97,13 +102,30 @@ export function Navbar() {
               <GraduationCap className="text-primary-foreground w-6 h-6" />
             </div>
             <div className="hidden sm:block">
-              <span className="text-lg font-black tracking-tight text-foreground block leading-none">LET's Prep</span>
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-black tracking-tight text-foreground block leading-none">LET's Prep</span>
+                {user && (
+                  <Badge variant="outline" className="h-5 px-1.5 font-black text-[9px] border-primary/20 text-primary bg-primary/5">
+                    Lvl {levelData?.level}
+                  </Badge>
+                )}
+              </div>
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Professional Simulation</span>
             </div>
           </Link>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
+          {user && (
+            <div className="hidden lg:flex flex-col items-end gap-1 min-w-[120px] mr-2">
+              <div className="flex justify-between w-full px-1">
+                <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">{levelData?.title}</span>
+                <span className="text-[8px] font-black text-primary">{Math.round(levelData?.progress || 0)}%</span>
+              </div>
+              <Progress value={levelData?.progress} className="h-1 w-full bg-muted" />
+            </div>
+          )}
+
           <div className="flex items-center gap-1 sm:gap-2">
             {user && (
               <div className="hidden md:block">
@@ -182,7 +204,17 @@ export function Navbar() {
                     </div>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">{user.email}</p>
                   </div>
-                  <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground px-3 py-2">Simulation Hub</DropdownMenuLabel>
+                  <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground px-3 py-2">Career Overview</DropdownMenuLabel>
+                  <DropdownMenuItem asChild>
+                    <div className="px-3 py-2 space-y-2">
+                      <div className="flex justify-between items-center text-[10px] font-black uppercase">
+                        <span className="text-muted-foreground">Rank {user.level}</span>
+                        <span className="text-primary">{user.xp || 0} XP</span>
+                      </div>
+                      <Progress value={levelData?.progress} className="h-1.5" />
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="my-2 bg-border/50" />
                   <DropdownMenuItem asChild>
                     <Link href="/profile" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
                       <User className="w-4 h-4 text-primary" /> Profile Overview
@@ -191,11 +223,6 @@ export function Navbar() {
                   <DropdownMenuItem asChild>
                     <Link href="/profile?tab=history" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
                       <History className="w-4 h-4 text-emerald-500" /> Analysis Vault
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile?tab=account" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
-                      <Settings className="w-4 h-4 text-slate-500" /> Account Settings
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="my-2 bg-border/50" />

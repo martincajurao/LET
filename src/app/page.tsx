@@ -1,6 +1,7 @@
+
 'use client'
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,7 +40,11 @@ import {
   Shield,
   Heart,
   LayoutGrid,
-  Sparkles
+  Sparkles,
+  Lock,
+  Timer,
+  Play,
+  BellRing
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
@@ -47,15 +52,16 @@ import { Question, MAJORSHIPS } from "@/app/lib/mock-data";
 import { PersonalizedPerformanceSummaryOutput } from "@/ai/flows/personalized-performance-summary-flow";
 import { useUser, useFirestore } from "@/firebase";
 import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp } from "firebase/firestore";
-import { fetchQuestionsFromFirestore } from "@/lib/db-seed";
+import { fetchQuestionsFromFirestore, seedInitialQuestions } from "@/lib/db-seed";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { getLevelData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, XP_PER_LEVEL } from '@/lib/xp-system';
 
-type AppState = 'dashboard' | 'exam' | 'results' | 'onboarding';
+type AppState = 'dashboard' | 'exam' | 'results' | 'onboarding' | 'quickfire';
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array];
@@ -76,7 +82,7 @@ function sanitizeData(data: any): any {
 }
 
 function LetsPrepContent() {
-  const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook, bypassLogin } = useUser();
+  const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook, bypassLogin, addXp } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const { isDark, toggleDarkMode } = useTheme();
@@ -95,12 +101,44 @@ function LetsPrepContent() {
   const [timePerQuestion, setTimePerQuestion] = useState(60);
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
 
+  // Intervals & XP states
+  const [adCooldown, setAdCooldown] = useState(0);
+  const [quickFireCooldown, setQuickFireCooldown] = useState(0);
+  const [claimingXp, setClaimingXp] = useState(false);
+
   // Onboarding States
   const [setupStep, setSetupStep] = useState(1);
   const [nickname, setNickname] = useState("");
   const [selectedMajorship, setSelectedMajorship] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [savingOnboarding, setSavingOnboarding] = useState(false);
+
+  const levelData = useMemo(() => user ? getLevelData(user.xp || 0) : null, [user?.xp]);
+
+  // Handle Cooldowns & Push-Like Notifications
+  useEffect(() => {
+    if (!user) return;
+    
+    const interval = setInterval(() => {
+      const now = Date.now();
+      
+      const adTimeLeft = Math.max(0, (user.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP - now);
+      const qfTimeLeft = Math.max(0, (user.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE - now);
+      
+      setAdCooldown(adTimeLeft);
+      setQuickFireCooldown(qfTimeLeft);
+
+      // Simulated "Push Notification" logic
+      if (adTimeLeft === 0 && user.lastAdXpTimestamp && (now - user.lastAdXpTimestamp) < COOLDOWNS.AD_XP + 5000) {
+        toast({ title: "💎 Professional Insight Ready", description: "Your XP boost is now available in the dashboard!" });
+      }
+      if (qfTimeLeft === 0 && user.lastQuickFireTimestamp && (now - user.lastQuickFireTimestamp) < COOLDOWNS.QUICK_FIRE + 5000) {
+        toast({ title: "🔥 Brain Teaser Ready", description: "Earn +125 XP with a 5-item Quick Fire challenge!" });
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [user, toast]);
 
   useEffect(() => {
     const startCat = searchParams.get('start');
@@ -135,9 +173,20 @@ function LetsPrepContent() {
 
   const startExam = async (category: string | 'all' = 'all') => {
     if (loading) return;
+    
+    // Check Lock Requirements
+    if (user && !isTrackUnlocked(levelData?.level || 1, category)) {
+      toast({ 
+        title: "Mode Locked", 
+        description: `This simulation track requires Level ${category === 'all' ? 12 : (category === 'Professional Education' ? 3 : 7)}. Keep earning XP!`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     setLoadingStep(5);
-    setLoadingMessage("Checking session...");
+    setLoadingMessage("Opening Vault...");
 
     if (!user) {
       setAuthIssue(true);
@@ -148,7 +197,11 @@ function LetsPrepContent() {
     try {
       if (!firestore) throw new Error("Cloud synchronization error.");
       const questionPool = await fetchQuestionsFromFirestore(firestore);
-      if (!questionPool || questionPool.length === 0) throw new Error("Question bank is empty.");
+      if (!questionPool || questionPool.length === 0) {
+        // If DB empty, seed once
+        await seedInitialQuestions(firestore);
+        throw new Error("Initializing Question Bank. Please retry in 2 seconds.");
+      }
 
       let finalQuestions: Question[] = [];
       const sequenceOrder = ['General Education', 'Professional Education', 'Specialization'];
@@ -164,6 +217,8 @@ function LetsPrepContent() {
             finalQuestions = [...finalQuestions, ...shuffleArray(pool).slice(0, limitCount)];
           }
         }
+      } else if (category === 'quickfire') {
+        finalQuestions = shuffleArray(questionPool).slice(0, 5);
       } else {
         const pool = questionPool.filter(q => {
           const target = category === 'Major' ? 'Specialization' : category;
@@ -202,7 +257,16 @@ function LetsPrepContent() {
       isCorrect: answers[q.id] === q.correctAnswer
     }));
     
-    const overallScore = Math.round((results.filter(h => h.isCorrect).length / (currentQuestions.length || 1)) * 100);
+    const correctCount = results.filter(h => h.isCorrect).length;
+    const overallScore = Math.round((correctCount / (currentQuestions.length || 1)) * 100);
+
+    // Calculate XP Rewards
+    let xpEarned = correctCount * XP_REWARDS.CORRECT_ANSWER;
+    if (currentQuestions.length > 5) {
+      xpEarned += (currentQuestions.length >= 50 ? XP_REWARDS.FINISH_FULL_SIM : XP_REWARDS.FINISH_TRACK);
+    } else {
+      xpEarned += XP_REWARDS.QUICK_FIRE_COMPLETE;
+    }
 
     const resultsData = sanitizeData({
       userId: user.uid,
@@ -210,21 +274,49 @@ function LetsPrepContent() {
       timestamp: Date.now(),
       overallScore,
       timeSpent,
+      xpEarned,
       results,
       lastActiveDate: serverTimestamp()
     });
 
     if (!user.uid.startsWith('bypass')) {
       await addDoc(collection(firestore, "exam_results"), resultsData);
-      await updateDoc(doc(firestore, 'users', user.uid), {
+      
+      const updateData: any = {
         dailyQuestionsAnswered: increment(currentQuestions.length),
-        dailyTestsFinished: increment(1),
+        dailyTestsFinished: increment(currentQuestions.length > 5 ? 1 : 0),
+        xp: increment(xpEarned),
         lastActiveDate: serverTimestamp()
-      });
+      };
+
+      if (currentQuestions.length <= 5) {
+        updateData.lastQuickFireTimestamp = Date.now();
+      }
+
+      await updateDoc(doc(firestore, 'users', user.uid), updateData);
     }
 
     setLoadingStep(100);
     setTimeout(() => { setState('results'); setLoading(false); }, 500);
+  };
+
+  const handleWatchXpAd = async () => {
+    if (!user || !firestore || adCooldown > 0) return;
+    setClaimingXp(true);
+    setTimeout(async () => {
+      try {
+        await updateDoc(doc(firestore, 'users', user.uid), {
+          xp: increment(XP_REWARDS.AD_WATCH_XP),
+          credits: increment(2),
+          lastAdXpTimestamp: Date.now()
+        });
+        toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +2 Credits earned.` });
+      } catch (e) {
+        toast({ variant: "destructive", title: "Claim Failed", description: "Sync error." });
+      } finally {
+        setClaimingXp(false);
+      }
+    }, 2500);
   };
 
   const finishOnboarding = async () => {
@@ -249,17 +341,23 @@ function LetsPrepContent() {
     }
   };
 
+  const formatCooldown = (ms: number) => {
+    const mins = Math.ceil(ms / (1000 * 60));
+    if (mins >= 60) return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+    return `${mins}m`;
+  };
+
   if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   const displayStats = user ? [
     { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user?.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
-    { icon: <Flame className="w-4 h-4 text-orange-500" />, label: 'Streak', value: user?.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' },
+    { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Rank', value: `Lvl ${levelData?.level}`, color: 'text-primary bg-primary/10' },
     { icon: user?.isPro ? <Crown className="w-4 h-4 text-yellow-600" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user?.isPro ? 'Platinum' : 'Standard', color: user?.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
-    { icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />, label: 'Pass Rate', value: '82%', color: 'text-emerald-500 bg-emerald-500/10' }
+    { icon: <Flame className="w-4 h-4 text-orange-500" />, label: 'Streak', value: user?.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' }
   ] : [
     { icon: <Users className="w-4 h-4 text-blue-500" />, label: 'Community', value: '1.7K+', color: 'text-blue-500 bg-blue-500/5' },
     { icon: <Sparkles className="w-4 h-4 text-purple-500" />, label: 'AI Solved', value: '8.2K+', color: 'text-purple-500 bg-purple-500/5' },
-    { icon: <LayoutGrid className="w-4 h-4 text-pink-500" />, label: 'Question Bank', value: '3.5K+', color: 'text-pink-500 bg-pink-500/5' },
+    { icon: <LayoutGrid className="w-4 h-4 text-pink-500" />, label: 'Curated Items', value: '3.5K+', color: 'text-pink-500 bg-pink-500/5' },
     { icon: <Trophy className="w-4 h-4 text-yellow-500" />, label: 'Board Ready', value: '82%', color: 'text-yellow-500 bg-yellow-500/5' }
   ];
 
@@ -367,17 +465,6 @@ function LetsPrepContent() {
                     />
                   </div>
                 </div>
-
-                <div className="pt-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 mb-3 block">Simulation Mode</Label>
-                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border-2 border-dashed">
-                    <div className="flex items-center gap-3">
-                      {isDark ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-yellow-500" />}
-                      <span className="text-sm font-bold">{isDark ? 'Dark Mode' : 'Light Mode'}</span>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={toggleDarkMode} className="h-8 rounded-lg font-black text-[10px] uppercase">Toggle</Button>
-                  </div>
-                </div>
               </div>
 
               <Button 
@@ -393,6 +480,7 @@ function LetsPrepContent() {
         </div>
       ) : (
         <div className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
+          {/* Statistics Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {displayStats.map((stat, i) => (
               <div key={i} className="bg-card border border-border/50 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
@@ -405,8 +493,56 @@ function LetsPrepContent() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 gap-6">
-            <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-8 space-y-6">
+              {/* Career Progress Card */}
+              {user && (
+                <Card className="border-none shadow-sm rounded-3xl bg-card overflow-hidden">
+                  <CardHeader className="p-6 pb-2">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Current Rank</p>
+                        <CardTitle className="text-xl font-black flex items-center gap-2">
+                          {levelData?.title} <Badge className="bg-primary/10 text-primary border-none text-[10px]">Lvl {levelData?.level}</Badge>
+                        </CardTitle>
+                      </div>
+                      <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                        <Trophy className="w-5 h-5 text-primary" />
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-6 pt-0 space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs font-bold">
+                        <span className="text-muted-foreground">{user.xp || 0} XP</span>
+                        <span className="text-muted-foreground">{XP_PER_LEVEL} XP</span>
+                      </div>
+                      <Progress value={levelData?.progress} className="h-2 rounded-full" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <Button 
+                        onClick={handleWatchXpAd} 
+                        disabled={claimingXp || adCooldown > 0} 
+                        variant="outline" 
+                        className="h-12 rounded-xl font-black text-xs gap-2 border-primary/20 hover:bg-primary/5"
+                      >
+                        {claimingXp ? <Loader2 className="w-4 h-4 animate-spin" /> : adCooldown > 0 ? <Timer className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+                        {adCooldown > 0 ? formatCooldown(adCooldown) : "XP Boost Clip (+50)"}
+                      </Button>
+                      <Button 
+                        onClick={() => startExam('quickfire')} 
+                        disabled={quickFireCooldown > 0}
+                        variant="default" 
+                        className="h-12 rounded-xl font-black text-xs gap-2 shadow-lg shadow-primary/20"
+                      >
+                        {quickFireCooldown > 0 ? <Timer className="w-4 h-4" /> : <BellRing className="w-4 h-4" />}
+                        {quickFireCooldown > 0 ? formatCooldown(quickFireCooldown) : "Quick Fire Challenge"}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <Card className="overflow-hidden border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-primary/20 via-card to-background relative p-8 md:p-12">
                 <div className="relative z-10 space-y-6">
                   <div className="flex flex-wrap items-center gap-3">
@@ -421,7 +557,7 @@ function LetsPrepContent() {
                     <Zap className="w-6 h-6 fill-current" /> <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </div>
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/3 animate-md-slide-up" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/3" />
               </Card>
 
               <div className="space-y-4">
@@ -430,31 +566,49 @@ function LetsPrepContent() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
-                    { name: 'Gen Ed', icon: <Languages />, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Core Knowledge' },
-                    { name: 'Prof Ed', icon: <GraduationCap />, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Teaching Strategy' },
-                    { name: user?.majorship || 'Major', icon: <Star />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Subject Mastery' }
-                  ].map((track, i) => (
-                    <Card key={i} onClick={() => startExam(track.name as any)} className="group cursor-pointer border-2 border-border/50 hover:border-primary transition-all rounded-3xl bg-card overflow-hidden active:scale-95">
-                      <CardContent className="p-6 space-y-4">
-                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm", track.bg, track.color)}>{track.icon}</div>
-                        <div>
-                          <h4 className="font-black text-lg text-foreground">{track.name}</h4>
-                          <p className="text-xs text-muted-foreground font-medium">{track.desc}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                    { id: 'Gen Ed', name: 'Gen Ed', icon: <Languages />, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Core Knowledge', lvl: 1 },
+                    { id: 'Prof Ed', name: 'Prof Ed', icon: <GraduationCap />, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Teaching Strategy', lvl: 3 },
+                    { id: user?.majorship || 'Major', name: user?.majorship || 'Major', icon: <Star />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Subject Mastery', lvl: 7 }
+                  ].map((track, i) => {
+                    const isLocked = user && !isTrackUnlocked(levelData?.level || 1, track.id);
+                    return (
+                      <Card 
+                        key={i} 
+                        onClick={() => !isLocked && startExam(track.id as any)} 
+                        className={cn(
+                          "group cursor-pointer border-2 transition-all rounded-3xl bg-card overflow-hidden active:scale-95 relative",
+                          isLocked ? "border-muted opacity-60" : "border-border/50 hover:border-primary"
+                        )}
+                      >
+                        {isLocked && (
+                          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/40 backdrop-blur-[1px]">
+                            <Lock className="w-6 h-6 text-muted-foreground mb-1" />
+                            <span className="text-[10px] font-black uppercase text-muted-foreground">Lvl {track.lvl} Required</span>
+                          </div>
+                        )}
+                        <CardContent className="p-6 space-y-4">
+                          <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm", track.bg, track.color)}>{track.icon}</div>
+                          <div>
+                            <h4 className="font-black text-lg text-foreground">{track.name}</h4>
+                            <p className="text-xs text-muted-foreground font-medium">{track.desc}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
+            </div>
 
-              <Card className="border-none shadow-xl rounded-[2.5rem] bg-foreground text-background p-8 relative overflow-hidden group">
+            <div className="lg:col-span-4 space-y-6">
+              <Card className="border-none shadow-xl rounded-[2rem] bg-foreground text-background p-8 relative overflow-hidden group h-full">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
                 <CardHeader className="p-0 mb-6">
                   <CardTitle className="text-xl font-black tracking-tight flex items-center gap-3">
-                    <ShieldCheck className="w-6 h-6 text-primary" /> Verified Professional Platform
+                    <ShieldCheck className="w-6 h-6 text-primary" /> Verified Hub
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-0 grid grid-cols-1 md:grid-cols-3 gap-8">
+                <CardContent className="p-0 space-y-8">
                   <div className="space-y-1">
                     <p className="text-4xl font-black text-primary">3.5K+</p>
                     <p className="text-xs font-bold uppercase tracking-widest opacity-60">Curated Practice Items</p>
@@ -465,7 +619,7 @@ function LetsPrepContent() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-4xl font-black text-blue-400">100%</p>
-                    <p className="text-xs font-bold uppercase tracking-widest opacity-60">Free Simulation Mode</p>
+                    <p className="text-xs font-bold uppercase tracking-widest opacity-60">Free Forever Access</p>
                   </div>
                 </CardContent>
               </Card>
