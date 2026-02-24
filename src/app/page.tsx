@@ -1,6 +1,7 @@
+
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,7 +62,7 @@ function sanitizeData(data: any): any {
   return sanitized;
 }
 
-export default function LetsPrepApp() {
+function LetsPrepContent() {
   const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook, loginAnonymously } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -142,10 +143,13 @@ export default function LetsPrepApp() {
         }
       } else {
         const pool = questionPool.filter(q => {
-          if (category === 'Specialization') return q.subject === 'Specialization' && q.subCategory === (user?.majorship || 'English');
-          return q.subject === category;
+          const target = category === 'Major' ? 'Specialization' : category;
+          if (target === 'Specialization') return q.subject === 'Specialization' && q.subCategory === (user?.majorship || 'English');
+          return q.subject === target;
         });
-        let limitCount = category === 'Professional Education' ? limits.limitProfEd : (category === 'Specialization' ? limits.limitSpec : limits.limitGenEd);
+        let limitCount = (category === 'Professional Education' || category === 'Prof Ed') ? limits.limitProfEd : 
+                         (category === 'Specialization' || category === 'Major') ? limits.limitSpec : 
+                         limits.limitGenEd;
         finalQuestions = shuffleArray(pool).slice(0, limitCount);
       }
 
@@ -226,7 +230,7 @@ export default function LetsPrepApp() {
       <Dialog open={loading}>
         <DialogContent className="max-w-[300px] border-none shadow-2xl bg-card rounded-[2.5rem] p-8">
           <DialogHeader>
-            <DialogTitle className="sr-only">Loading</DialogTitle>
+            <DialogTitle className="sr-only">Initializing Simulation</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center gap-6">
             <div className="relative">
@@ -267,7 +271,6 @@ export default function LetsPrepApp() {
         </div>
       ) : (
         <div className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
-          {/* Stats Bar */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user?.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
@@ -286,9 +289,7 @@ export default function LetsPrepApp() {
           </div>
 
           <div className="grid grid-cols-1 gap-6">
-            {/* Main Content */}
             <div className="space-y-6">
-              {/* Hero Banner */}
               <Card className="overflow-hidden border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-primary/20 via-card to-background relative p-8 md:p-12">
                 <div className="relative z-10 space-y-6">
                   <div className="flex flex-wrap items-center gap-3">
@@ -306,7 +307,6 @@ export default function LetsPrepApp() {
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/3 animate-md-slide-up" />
               </Card>
 
-              {/* Simulation Tracks */}
               <div className="space-y-4">
                 <h3 className="text-xl font-black tracking-tight px-2 flex items-center gap-2">
                   <BookOpen className="w-5 h-5 text-primary" /> Training Grounds
@@ -352,5 +352,13 @@ export default function LetsPrepApp() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function LetsPrepApp() {
+  return (
+    <Suspense fallback={null}>
+      <LetsPrepContent />
+    </Suspense>
   );
 }

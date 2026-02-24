@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -12,6 +13,8 @@ import {
   Target
 } from 'lucide-react';
 import { PracticeModal } from './practice-modal';
+import { useFirestore } from '@/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 interface NavItem {
   id: string;
@@ -33,10 +36,27 @@ function NavContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tab = searchParams ? searchParams.get('tab') : null;
+  const firestore = useFirestore();
   
   const [isPracticeOpen, setIsPracticeOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
+
+  useEffect(() => {
+    if (!firestore) return;
+    const unsub = onSnapshot(doc(firestore, "system_configs", "global"), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setLimits({
+          limitGenEd: data.limitGenEd || 10,
+          limitProfEd: data.limitProfEd || 10,
+          limitSpec: data.limitSpec || 10
+        });
+      }
+    });
+    return () => unsub();
+  }, [firestore]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -125,6 +145,7 @@ function NavContent() {
         isOpen={isPracticeOpen} 
         onClose={() => setIsPracticeOpen(false)} 
         onStartExam={(cat) => router.push(`/?start=${cat}`)}
+        limits={limits}
       />
     </>
   );

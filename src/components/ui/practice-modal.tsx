@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useUser } from '@/firebase/auth/use-user';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +13,6 @@ import {
   Star, 
   X, 
   Clock,
-  ChevronRight 
 } from 'lucide-react';
 import {
   Dialog,
@@ -27,10 +27,19 @@ interface PracticeModalProps {
   onClose: () => void;
   onStartExam: (category: string) => void;
   loading?: boolean;
+  limits?: { limitGenEd: number; limitProfEd: number; limitSpec: number };
 }
 
-export function PracticeModal({ isOpen, onClose, onStartExam, loading = false }: PracticeModalProps) {
+export function PracticeModal({ 
+  isOpen, 
+  onClose, 
+  onStartExam, 
+  loading = false,
+  limits = { limitGenEd: 10, limitProfEd: 10, limitSpec: 10 }
+}: PracticeModalProps) {
   const { user } = useUser();
+
+  const totalQuestions = limits.limitGenEd + limits.limitProfEd + limits.limitSpec;
 
   const practiceModes = [
     {
@@ -40,8 +49,8 @@ export function PracticeModal({ isOpen, onClose, onStartExam, loading = false }:
       icon: <Zap className="w-6 h-6" />,
       color: 'bg-primary text-primary-foreground',
       borderColor: 'border-primary',
-      time: '~30 minutes',
-      questions: '30 questions'
+      time: `~${Math.ceil(totalQuestions * 1.5)} minutes`,
+      questions: `${totalQuestions} items`
     },
     {
       id: 'General Education',
@@ -50,8 +59,8 @@ export function PracticeModal({ isOpen, onClose, onStartExam, loading = false }:
       icon: <Languages className="w-6 h-6" />,
       color: 'bg-blue-500 text-white',
       borderColor: 'border-blue-500',
-      time: '~10 minutes',
-      questions: '10 questions'
+      time: `~${limits.limitGenEd} minutes`,
+      questions: `${limits.limitGenEd} items`
     },
     {
       id: 'Professional Education',
@@ -60,8 +69,8 @@ export function PracticeModal({ isOpen, onClose, onStartExam, loading = false }:
       icon: <BookOpen className="w-6 h-6" />,
       color: 'bg-purple-500 text-white',
       borderColor: 'border-purple-500',
-      time: '~10 minutes',
-      questions: '10 questions'
+      time: `~${limits.limitProfEd} minutes`,
+      questions: `${limits.limitProfEd} items`
     },
     {
       id: 'Specialization',
@@ -70,8 +79,8 @@ export function PracticeModal({ isOpen, onClose, onStartExam, loading = false }:
       icon: <Star className="w-6 h-6" />,
       color: 'bg-emerald-500 text-white',
       borderColor: 'border-emerald-500',
-      time: '~10 minutes',
-      questions: '10 questions'
+      time: `~${limits.limitSpec} minutes`,
+      questions: `${limits.limitSpec} items`
     }
   ];
 
@@ -134,7 +143,7 @@ export function PracticeModal({ isOpen, onClose, onStartExam, loading = false }:
                       "text-[10px] font-bold px-3 py-1 shadow-md",
                       mode.id === 'all' ? 'bg-primary/20 text-primary border-primary/30' :
                       mode.id === 'General Education' ? 'bg-blue-500/20 text-blue-600 border-blue-500/30' :
-                      mode.id === 'Professional Education' ? 'bg-purple-500/20 text-purple-600 border-purple-500/30' :
+                      mode.id === 'Professional Education' ? 'from-purple-500/20 text-purple-600 border-purple-500/30' :
                       'bg-emerald-500/20 text-emerald-600 border-emerald-500/30'
                     )}>
                       {mode.questions}
@@ -170,16 +179,15 @@ export function PracticeModal({ isOpen, onClose, onStartExam, loading = false }:
           <div className="mt-8 p-6 bg-primary/5 rounded-2xl border border-primary/20 shadow-lg">
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
-                <Languages className="w-5 h-5 text-primary" />
+                <Star className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <h4 className="font-black text-sm text-foreground flex items-center gap-2">
-                  Pro Tip
+                  System Calibrated
                   <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                 </h4>
                 <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                  Start with a Full Simulation to get a complete assessment of your readiness, 
-                  then focus on specific areas that need improvement.
+                  These item counts are customized based on the latest board examination standards set in your administrative settings.
                 </p>
               </div>
             </div>
