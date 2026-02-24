@@ -135,7 +135,7 @@ export function PracticeModal({
                     <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/20 backdrop-blur-[1px]">
                       <div className="bg-card p-3 rounded-2xl shadow-xl flex flex-col items-center border border-border">
                         <Lock className="w-6 h-6 text-muted-foreground mb-1" />
-                        <span className="text-[10px] font-black uppercase text-muted-foreground">Unlocks: {getCareerRankTitle(mode.reqRank)}</span>
+                        <span className="text-[10px] font-black uppercase text-muted-foreground">Unlocks: Rank {mode.reqRank} ({getCareerRankTitle(mode.reqRank)})</span>
                       </div>
                     </div>
                   )}

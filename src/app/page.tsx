@@ -60,7 +60,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, XP_PER_RANK } from '@/lib/xp-system';
+import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, XP_PER_RANK, UNLOCK_RANKS, getCareerRankTitle } from '@/lib/xp-system';
 
 type AppState = 'dashboard' | 'exam' | 'results' | 'onboarding' | 'quickfire' | 'quickfire_results';
 
@@ -178,9 +178,12 @@ function LetsPrepContent() {
     if (loading) return;
     
     if (category !== 'quickfire' && user && !isTrackUnlocked(rankData?.rank || 1, category as string)) {
+      const reqRank = category === 'all' ? UNLOCK_RANKS.FULL_SIMULATION : (category === 'Professional Education' ? UNLOCK_RANKS.PROFESSIONAL_ED : UNLOCK_RANKS.SPECIALIZATION);
+      const reqTitle = getCareerRankTitle(reqRank);
+      
       toast({ 
         title: "Mode Locked", 
-        description: `Requires ${category === 'all' ? 'Master Candidate' : (category === 'Professional Education' ? 'Aspiring Professional' : 'Subject Specialist')} rank. Keep earning XP!`,
+        description: `Requires Rank ${reqRank} (${reqTitle}). Keep earning XP!`,
         variant: "destructive"
       });
       return;
@@ -549,9 +552,9 @@ function LetsPrepContent() {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
-                      { id: 'General Education', name: 'Gen Ed', icon: <Languages />, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Core Knowledge', rnk: 1, title: 'Novice' },
-                      { id: 'Professional Education', name: 'Prof Ed', icon: <GraduationCap />, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Teaching Strategy', rnk: 3, title: 'Aspiring' },
-                      { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Subject Mastery', rnk: 7, title: 'Specialist' }
+                      { id: 'General Education', name: 'Gen Ed', icon: <Languages />, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Core Knowledge', rnk: UNLOCK_RANKS.GENERAL_ED, title: getCareerRankTitle(UNLOCK_RANKS.GENERAL_ED) },
+                      { id: 'Professional Education', name: 'Prof Ed', icon: <GraduationCap />, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Teaching Strategy', rnk: UNLOCK_RANKS.PROFESSIONAL_ED, title: getCareerRankTitle(UNLOCK_RANKS.PROFESSIONAL_ED) },
+                      { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Subject Mastery', rnk: UNLOCK_RANKS.SPECIALIZATION, title: getCareerRankTitle(UNLOCK_RANKS.SPECIALIZATION) }
                     ].map((track, i) => {
                       const isLocked = user && !isTrackUnlocked(rankData?.rank || 1, track.id);
                       return (
@@ -564,9 +567,9 @@ function LetsPrepContent() {
                           )}
                         >
                           {isLocked && (
-                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/40 backdrop-blur-[1px]">
+                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/40 backdrop-blur-[1px] p-4 text-center">
                               <Lock className="w-6 h-6 text-muted-foreground mb-1" />
-                              <span className="text-[10px] font-black uppercase text-muted-foreground">{track.title} Required</span>
+                              <span className="text-[10px] font-black uppercase text-muted-foreground">Rank {track.rnk} ({track.title}) Required</span>
                             </div>
                           )}
                           <CardContent className="p-6 space-y-4">
