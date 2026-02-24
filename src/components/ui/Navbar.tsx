@@ -167,13 +167,13 @@ export function Navbar() {
               <div className="flex items-center gap-2">
                 <span className="text-lg font-black tracking-tight text-foreground block leading-none">LET's Prep</span>
                 {user && (
-                  <Badge variant="outline" className="h-5 px-1.5 font-black text-[9px] border-primary/20 text-primary bg-primary/5">
-                    Rank {rankData?.rank}
+                  <Badge variant="outline" className="h-5 px-2 font-black text-[9px] border-primary/20 text-primary bg-primary/5">
+                    {rankData?.title}
                   </Badge>
                 )}
               </div>
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                {rankData?.title || 'Professional Simulation'}
+                Professional Ranking
               </span>
             </div>
           </Link>
@@ -280,7 +280,7 @@ export function Navbar() {
                   <DropdownMenuItem asChild>
                     <div className="px-3 py-2 space-y-2">
                       <div className="flex justify-between items-center text-[10px] font-black uppercase">
-                        <span className="text-muted-foreground">Rank {rankData?.rank}</span>
+                        <span className="text-muted-foreground">{rankData?.title}</span>
                         <span className="text-primary">{user.xp || 0} XP</span>
                       </div>
                       <Progress value={rankData?.progress} className="h-1.5" />

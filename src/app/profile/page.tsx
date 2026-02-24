@@ -142,11 +142,11 @@ export default function ProfilePage() {
                   { icon: <History className="w-4 h-4 text-muted-foreground" />, label: 'Simulations', value: stats.totalSessions },
                   { icon: <Target className="w-4 h-4 text-primary" />, label: 'Avg Rating', value: `${stats.avgScore}%` },
                   { icon: <Trophy className="w-4 h-4 text-yellow-500" />, label: 'Best Rating', value: `${stats.bestScore}%` },
-                  { icon: <Coins className="w-4 h-4 text-emerald-500" />, label: 'Rank', value: `Rank ${rankData?.rank}` }
+                  { icon: <Coins className="w-4 h-4 text-emerald-500" />, label: 'Career Title', value: rankData?.title }
                 ].map((stat, i) => (
                   <div key={i} className="p-6 bg-muted/10 rounded-3xl border border-border flex flex-col items-center justify-center text-center space-y-1 hover:bg-card hover:shadow-md transition-all group">
                     <div className="w-10 h-10 rounded-2xl bg-card shadow-sm border border-border flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">{stat.icon}</div>
-                    <span className="text-2xl font-black text-foreground">{stat.value}</span>
+                    <span className="text-xl font-black text-foreground">{stat.value}</span>
                     <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.15em]">{stat.label}</span>
                   </div>
                 ))}

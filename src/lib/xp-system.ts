@@ -42,7 +42,7 @@ export function getRankData(totalXp: number) {
   };
 }
 
-function getCareerRankTitle(rank: number): string {
+export function getCareerRankTitle(rank: number): string {
   if (rank >= 30) return "Master Emeritus";
   if (rank >= 25) return "Elite Academic";
   if (rank >= 20) return "Master Candidate";

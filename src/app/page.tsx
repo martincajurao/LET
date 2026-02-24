@@ -180,7 +180,7 @@ function LetsPrepContent() {
     if (category !== 'quickfire' && user && !isTrackUnlocked(rankData?.rank || 1, category as string)) {
       toast({ 
         title: "Mode Locked", 
-        description: `Requires Rank ${category === 'all' ? 12 : (category === 'Professional Education' ? 3 : 7)}. Keep earning XP!`,
+        description: `Requires ${category === 'all' ? 'Master Candidate' : (category === 'Professional Education' ? 'Aspiring Professional' : 'Subject Specialist')} rank. Keep earning XP!`,
         variant: "destructive"
       });
       return;
@@ -370,7 +370,7 @@ function LetsPrepContent() {
 
   const displayStats = user ? [
     { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user?.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
-    { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Rank', value: `Rank ${rankData?.rank}`, color: 'text-primary bg-primary/10' },
+    { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Academic Title', value: rankData?.title, color: 'text-primary bg-primary/10' },
     { icon: user?.isPro ? <Crown className="w-4 h-4 text-yellow-600" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user?.isPro ? 'Platinum' : 'FREE', color: user?.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
     { icon: <Flame className="w-4 h-4 text-orange-500" />, label: 'Streak', value: user?.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' }
   ] : [
@@ -496,9 +496,9 @@ function LetsPrepContent() {
                     <CardHeader className="p-6 pb-2">
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Academic Rank</p>
+                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Career Status</p>
                           <CardTitle className="text-xl font-black flex items-center gap-2">
-                            {rankData?.title} <Badge className="bg-primary/10 text-primary border-none text-[10px]">Rank {rankData?.rank}</Badge>
+                            {rankData?.title}
                           </CardTitle>
                         </div>
                         <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center"><Trophy className="w-5 h-5 text-primary" /></div>
@@ -549,9 +549,9 @@ function LetsPrepContent() {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
-                      { id: 'General Education', name: 'Gen Ed', icon: <Languages />, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Core Knowledge', rnk: 1 },
-                      { id: 'Professional Education', name: 'Prof Ed', icon: <GraduationCap />, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Teaching Strategy', rnk: 3 },
-                      { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Subject Mastery', rnk: 7 }
+                      { id: 'General Education', name: 'Gen Ed', icon: <Languages />, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Core Knowledge', rnk: 1, title: 'Novice' },
+                      { id: 'Professional Education', name: 'Prof Ed', icon: <GraduationCap />, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Teaching Strategy', rnk: 3, title: 'Aspiring' },
+                      { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Subject Mastery', rnk: 7, title: 'Specialist' }
                     ].map((track, i) => {
                       const isLocked = user && !isTrackUnlocked(rankData?.rank || 1, track.id);
                       return (
@@ -566,7 +566,7 @@ function LetsPrepContent() {
                           {isLocked && (
                             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/40 backdrop-blur-[1px]">
                               <Lock className="w-6 h-6 text-muted-foreground mb-1" />
-                              <span className="text-[10px] font-black uppercase text-muted-foreground">Rank {track.rnk} Required</span>
+                              <span className="text-[10px] font-black uppercase text-muted-foreground">{track.title} Required</span>
                             </div>
                           )}
                           <CardContent className="p-6 space-y-4">
