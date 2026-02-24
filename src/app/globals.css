@@ -97,7 +97,7 @@
   scrollbar-width: none;
 }
 
-/* Safe Area Insets for Mobile Wrapping */
+/* Safe Area Insets */
 .safe-pb {
   padding-bottom: env(safe-area-inset-bottom);
 }
