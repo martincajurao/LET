@@ -30,7 +30,8 @@ import {
   BookOpen,
   TrendingUp,
   ShieldCheck,
-  Smartphone
+  Smartphone,
+  Facebook
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
@@ -69,7 +70,7 @@ function sanitizeData(data: any): any {
 }
 
 export default function LetsPrepApp() {
-  const { user, loading: authLoading, updateProfile, loginWithGoogle, loginAnonymously } = useUser();
+  const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook, loginAnonymously } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -212,7 +213,7 @@ export default function LetsPrepApp() {
       <Toaster />
       
       <Dialog open={authIssue} onOpenChange={setAuthIssue}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8">
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm">
           <DialogHeader className="text-center">
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <ShieldCheck className="w-8 h-8 text-primary" />
@@ -222,6 +223,9 @@ export default function LetsPrepApp() {
           </DialogHeader>
           <div className="grid gap-3 py-6">
             <Button onClick={loginWithGoogle} className="h-14 rounded-2xl font-bold gap-3 shadow-lg"><Zap className="w-5 h-5 fill-current" /> Continue with Google</Button>
+            <Button onClick={loginWithFacebook} className="h-14 rounded-2xl font-bold gap-3 shadow-lg bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none">
+              <Facebook className="w-5 h-5 fill-current" /> Continue with Facebook
+            </Button>
             <Button variant="outline" onClick={loginAnonymously} className="h-14 rounded-2xl font-bold border-2">Guest Simulation</Button>
           </div>
         </DialogContent>
@@ -243,15 +247,15 @@ export default function LetsPrepApp() {
       </Dialog>
 
       {state === 'exam' ? (
-        <div className="animate-android-slide-up h-full">
+        <div className="animate-md-slide-up h-full">
           <ExamInterface questions={currentQuestions} timePerQuestion={timePerQuestion} onComplete={handleExamComplete} />
         </div>
       ) : state === 'results' ? (
-        <div className="animate-android-slide-up h-full p-4">
+        <div className="animate-md-slide-up h-full p-4">
           <ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} aiSummary={aiSummary} onRestart={() => setState('dashboard')} />
         </div>
       ) : state === 'registration' ? (
-        <div className="min-h-[80vh] flex items-center justify-center p-6 animate-android-slide-up">
+        <div className="min-h-[80vh] flex items-center justify-center p-6 animate-md-slide-up">
           <Card className="w-full max-w-sm rounded-[3rem] bg-card border-none shadow-2xl p-8 text-center space-y-8">
             <div className="space-y-2">
               <div className="w-20 h-20 bg-primary/10 rounded-[2rem] flex items-center justify-center mx-auto">
@@ -270,10 +274,10 @@ export default function LetsPrepApp() {
         <div className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user?.credits || 0, color: 'bg-yellow-500/10' },
-              { icon: <Flame className="w-4 h-4 text-orange-500" />, label: 'Streak', value: user?.streakCount || 0, color: 'bg-orange-500/10' },
-              { icon: <Target className="w-4 h-4 text-blue-500" />, label: 'Accuracy', value: '85%', color: 'bg-blue-500/10' },
-              { icon: <Trophy className="w-4 h-4 text-emerald-500" />, label: 'Rank', value: '#12', color: 'bg-emerald-500/10' }
+              { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user?.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
+              { icon: <Flame className="w-4 h-4 text-orange-500" />, label: 'Streak', value: user?.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' },
+              { icon: <Target className="w-4 h-4 text-blue-500" />, label: 'Accuracy', value: '85%', color: 'text-blue-500 bg-blue-500/10' },
+              { icon: <Trophy className="w-4 h-4 text-emerald-500" />, label: 'Rank', value: '#12', color: 'text-emerald-500 bg-emerald-500/10' }
             ].map((stat, i) => (
               <div key={i} className="bg-card border border-border/50 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
                 <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0", stat.color)}>{stat.icon}</div>
@@ -301,7 +305,7 @@ export default function LetsPrepApp() {
                     <Zap className="w-6 h-6 fill-current" /> <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </div>
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/3 animate-android-slide-up" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/3 animate-md-slide-up" />
               </Card>
 
               <div className="space-y-4">
