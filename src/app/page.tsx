@@ -44,7 +44,6 @@ import { fetchQuestionsFromFirestore } from "@/lib/db-seed";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Link from 'next/link';
 import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
 import { ReferralSystem } from '@/components/ui/referral-system';
@@ -97,7 +96,7 @@ function sanitizeData(data: any): any {
 }
 
 export default function LetsPrepApp() {
-  const { user, loading: authLoading, logout, updateProfile, loginWithGoogle, loginWithFacebook, loginAnonymously, bypassLogin } = useUser();
+  const { user, loading: authLoading, logout, updateProfile, loginWithGoogle, loginWithFacebook, loginAnonymously } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   
@@ -136,7 +135,6 @@ export default function LetsPrepApp() {
     return () => unsub();
   }, [firestore]);
 
-  // Listen for openPracticeModal event from mobile bottom nav FAB
   useEffect(() => {
     const handleOpenPractice = () => {
       startExam('all');
@@ -283,13 +281,13 @@ export default function LetsPrepApp() {
     }, 500);
   };
 
-  if (authLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+  if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
 return (
-    <div className="min-h-screen dark:bg-slate-950 bg-[#F8FAFC] font-body pb-24">
+    <div className="min-h-screen bg-background text-foreground font-body pb-24">
       <Toaster />
       <Dialog open={authIssue} onOpenChange={setAuthIssue}>
-        <DialogContent className="rounded-[2rem]">
+        <DialogContent className="rounded-[2rem] bg-card">
           <DialogHeader><DialogTitle className="font-black">Authentication Required</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-4">
             <Button onClick={loginWithGoogle} className="h-14 rounded-xl font-black gap-2"><GoogleIcon /> Sign in with Google</Button>
@@ -299,7 +297,7 @@ return (
         </DialogContent>
       </Dialog>
       <Dialog open={loading}>
-        <DialogContent className="sm:max-w-md border-none shadow-2xl bg-white rounded-[2rem]">
+        <DialogContent className="sm:max-w-md border-none shadow-2xl bg-card rounded-[2rem]">
           <DialogHeader><DialogTitle className="text-center font-black">{loadingMessage}</DialogTitle></DialogHeader>
           <div className="space-y-6 py-6 text-center">
             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center"><BrainCircuit className="w-6 h-6 text-primary animate-pulse" /></div>
@@ -314,7 +312,7 @@ return (
         <div className="max-w-7xl mx-auto p-4 md:p-8"><ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} aiSummary={aiSummary} onRestart={() => setState('dashboard')} /></div>
       ) : state === 'registration' ? (
         <div className="min-h-[60vh] flex items-center justify-center p-4">
-          <Card className="max-w-md w-full rounded-[2.5rem]">
+          <Card className="max-w-md w-full rounded-[2.5rem] bg-card">
             <CardHeader className="text-center pt-10"><CardTitle className="text-2xl font-black">Choose Your Majorship</CardTitle></CardHeader>
             <CardContent className="pb-12 pt-4 px-10">
               <Select onValueChange={(val) => { updateProfile({ majorship: val }); setState('dashboard'); }}>
@@ -327,84 +325,75 @@ return (
       ) : (
         <>
           <div className="max-w-7xl mx-auto px-3 md:px-4 py-6 md:py-8 space-y-8">
-            {/* Quick Stats Bar - Above the main grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              <Card className="border-none shadow-md rounded-2xl bg-white overflow-hidden">
+              <Card className="border-none shadow-md rounded-2xl bg-card overflow-hidden">
                 <CardContent className="p-3 md:p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
-                    <Users className="w-5 h-5 md:w-6 md:h-6 text-blue-500" />
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+                    <Users className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                   </div>
                   <div>
-                    <p className="text-lg md:text-xl font-black text-slate-800">2.5K+</p>
-                    <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Learners</p>
+                    <p className="text-lg md:text-xl font-black text-foreground">2.5K+</p>
+                    <p className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Active Learners</p>
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-none shadow-md rounded-2xl bg-white overflow-hidden">
+              <Card className="border-none shadow-md rounded-2xl bg-card overflow-hidden">
                 <CardContent className="p-3 md:p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0">
-                    <BrainCircuit className="w-5 h-5 md:w-6 md:h-6 text-emerald-500" />
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-secondary/10 rounded-xl flex items-center justify-center shrink-0">
+                    <BrainCircuit className="w-5 h-5 md:w-6 md:h-6 text-secondary" />
                   </div>
                   <div>
-                    <p className="text-lg md:text-xl font-black text-slate-800">50K+</p>
-                    <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Questions Solved</p>
+                    <p className="text-lg md:text-xl font-black text-foreground">50K+</p>
+                    <p className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Questions Solved</p>
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-none shadow-md rounded-2xl bg-white overflow-hidden">
+              <Card className="border-none shadow-md rounded-2xl bg-card overflow-hidden">
                 <CardContent className="p-3 md:p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-50 rounded-xl flex items-center justify-center shrink-0">
-                    <Trophy className="w-5 h-5 md:w-6 md:h-6 text-purple-500" />
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-yellow-500/10 rounded-xl flex items-center justify-center shrink-0">
+                    <Trophy className="w-5 h-5 md:w-6 md:h-6 text-yellow-500" />
                   </div>
                   <div>
-                    <p className="text-lg md:text-xl font-black text-slate-800">85%</p>
-                    <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg. Score</p>
+                    <p className="text-lg md:text-xl font-black text-foreground">85%</p>
+                    <p className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Avg. Score</p>
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-none shadow-md rounded-2xl bg-white overflow-hidden">
+              <Card className="border-none shadow-md rounded-2xl bg-card overflow-hidden">
                 <CardContent className="p-3 md:p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-orange-50 rounded-xl flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-orange-500/10 rounded-xl flex items-center justify-center shrink-0">
                     <Flame className="w-5 h-5 md:w-6 md:h-6 text-orange-500" />
                   </div>
                   <div>
-                    <p className="text-lg md:text-xl font-black text-slate-800">30%</p>
-                    <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pass Rate</p>
+                    <p className="text-lg md:text-xl font-black text-foreground">30%</p>
+                    <p className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Pass Rate</p>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10">
-              <Card className="lg:col-span-8 overflow-hidden border-none shadow-xl rounded-2xl lg:rounded-[2.5rem] bg-gradient-to-br from-white to-slate-50 group relative">
+              <Card className="lg:col-span-8 overflow-hidden border-none shadow-xl rounded-2xl lg:rounded-[2.5rem] bg-gradient-to-br from-card to-background group relative">
                 <CardHeader className="p-6 md:p-10 lg:p-12 space-y-4 md:space-y-6 lg:space-y-8 relative z-10">
                   <div className="flex flex-wrap items-center gap-2 md:gap-3">
                     <Badge variant="secondary" className="font-bold text-[9px] md:text-[10px] uppercase px-3 md:px-4 py-1 bg-primary/10 text-primary border-none">LET Board Simulation</Badge>
-                    <div className="flex items-center gap-1 text-orange-500 bg-orange-50 px-2 md:px-3 py-1 rounded-full"><Flame className="w-3 h-3 fill-current" /><span className="text-[9px] md:text-[10px] font-bold uppercase">Adaptive</span></div>
+                    <div className="flex items-center gap-1 text-orange-500 bg-orange-50 dark:bg-orange-950 px-2 md:px-3 py-1 rounded-full"><Flame className="w-3 h-3 fill-current" /><span className="text-[9px] md:text-[10px] font-bold uppercase">Adaptive</span></div>
                   </div>
                   <div className="space-y-3 md:space-y-4">
                     <h2 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] animate-fade-in-up">The <span className="text-gradient italic">Ultimate</span> <br /> Teacher Prep.</h2>
-                    <p className="text-slate-500 font-medium md:text-lg animate-fade-in-up delay-200">Master Gen Ed, Prof Ed, and your Majorship with high-fidelity AI-powered simulations.</p>
+                    <p className="text-muted-foreground font-medium md:text-lg animate-fade-in-up delay-200">Master Gen Ed, Prof Ed, and your Majorship with high-fidelity AI-powered simulations.</p>
                   </div>
-                  <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-12 md:h-16 px-6 md:px-10 rounded-xl md:rounded-2xl font-bold md:font-black text-sm md:text-lg gap-2 md:gap-3 shadow-lg md:shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all bg-primary hover:bg-primary/90 text-slate-900 animate-fade-in-up delay-300 hover:animate-pulse-glow">
+                  <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-12 md:h-16 px-6 md:px-10 rounded-xl md:rounded-2xl font-bold md:font-black text-sm md:text-lg gap-2 md:gap-3 shadow-lg md:shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all bg-primary hover:bg-primary/90 text-primary-foreground animate-fade-in-up delay-300 hover:animate-pulse-glow">
                     <Zap className="w-5 md:w-6 h-5 md:h-6 fill-current" /> <span className="hidden sm:inline">Start Full Simulation</span><span className="sm:hidden">Start Now</span>
                   </Button>
                 </CardHeader>
-                {/* Decorative elements */}
                 <div className="absolute top-0 right-0 w-24 h-24 md:w-40 md:h-40 lg:w-48 lg:h-48 bg-gradient-to-br from-primary/5 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 md:translate-x-1/2 animate-float" />
-                <div className="absolute bottom-0 left-0 w-20 h-20 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-tr from-orange-100/50 to-transparent rounded-full translate-y-1/2 -translate-x-1/3 md:-translate-x-1/2 animate-float delay-300" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-blue-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse" />
+                <div className="absolute bottom-0 left-0 w-20 h-20 md:w-28 md:h-28 lg:w-32 lg:h-32 bg-gradient-to-tr from-secondary/10 to-transparent rounded-full translate-y-1/2 -translate-x-1/3 md:-translate-x-1/2 animate-float delay-300" />
               </Card>
 
-              {/* User Stats & Leaderboard Column */}
               <div className="lg:col-span-4 space-y-4 lg:space-y-0 lg:flex lg:flex-col lg:gap-4">
-                {/* Login Card - Show when NOT logged in */}
                 {!user ? (
-                  <Card className="border-none shadow-xl rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white overflow-hidden relative">
-                    {/* Decorative elements */}
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/20 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-                    <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-500/10 to-transparent rounded-full translate-y-1/2 -translate-x-1/2" />
-                    
+                  <Card className="border-none shadow-xl rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white overflow-hidden relative">
                     <CardContent className="p-5 md:p-6 space-y-4 relative z-10">
                       <div className="text-center space-y-2">
                         <div className="w-16 h-16 mx-auto bg-white/10 rounded-2xl flex items-center justify-center mb-2">
@@ -413,7 +402,6 @@ return (
                         <p className="font-black text-xl md:text-2xl">LET Prep Pro</p>
                         <p className="text-xs md:text-sm text-slate-400">Master your board exam with AI-powered simulations</p>
                       </div>
-                      
                       <div className="space-y-2 pt-2">
                         <Button onClick={loginWithGoogle} className="w-full h-12 bg-white text-slate-900 hover:bg-slate-100 rounded-xl font-bold gap-2 shadow-lg">
                           <GoogleIcon /> Continue with Google
@@ -422,18 +410,9 @@ return (
                           <FacebookIcon /> Sign in with Facebook
                         </Button>
                       </div>
-                      
-                      <div className="flex flex-wrap justify-center gap-2 pt-2">
-                        {["AI Explanations", "Progress Tracking", "Leaderboards"].map((feature, i) => (
-                          <Badge key={i} variant="secondary" className="bg-white/10 text-white border-none text-[10px] font-medium">
-                            {feature}
-                          </Badge>
-                        ))}
-                      </div>
                     </CardContent>
                   </Card>
                 ) : (
-                  /* User Stats Card - Only show when logged in */
                   <Card className="border-none shadow-lg rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground overflow-hidden">
                     <CardContent className="p-4 md:p-6">
                       <div className="flex items-center justify-between mb-3 md:mb-4">
@@ -469,32 +448,11 @@ return (
                     </CardContent>
                   </Card>
                 )}
-                
-                {/* Collapsible Leaderboard - Shows top 3 by default */}
-                <Card className="border-none shadow-lg rounded-2xl bg-white overflow-hidden">
+                <Card className="border-none shadow-lg rounded-2xl bg-card overflow-hidden">
                   <Leaderboard />
                 </Card>
               </div>
 
-              {/* Quick Actions - Mobile Only */}
-              <div className="lg:col-span-12">
-                <div className="grid grid-cols-3 gap-2 md:hidden">
-                  <Button onClick={() => startExam('all')} className="h-16 flex flex-col items-center justify-center gap-1 rounded-xl bg-primary text-primary-foreground shadow-lg">
-                    <Zap className="w-5 h-5" />
-                    <span className="text-[10px] font-bold">Simulate</span>
-                  </Button>
-                  <Button onClick={() => startExam('General Education')} className="h-16 flex flex-col items-center justify-center gap-1 rounded-xl bg-blue-500 text-white shadow-lg">
-                    <Languages className="w-5 h-5" />
-                    <span className="text-[10px] font-bold">Gen Ed</span>
-                  </Button>
-                  <Button onClick={() => startExam('Professional Education')} className="h-16 flex flex-col items-center justify-center gap-1 rounded-xl bg-purple-500 text-white shadow-lg">
-                    <BookOpen className="w-5 h-5" />
-                    <span className="text-[10px] font-bold">Prof Ed</span>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Events, Tasks & Referral */}
               <div className="lg:col-span-12 space-y-8 md:space-y-10">
                 <EventsSection />
                 <DailyTaskDashboard />
@@ -503,21 +461,20 @@ return (
             </div>
           </div>
 
-          {/* Simulation Tracks - Below the main grid with enhanced design */}
           <div className="max-w-7xl mx-auto px-3 md:px-4 py-8 md:py-12 space-y-6 md:space-y-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-2 md:px-4">
-              <h3 className="text-2xl md:text-3xl font-black tracking-tight animate-fade-in-up">Simulation Tracks</h3>
-              <p className="text-sm text-slate-500 font-medium">Choose your exam category to begin</p>
+              <h3 className="text-2xl md:text-3xl font-black tracking-tight animate-fade-in-up text-foreground">Simulation Tracks</h3>
+              <p className="text-sm text-muted-foreground font-medium">Choose your exam category to begin</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               {[
                 { 
                   name: 'General Education', 
                   icon: <Languages className="w-6 md:w-7 h-6 md:h-7" />, 
-                  color: 'bg-blue-50 text-blue-600', 
-                  borderColor: 'border-blue-200', 
+                  color: 'bg-blue-500/10 text-blue-500', 
+                  borderColor: 'border-blue-500/20', 
                   hoverBg: 'hover:bg-blue-500', 
-                  bgGradient: 'from-blue-50 to-blue-100/50',
+                  bgGradient: 'from-blue-500/5 to-transparent',
                   id: 'General Education', 
                   delay: 'delay-100',
                   description: 'Language, Mathematics, Science & Humanities'
@@ -525,10 +482,10 @@ return (
                 { 
                   name: 'Professional Education', 
                   icon: <BookOpen className="w-6 md:w-7 h-6 md:h-7" />, 
-                  color: 'bg-purple-50 text-purple-600', 
-                  borderColor: 'border-purple-200', 
+                  color: 'bg-purple-500/10 text-purple-500', 
+                  borderColor: 'border-purple-500/20', 
                   hoverBg: 'hover:bg-purple-500', 
-                  bgGradient: 'from-purple-50 to-purple-100/50',
+                  bgGradient: 'from-purple-500/5 to-transparent',
                   id: 'Professional Education', 
                   delay: 'delay-200',
                   description: 'Teaching Principles & Child Development'
@@ -536,10 +493,10 @@ return (
                 { 
                   name: user?.majorship || 'Specialization', 
                   icon: <Star className="w-6 md:w-7 h-6 md:h-7" />, 
-                  color: 'bg-emerald-50 text-emerald-600', 
-                  borderColor: 'border-emerald-200', 
+                  color: 'bg-emerald-500/10 text-emerald-500', 
+                  borderColor: 'border-emerald-500/20', 
                   hoverBg: 'hover:bg-emerald-500', 
-                  bgGradient: 'from-emerald-50 to-emerald-100/50',
+                  bgGradient: 'from-emerald-500/5 to-transparent',
                   id: 'Specialization', 
                   delay: 'delay-300',
                   description: 'Your chosen major field of specialization'
@@ -557,12 +514,11 @@ return (
                     overflow-hidden flex flex-col 
                     animate-fade-in-up ${track.delay} 
                     hover:scale-[1.02] hover:-translate-y-1
-                    relative
+                    relative bg-card
                   `}
                 >
-                  {/* Progress indicator badge */}
                   <div className="absolute top-3 right-3">
-                    <Badge variant="outline" className="bg-white/80 backdrop-blur-sm text-[9px] font-black uppercase tracking-wider border-slate-200">
+                    <Badge variant="outline" className="bg-background/80 backdrop-blur-sm text-[9px] font-black uppercase tracking-wider">
                       Practice Now
                     </Badge>
                   </div>
@@ -571,16 +527,16 @@ return (
                     <div className={`w-14 h-14 md:w-16 md:h-16 ${track.color} rounded-2xl flex items-center justify-center mb-4 md:mb-5 shadow-sm border`}>
                       {track.icon}
                     </div>
-                    <h4 className="text-lg md:text-xl font-black tracking-tight group-hover:text-primary transition-colors">{track.name}</h4>
-                    <p className="text-xs md:text-sm font-medium text-slate-500 line-clamp-2">{track.description}</p>
+                    <h4 className="text-lg md:text-xl font-black tracking-tight group-hover:text-primary transition-colors text-foreground">{track.name}</h4>
+                    <p className="text-xs md:text-sm font-medium text-muted-foreground line-clamp-2">{track.description}</p>
                   </CardHeader>
                   <CardFooter className="p-5 md:p-7 pt-0 mt-auto">
                     <div className={`
                       w-full justify-center font-bold text-sm md:text-base 
                       h-11 md:h-12 px-5 md:px-6 rounded-xl 
                       flex items-center border-2 border-current
-                      ${track.hoverBg} group-hover:text-white 
-                      transition-all bg-white text-slate-700
+                      ${track.hoverBg} group-hover:text-primary-foreground 
+                      transition-all bg-card text-foreground
                       group-hover:shadow-lg
                     `}>
                       Start Practice <ChevronRight className="w-4 h-4 ml-2" />
@@ -592,8 +548,6 @@ return (
           </div>
         </>
       )}
-      
-      {/* Mobile Bottom Navigation - Only visible when user is signed in */}
       <MobileBottomNav isSignedIn={!!user} />
     </div>
   );
