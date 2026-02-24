@@ -1,9 +1,7 @@
 /**
  * Professional Growth (XP) Utility
- * Defines career progression, unlock ranks, and reward structures.
+ * Defines career progression, tiered unlock ranks, and scaling reward structures.
  */
-
-export const XP_PER_RANK = 1000;
 
 export const UNLOCK_RANKS = {
   GENERAL_ED: 1,
@@ -20,7 +18,6 @@ export const XP_REWARDS = {
   AD_WATCH_XP: 75,
   QUICK_FIRE_COMPLETE: 125,
   DAILY_STREAK_BONUS: 100,
-  RANK_UP_CREDITS: 25
 };
 
 export const COOLDOWNS = {
@@ -28,28 +25,51 @@ export const COOLDOWNS = {
   QUICK_FIRE: 4 * 60 * 60 * 1000 // 4 hours
 };
 
+/**
+ * TIERED ECONOMY CONFIGURATION
+ * Requirements and rewards scale based on academic title groups.
+ */
+const CAREER_TIERS = [
+  { minRank: 1,  maxRank: 4,  title: "Novice Candidate",     req: 500,   reward: 10 },
+  { minRank: 5,  maxRank: 9,  title: "Aspiring Professional", req: 1000,  reward: 25 },
+  { minRank: 10, maxRank: 14, title: "Subject Specialist",   req: 2000,  reward: 50 },
+  { minRank: 15, maxRank: 19, title: "Senior Educator",      req: 3500,  reward: 80 },
+  { minRank: 20, maxRank: 24, title: "Master Candidate",     req: 5000,  reward: 150 },
+  { minRank: 25, maxRank: 29, title: "Elite Academic",       req: 7500,  reward: 250 },
+  { minRank: 30, maxRank: 99, title: "Master Emeritus",      req: 10000, reward: 500 },
+];
+
+export function getRankTierConfig(rank: number) {
+  return CAREER_TIERS.find(t => rank >= t.minRank && rank <= t.maxRank) || CAREER_TIERS[CAREER_TIERS.length - 1];
+}
+
 export function getRankData(totalXp: number) {
-  const rank = Math.floor(totalXp / XP_PER_RANK) + 1;
-  const xpInRank = totalXp % XP_PER_RANK;
-  const progress = (xpInRank / XP_PER_RANK) * 100;
+  let rank = 1;
+  let remainingXp = totalXp;
+  
+  // Calculate current rank by iterating through tiers
+  while (true) {
+    const config = getRankTierConfig(rank);
+    if (remainingXp < config.req) break;
+    remainingXp -= config.req;
+    rank++;
+  }
+
+  const currentTier = getRankTierConfig(rank);
+  const progress = (remainingXp / currentTier.req) * 100;
   
   return {
     rank,
-    xpInRank,
-    nextRankXp: XP_PER_RANK,
+    xpInRank: remainingXp,
+    nextRankXp: currentTier.req,
     progress,
-    title: getCareerRankTitle(rank)
+    title: currentTier.title,
+    rankUpReward: currentTier.reward
   };
 }
 
 export function getCareerRankTitle(rank: number): string {
-  if (rank >= 30) return "Master Emeritus";
-  if (rank >= 25) return "Elite Academic";
-  if (rank >= 20) return "Master Candidate";
-  if (rank >= 15) return "Senior Educator";
-  if (rank >= 10) return "Subject Specialist";
-  if (rank >= 5) return "Aspiring Professional";
-  return "Novice Candidate";
+  return getRankTierConfig(rank).title;
 }
 
 export function isTrackUnlocked(rank: number, track: string): boolean {

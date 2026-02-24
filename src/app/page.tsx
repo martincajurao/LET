@@ -59,7 +59,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, XP_PER_RANK, UNLOCK_RANKS, getCareerRankTitle } from '@/lib/xp-system';
+import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, getCareerRankTitle } from '@/lib/xp-system';
 
 type AppState = 'dashboard' | 'exam' | 'results' | 'onboarding' | 'quickfire' | 'quickfire_results';
 
@@ -118,6 +118,7 @@ function LetsPrepContent() {
   // Rank Up Celebration
   const [showRankUp, setShowRankUp] = useState(false);
   const [celebratedRank, setCelebratedRank] = useState(1);
+  const [celebratedReward, setCelebratedReward] = useState(0);
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
@@ -131,12 +132,13 @@ function LetsPrepContent() {
     if (currentRank > lastRewarded) {
       const triggerCelebration = async () => {
         setCelebratedRank(currentRank);
+        setCelebratedReward(rankData?.rankUpReward || 25);
         setShowRankUp(true);
         try {
           const userRef = doc(firestore, 'users', user.uid);
           await updateDoc(userRef, {
             lastRewardedRank: currentRank,
-            credits: increment(XP_REWARDS.RANK_UP_CREDITS)
+            credits: increment(rankData?.rankUpReward || 25)
           });
         } catch (e) {
           console.error("Rank up reward sync failed:", e);
@@ -144,7 +146,7 @@ function LetsPrepContent() {
       };
       triggerCelebration();
     }
-  }, [user, rankData?.rank, firestore]);
+  }, [user, rankData?.rank, rankData?.rankUpReward, firestore]);
 
   useEffect(() => {
     const fetchRank = async () => {
@@ -293,7 +295,7 @@ function LetsPrepContent() {
     setClaimingXp(true);
     setTimeout(async () => {
       try {
-        await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(XP_REWARDS.AD_WATCH_XP), credits: increment(2), lastAdXpTimestamp: Date.now() });
+        await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(XP_REWARDS.AD_WATCH_XP), credits: increment(5), lastAdXpTimestamp: Date.now() });
         toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP earned.` });
       } catch (e) { toast({ variant: "destructive", title: "Claim Failed", description: "Sync error." }); } finally { setClaimingXp(false); }
     }, 2500);
@@ -336,7 +338,7 @@ function LetsPrepContent() {
         isOpen={showRankUp} 
         onClose={() => setShowRankUp(false)} 
         rank={celebratedRank} 
-        reward={XP_REWARDS.RANK_UP_CREDITS} 
+        reward={celebratedReward} 
       />
 
       <Dialog open={authIssue} onOpenChange={setAuthIssue}>
@@ -443,7 +445,7 @@ function LetsPrepContent() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
                           <span className="text-muted-foreground">{user.xp || 0} XP</span>
-                          <span className="text-muted-foreground">{XP_PER_RANK} XP</span>
+                          <span className="text-muted-foreground">{rankData?.nextRankXp} XP</span>
                         </div>
                         <Progress value={rankData?.progress} className="h-2 rounded-full" />
                       </div>
