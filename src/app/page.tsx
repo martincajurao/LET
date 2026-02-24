@@ -31,6 +31,7 @@ import {
   CheckCircle2,
   Languages,
   User,
+  Users,
   Ticket,
   Moon,
   Sun,
@@ -248,6 +249,18 @@ function LetsPrepContent() {
 
   if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
+  const displayStats = user ? [
+    { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user?.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
+    { icon: <Flame className="w-4 h-4 text-orange-500" />, label: 'Streak', value: user?.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' },
+    { icon: user?.isPro ? <Crown className="w-4 h-4 text-yellow-600" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user?.isPro ? 'Platinum' : 'Standard', color: user?.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
+    { icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />, label: 'Pass Rate', value: '92%', color: 'text-emerald-500 bg-emerald-500/10' }
+  ] : [
+    { icon: <Users className="w-4 h-4 text-blue-500" />, label: 'Educators', value: '12K+', color: 'text-blue-500 bg-blue-500/10' },
+    { icon: <BookOpen className="w-4 h-4 text-purple-500" />, label: 'Solved Items', value: '500K+', color: 'text-purple-500 bg-purple-500/10' },
+    { icon: <Heart className="w-4 h-4 text-pink-500" />, label: 'Free Access', value: '100%', color: 'text-pink-500 bg-pink-500/10' },
+    { icon: <Trophy className="w-4 h-4 text-yellow-500" />, label: 'Avg Readiness', value: '85%', color: 'text-yellow-500 bg-yellow-500/10' }
+  ];
+
   return (
     <div className="min-h-screen bg-background text-foreground font-body transition-all duration-300">
       <Toaster />
@@ -379,12 +392,7 @@ function LetsPrepContent() {
       ) : (
         <div className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user?.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
-              { icon: <Flame className="w-4 h-4 text-orange-500" />, label: 'Streak', value: user?.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' },
-              { icon: user?.isPro ? <Crown className="w-4 h-4 text-yellow-600" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user?.isPro ? 'Platinum' : 'Standard', color: user?.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
-              { icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />, label: 'Pass Rate', value: '92%', color: 'text-emerald-500 bg-emerald-500/10' }
-            ].map((stat, i) => (
+            {displayStats.map((stat, i) => (
               <div key={i} className="bg-card border border-border/50 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
                 <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0", stat.color)}>{stat.icon}</div>
                 <div>
@@ -438,7 +446,7 @@ function LetsPrepContent() {
               </div>
 
               <Card className="border-none shadow-xl rounded-[2.5rem] bg-foreground text-background p-8 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
                 <CardHeader className="p-0 mb-6">
                   <CardTitle className="text-xl font-black tracking-tight flex items-center gap-3">
                     <ShieldCheck className="w-6 h-6 text-primary" /> Verified Professional Platform
@@ -446,7 +454,7 @@ function LetsPrepContent() {
                 </CardHeader>
                 <CardContent className="p-0 grid grid-cols-1 md:grid-cols-3 gap-8">
                   <div className="space-y-1">
-                    <p className="text-4xl font-black text-primary">50K+</p>
+                    <p className="text-4xl font-black text-primary">500K+</p>
                     <p className="text-xs font-bold uppercase tracking-widest opacity-60">Practice Items Solved</p>
                   </div>
                   <div className="space-y-1">
