@@ -74,9 +74,19 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return shuffled;
 };
 
+/**
+ * Safely prepares data for Firestore by removing undefined and 
+ * preserving Firestore internal objects (FieldValue, etc.)
+ */
 function sanitizeData(data: any): any {
   if (data === undefined) return null;
   if (data === null || typeof data !== 'object') return data;
+  
+  // Preserve Firestore internal objects (serverTimestamp, increment, etc)
+  if (data.constructor?.name === 'FieldValue' || (data._methodName && data._methodName.startsWith('FieldValue.'))) {
+    return data;
+  }
+
   if (Array.isArray(data)) return data.map(sanitizeData);
   const sanitized: any = {};
   for (const key in data) { sanitized[key] = sanitizeData(data[key]); }
@@ -368,12 +378,16 @@ function LetsPrepContent() {
     }
     setSavingOnboarding(true);
     try {
-      await updateProfile({
+      const profileUpdates: any = {
         displayName: nickname,
         majorship: selectedMajorship,
-        referredBy: referralCode || undefined,
         onboardingComplete: true
-      });
+      };
+      if (referralCode) {
+        profileUpdates.referredBy = referralCode;
+      }
+      
+      await updateProfile(profileUpdates);
       setState('dashboard');
     } catch (e: any) {
       toast({ variant: "destructive", title: "Setup Error", description: e.message });
