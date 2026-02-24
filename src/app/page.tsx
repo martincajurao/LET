@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
@@ -48,6 +47,8 @@ import {
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
+import { QuickFireInterface } from "@/components/exam/QuickFireInterface";
+import { QuickFireResults } from "@/components/exam/QuickFireResults";
 import { Question, MAJORSHIPS } from "@/app/lib/mock-data";
 import { PersonalizedPerformanceSummaryOutput } from "@/ai/flows/personalized-performance-summary-flow";
 import { useUser, useFirestore } from "@/firebase";
@@ -61,7 +62,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { getLevelData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, XP_PER_LEVEL } from '@/lib/xp-system';
 
-type AppState = 'dashboard' | 'exam' | 'results' | 'onboarding' | 'quickfire';
+type AppState = 'dashboard' | 'exam' | 'results' | 'onboarding' | 'quickfire' | 'quickfire_results';
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array];
@@ -92,10 +93,10 @@ function LetsPrepContent() {
   const [currentQuestions, setCurrentQuestions] = useState<Question[]>([]);
   const [examAnswers, setExamAnswers] = useState<Record<string, string>>({});
   const [examTime, setExamTime] = useState(0);
+  const [lastXpEarned, setLastXpEarned] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState("");
-  const [aiSummary, setAiSummary] = useState<PersonalizedPerformanceSummaryOutput | undefined>();
   const [authIssue, setAuthIssue] = useState(false);
   
   const [timePerQuestion, setTimePerQuestion] = useState(60);
@@ -107,7 +108,6 @@ function LetsPrepContent() {
   const [claimingXp, setClaimingXp] = useState(false);
 
   // Onboarding States
-  const [setupStep, setSetupStep] = useState(1);
   const [nickname, setNickname] = useState("");
   const [selectedMajorship, setSelectedMajorship] = useState("");
   const [referralCode, setReferralCode] = useState("");
@@ -115,20 +115,18 @@ function LetsPrepContent() {
 
   const levelData = useMemo(() => user ? getLevelData(user.xp || 0) : null, [user?.xp]);
 
-  // Handle Cooldowns & Push-Like Notifications
+  // Handle Cooldowns
   useEffect(() => {
     if (!user) return;
     
     const interval = setInterval(() => {
       const now = Date.now();
-      
       const adTimeLeft = Math.max(0, (user.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP - now);
       const qfTimeLeft = Math.max(0, (user.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE - now);
       
       setAdCooldown(adTimeLeft);
       setQuickFireCooldown(qfTimeLeft);
 
-      // Simulated "Push Notification" logic
       if (adTimeLeft === 0 && user.lastAdXpTimestamp && (now - user.lastAdXpTimestamp) < COOLDOWNS.AD_XP + 5000) {
         toast({ title: "💎 Professional Insight Ready", description: "Your XP boost is now available in the dashboard!" });
       }
@@ -171,14 +169,13 @@ function LetsPrepContent() {
     return () => unsub();
   }, [firestore]);
 
-  const startExam = async (category: string | 'all' = 'all') => {
+  const startExam = async (category: string | 'all' | 'quickfire' = 'all') => {
     if (loading) return;
     
-    // Check Lock Requirements (Quickfire is always unlocked)
-    if (category !== 'quickfire' && user && !isTrackUnlocked(levelData?.level || 1, category)) {
+    if (category !== 'quickfire' && user && !isTrackUnlocked(levelData?.level || 1, category as string)) {
       toast({ 
         title: "Mode Locked", 
-        description: `This simulation track requires Level ${category === 'all' ? 12 : (category === 'Professional Education' ? 3 : 7)}. Keep earning XP!`,
+        description: `Requires Level ${category === 'all' ? 12 : (category === 'Professional Education' ? 3 : 7)}. Keep earning XP!`,
         variant: "destructive"
       });
       return;
@@ -198,15 +195,14 @@ function LetsPrepContent() {
       if (!firestore) throw new Error("Cloud synchronization error.");
       const questionPool = await fetchQuestionsFromFirestore(firestore);
       if (!questionPool || questionPool.length === 0) {
-        // If DB empty, seed once
         await seedInitialQuestions(firestore);
-        throw new Error("Initializing Question Bank. Please retry in 2 seconds.");
+        throw new Error("Initializing Bank. Please retry.");
       }
 
       let finalQuestions: Question[] = [];
-      const sequenceOrder = ['General Education', 'Professional Education', 'Specialization'];
 
       if (category === 'all') {
+        const sequenceOrder = ['General Education', 'Professional Education', 'Specialization'];
         for (const subjectName of sequenceOrder) {
           const pool = questionPool.filter(q => {
             if (subjectName === 'Specialization') return q.subject === 'Specialization' && q.subCategory === (user?.majorship || 'English');
@@ -218,19 +214,15 @@ function LetsPrepContent() {
           }
         }
       } else if (category === 'quickfire') {
-        // Implement Guaranteed Mix from All Categories
         const genEdPool = questionPool.filter(q => q.subject === 'General Education');
         const profEdPool = questionPool.filter(q => q.subject === 'Professional Education');
         const specPool = questionPool.filter(q => q.subject === 'Specialization');
 
         const selection: Question[] = [];
-        
-        // Try to pick 1 from each category first
         if (genEdPool.length > 0) selection.push(shuffleArray(genEdPool)[0]);
         if (profEdPool.length > 0) selection.push(shuffleArray(profEdPool)[0]);
         if (specPool.length > 0) selection.push(shuffleArray(specPool)[0]);
 
-        // Fill remaining slots with random questions from the entire bank
         const selectedIds = new Set(selection.map(q => q.id));
         const remainingPool = questionPool.filter(q => !selectedIds.has(q.id));
         const extras = shuffleArray(remainingPool).slice(0, 5 - selection.length);
@@ -248,11 +240,14 @@ function LetsPrepContent() {
         finalQuestions = shuffleArray(pool).slice(0, limitCount);
       }
 
-      if (finalQuestions.length === 0) throw new Error(`Insufficient items for: ${category}`);
+      if (finalQuestions.length === 0) throw new Error(`Insufficient items for selection.`);
 
       setCurrentQuestions(finalQuestions);
       setLoadingStep(100);
-      setTimeout(() => { setState('exam'); setLoading(false); }, 300);
+      setTimeout(() => { 
+        setState(category === 'quickfire' ? 'quickfire' : 'exam'); 
+        setLoading(false); 
+      }, 300);
     } catch (e: any) {
       toast({ variant: "destructive", title: "Simulation Failed", description: e.message });
       setLoading(false);
@@ -277,15 +272,18 @@ function LetsPrepContent() {
     const correctCount = results.filter(h => h.isCorrect).length;
     const overallScore = Math.round((correctCount / (currentQuestions.length || 1)) * 100);
 
-    // Calculate XP Rewards
+    // XP Rewards
     let xpEarned = correctCount * XP_REWARDS.CORRECT_ANSWER;
-    if (currentQuestions.length > 5) {
+    const isQuickFire = currentQuestions.length <= 5;
+
+    if (!isQuickFire) {
       xpEarned += (currentQuestions.length >= 50 ? XP_REWARDS.FINISH_FULL_SIM : XP_REWARDS.FINISH_TRACK);
     } else {
-      // Quick Fire: Bonus is strictly based on score (Accuracy %)
       const accuracy = correctCount / (currentQuestions.length || 1);
       xpEarned += Math.round(accuracy * XP_REWARDS.QUICK_FIRE_COMPLETE);
     }
+
+    setLastXpEarned(xpEarned);
 
     const resultsData = sanitizeData({
       userId: user.uid,
@@ -300,23 +298,21 @@ function LetsPrepContent() {
 
     if (!user.uid.startsWith('bypass')) {
       await addDoc(collection(firestore, "exam_results"), resultsData);
-      
       const updateData: any = {
         dailyQuestionsAnswered: increment(currentQuestions.length),
-        dailyTestsFinished: increment(currentQuestions.length > 5 ? 1 : 0),
+        dailyTestsFinished: increment(!isQuickFire ? 1 : 0),
         xp: increment(xpEarned),
         lastActiveDate: serverTimestamp()
       };
-
-      if (currentQuestions.length <= 5) {
-        updateData.lastQuickFireTimestamp = Date.now();
-      }
-
+      if (isQuickFire) updateData.lastQuickFireTimestamp = Date.now();
       await updateDoc(doc(firestore, 'users', user.uid), updateData);
     }
 
     setLoadingStep(100);
-    setTimeout(() => { setState('results'); setLoading(false); }, 500);
+    setTimeout(() => { 
+      setState(isQuickFire ? 'quickfire_results' : 'results'); 
+      setLoading(false); 
+    }, 500);
   };
 
   const handleWatchXpAd = async () => {
@@ -329,7 +325,7 @@ function LetsPrepContent() {
           credits: increment(2),
           lastAdXpTimestamp: Date.now()
         });
-        toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +2 Credits earned.` });
+        toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP earned.` });
       } catch (e) {
         toast({ variant: "destructive", title: "Claim Failed", description: "Sync error." });
       } finally {
@@ -340,7 +336,7 @@ function LetsPrepContent() {
 
   const finishOnboarding = async () => {
     if (!selectedMajorship || !nickname) {
-      toast({ title: "Missing Info", description: "Please provide a nickname and select your track." });
+      toast({ title: "Missing Info", description: "Please complete the setup." });
       return;
     }
     setSavingOnboarding(true);
@@ -351,7 +347,6 @@ function LetsPrepContent() {
         referredBy: referralCode || undefined,
         onboardingComplete: true
       });
-      toast({ title: "Welcome!", description: "Account setup complete. Good luck, Educator!" });
       setState('dashboard');
     } catch (e: any) {
       toast({ variant: "destructive", title: "Setup Error", description: e.message });
@@ -391,13 +386,11 @@ function LetsPrepContent() {
               <ShieldCheck className="w-8 h-8 text-primary" />
             </div>
             <DialogTitle className="text-2xl font-black">Authentication Required</DialogTitle>
-            <DialogDescription className="text-muted-foreground">Sign in to track your progress and earn credits. <span className="text-primary font-black">Free Forever Access.</span></DialogDescription>
+            <DialogDescription className="text-muted-foreground">Sign in to track progress. <span className="text-primary font-black">Free Forever Access.</span></DialogDescription>
           </DialogHeader>
           <div className="grid gap-2 py-4">
             <Button onClick={async () => { await loginWithGoogle(); setAuthIssue(false); }} className="h-12 rounded-xl font-bold gap-2 shadow-lg"><Zap className="w-4 h-4 fill-current" /> Continue with Google</Button>
-            <Button onClick={async () => { await loginWithFacebook(); setAuthIssue(false); }} className="h-12 rounded-xl font-bold gap-2 shadow-lg bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none">
-              <Facebook className="w-4 h-4 fill-current" /> Continue with Facebook
-            </Button>
+            <Button onClick={async () => { await loginWithFacebook(); setAuthIssue(false); }} className="h-12 rounded-xl font-bold gap-2 shadow-lg bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none"><Facebook className="w-4 h-4 fill-current" /> Continue with Facebook</Button>
             <Button variant="outline" onClick={() => { bypassLogin(); setAuthIssue(false); }} className="h-12 rounded-xl font-bold border-2">Guest Simulation</Button>
           </div>
         </DialogContent>
@@ -405,9 +398,6 @@ function LetsPrepContent() {
 
       <Dialog open={loading}>
         <DialogContent className="max-w-[300px] border-none shadow-2xl bg-card rounded-[2.5rem] p-8 z-[1001]">
-          <DialogHeader>
-            <DialogTitle className="sr-only">Initializing Simulation</DialogTitle>
-          </DialogHeader>
           <div className="flex flex-col items-center gap-6">
             <div className="relative">
               <div className="w-20 h-20 bg-primary/10 rounded-full animate-ping absolute inset-0" />
@@ -421,231 +411,198 @@ function LetsPrepContent() {
         </DialogContent>
       </Dialog>
 
-      {state === 'exam' ? (
-        <div className="animate-md-slide-up h-full">
-          <ExamInterface questions={currentQuestions} timePerQuestion={timePerQuestion} onComplete={handleExamComplete} />
-        </div>
-      ) : state === 'results' ? (
-        <div className="animate-md-slide-up h-full p-4">
-          <ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} aiSummary={aiSummary} onRestart={() => setState('dashboard')} />
-        </div>
-      ) : state === 'onboarding' ? (
-        <div className="min-h-[85vh] flex items-center justify-center p-4">
-          <Card className="w-full max-w-md rounded-[3rem] bg-card border-none shadow-2xl overflow-hidden animate-md-slide-up">
-            <div className="bg-primary/10 p-8 flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-card rounded-[1.5rem] flex items-center justify-center shadow-lg mb-4">
-                <ShieldCheck className="w-8 h-8 text-primary" />
+      <AnimatePresence mode="wait">
+        {state === 'exam' ? (
+          <motion.div key="exam" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
+            <ExamInterface questions={currentQuestions} timePerQuestion={timePerQuestion} onComplete={handleExamComplete} />
+          </motion.div>
+        ) : state === 'quickfire' ? (
+          <motion.div key="quickfire" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
+            <QuickFireInterface questions={currentQuestions} onComplete={handleExamComplete} onExit={() => setState('dashboard')} />
+          </motion.div>
+        ) : state === 'results' ? (
+          <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">
+            <ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} onRestart={() => setState('dashboard')} />
+          </motion.div>
+        ) : state === 'quickfire_results' ? (
+          <motion.div key="quickfire_results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">
+            <QuickFireResults questions={currentQuestions} answers={examAnswers} timeSpent={examTime} xpEarned={lastXpEarned} onRestart={() => setState('dashboard')} />
+          </motion.div>
+        ) : state === 'onboarding' ? (
+          <motion.div key="onboarding" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-[85vh] flex items-center justify-center p-4">
+            <Card className="w-full max-w-md rounded-[3rem] bg-card border-none shadow-2xl overflow-hidden">
+              <div className="bg-primary/10 p-8 flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-card rounded-[1.5rem] flex items-center justify-center shadow-lg mb-4">
+                  <ShieldCheck className="w-8 h-8 text-primary" />
+                </div>
+                <h2 className="text-2xl font-black tracking-tight text-foreground">Finalizing Profile</h2>
+                <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest mt-1">Professional Verification</p>
               </div>
-              <h2 className="text-2xl font-black tracking-tight text-foreground">Finalizing Profile</h2>
-              <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest mt-1">Professional Verification</p>
+              <CardContent className="p-8 space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Leaderboard Nickname</Label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input placeholder="e.g. Master Teacher" className="pl-11 h-12 rounded-xl border-2" value={nickname} onChange={(e) => setNickname(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Majorship Track</Label>
+                    <Select value={selectedMajorship} onValueChange={setSelectedMajorship}>
+                      <SelectTrigger className="h-12 rounded-xl border-2 px-4 font-bold">
+                        <div className="flex items-center gap-2">
+                          <GraduationCap className="w-4 h-4 text-muted-foreground" />
+                          <SelectValue placeholder="Select your track..." />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">{MAJORSHIPS.map(m => (<SelectItem key={m} value={m} className="font-bold py-3">{m}</SelectItem>))}</SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button onClick={finishOnboarding} disabled={savingOnboarding || !nickname || !selectedMajorship} className="w-full h-14 rounded-2xl font-black text-lg shadow-xl shadow-primary/30">
+                  {savingOnboarding ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5 fill-current" />}
+                  Enter Learning Vault
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : (
+          <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {displayStats.map((stat, i) => (
+                <div key={i} className="bg-card border border-border/50 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
+                  <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0", stat.color)}>{stat.icon}</div>
+                  <div>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">{stat.label}</p>
+                    <p className="text-lg font-black text-foreground leading-none">{stat.value}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            
-            <CardContent className="p-8 space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Leaderboard Nickname</Label>
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="e.g. Master Teacher" 
-                      className="pl-11 h-12 rounded-xl border-2 focus:ring-primary/20"
-                      value={nickname}
-                      onChange={(e) => setNickname(e.target.value)}
-                    />
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Majorship Track</Label>
-                  <Select value={selectedMajorship} onValueChange={setSelectedMajorship}>
-                    <SelectTrigger className="h-12 rounded-xl border-2 px-4 font-bold">
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="w-4 h-4 text-muted-foreground" />
-                        <SelectValue placeholder="Select your track..." />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-8 space-y-6">
+                {user && (
+                  <Card className="border-none shadow-sm rounded-3xl bg-card overflow-hidden">
+                    <CardHeader className="p-6 pb-2">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Current Rank</p>
+                          <CardTitle className="text-xl font-black flex items-center gap-2">
+                            {levelData?.title} <Badge className="bg-primary/10 text-primary border-none text-[10px]">Lvl {levelData?.level}</Badge>
+                          </CardTitle>
+                        </div>
+                        <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center"><Trophy className="w-5 h-5 text-primary" /></div>
                       </div>
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      {MAJORSHIPS.map(m => (
-                        <SelectItem key={m} value={m} className="font-bold py-3">{m}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Referral Code (Optional)</Label>
-                  <div className="relative">
-                    <Ticket className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="Enter invite code" 
-                      className="pl-11 h-12 rounded-xl border-2 focus:ring-primary/20"
-                      value={referralCode}
-                      onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <Button 
-                onClick={finishOnboarding} 
-                disabled={savingOnboarding || !nickname || !selectedMajorship}
-                className="w-full h-14 rounded-2xl font-black text-lg shadow-xl shadow-primary/30 gap-3 transition-all active:scale-[0.98]"
-              >
-                {savingOnboarding ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5 fill-current" />}
-                Enter Learning Vault
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      ) : (
-        <div className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
-          {/* Statistics Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {displayStats.map((stat, i) => (
-              <div key={i} className="bg-card border border-border/50 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
-                <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0", stat.color)}>{stat.icon}</div>
-                <div>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">{stat.label}</p>
-                  <p className="text-lg font-black text-foreground leading-none">{stat.value}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-8 space-y-6">
-              {/* Career Progress Card */}
-              {user && (
-                <Card className="border-none shadow-sm rounded-3xl bg-card overflow-hidden">
-                  <CardHeader className="p-6 pb-2">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Current Rank</p>
-                        <CardTitle className="text-xl font-black flex items-center gap-2">
-                          {levelData?.title} <Badge className="bg-primary/10 text-primary border-none text-[10px]">Lvl {levelData?.level}</Badge>
-                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6 pt-0 space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs font-bold">
+                          <span className="text-muted-foreground">{user.xp || 0} XP</span>
+                          <span className="text-muted-foreground">{XP_PER_LEVEL} XP</span>
+                        </div>
+                        <Progress value={levelData?.progress} className="h-2 rounded-full" />
                       </div>
-                      <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-                        <Trophy className="w-5 h-5 text-primary" />
+                      <div className="grid grid-cols-2 gap-3 pt-2">
+                        <Button onClick={handleWatchXpAd} disabled={claimingXp || adCooldown > 0} variant="outline" className="h-12 rounded-xl font-black text-xs gap-2 border-primary/20 hover:bg-primary/5">
+                          {claimingXp ? <Loader2 className="w-4 h-4 animate-spin" /> : adCooldown > 0 ? <Timer className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+                          {adCooldown > 0 ? formatCooldown(adCooldown) : "XP Boost Clip (+50)"}
+                        </Button>
+                        <Button onClick={() => startExam('quickfire')} disabled={quickFireCooldown > 0} variant="default" className="h-12 rounded-xl font-black text-xs gap-2 shadow-lg shadow-primary/20">
+                          {quickFireCooldown > 0 ? <Timer className="w-4 h-4" /> : <BellRing className="w-4 h-4" />}
+                          {quickFireCooldown > 0 ? formatCooldown(quickFireCooldown) : "Mixed Brain Teaser"}
+                        </Button>
                       </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <Card className="overflow-hidden border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-primary/20 via-card to-background relative p-8 md:p-12">
+                  <div className="relative z-10 space-y-6">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Badge variant="secondary" className="font-black text-[10px] uppercase px-4 py-1 bg-primary/20 text-primary border-none">Free Forever Practice</Badge>
+                      <div className="flex items-center gap-1.5 text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full"><Heart className="w-3.5 h-3.5" /><span className="text-[10px] font-black uppercase">Open to All</span></div>
                     </div>
+                    <div className="space-y-4">
+                      <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-foreground">Prepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
+                      <p className="text-muted-foreground font-medium md:text-xl max-w-lg">Experience high-fidelity simulations with AI pedagogical analysis tailored for Filipino educators.</p>
+                    </div>
+                    <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all group">
+                      <Zap className="w-6 h-6 fill-current" /> <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </div>
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/3" />
+                </Card>
+
+                <div className="space-y-4">
+                  <h3 className="text-xl font-black tracking-tight px-2 flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-primary" /> Training Grounds
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[
+                      { id: 'General Education', name: 'Gen Ed', icon: <Languages />, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Core Knowledge', lvl: 1 },
+                      { id: 'Professional Education', name: 'Prof Ed', icon: <GraduationCap />, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Teaching Strategy', lvl: 3 },
+                      { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Subject Mastery', lvl: 7 }
+                    ].map((track, i) => {
+                      const isLocked = user && !isTrackUnlocked(levelData?.level || 1, track.id);
+                      return (
+                        <Card 
+                          key={i} 
+                          onClick={() => !isLocked && startExam(track.id as any)} 
+                          className={cn(
+                            "group cursor-pointer border-2 transition-all rounded-3xl bg-card overflow-hidden active:scale-95 relative",
+                            isLocked ? "border-muted opacity-60" : "border-border/50 hover:border-primary"
+                          )}
+                        >
+                          {isLocked && (
+                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/40 backdrop-blur-[1px]">
+                              <Lock className="w-6 h-6 text-muted-foreground mb-1" />
+                              <span className="text-[10px] font-black uppercase text-muted-foreground">Lvl {track.lvl} Required</span>
+                            </div>
+                          )}
+                          <CardContent className="p-6 space-y-4">
+                            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm", track.bg, track.color)}>{track.icon}</div>
+                            <div>
+                              <h4 className="font-black text-lg text-foreground">{track.name}</h4>
+                              <p className="text-xs text-muted-foreground font-medium">{track.desc}</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-4 space-y-6">
+                <Card className="border-none shadow-xl rounded-[2rem] bg-foreground text-background p-8 relative overflow-hidden group h-full">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
+                  <CardHeader className="p-0 mb-6">
+                    <CardTitle className="text-xl font-black tracking-tight flex items-center gap-3">
+                      <ShieldCheck className="w-6 h-6 text-primary" /> Verified Hub
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6 pt-0 space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs font-bold">
-                        <span className="text-muted-foreground">{user.xp || 0} XP</span>
-                        <span className="text-muted-foreground">{XP_PER_LEVEL} XP</span>
-                      </div>
-                      <Progress value={levelData?.progress} className="h-2 rounded-full" />
+                  <CardContent className="p-0 space-y-8">
+                    <div className="space-y-1">
+                      <p className="text-4xl font-black text-primary">3.5K+</p>
+                      <p className="text-xs font-bold uppercase tracking-widest opacity-60">Curated Practice Items</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 pt-2">
-                      <Button 
-                        onClick={handleWatchXpAd} 
-                        disabled={claimingXp || adCooldown > 0} 
-                        variant="outline" 
-                        className="h-12 rounded-xl font-black text-xs gap-2 border-primary/20 hover:bg-primary/5"
-                      >
-                        {claimingXp ? <Loader2 className="w-4 h-4 animate-spin" /> : adCooldown > 0 ? <Timer className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
-                        {adCooldown > 0 ? formatCooldown(adCooldown) : "XP Boost Clip (+50)"}
-                      </Button>
-                      <Button 
-                        onClick={() => startExam('quickfire')} 
-                        disabled={quickFireCooldown > 0}
-                        variant="default" 
-                        className="h-12 rounded-xl font-black text-xs gap-2 shadow-lg shadow-primary/20"
-                      >
-                        {quickFireCooldown > 0 ? <Timer className="w-4 h-4" /> : <BellRing className="w-4 h-4" />}
-                        {quickFireCooldown > 0 ? formatCooldown(quickFireCooldown) : "Mixed Brain Teaser"}
-                      </Button>
+                    <div className="space-y-1">
+                      <p className="text-4xl font-black text-secondary">82%</p>
+                      <p className="text-xs font-bold uppercase tracking-widest opacity-60">Avg Board Readiness</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-4xl font-black text-blue-400">100%</p>
+                      <p className="text-xs font-bold uppercase tracking-widest opacity-60">Free Forever Access</p>
                     </div>
                   </CardContent>
                 </Card>
-              )}
-
-              <Card className="overflow-hidden border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-primary/20 via-card to-background relative p-8 md:p-12">
-                <div className="relative z-10 space-y-6">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Badge variant="secondary" className="font-black text-[10px] uppercase px-4 py-1 bg-primary/20 text-primary border-none">Free Forever Practice</Badge>
-                    <div className="flex items-center gap-1.5 text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full"><Heart className="w-3.5 h-3.5" /><span className="text-[10px] font-black uppercase">Open to All</span></div>
-                  </div>
-                  <div className="space-y-4">
-                    <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-foreground">Prepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
-                    <p className="text-muted-foreground font-medium md:text-xl max-w-lg">Experience high-fidelity simulations with AI pedagogical analysis tailored for Filipino educators. <span className="text-foreground font-black">Completely free practice.</span></p>
-                  </div>
-                  <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all group">
-                    <Zap className="w-6 h-6 fill-current" /> <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </div>
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/3" />
-              </Card>
-
-              <div className="space-y-4">
-                <h3 className="text-xl font-black tracking-tight px-2 flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-primary" /> Training Grounds
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[
-                    { id: 'Gen Ed', name: 'Gen Ed', icon: <Languages />, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Core Knowledge', lvl: 1 },
-                    { id: 'Prof Ed', name: 'Prof Ed', icon: <GraduationCap />, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Teaching Strategy', lvl: 3 },
-                    { id: user?.majorship || 'Major', name: user?.majorship || 'Major', icon: <Star />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Subject Mastery', lvl: 7 }
-                  ].map((track, i) => {
-                    const isLocked = user && !isTrackUnlocked(levelData?.level || 1, track.id);
-                    return (
-                      <Card 
-                        key={i} 
-                        onClick={() => !isLocked && startExam(track.id as any)} 
-                        className={cn(
-                          "group cursor-pointer border-2 transition-all rounded-3xl bg-card overflow-hidden active:scale-95 relative",
-                          isLocked ? "border-muted opacity-60" : "border-border/50 hover:border-primary"
-                        )}
-                      >
-                        {isLocked && (
-                          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/40 backdrop-blur-[1px]">
-                            <Lock className="w-6 h-6 text-muted-foreground mb-1" />
-                            <span className="text-[10px] font-black uppercase text-muted-foreground">Lvl {track.lvl} Required</span>
-                          </div>
-                        )}
-                        <CardContent className="p-6 space-y-4">
-                          <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm", track.bg, track.color)}>{track.icon}</div>
-                          <div>
-                            <h4 className="font-black text-lg text-foreground">{track.name}</h4>
-                            <p className="text-xs text-muted-foreground font-medium">{track.desc}</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
               </div>
             </div>
-
-            <div className="lg:col-span-4 space-y-6">
-              <Card className="border-none shadow-xl rounded-[2rem] bg-foreground text-background p-8 relative overflow-hidden group h-full">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
-                <CardHeader className="p-0 mb-6">
-                  <CardTitle className="text-xl font-black tracking-tight flex items-center gap-3">
-                    <ShieldCheck className="w-6 h-6 text-primary" /> Verified Hub
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0 space-y-8">
-                  <div className="space-y-1">
-                    <p className="text-4xl font-black text-primary">3.5K+</p>
-                    <p className="text-xs font-bold uppercase tracking-widest opacity-60">Curated Practice Items</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-4xl font-black text-secondary">82%</p>
-                    <p className="text-xs font-bold uppercase tracking-widest opacity-60">Avg Board Readiness</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-4xl font-black text-blue-400">100%</p>
-                    <p className="text-xs font-bold uppercase tracking-widest opacity-60">Free Forever Access</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
