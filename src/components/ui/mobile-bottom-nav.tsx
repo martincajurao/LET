@@ -57,6 +57,17 @@ function NavContent() {
       setIsPracticeOpen(true);
       return;
     }
+    
+    if (item.id === 'events') {
+      if (pathname === '/') {
+        const element = document.getElementById('events');
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+          return;
+        }
+      }
+    }
+    
     router.push(item.href);
   };
 
@@ -64,7 +75,6 @@ function NavContent() {
     if (item.id === 'home' && pathname === '/') return true;
     if (item.id === 'progress' && pathname === '/profile' && tab !== 'account') return true;
     if (item.id === 'settings' && tab === 'account') return true;
-    if (item.id === 'events' && pathname === '/' && typeof window !== 'undefined' && window.location.hash === '#events') return true;
     return false;
   };
 

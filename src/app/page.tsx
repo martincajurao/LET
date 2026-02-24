@@ -331,7 +331,9 @@ export default function LetsPrepApp() {
                 </div>
               </div>
 
-              <EventsSection />
+              <div id="events">
+                <EventsSection />
+              </div>
             </div>
 
             <div className="lg:col-span-4 space-y-6">
