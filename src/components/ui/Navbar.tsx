@@ -21,7 +21,11 @@ import {
   Bell, 
   Settings, 
   Facebook,
-  ShieldCheck
+  ShieldCheck,
+  Menu,
+  Home,
+  ListTodo,
+  Trophy
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -74,6 +78,13 @@ export function Navbar() {
     }, 3000);
   };
 
+  const navItems = [
+    { label: 'Home', icon: <Home className="w-4 h-4" />, href: '/' },
+    { label: 'Daily Tasks', icon: <ListTodo className="w-4 h-4" />, href: '/tasks' },
+    { label: 'Global Arena', icon: <Trophy className="w-4 h-4" />, href: '/events' },
+    { label: 'Settings', icon: <Settings className="w-4 h-4" />, href: '/profile?tab=account' },
+  ];
+
   return (
     <>
       <nav className="h-16 flex items-center justify-between px-4 md:px-8 bg-background/80 backdrop-blur-xl border-b sticky top-0 z-[100] transition-all duration-300 shadow-sm">
@@ -91,6 +102,28 @@ export function Navbar() {
 
         <div className="flex items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-1 sm:gap-2">
+            {/* Desktop Navigation Menu Icon */}
+            <div className="hidden md:block">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-muted">
+                    <Menu className="w-5 h-5 text-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 mt-2 rounded-2xl border bg-card shadow-2xl p-2" align="end">
+                  <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground px-3 py-2">Quick Navigation</DropdownMenuLabel>
+                  {navItems.map((item) => (
+                    <DropdownMenuItem key={item.label} asChild>
+                      <Link href={item.href} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
+                        <div className="text-primary">{item.icon}</div>
+                        {item.label}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
             <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-muted" onClick={toggleDarkMode}>
               {isDark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-slate-600" />}
             </Button>
