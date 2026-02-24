@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // User Profile Rules
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+
+    // Question Bank Rules
+    match /questions/{questionId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Admin only via console/functions
+    }
+
+    // AI Explanations Cache
+    match /ai_explanations/{questionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Exam Results Rules
+    match /exam_results/{resultId} {
+      allow create: if isAuthenticated();
+      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
+      allow list: if isAuthenticated() && request.query.limit <= 100;
+    }
+
+    // Competition Events
+    match /events/{eventId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    match /event_leaderboard/{eventId}/participants/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+
+    // System Config
+    match /system_configs/{configId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
