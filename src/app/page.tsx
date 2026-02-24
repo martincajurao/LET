@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
@@ -317,6 +318,10 @@ function LetsPrepContent() {
 
       <Dialog open={loading}>
         <DialogContent className="max-w-[280px] border-none shadow-2xl bg-card rounded-[2rem] p-8 z-[1001]">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Loading Session</DialogTitle>
+            <DialogDescription>Please wait while we calibrate your professional simulation.</DialogDescription>
+          </DialogHeader>
           <div className="flex flex-col items-center gap-6">
             <div className="relative">
               <div className="w-20 h-20 bg-primary/10 rounded-full animate-ping absolute inset-0" />
