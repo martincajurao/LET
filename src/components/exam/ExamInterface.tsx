@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Dialog, 
   DialogContent, 
@@ -27,7 +28,9 @@ import {
   Play,
   CheckCircle2,
   BrainCircuit,
-  Timer
+  Timer,
+  LayoutGrid,
+  Info
 } from "lucide-react";
 import { Question } from "@/app/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -127,7 +130,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
   const handleBack = () => {
     if (currentInPhaseIdx > 0) {
-      setCurrentInPhaseIdx(prev => prev + 1);
+      setCurrentInPhaseIdx(prev => prev - 1);
     } else if (currentPhaseIdx > 0) {
       const prevPhaseIdx = currentPhaseIdx - 1;
       setCurrentPhaseIdx(prevPhaseIdx);
@@ -236,50 +239,64 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
           </div>
         </div>
 
-        <aside className="hidden lg:flex w-72 border-l bg-muted/5 p-6 flex-col gap-6 overflow-y-auto">
-          <div className="space-y-1">
-            <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Simulation Map</h3>
-            <p className="text-[10px] font-medium text-muted-foreground">Phased board examination.</p>
+        <aside className="hidden lg:flex w-80 border-l bg-muted/5 flex-col overflow-hidden">
+          <div className="p-6 border-b bg-card/50">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-xs font-black uppercase tracking-widest text-foreground">Simulation Map</h3>
+              <LayoutGrid className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">450 Items Capacity</p>
           </div>
           
-          {groupedPhases.map((phase, pIdx) => (
-            <div key={pIdx} className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className={cn(
-                  "w-1.5 h-1.5 rounded-full",
-                  currentPhaseIdx === pIdx ? "bg-primary animate-pulse" : currentPhaseIdx > pIdx ? "bg-emerald-500" : "bg-muted"
-                )} />
-                <span className={cn(
-                  "text-[10px] font-black uppercase tracking-widest",
-                  currentPhaseIdx === pIdx ? "text-foreground" : "text-muted-foreground"
-                )}>
-                  {phase.subject}
-                </span>
-              </div>
-              <div className="grid grid-cols-5 gap-1.5">
-                {phase.items.map((q, i) => (
-                  <button 
-                    key={q.id} 
-                    onClick={() => {
-                      setCurrentPhaseIdx(pIdx);
-                      setCurrentInPhaseIdx(i);
-                    }}
-                    className={cn(
-                      "aspect-square rounded-lg text-[10px] font-black border transition-all",
-                      currentPhaseIdx === pIdx && currentInPhaseIdx === i 
-                        ? "border-primary bg-primary text-primary-foreground shadow-md" 
-                        : answers[q.id] 
-                          ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-600" 
-                          : "border-border text-muted-foreground hover:bg-muted",
-                      flags[q.id] && "border-orange-500/50 bg-orange-500/10 text-orange-600"
-                    )}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
+          <ScrollArea className="flex-1">
+            <div className="p-6 space-y-8">
+              {groupedPhases.map((phase, pIdx) => (
+                <div key={pIdx} className="space-y-4">
+                  <div className="flex items-center gap-2 sticky top-0 bg-background/80 backdrop-blur-sm py-1 z-10">
+                    <div className={cn(
+                      "w-2 h-2 rounded-full",
+                      currentPhaseIdx === pIdx ? "bg-primary animate-pulse" : currentPhaseIdx > pIdx ? "bg-emerald-500" : "bg-muted"
+                    )} />
+                    <span className={cn(
+                      "text-[10px] font-black uppercase tracking-widest",
+                      currentPhaseIdx === pIdx ? "text-foreground" : "text-muted-foreground"
+                    )}>
+                      {phase.subject}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {phase.items.map((q, i) => (
+                      <button 
+                        key={q.id} 
+                        onClick={() => {
+                          setCurrentPhaseIdx(pIdx);
+                          setCurrentInPhaseIdx(i);
+                        }}
+                        className={cn(
+                          "aspect-square rounded-lg text-[9px] font-black border transition-all flex items-center justify-center",
+                          currentPhaseIdx === pIdx && currentInPhaseIdx === i 
+                            ? "border-primary bg-primary text-primary-foreground shadow-md scale-110 z-10" 
+                            : answers[q.id] 
+                              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600" 
+                              : "border-border text-muted-foreground hover:bg-muted/50",
+                          flags[q.id] && ! (currentPhaseIdx === pIdx && currentInPhaseIdx === i) && "border-orange-500/50 bg-orange-500/10 text-orange-600"
+                        )}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          </ScrollArea>
+
+          <div className="p-4 border-t bg-card/50 text-[9px] font-bold text-muted-foreground grid grid-cols-2 gap-2">
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Answered</div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-primary" /> Current</div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-orange-500" /> Flagged</div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-border" /> Remaining</div>
+          </div>
         </aside>
       </main>
 
