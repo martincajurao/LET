@@ -103,7 +103,6 @@ export function Navbar() {
 
         <div className="flex items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-1 sm:gap-2">
-            {/* Desktop Navigation Menu Icon - Only visible for signed users in web view */}
             {user && (
               <div className="hidden md:block">
                 <DropdownMenu>
@@ -165,9 +164,13 @@ export function Navbar() {
                         {user.displayName?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    {user.isPro && (
+                    {user.isPro ? (
                       <div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-0.5 shadow-sm border border-background">
                         <Crown className="w-2.5 h-2.5 text-yellow-900" />
+                      </div>
+                    ) : (
+                      <div className="absolute -top-1 -right-1 bg-blue-400 rounded-full p-0.5 shadow-sm border border-background">
+                        <ShieldCheck className="w-2.5 h-2.5 text-white" />
                       </div>
                     )}
                   </button>
@@ -176,8 +179,10 @@ export function Navbar() {
                   <div className="p-3 mb-2 bg-muted/30 rounded-xl">
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <p className="text-sm font-black truncate">{user.displayName}</p>
-                      {user.isPro && (
+                      {user.isPro ? (
                         <Badge className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20 text-[8px] font-black uppercase px-1.5 py-0">PRO</Badge>
+                      ) : (
+                        <Badge className="bg-blue-500/10 text-blue-700 border-blue-500/20 text-[8px] font-black uppercase px-1.5 py-0">FREE</Badge>
                       )}
                     </div>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">{user.email}</p>
@@ -209,7 +214,6 @@ export function Navbar() {
         </div>
       </nav>
 
-      {/* Auth Modal */}
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm">
           <DialogHeader className="text-center">
@@ -217,7 +221,7 @@ export function Navbar() {
               <ShieldCheck className="w-8 h-8 text-primary" />
             </div>
             <DialogTitle className="text-2xl font-black">Welcome to LET's Prep</DialogTitle>
-            <DialogDescription className="text-muted-foreground">Choose your preferred sign-in method to continue your professional journey.</DialogDescription>
+            <DialogDescription className="text-muted-foreground text-sm">Choose your preferred sign-in method to continue your professional journey. <span className="text-primary font-black">Free Forever Access.</span></DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-6">
             <Button onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-bold gap-3 shadow-lg">
