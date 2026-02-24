@@ -35,7 +35,8 @@ import {
   Moon,
   Sun,
   Crown,
-  Shield
+  Shield,
+  Heart
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
@@ -258,7 +259,7 @@ function LetsPrepContent() {
               <ShieldCheck className="w-8 h-8 text-primary" />
             </div>
             <DialogTitle className="text-2xl font-black">Authentication Required</DialogTitle>
-            <DialogDescription className="text-muted-foreground">Sign in to track your progress and earn credits.</DialogDescription>
+            <DialogDescription className="text-muted-foreground">Sign in to track your progress and earn credits. <span className="text-primary font-black">Free Forever Access.</span></DialogDescription>
           </DialogHeader>
           <div className="grid gap-2 py-4">
             <Button onClick={async () => { await loginWithGoogle(); setAuthIssue(false); }} className="h-12 rounded-xl font-bold gap-2 shadow-lg"><Zap className="w-4 h-4 fill-current" /> Continue with Google</Button>
@@ -399,12 +400,12 @@ function LetsPrepContent() {
               <Card className="overflow-hidden border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-primary/20 via-card to-background relative p-8 md:p-12">
                 <div className="relative z-10 space-y-6">
                   <div className="flex flex-wrap items-center gap-3">
-                    <Badge variant="secondary" className="font-black text-[10px] uppercase px-4 py-1 bg-primary/20 text-primary border-none">Simulation 2.0</Badge>
-                    <div className="flex items-center gap-1.5 text-orange-500 bg-orange-500/10 px-3 py-1 rounded-full"><Smartphone className="w-3.5 h-3.5" /><span className="text-[10px] font-black uppercase">App Ready</span></div>
+                    <Badge variant="secondary" className="font-black text-[10px] uppercase px-4 py-1 bg-primary/20 text-primary border-none">Free Forever Practice</Badge>
+                    <div className="flex items-center gap-1.5 text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full"><Heart className="w-3.5 h-3.5" /><span className="text-[10px] font-black uppercase">Open to All</span></div>
                   </div>
                   <div className="space-y-4">
                     <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-foreground">Prepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
-                    <p className="text-muted-foreground font-medium md:text-xl max-w-lg">Experience high-fidelity simulations with AI pedagogical analysis tailored for Filipino educators.</p>
+                    <p className="text-muted-foreground font-medium md:text-xl max-w-lg">Experience high-fidelity simulations with AI pedagogical analysis tailored for Filipino educators. <span className="text-foreground font-black">Completely free practice.</span></p>
                   </div>
                   <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all group">
                     <Zap className="w-6 h-6 fill-current" /> <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -436,20 +437,25 @@ function LetsPrepContent() {
                 </div>
               </div>
 
-              <Card className="border-none shadow-lg rounded-[2rem] bg-foreground text-background p-6">
-                <CardHeader className="p-0 mb-4">
-                  <CardTitle className="text-lg font-black tracking-tight flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-primary" /> Verified Platform
+              <Card className="border-none shadow-xl rounded-[2.5rem] bg-foreground text-background p-8 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <CardHeader className="p-0 mb-6">
+                  <CardTitle className="text-xl font-black tracking-tight flex items-center gap-3">
+                    <ShieldCheck className="w-6 h-6 text-primary" /> Verified Professional Platform
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-0 grid grid-cols-2 gap-4">
+                <CardContent className="p-0 grid grid-cols-1 md:grid-cols-3 gap-8">
                   <div className="space-y-1">
-                    <p className="text-2xl font-black text-primary">50K+</p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Items Solved</p>
+                    <p className="text-4xl font-black text-primary">50K+</p>
+                    <p className="text-xs font-bold uppercase tracking-widest opacity-60">Practice Items Solved</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-2xl font-black text-secondary">85%</p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Avg Readiness</p>
+                    <p className="text-4xl font-black text-secondary">85%</p>
+                    <p className="text-xs font-bold uppercase tracking-widest opacity-60">Avg Board Readiness</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-4xl font-black text-blue-400">100%</p>
+                    <p className="text-xs font-bold uppercase tracking-widest opacity-60">Free Simulation Mode</p>
                   </div>
                 </CardContent>
               </Card>

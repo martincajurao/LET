@@ -25,7 +25,8 @@ import {
   Home,
   ListTodo,
   Trophy,
-  Crown
+  Crown,
+  Shield
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -180,7 +181,7 @@ export function Navbar() {
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <p className="text-sm font-black truncate">{user.displayName}</p>
                       {user.isPro ? (
-                        <Badge className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20 text-[8px] font-black uppercase px-1.5 py-0">PRO</Badge>
+                        <Badge className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20 text-[8px] font-black uppercase px-1.5 py-0">PLATINUM</Badge>
                       ) : (
                         <Badge className="bg-blue-500/10 text-blue-700 border-blue-500/20 text-[8px] font-black uppercase px-1.5 py-0">FREE</Badge>
                       )}
