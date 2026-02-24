@@ -38,7 +38,8 @@ import {
   Crown,
   Shield,
   Heart,
-  LayoutGrid
+  LayoutGrid,
+  Sparkles
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
@@ -257,7 +258,7 @@ function LetsPrepContent() {
     { icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />, label: 'Pass Rate', value: '82%', color: 'text-emerald-500 bg-emerald-500/10' }
   ] : [
     { icon: <Users className="w-4 h-4 text-blue-500" />, label: 'Community', value: '1.7K+', color: 'text-blue-500 bg-blue-500/5' },
-    { icon: <BookOpen className="w-4 h-4 text-purple-500" />, label: 'Items Mastered', value: '12.5K+', color: 'text-purple-500 bg-purple-500/5' },
+    { icon: <Sparkles className="w-4 h-4 text-purple-500" />, label: 'AI Solved', value: '8.2K+', color: 'text-purple-500 bg-purple-500/5' },
     { icon: <LayoutGrid className="w-4 h-4 text-pink-500" />, label: 'Question Bank', value: '3.5K+', color: 'text-pink-500 bg-pink-500/5' },
     { icon: <Trophy className="w-4 h-4 text-yellow-500" />, label: 'Board Ready', value: '82%', color: 'text-yellow-500 bg-yellow-500/5' }
   ];
@@ -456,7 +457,7 @@ function LetsPrepContent() {
                 <CardContent className="p-0 grid grid-cols-1 md:grid-cols-3 gap-8">
                   <div className="space-y-1">
                     <p className="text-4xl font-black text-primary">3.5K+</p>
-                    <p className="text-xs font-bold uppercase tracking-widest opacity-60">Verified Practice Items</p>
+                    <p className="text-xs font-bold uppercase tracking-widest opacity-60">Curated Practice Items</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-4xl font-black text-secondary">82%</p>
