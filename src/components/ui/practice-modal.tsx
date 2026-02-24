@@ -220,14 +220,20 @@ export function PracticeModal({
                         <button
                           onClick={(e) => handleUnlockEarly(e, mode.id, mode.unlockCost)}
                           disabled={unlockingId === mode.id}
-                          className="w-full h-12 rounded-2xl font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-2 bg-gradient-to-b from-yellow-400 to-orange-500 text-white shadow-[0_4px_0_rgb(154,52,18)] transition-all hover:brightness-110 active:shadow-none active:translate-y-[4px] disabled:opacity-50 disabled:grayscale"
+                          className="w-full h-14 rounded-2xl font-bold text-[10px] uppercase tracking-wide flex items-center justify-between px-4 bg-gradient-to-r from-yellow-500 to-orange-600 text-white shadow-[0_4px_0_#9a3412] transition-all hover:brightness-110 active:shadow-none active:translate-y-[4px] disabled:opacity-50 disabled:grayscale group"
                         >
                           {unlockingId === mode.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <div className="w-full flex justify-center">
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                            </div>
                           ) : (
                             <>
-                              <Coins className="w-4 h-4 text-white fill-current drop-shadow-sm" />
-                              <span className="drop-shadow-sm">Unlock with <span className="text-white text-base font-black ml-0.5">{mode.unlockCost}</span> AI credit</span>
+                              <span className="opacity-90 font-black">Unlock Mode</span>
+                              <div className="bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-white/30 flex items-center gap-2 shadow-inner">
+                                <span className="font-black text-sm">{mode.unlockCost}</span>
+                                <Coins className="w-4 h-4 text-yellow-200 fill-current" />
+                                <span className="text-[8px] font-black opacity-80">AI CREDIT</span>
+                              </div>
                             </>
                           )}
                         </button>
