@@ -98,16 +98,16 @@ function sanitizeData(data: any): any {
 }
 
 const EducationalLoader = ({ message }: { message?: string }) => (
-  <div className="flex flex-col items-center justify-center gap-8 animate-in fade-in duration-700">
+  <div className="flex flex-col items-center justify-center gap-8 animate-in fade-in duration-1000">
     <div className="relative">
       <motion.div 
         animate={{ rotate: 360 }}
-        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
         className="w-32 h-32 border-2 border-dashed border-primary/20 rounded-full absolute -inset-4"
       />
       <motion.div 
         animate={{ rotate: -360 }}
-        transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+        transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
         className="w-32 h-32 border-2 border-dashed border-primary/10 rounded-full absolute -inset-4 scale-110"
       />
       
@@ -117,7 +117,7 @@ const EducationalLoader = ({ message }: { message?: string }) => (
             y: [0, -6, 0],
             rotate: [0, 3, -3, 0]
           }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
         >
           <GraduationCap className="w-12 h-12 text-primary" />
         </motion.div>
@@ -129,7 +129,7 @@ const EducationalLoader = ({ message }: { message?: string }) => (
             x: [0, 15, -5, 0],
             y: [0, -10, 15, 0]
           }}
-          transition={{ duration: 3, repeat: Infinity }}
+          transition={{ duration: 4, repeat: Infinity }}
           className="absolute top-4 right-4"
         >
           <Sparkles className="w-5 h-5 text-yellow-500 fill-current" />
@@ -385,6 +385,7 @@ function LetsPrepContent() {
     <motion.div 
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }} 
+      transition={{ duration: 1.2, ease: "easeOut" }}
       className="fixed inset-0 z-[2000] flex items-center justify-center bg-background bg-gradient-to-b from-background via-background to-primary/5"
     >
       <EducationalLoader message="Synchronizing Educator Session" />
@@ -404,7 +405,12 @@ function LetsPrepContent() {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-body transition-all duration-300">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8, delay: 0.2 }}
+      className="min-h-screen bg-background text-foreground font-body transition-all duration-300"
+    >
       <Toaster />
       
       {/* Celebration Overlays */}
@@ -593,7 +599,7 @@ function LetsPrepContent() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
 
