@@ -227,7 +227,7 @@ export function PracticeModal({
                           ) : (
                             <>
                               <Coins className="w-3.5 h-3.5 text-yellow-400 fill-current" />
-                              Unlock with AI Credit: {mode.unlockCost}c
+                              Unlock with {mode.unlockCost} AI credit
                             </>
                           )}
                         </Button>
