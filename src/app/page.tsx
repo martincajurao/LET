@@ -46,7 +46,7 @@ type AppState = 'dashboard' | 'exam' | 'results' | 'registration';
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
+  for (i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
@@ -220,11 +220,11 @@ function LetsPrepContent() {
             <DialogDescription className="text-muted-foreground">Sign in to track your progress and earn credits.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-2 py-4">
-            <Button onClick={loginWithGoogle} className="h-12 rounded-xl font-bold gap-2 shadow-lg"><Zap className="w-4 h-4 fill-current" /> Continue with Google</Button>
-            <Button onClick={loginWithFacebook} className="h-12 rounded-xl font-bold gap-2 shadow-lg bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none">
+            <Button onClick={async () => { await loginWithGoogle(); setAuthIssue(false); }} className="h-12 rounded-xl font-bold gap-2 shadow-lg"><Zap className="w-4 h-4 fill-current" /> Continue with Google</Button>
+            <Button onClick={async () => { await loginWithFacebook(); setAuthIssue(false); }} className="h-12 rounded-xl font-bold gap-2 shadow-lg bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none">
               <Facebook className="w-4 h-4 fill-current" /> Continue with Facebook
             </Button>
-            <Button variant="outline" onClick={bypassLogin} className="h-12 rounded-xl font-bold border-2">Guest Simulation</Button>
+            <Button variant="outline" onClick={() => { bypassLogin(); setAuthIssue(false); }} className="h-12 rounded-xl font-bold border-2">Guest Simulation</Button>
           </div>
         </DialogContent>
       </Dialog>

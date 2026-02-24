@@ -174,10 +174,10 @@ export function Navbar() {
             <DialogDescription className="text-muted-foreground">Choose your preferred sign-in method to continue your professional journey.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-6">
-            <Button onClick={() => { loginWithGoogle(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-bold gap-3 shadow-lg">
+            <Button onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-bold gap-3 shadow-lg">
               <Zap className="w-5 h-5 fill-current" /> Continue with Google
             </Button>
-            <Button onClick={() => { loginWithFacebook(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-bold gap-3 shadow-lg bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none">
+            <Button onClick={async () => { await loginWithFacebook(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-bold gap-3 shadow-lg bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none">
               <Facebook className="w-5 h-5 fill-current" /> Continue with Facebook
             </Button>
             <Button variant="outline" onClick={() => { bypassLogin(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-bold border-2">
