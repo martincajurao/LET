@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
@@ -302,7 +301,7 @@ function LetsPrepContent() {
     <div className="min-h-screen bg-background text-foreground font-body transition-all duration-300">
       <Toaster />
       <Dialog open={authIssue} onOpenChange={setAuthIssue}>
-        <DialogContent className="rounded-[2rem] bg-card border-none shadow-2xl p-8 max-w-sm z-[1001]">
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm z-[1001]">
           <DialogHeader className="text-center">
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4"><ShieldCheck className="w-8 h-8 text-primary" /></div>
             <DialogTitle className="text-2xl font-black">Authentication Required</DialogTitle>
@@ -393,7 +392,10 @@ function LetsPrepContent() {
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
                           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Career Status</p>
-                          <CardTitle className="text-xl font-black flex items-center gap-2">{rankData?.title}</CardTitle>
+                          <CardTitle className="text-xl font-black flex items-center gap-2">
+                            {rankData?.title} 
+                            <span className="text-xs font-bold text-muted-foreground ml-1">Rank {rankData?.rank}</span>
+                          </CardTitle>
                         </div>
                         <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center"><Trophy className="w-5 h-5 text-primary" /></div>
                       </div>

@@ -168,7 +168,7 @@ export function Navbar() {
                 <span className="text-lg font-black tracking-tight text-foreground block leading-none">LET's Prep</span>
                 {user && (
                   <Badge variant="outline" className="h-5 px-2 font-black text-[9px] border-primary/20 text-primary bg-primary/5">
-                    {rankData?.title}
+                    {rankData?.title} (Rank {rankData?.rank})
                   </Badge>
                 )}
               </div>
@@ -209,7 +209,7 @@ export function Navbar() {
                         }
                       }}>
                         {item.onClick ? (
-                          <div className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
+                          <div className="flex items-center gap-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
                             <div className="text-primary">{item.icon}</div>
                             {item.label}
                           </div>
