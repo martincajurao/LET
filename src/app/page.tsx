@@ -398,6 +398,9 @@ function LetsPrepContent() {
 
       <Dialog open={loading}>
         <DialogContent className="max-w-[300px] border-none shadow-2xl bg-card rounded-[2.5rem] p-8 z-[1001]">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Loading simulation</DialogTitle>
+          </DialogHeader>
           <div className="flex flex-col items-center gap-6">
             <div className="relative">
               <div className="w-20 h-20 bg-primary/10 rounded-full animate-ping absolute inset-0" />
