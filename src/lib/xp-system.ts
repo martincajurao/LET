@@ -1,11 +1,11 @@
 /**
  * Professional Growth (XP) Utility
- * Defines career progression, unlock levels, and reward structures.
+ * Defines career progression, unlock ranks, and reward structures.
  */
 
-export const XP_PER_LEVEL = 1000;
+export const XP_PER_RANK = 1000;
 
-export const UNLOCK_LEVELS = {
+export const UNLOCK_RANKS = {
   GENERAL_ED: 1,
   PROFESSIONAL_ED: 3,
   SPECIALIZATION: 7,
@@ -28,34 +28,34 @@ export const COOLDOWNS = {
   QUICK_FIRE: 4 * 60 * 60 * 1000 // 4 hours
 };
 
-export function getLevelData(totalXp: number) {
-  const level = Math.floor(totalXp / XP_PER_LEVEL) + 1;
-  const xpInLevel = totalXp % XP_PER_LEVEL;
-  const progress = (xpInLevel / XP_PER_LEVEL) * 100;
+export function getRankData(totalXp: number) {
+  const rank = Math.floor(totalXp / XP_PER_RANK) + 1;
+  const xpInRank = totalXp % XP_PER_RANK;
+  const progress = (xpInRank / XP_PER_RANK) * 100;
   
   return {
-    level,
-    xpInLevel,
-    nextLevelXp: XP_PER_LEVEL,
+    rank,
+    xpInRank,
+    nextRankXp: XP_PER_RANK,
     progress,
-    title: getCareerRankTitle(level)
+    title: getCareerRankTitle(rank)
   };
 }
 
-function getCareerRankTitle(level: number): string {
-  if (level >= 30) return "Master Emeritus";
-  if (level >= 25) return "Elite Academic";
-  if (level >= 20) return "Master Candidate";
-  if (level >= 15) return "Senior Educator";
-  if (level >= 10) return "Subject Specialist";
-  if (level >= 5) return "Aspiring Professional";
+function getCareerRankTitle(rank: number): string {
+  if (rank >= 30) return "Master Emeritus";
+  if (rank >= 25) return "Elite Academic";
+  if (rank >= 20) return "Master Candidate";
+  if (rank >= 15) return "Senior Educator";
+  if (rank >= 10) return "Subject Specialist";
+  if (rank >= 5) return "Aspiring Professional";
   return "Novice Candidate";
 }
 
-export function isTrackUnlocked(level: number, track: string): boolean {
-  if (track === 'General Education' || track === 'Gen Ed') return level >= UNLOCK_LEVELS.GENERAL_ED;
-  if (track === 'Professional Education' || track === 'Prof Ed') return level >= UNLOCK_LEVELS.PROFESSIONAL_ED;
-  if (track === 'Specialization' || track === 'Major') return level >= UNLOCK_LEVELS.SPECIALIZATION;
-  if (track === 'all') return level >= UNLOCK_LEVELS.FULL_SIMULATION;
+export function isTrackUnlocked(rank: number, track: string): boolean {
+  if (track === 'General Education' || track === 'Gen Ed') return rank >= UNLOCK_RANKS.GENERAL_ED;
+  if (track === 'Professional Education' || track === 'Prof Ed') return rank >= UNLOCK_RANKS.PROFESSIONAL_ED;
+  if (track === 'Specialization' || track === 'Major') return rank >= UNLOCK_RANKS.SPECIALIZATION;
+  if (track === 'all') return rank >= UNLOCK_RANKS.FULL_SIMULATION;
   return true;
 }

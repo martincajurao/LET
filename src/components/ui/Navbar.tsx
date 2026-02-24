@@ -52,7 +52,7 @@ import { doc, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
-import { getLevelData, XP_REWARDS, COOLDOWNS } from '@/lib/xp-system';
+import { getRankData, XP_REWARDS, COOLDOWNS } from '@/lib/xp-system';
 import { NotificationsModal } from './notifications-modal';
 import { useRouter } from 'next/navigation';
 
@@ -69,7 +69,7 @@ export function Navbar() {
   const [availableTasksCount, setAvailableTasksCount] = useState(0);
   const [claimableTasksCount, setClaimableTasksCount] = useState(0);
 
-  const levelData = user ? getLevelData(user.xp || 0) : null;
+  const rankData = user ? getRankData(user.xp || 0) : null;
 
   useEffect(() => {
     if (!user) {
@@ -168,7 +168,7 @@ export function Navbar() {
                 <span className="text-lg font-black tracking-tight text-foreground block leading-none">LET's Prep</span>
                 {user && (
                   <Badge variant="outline" className="h-5 px-1.5 font-black text-[9px] border-primary/20 text-primary bg-primary/5">
-                    Lvl {levelData?.level}
+                    Rank {rankData?.rank}
                   </Badge>
                 )}
               </div>
@@ -181,10 +181,10 @@ export function Navbar() {
           {user && (
             <div className="hidden lg:flex flex-col items-end gap-1 min-w-[120px] mr-2">
               <div className="flex justify-between w-full px-1">
-                <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">{levelData?.title}</span>
-                <span className="text-[8px] font-black text-primary">{Math.round(levelData?.progress || 0)}%</span>
+                <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">{rankData?.title}</span>
+                <span className="text-[8px] font-black text-primary">{Math.round(rankData?.progress || 0)}%</span>
               </div>
-              <Progress value={levelData?.progress} className="h-1 w-full bg-muted" />
+              <Progress value={rankData?.progress} className="h-1 w-full bg-muted" />
             </div>
           )}
 
@@ -282,10 +282,10 @@ export function Navbar() {
                   <DropdownMenuItem asChild>
                     <div className="px-3 py-2 space-y-2">
                       <div className="flex justify-between items-center text-[10px] font-black uppercase">
-                        <span className="text-muted-foreground">Rank {user.level}</span>
+                        <span className="text-muted-foreground">Rank {rankData?.rank}</span>
                         <span className="text-primary">{user.xp || 0} XP</span>
                       </div>
-                      <Progress value={levelData?.progress} className="h-1.5" />
+                      <Progress value={rankData?.progress} className="h-1.5" />
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="my-2 bg-border/50" />

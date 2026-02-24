@@ -60,7 +60,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { getLevelData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, XP_PER_LEVEL } from '@/lib/xp-system';
+import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, XP_PER_RANK } from '@/lib/xp-system';
 
 type AppState = 'dashboard' | 'exam' | 'results' | 'onboarding' | 'quickfire' | 'quickfire_results';
 
@@ -114,7 +114,7 @@ function LetsPrepContent() {
   const [referralCode, setReferralCode] = useState("");
   const [savingOnboarding, setSavingOnboarding] = useState(false);
 
-  const levelData = useMemo(() => user ? getLevelData(user.xp || 0) : null, [user?.xp]);
+  const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
   // Handle Cooldowns
   useEffect(() => {
@@ -177,10 +177,10 @@ function LetsPrepContent() {
   const startExam = async (category: string | 'all' | 'quickfire' = 'all') => {
     if (loading) return;
     
-    if (category !== 'quickfire' && user && !isTrackUnlocked(levelData?.level || 1, category as string)) {
+    if (category !== 'quickfire' && user && !isTrackUnlocked(rankData?.rank || 1, category as string)) {
       toast({ 
         title: "Mode Locked", 
-        description: `Requires Level ${category === 'all' ? 12 : (category === 'Professional Education' ? 3 : 7)}. Keep earning XP!`,
+        description: `Requires Rank ${category === 'all' ? 12 : (category === 'Professional Education' ? 3 : 7)}. Keep earning XP!`,
         variant: "destructive"
       });
       return;
@@ -370,7 +370,7 @@ function LetsPrepContent() {
 
   const displayStats = user ? [
     { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user?.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
-    { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Rank', value: `Lvl ${levelData?.level}`, color: 'text-primary bg-primary/10' },
+    { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Rank', value: `Rank ${rankData?.rank}`, color: 'text-primary bg-primary/10' },
     { icon: user?.isPro ? <Crown className="w-4 h-4 text-yellow-600" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user?.isPro ? 'Platinum' : 'FREE', color: user?.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
     { icon: <Flame className="w-4 h-4 text-orange-500" />, label: 'Streak', value: user?.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' }
   ] : [
@@ -496,9 +496,9 @@ function LetsPrepContent() {
                     <CardHeader className="p-6 pb-2">
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Current Rank</p>
+                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Academic Rank</p>
                           <CardTitle className="text-xl font-black flex items-center gap-2">
-                            {levelData?.title} <Badge className="bg-primary/10 text-primary border-none text-[10px]">Lvl {levelData?.level}</Badge>
+                            {rankData?.title} <Badge className="bg-primary/10 text-primary border-none text-[10px]">Rank {rankData?.rank}</Badge>
                           </CardTitle>
                         </div>
                         <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center"><Trophy className="w-5 h-5 text-primary" /></div>
@@ -508,9 +508,9 @@ function LetsPrepContent() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-xs font-bold">
                           <span className="text-muted-foreground">{user.xp || 0} XP</span>
-                          <span className="text-muted-foreground">{XP_PER_LEVEL} XP</span>
+                          <span className="text-muted-foreground">{XP_PER_RANK} XP</span>
                         </div>
-                        <Progress value={levelData?.progress} className="h-2 rounded-full" />
+                        <Progress value={rankData?.progress} className="h-2 rounded-full" />
                       </div>
                       <div className="grid grid-cols-2 gap-3 pt-2">
                         <Button onClick={handleWatchXpAd} disabled={claimingXp || adCooldown > 0} variant="outline" className="h-12 rounded-xl font-black text-xs gap-2 border-primary/20 hover:bg-primary/5">
@@ -549,11 +549,11 @@ function LetsPrepContent() {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
-                      { id: 'General Education', name: 'Gen Ed', icon: <Languages />, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Core Knowledge', lvl: 1 },
-                      { id: 'Professional Education', name: 'Prof Ed', icon: <GraduationCap />, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Teaching Strategy', lvl: 3 },
-                      { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Subject Mastery', lvl: 7 }
+                      { id: 'General Education', name: 'Gen Ed', icon: <Languages />, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Core Knowledge', rnk: 1 },
+                      { id: 'Professional Education', name: 'Prof Ed', icon: <GraduationCap />, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Teaching Strategy', rnk: 3 },
+                      { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Subject Mastery', rnk: 7 }
                     ].map((track, i) => {
-                      const isLocked = user && !isTrackUnlocked(levelData?.level || 1, track.id);
+                      const isLocked = user && !isTrackUnlocked(rankData?.rank || 1, track.id);
                       return (
                         <Card 
                           key={i} 
@@ -566,7 +566,7 @@ function LetsPrepContent() {
                           {isLocked && (
                             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/40 backdrop-blur-[1px]">
                               <Lock className="w-6 h-6 text-muted-foreground mb-1" />
-                              <span className="text-[10px] font-black uppercase text-muted-foreground">Lvl {track.lvl} Required</span>
+                              <span className="text-[10px] font-black uppercase text-muted-foreground">Rank {track.rnk} Required</span>
                             </div>
                           )}
                           <CardContent className="p-6 space-y-4">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -22,7 +21,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { getLevelData, isTrackUnlocked, UNLOCK_LEVELS } from '@/lib/xp-system';
+import { getRankData, isTrackUnlocked, UNLOCK_RANKS } from '@/lib/xp-system';
 
 interface PracticeModalProps {
   isOpen: boolean;
@@ -40,7 +39,7 @@ export function PracticeModal({
   limits = { limitGenEd: 10, limitProfEd: 10, limitSpec: 10 }
 }: PracticeModalProps) {
   const { user } = useUser();
-  const levelData = user ? getLevelData(user.xp || 0) : { level: 1 };
+  const rankData = user ? getRankData(user.xp || 0) : { rank: 1 };
 
   const totalQuestions = limits.limitGenEd + limits.limitProfEd + limits.limitSpec;
 
@@ -54,7 +53,7 @@ export function PracticeModal({
       borderColor: 'border-primary',
       time: `~${Math.ceil(totalQuestions * 1.5)} minutes`,
       questions: `${totalQuestions} items`,
-      reqLevel: UNLOCK_LEVELS.FULL_SIMULATION
+      reqRank: UNLOCK_RANKS.FULL_SIMULATION
     },
     {
       id: 'General Education',
@@ -65,7 +64,7 @@ export function PracticeModal({
       borderColor: 'border-blue-500',
       time: `~${limits.limitGenEd} minutes`,
       questions: `${limits.limitGenEd} items`,
-      reqLevel: UNLOCK_LEVELS.GENERAL_ED
+      reqRank: UNLOCK_RANKS.GENERAL_ED
     },
     {
       id: 'Professional Education',
@@ -76,7 +75,7 @@ export function PracticeModal({
       borderColor: 'border-purple-500',
       time: `~${limits.limitProfEd} minutes`,
       questions: `${limits.limitProfEd} items`,
-      reqLevel: UNLOCK_LEVELS.PROFESSIONAL_ED
+      reqRank: UNLOCK_RANKS.PROFESSIONAL_ED
     },
     {
       id: 'Specialization',
@@ -87,12 +86,12 @@ export function PracticeModal({
       borderColor: 'border-emerald-500',
       time: `~${limits.limitSpec} minutes`,
       questions: `${limits.limitSpec} items`,
-      reqLevel: UNLOCK_LEVELS.SPECIALIZATION
+      reqRank: UNLOCK_RANKS.SPECIALIZATION
     }
   ];
 
-  const handleStartPractice = (category: string, reqLevel: number) => {
-    if (levelData.level < reqLevel) return;
+  const handleStartPractice = (category: string, reqRank: number) => {
+    if (rankData.rank < reqRank) return;
     onStartExam(category);
     onClose();
   };
@@ -122,7 +121,7 @@ export function PracticeModal({
         <div className="p-6 space-y-6 bg-background">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {practiceModes.map((mode) => {
-              const isLocked = levelData.level < mode.reqLevel;
+              const isLocked = rankData.rank < mode.reqRank;
               return (
                 <Card
                   key={mode.id}
@@ -130,13 +129,13 @@ export function PracticeModal({
                     "border-2 transition-all duration-300 relative overflow-hidden bg-card rounded-2xl",
                     isLocked ? "border-muted opacity-70 grayscale cursor-not-allowed" : "cursor-pointer hover:shadow-xl hover:-translate-y-2 group " + mode.borderColor
                   )}
-                  onClick={() => !loading && handleStartPractice(mode.id, mode.reqLevel)}
+                  onClick={() => !loading && handleStartPractice(mode.id, mode.reqRank)}
                 >
                   {isLocked && (
                     <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/20 backdrop-blur-[1px]">
                       <div className="bg-card p-3 rounded-2xl shadow-xl flex flex-col items-center border border-border">
                         <Lock className="w-6 h-6 text-muted-foreground mb-1" />
-                        <span className="text-[10px] font-black uppercase text-muted-foreground">Unlocks at Level {mode.reqLevel}</span>
+                        <span className="text-[10px] font-black uppercase text-muted-foreground">Unlocks at Rank {mode.reqRank}</span>
                       </div>
                     </div>
                   )}

@@ -40,6 +40,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useSearchParams } from 'next/navigation';
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { getRankData } from '@/lib/xp-system';
 
 interface ExamRecord {
   id: string;
@@ -59,6 +60,8 @@ export default function ProfilePage() {
   const [majorship, setMajorship] = useState(user?.majorship || "");
   const [records, setRecords] = useState<ExamRecord[]>([]);
   const [loadingRecords, setLoadingRecords] = useState(true);
+
+  const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
   useEffect(() => { if (user?.majorship) setMajorship(user.majorship); }, [user]);
 
@@ -128,7 +131,7 @@ export default function ProfilePage() {
                   { icon: <History className="w-4 h-4 text-muted-foreground" />, label: 'Simulations', value: stats.totalSessions },
                   { icon: <Target className="w-4 h-4 text-primary" />, label: 'Avg Rating', value: `${stats.avgScore}%` },
                   { icon: <Trophy className="w-4 h-4 text-yellow-500" />, label: 'Best Rating', value: `${stats.bestScore}%` },
-                  { icon: <Coins className="w-4 h-4 text-emerald-500" />, label: 'AI Credits', value: stats.credits }
+                  { icon: <Coins className="w-4 h-4 text-emerald-500" />, label: 'Rank', value: `Rank ${rankData?.rank}` }
                 ].map((stat, i) => (
                   <div key={i} className="p-6 bg-muted/10 rounded-3xl border border-border flex flex-col items-center justify-center text-center space-y-1 hover:bg-card hover:shadow-md transition-all group">
                     <div className="w-10 h-10 rounded-2xl bg-card shadow-sm border border-border flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">{stat.icon}</div>
