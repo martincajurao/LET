@@ -13,6 +13,7 @@ import {
   X, 
   Clock,
   Lock,
+  Unlock,
   Coins,
   Loader2,
   CheckCircle2
@@ -220,7 +221,7 @@ export function PracticeModal({
                         <button
                           onClick={(e) => handleUnlockEarly(e, mode.id, mode.unlockCost)}
                           disabled={unlockingId === mode.id}
-                          className="w-full h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-between px-4 bg-primary text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:grayscale group"
+                          className="w-full h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-between px-4 border-2 border-primary bg-primary/5 text-primary transition-all hover:bg-primary/10 active:scale-95 disabled:opacity-50 disabled:grayscale group"
                         >
                           {unlockingId === mode.id ? (
                             <div className="w-full flex justify-center">
@@ -228,10 +229,13 @@ export function PracticeModal({
                             </div>
                           ) : (
                             <>
-                              <span className="font-black">Unlock Mode</span>
-                              <div className="bg-background/20 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 flex items-center gap-2 shadow-inner">
+                              <div className="flex items-center gap-2">
+                                <Unlock className="w-4 h-4" />
+                                <span className="font-black">Unlock Mode</span>
+                              </div>
+                              <div className="bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 flex items-center gap-2">
                                 <span className="font-black text-sm">{mode.unlockCost}</span>
-                                <Coins className="w-4 h-4 text-yellow-500 fill-current" />
+                                <Coins className="w-4 h-4 text-yellow-600 fill-current" />
                                 <span className="text-[8px] font-black opacity-80">AI CREDIT</span>
                               </div>
                             </>
