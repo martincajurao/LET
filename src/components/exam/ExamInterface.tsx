@@ -86,19 +86,22 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   const handleAnswer = (val: string) => {
     const currentQ = groupedPhases[currentPhaseIdx].items[currentInPhaseIdx];
     setAnswers(prev => ({ ...prev, [currentQ.id]: val }));
-    // Dispatch event for daily task tracking if needed
+    // Dispatch event for daily task tracking
     window.dispatchEvent(new CustomEvent('questionAnswered'));
   };
 
   const handleNext = () => {
     const currentPhase = groupedPhases[currentPhaseIdx];
     if (currentInPhaseIdx < currentPhase.items.length - 1) {
+      // Still questions in current phase
       setCurrentInPhaseIdx(prev => prev + 1);
     } else {
-      // Last question in phase
+      // Last question in current phase reached
       if (currentPhaseIdx < groupedPhases.length - 1) {
+        // There are more phases, show the break screen
         setShowBreakScreen(true);
       } else {
+        // Absolute last question of last phase, show finish confirmation
         setShowSubmitConfirm(true);
       }
     }
@@ -311,11 +314,13 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
           <div className="bg-muted/30 p-6 rounded-3xl border border-border/50 my-8 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Next Phase</span>
-              <Badge className="font-black bg-primary/20 text-primary border-none">{groupedPhases[currentPhaseIdx + 1]?.subject}</Badge>
+              <Badge className="font-black bg-primary/20 text-primary border-none">
+                {groupedPhases[currentPhaseIdx + 1]?.subject || 'Finalizing'}
+              </Badge>
             </div>
             <div className="flex items-center gap-3 text-sm font-medium text-foreground text-left">
               <Coffee className="w-5 h-5 text-orange-500 shrink-0" />
-              <p>Research suggests a 30-second break improves analytical focus by 15%.</p>
+              <p>Research suggests a short break improves analytical focus by 15%.</p>
             </div>
           </div>
 
@@ -323,6 +328,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
             <Button 
               onClick={() => {
                 setShowBreakScreen(false);
+                // Advance to first question of next phase
                 setCurrentPhaseIdx(prev => prev + 1);
                 setCurrentInPhaseIdx(0);
               }}
@@ -352,7 +358,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
             </div>
             <DialogTitle className="text-2xl font-black">Finalize Simulation?</DialogTitle>
             <DialogDescription className="text-muted-foreground font-medium">
-              You have answered <span className="text-foreground font-black">{answeredCount} out of {questions.length}</span> items. Once submitted, you cannot change your answers.
+              You have answered <span className="text-foreground font-black">{answeredCount} out of {questions.length}</span> items. Once submitted, your answers will be calibrated by AI.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-2 pt-4">
