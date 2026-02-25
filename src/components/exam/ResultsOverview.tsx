@@ -5,7 +5,36 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LabelList } from 'recharts';
-import { CheckCircle2, XCircle, Trophy, Target, BookOpen, ArrowLeft, BrainCircuit, Sparkles, Loader2, AlertCircle, LayoutDashboard, ChevronRight, Lock, Play, MessageSquare, Coins, Crown, ShieldCheck, ShieldAlert } from "lucide-react";
+import { 
+  CheckCircle2, 
+  XCircle, 
+  Trophy, 
+  Target, 
+  BookOpen, 
+  ArrowLeft, 
+  BrainCircuit, 
+  Sparkles, 
+  Loader2, 
+  AlertCircle, 
+  LayoutDashboard, 
+  ChevronRight, 
+  Lock, 
+  Play, 
+  MessageSquare, 
+  Coins, 
+  Crown, 
+  ShieldCheck, 
+  ShieldAlert,
+  Zap,
+  Star
+} from "lucide-react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription 
+} from "@/components/ui/dialog";
 import { PersonalizedPerformanceSummaryOutput } from "@/ai/flows/personalized-performance-summary-flow";
 import { explainMistakesBatch } from "@/ai/flows/explain-mistakes-batch-flow";
 import { Question } from "@/app/lib/mock-data";
@@ -50,6 +79,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [showPurchaseSuccess, setShowPurchaseSuccess] = useState(false);
 
   useEffect(() => {
     if (user?.isPro) {
@@ -125,11 +155,8 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
     setUnlocking(true);
     setVerifying(false);
 
-    // Hard-locked duration (3.5s)
     setTimeout(async () => {
       setVerifying(true);
-      
-      // Professional verification phase (1.5s)
       setTimeout(async () => {
         try {
           const userRef = doc(firestore, 'users', user.uid);
@@ -137,7 +164,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
             dailyAdCount: increment(1)
           });
           setIsUnlocked(true);
-          toast({ title: "Analysis Unlocked", description: "Pedagogical insights are now active." });
+          setShowPurchaseSuccess(true);
         } catch (e) {
           toast({ variant: "destructive", title: "Unlock Failed", description: "Could not verify clip completion." });
         } finally {
@@ -150,7 +177,8 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
 
   const handleUnlockWithCredits = async () => {
     if (!user || !firestore) return;
-    if ((user.credits || 0) < 10) {
+    const credits = typeof user.credits === 'number' ? user.credits : 0;
+    if (credits < 10) {
       toast({ variant: "destructive", title: "Insufficient Credits", description: "Complete daily tasks or watch an ad to earn more!" });
       return;
     }
@@ -162,7 +190,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
         credits: increment(-10)
       });
       setIsUnlocked(true);
-      toast({ title: "Analysis Purchased", description: "Spent 10 Credits to unlock session insights." });
+      setShowPurchaseSuccess(true);
     } catch (e) {
       toast({ variant: "destructive", title: "Sync Failed", description: "Could not process credit deduction." });
     } finally {
@@ -176,9 +204,10 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
     if (generatingIds.has(q.id) || localExplanations[q.id]) return;
     
     const costPerInsight = 5;
-    const isPro = user.isPro;
+    const isPro = !!user.isPro;
+    const userCredits = typeof user.credits === 'number' ? user.credits : 0;
 
-    if (!isPro && (user.credits || 0) < costPerInsight) {
+    if (!isPro && userCredits < costPerInsight) {
       toast({ variant: "destructive", title: "Insufficient AI Credits", description: `You need ${costPerInsight} Credits per insight.` });
       return;
     }
@@ -402,7 +431,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                         key={q.id} 
                         value={q.id} 
                         className="border-none bg-card rounded-2xl px-2 overflow-hidden shadow-sm"
-                        onPointerEnter={() => user?.isPro && handleGenerateExplanation(q)}
+                        onPointerEnter={() => !!user?.isPro && handleGenerateExplanation(q)}
                       >
                         <AccordionTrigger className="hover:no-underline py-4 px-4 text-left"><span className="text-xs font-bold line-clamp-1 text-foreground">{q.text}</span></AccordionTrigger>
                         <AccordionContent className="p-6 pt-0 space-y-4">
@@ -420,7 +449,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                           <div className="space-y-4">
                             <AnimatePresence mode="wait">
                               {!localExplanations[q.id] ? (
-                                user?.isPro ? (
+                                !!user?.isPro ? (
                                   <div className="flex flex-col items-center justify-center py-6 gap-3 bg-primary/5 rounded-xl border border-dashed border-primary/20">
                                     <Loader2 className="w-6 h-6 animate-spin text-primary" />
                                     <p className="text-[10px] font-black uppercase tracking-widest text-primary">Pro: Instant reveal active...</p>
@@ -456,6 +485,91 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
           </div>
         </>
       )}
+
+      {/* Purchase Success Dialog */}
+      <Dialog open={showPurchaseSuccess} onOpenChange={setShowPurchaseSuccess}>
+        <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-0 max-w-[340px] overflow-hidden outline-none z-[1100]">
+          <div className="bg-emerald-500/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
+            <motion.div
+              initial={{ scale: 0, rotate: -45 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", damping: 12, stiffness: 200, delay: 0.1 }}
+              className="w-20 h-20 bg-emerald-500 text-white rounded-[2rem] flex items-center justify-center shadow-2xl relative z-10"
+            >
+              <CheckCircle2 className="w-10 h-10" />
+            </motion.div>
+            
+            <motion.div 
+              animate={{ 
+                scale: [1, 1.2, 1],
+                opacity: [0.2, 0.4, 0.2] 
+              }}
+              transition={{ duration: 3, repeat: Infinity }}
+              className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 to-transparent z-0" 
+            />
+            
+            <div className="absolute inset-0 z-5 pointer-events-none">
+              {[...Array(5)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 0 }}
+                  animate={{ opacity: [0, 1, 0], y: -80, x: (i - 2) * 30 }}
+                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.4 }}
+                  className="absolute bottom-0 left-1/2"
+                >
+                  <Sparkles className="w-3 h-3 text-emerald-500 fill-current" />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="p-8 pt-4 text-center space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="space-y-2"
+            >
+              <DialogHeader>
+                <div className="flex flex-col items-center">
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600 mb-1">Access Granted</span>
+                  <DialogTitle className="text-2xl font-black tracking-tight text-foreground">Analysis Unlocked!</DialogTitle>
+                  <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest mt-1">
+                    Pedagogical insights are now active
+                  </DialogDescription>
+                </div>
+              </DialogHeader>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.5 }}
+              className="bg-muted/30 rounded-2xl p-4 border border-border/50 flex flex-col items-center gap-1"
+            >
+              <span className="text-[9px] font-black uppercase text-muted-foreground">Session Value</span>
+              <div className="flex items-center gap-2">
+                <BrainCircuit className="w-5 h-5 text-primary" />
+                <span className="text-2xl font-black text-foreground">AI Review Ready</span>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+            >
+              <Button 
+                onClick={() => setShowPurchaseSuccess(false)}
+                className="w-full h-14 rounded-2xl font-black text-base gap-2 shadow-lg shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                Start Review
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </motion.div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

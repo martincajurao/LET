@@ -277,9 +277,9 @@ export default function AdminDashboard() {
                 <TableBody>
                   {filteredUsers.map(user => (
                     <TableRow key={user.id}>
-                      <TableCell><div className="flex flex-col"><p className="text-sm font-bold">{user.displayName || 'Guest'}</p><p className="text-[10px] text-muted-foreground">{user.email || 'No email'}</p></div></TableCell>
+                      <TableCell><div className="flex flex-col"><p className="text-sm font-bold">{String(user.displayName) || 'Guest'}</p><p className="text-[10px] text-muted-foreground">{String(user.email) || 'No email'}</p></div></TableCell>
                       <TableCell><Badge variant="outline" className="text-[9px] font-black uppercase">{user.isPro ? 'Platinum' : 'Standard'}</Badge></TableCell>
-                      <TableCell className="text-center"><Badge variant="secondary" className="font-black gap-1"><Coins className="w-3 h-3" /> {user.credits || 0}</Badge></TableCell>
+                      <TableCell className="text-center"><Badge variant="secondary" className="font-black gap-1"><Coins className="w-3 h-3" /> {Number(user.credits) || 0}</Badge></TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="w-4 h-4" /></Button></DropdownMenuTrigger>
@@ -429,7 +429,7 @@ export default function AdminDashboard() {
 
       <Dialog open={!!manageUser} onOpenChange={() => setManageUser(null)}>
         <DialogContent className="max-w-sm rounded-[2.5rem] p-8 border-none shadow-2xl">
-          <DialogHeader><DialogTitle className="text-xl font-black">Manage educator</DialogTitle><DialogDescription className="font-medium">{manageUser?.email}</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle className="text-xl font-black">Manage educator</DialogTitle><DialogDescription className="font-medium">{String(manageUser?.email)}</DialogDescription></DialogHeader>
           <div className="space-y-6 py-4">
             <div className="flex items-center gap-3">
               <Button variant="outline" onClick={() => setCreditAdjustment(p => p - 5)} className="h-12 w-12 rounded-xl border-2"><Minus className="w-4 h-4" /></Button>
