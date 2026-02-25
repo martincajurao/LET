@@ -203,10 +203,9 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
     if (generatingIds.has(q.id) || localExplanations[q.id]) return;
 
     const isPro = !!user.isPro;
-    const unlocked = isUnlocked; // Use the session unlock status
+    const unlocked = isUnlocked; 
     const credits = typeof user.credits === 'number' ? user.credits : 0;
 
-    // Only charge 5 credits if the user is NOT pro AND hasn't unlocked the session analysis
     const needsCharge = !isPro && !unlocked;
 
     if (needsCharge && credits < 5) {
@@ -386,9 +385,9 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                 disabled={unlocking}
                 className="h-16 px-10 rounded-2xl font-black text-lg gap-3 border-white/20 text-white hover:bg-white/10 relative overflow-hidden group"
               >
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl animate-breathing-gold">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl animate-breathing-gold border-2 border-yellow-500/20">
                   <Coins className="w-6 h-6 text-yellow-400 fill-current" />
-                  <span>10 Credits</span>
+                  <span className="text-yellow-400">10 Credits</span>
                 </div>
                 <span>Unlock Summary</span>
               </Button>
@@ -431,7 +430,6 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
         </>
       )}
 
-      {/* Mistake Review & Individual AI Tutor always visible below */}
       <div className="space-y-6">
         <h2 className="text-2xl font-black font-headline tracking-tight flex items-center gap-3 text-foreground">
           <BrainCircuit className="w-6 h-6 text-primary" /> Mistake Review & AI Tutor
@@ -480,8 +478,8 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                                     <span>Get AI Deep Dive</span>
                                   </div>
                                   <div className={cn(
-                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] transition-all",
-                                    user?.isPro || isUnlocked ? "bg-emerald-500/20 text-emerald-600" : "animate-breathing-primary bg-primary/20 text-primary-foreground"
+                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] transition-all border-2",
+                                    user?.isPro || isUnlocked ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600" : "animate-breathing-primary bg-primary/10 border-primary/20 text-primary"
                                   )}>
                                     {(user?.isPro || isUnlocked) ? (
                                       <>
@@ -490,8 +488,8 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                                       </>
                                     ) : (
                                       <>
-                                        <Coins className="w-3.5 h-3.5 fill-current" />
-                                        <span>5 Credits</span>
+                                        <Coins className="w-3.5 h-3.5 fill-current text-primary" />
+                                        <span className="text-primary font-black">5 CREDITS</span>
                                       </>
                                     )}
                                   </div>
@@ -523,7 +521,6 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
         )}
       </div>
 
-      {/* Purchase Success Dialog */}
       <Dialog open={showPurchaseSuccess} onOpenChange={setShowPurchaseSuccess}>
         <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-0 max-w-[340px] overflow-hidden outline-none z-[1100]">
           <div className="bg-emerald-500/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">

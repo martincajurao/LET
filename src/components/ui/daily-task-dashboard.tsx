@@ -217,8 +217,8 @@ export function DailyTaskDashboard() {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className={cn(
-                      "flex items-center gap-1 px-2.5 py-1 rounded-xl transition-all",
-                      isComplete && !task.isClaimed ? "animate-breathing-gold border border-yellow-500/20" : "bg-yellow-500/5 border border-yellow-500/10"
+                      "flex items-center gap-1 px-2.5 py-1 rounded-xl transition-all border-2",
+                      isComplete && !task.isClaimed ? "animate-breathing-gold border-yellow-500/20 bg-yellow-500/10" : "bg-yellow-500/5 border-yellow-500/10"
                     )}>
                       <Coins className="w-3.5 h-3.5 text-yellow-600 fill-current" />
                       <span className="text-xs font-black text-yellow-700">+{task.reward}</span>
@@ -312,9 +312,9 @@ export function DailyTaskDashboard() {
             >
               <span className="text-[9px] font-black uppercase text-muted-foreground">Reward Total</span>
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl animate-breathing-gold">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl animate-breathing-gold border-2 border-yellow-500/20">
                   <Coins className="w-7 h-7 text-yellow-600 fill-current" />
-                  <span className="text-4xl font-black text-foreground">+{claimedReward}</span>
+                  <span className="text-4xl font-black text-yellow-700">+{claimedReward}</span>
                 </div>
               </div>
             </motion.div>
