@@ -193,7 +193,7 @@ function LetsPrepContent() {
         const data = await res.json();
         setApkInfo(data);
 
-        // We point the QR code to our download proxy which handles the confirmation token
+        // Point QR code to our download proxy
         const downloadUrl = `${window.location.origin}/api/download`;
         
         const qrDataUrl = await QRCode.toDataURL(downloadUrl, {
@@ -336,7 +336,7 @@ function LetsPrepContent() {
   };
 
   const handleDownloadApk = () => {
-    // We strictly use the proxy route to avoid redirects and handle confirmation tokens
+    // We use the proxy route which points to the GitHub binary
     const downloadUrl = '/api/download';
     const link = document.createElement('a');
     link.href = downloadUrl;
