@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LabelList } from 'recharts';
-import { CheckCircle2, XCircle, Trophy, Target, BookOpen, ArrowLeft, BrainCircuit, Sparkles, Loader2, AlertCircle, LayoutDashboard, ChevronRight, Lock, Play, MessageSquare, Coins } from "lucide-react";
+import { CheckCircle2, XCircle, Trophy, Target, BookOpen, ArrowLeft, BrainCircuit, Sparkles, Loader2, AlertCircle, LayoutDashboard, ChevronRight, Lock, Play, MessageSquare, Coins, Crown } from "lucide-react";
 import { PersonalizedPerformanceSummaryOutput } from "@/ai/flows/personalized-performance-summary-flow";
 import { explainMistakesBatch } from "@/ai/flows/explain-mistakes-batch-flow";
 import { Question } from "@/app/lib/mock-data";
@@ -113,7 +114,6 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
     return Object.values(categorizedMistakes).reduce((acc, curr) => acc + curr.length, 0);
   }, [categorizedMistakes]);
 
-  // CALIBRATED FOR PROFITABILITY: Unlock logic
   const handleUnlockAnalysisWithAd = async () => {
     if (!user || !firestore) return;
     setUnlocking(true);
@@ -156,19 +156,14 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
   };
 
   const handleGenerateExplanation = async (q: Question) => {
-    if (!isUnlocked) {
-      toast({ title: "Locked Feature", description: "Unlock full analysis to use AI review." });
-      return;
-    }
-    if (!user || !firestore) {
-      toast({ variant: "destructive", title: "Error", description: "Please sign in to use AI explanation." });
-      return;
-    }
-    if (generatingIds.has(q.id)) return;
+    if (!isUnlocked) return;
+    if (!user || !firestore) return;
+    if (generatingIds.has(q.id) || localExplanations[q.id]) return;
     
-    // PROFITABILITY CALIBRATION: Cost per explanation set to 5 (1:1 Ad Ratio)
     const costPerInsight = 5;
-    if (!user.isPro && (user.credits || 0) < costPerInsight) {
+    const isPro = user.isPro;
+
+    if (!isPro && (user.credits || 0) < costPerInsight) {
       toast({ variant: "destructive", title: "Insufficient AI Credits", description: `You need ${costPerInsight} Credits per insight. Watch an ad to refill!` });
       return;
     }
@@ -191,17 +186,12 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
         setLocalExplanations(prev => ({ ...prev, [q.id]: result.explanations[0].aiExplanation }));
         
         const userRef = doc(firestore, 'users', user.uid);
-        if (!user.isPro) {
-          await updateDoc(userRef, {
-            credits: increment(-costPerInsight),
-            dailyAiUsage: increment(1),
-            mistakesReviewed: increment(1)
-          });
-        } else {
-          await updateDoc(userRef, {
-            mistakesReviewed: increment(1)
-          });
+        const updateData: any = { mistakesReviewed: increment(1) };
+        if (!isPro) {
+          updateData.credits = increment(-costPerInsight);
+          updateData.dailyAiUsage = increment(1);
         }
+        await updateDoc(userRef, updateData);
       }
     } catch (e) {
       setLocalExplanations(prev => ({ ...prev, [q.id]: q.explanation || "Review the core concepts related to this subject track." }));
@@ -377,7 +367,12 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                   <div key={subject} className="space-y-2">
                     <p className="text-[10px] font-black uppercase text-primary px-2">{subject}</p>
                     {mistakes.map((q) => (
-                      <AccordionItem key={q.id} value={q.id} className="border-none bg-card rounded-2xl px-2 overflow-hidden shadow-sm">
+                      <AccordionItem 
+                        key={q.id} 
+                        value={q.id} 
+                        className="border-none bg-card rounded-2xl px-2 overflow-hidden shadow-sm"
+                        onPointerEnter={() => user?.isPro && handleGenerateExplanation(q)}
+                      >
                         <AccordionTrigger className="hover:no-underline py-4 px-4 text-left"><span className="text-xs font-bold line-clamp-1 text-foreground">{q.text}</span></AccordionTrigger>
                         <AccordionContent className="p-6 pt-0 space-y-4">
                           <div className="bg-muted/30 p-4 rounded-xl border border-border">
@@ -394,14 +389,24 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                           <div className="space-y-4">
                             <AnimatePresence mode="wait">
                               {!localExplanations[q.id] ? (
-                                <Button onClick={() => handleGenerateExplanation(q)} disabled={generatingIds.has(q.id)} size="sm" className="w-full font-black gap-2 transition-all h-12 rounded-xl">
-                                  {generatingIds.has(q.id) ? <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing...</> : <><Sparkles className="w-4 h-4" /> Get AI Explanation (5 Credits)</>}
-                                </Button>
+                                user?.isPro ? (
+                                  <div className="flex flex-col items-center justify-center py-6 gap-3 bg-primary/5 rounded-xl border border-dashed border-primary/20">
+                                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-primary">Pro: Instant reveal active...</p>
+                                  </div>
+                                ) : (
+                                  <Button onClick={() => handleGenerateExplanation(q)} disabled={generatingIds.has(q.id)} size="sm" className="w-full font-black gap-2 transition-all h-12 rounded-xl">
+                                    {generatingIds.has(q.id) ? <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing...</> : <><Sparkles className="w-4 h-4" /> Get AI Explanation (5 Credits)</>}
+                                  </Button>
+                                )
                               ) : (
                                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-primary/5 p-5 rounded-xl border border-primary/20 italic text-sm text-foreground relative">
-                                  <div className="flex items-start gap-2 mb-3">
-                                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0"><MessageSquare className="w-3.5 h-3.5 text-primary" /></div>
-                                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mt-1">AI Tutor Insight</span>
+                                  <div className="flex items-start justify-between gap-2 mb-3">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0"><MessageSquare className="w-3.5 h-3.5 text-primary" /></div>
+                                      <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mt-1">AI Tutor Insight</span>
+                                    </div>
+                                    {user?.isPro && <Crown className="w-3.5 h-3.5 text-yellow-600" />}
                                   </div>
                                   <TypewriterText text={localExplanations[q.id]} />
                                 </motion.div>

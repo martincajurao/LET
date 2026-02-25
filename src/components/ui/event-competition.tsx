@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Flame, Zap, Clock, Users, Loader2, Crown, Star, Lock, Play, ExternalLink } from "lucide-react";
+import { Trophy, Flame, Zap, Clock, Users, Loader2, Crown, Star, Lock, Play, ExternalLink, Coins } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore } from '@/firebase';
@@ -35,6 +36,8 @@ export function EventCompetition({ onJoinEvent }: EventCompetitionProps) {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState<string | null>(null);
+
+  const ARENA_ENTRY_FEE = 20;
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -68,27 +71,24 @@ export function EventCompetition({ onJoinEvent }: EventCompetitionProps) {
       toast({
         variant: "destructive",
         title: "Login Required",
-        description: "Please sign in to join events.",
+        description: "Please sign in to join the arena.",
       });
       return;
     }
 
-    // Check if user has free entry or needs to use ad/credits
-    const canEnterFree = user.dailyEventEntries && user.dailyEventEntries > 0;
     const isPro = user.isPro;
-
-    if (!canEnterFree && !isPro) {
-      // User needs to watch ad or use credits
+    if (!isPro && (user.credits || 0) < ARENA_ENTRY_FEE) {
       toast({
-        title: "Entry Required",
-        description: "Watch an ad or use 5 credits to join this event.",
+        variant: "destructive",
+        title: "Insufficient Credits",
+        description: `Arena entry requires ${ARENA_ENTRY_FEE} credits. Watch an ad to refill!`,
       });
+      return;
     }
 
     setJoining(event.id);
 
     try {
-      // Call API to record participation
       const response = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -100,18 +100,21 @@ export function EventCompetition({ onJoinEvent }: EventCompetitionProps) {
       });
 
       if (response.ok) {
-        // Update daily event entries
         if (!isPro) {
           const userRef = doc(firestore, 'users', user.uid);
           await updateDoc(userRef, {
-            dailyEventEntries: increment(-1)
+            credits: increment(-ARENA_ENTRY_FEE)
+          });
+          toast({
+            title: "Credits Deducted",
+            description: `Spent ${ARENA_ENTRY_FEE} credits for Arena entry.`,
+          });
+        } else {
+          toast({
+            title: "Pro Entry Granted",
+            description: "Platinum users join the arena for free!",
           });
         }
-
-        toast({
-          title: "Event Joined!",
-          description: `You're now participating in ${event.title}`,
-        });
 
         if (onJoinEvent) {
           onJoinEvent(event);
@@ -199,9 +202,9 @@ export function EventCompetition({ onJoinEvent }: EventCompetitionProps) {
               <CardDescription className="text-xs">Time-limited events</CardDescription>
             </div>
           </div>
-          <div className="flex items-center gap-2 bg-primary/5 px-3 py-1.5 rounded-xl border border-primary/10 w-fit">
-             <Zap className="w-3 h-3 text-primary" />
-             <span className="text-xs font-bold">{user?.dailyEventEntries || 0} Entries</span>
+          <div className="flex items-center gap-2 bg-yellow-500/5 px-3 py-1.5 rounded-xl border border-yellow-500/10 w-fit">
+             <Coins className="w-3.5 h-3.5 text-yellow-600 fill-current" />
+             <span className="text-xs font-black text-yellow-700">{user?.credits || 0} Credits</span>
           </div>
         </div>
       </CardHeader>
@@ -239,15 +242,15 @@ export function EventCompetition({ onJoinEvent }: EventCompetitionProps) {
                     {event.questionCount}
                   </div>
                   <div className="flex items-center gap-1">
-                    <Star className="w-3 h-3" />
-                    +{event.rewardAmount}
+                    <Star className="w-3 h-3 text-emerald-600" />
+                    <span className="font-bold">+{event.rewardAmount} Reward</span>
                   </div>
                 </div>
 
                 <Button 
                   onClick={() => handleJoinEvent(event)}
                   disabled={joining === event.id}
-                  className="w-full h-10 text-xs font-bold gap-1.5"
+                  className="w-full h-10 text-xs font-black gap-1.5"
                   size="sm"
                   variant={user?.isPro ? "default" : "outline"}
                 >
@@ -255,13 +258,13 @@ export function EventCompetition({ onJoinEvent }: EventCompetitionProps) {
                     <Loader2 className="w-3 h-3 animate-spin" />
                   ) : user?.isPro ? (
                     <>
-                      <Play className="w-3 h-3" />
-                      Join
+                      <Crown className="w-3.5 h-3.5" />
+                      Free Entry
                     </>
                   ) : (
                     <>
-                      <Lock className="w-3 h-3" />
-                      Watch Ad
+                      <Coins className="w-3.5 h-3.5 text-yellow-600" />
+                      Enter (20c)
                     </>
                   )}
                 </Button>
@@ -273,9 +276,9 @@ export function EventCompetition({ onJoinEvent }: EventCompetitionProps) {
         {!user?.isPro && (
           <div className="pt-3 border-t border-slate-100">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-400 font-medium">Pro = unlimited entries!</span>
-              <Button variant="ghost" size="sm" className="text-primary font-bold text-xs h-8">
-                Upgrade <ExternalLink className="w-3 h-3 ml-1" />
+              <span className="text-slate-400 font-bold">Platinum = Unlimited Arena Entry!</span>
+              <Button variant="ghost" size="sm" className="text-primary font-black text-xs h-8">
+                Upgrade <Crown className="w-3 h-3 ml-1" />
               </Button>
             </div>
           </div>
