@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -71,7 +70,7 @@ export function ReferralSystem() {
             </div>
             <div className="p-3 bg-yellow-500/5 rounded-xl border border-yellow-500/10 flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5 text-yellow-600" />
-              <p className="text-[9px] font-black uppercase text-yellow-700 tracking-wider">Referrer gets +10 Credits • New User gets +5 Credits</p>
+              <p className="text-[9px] font-black uppercase text-yellow-700 tracking-wider">Referrer gets +15 Credits • New User gets +5 Credits</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">

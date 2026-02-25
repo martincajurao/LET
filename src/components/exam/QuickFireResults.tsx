@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,11 +14,18 @@ import {
   CheckCircle2,
   TrendingUp,
   BrainCircuit,
-  History
+  History,
+  Play,
+  Loader2,
+  Sparkles,
+  MessageSquare,
+  AlertCircle
 } from "lucide-react";
 import { Question } from "@/app/lib/mock-data";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { explainMistakesBatch } from "@/ai/flows/explain-mistakes-batch-flow";
+import { useToast } from "@/hooks/use-toast";
 
 interface QuickFireResultsProps {
   questions: Question[];
@@ -29,8 +36,45 @@ interface QuickFireResultsProps {
 }
 
 export function QuickFireResults({ questions, answers, timeSpent, xpEarned, onRestart }: QuickFireResultsProps) {
-  const correctCount = questions.filter(q => answers[q.id] === q.correctAnswer).length;
-  const accuracy = Math.round((correctCount / questions.length) * 100);
+  const { toast } = useToast();
+  const [isExplaining, setIsExplaining] = useState(false);
+  const [explanations, setExplanations] = useState<Record<string, string>>({});
+  
+  const mistakes = questions.filter(q => answers[q.id] !== q.correctAnswer);
+  const correctCount = questions.length - mistakes.length;
+  const accuracy = Math.round((correctCount / (questions.length || 1)) * 100);
+
+  const handleExplainAllWithAd = async () => {
+    if (mistakes.length === 0) return;
+    setIsExplaining(true);
+    
+    // Simulate Ad sequence
+    setTimeout(async () => {
+      try {
+        const result = await explainMistakesBatch({
+          mistakes: mistakes.map(m => ({
+            questionId: m.id,
+            text: m.text,
+            options: m.options,
+            correctAnswer: m.correctAnswer,
+            userAnswer: answers[m.id] || "No Answer",
+            subject: m.subject
+          }))
+        });
+
+        if (result.explanations) {
+          const mapping: Record<string, string> = {};
+          result.explanations.forEach(e => mapping[e.questionId] = e.aiExplanation);
+          setExplanations(mapping);
+          toast({ title: "Insights Unlocked!", description: "AI Pedagogical explanations are now visible below." });
+        }
+      } catch (e) {
+        toast({ variant: "destructive", title: "Sync Error", description: "Could not generate batch explanations." });
+      } finally {
+        setIsExplaining(false);
+      }
+    }, 2500);
+  };
 
   return (
     <div className="max-w-xl mx-auto py-12 px-4 space-y-8 animate-in fade-in zoom-in-95 duration-500">
@@ -73,37 +117,74 @@ export function QuickFireResults({ questions, answers, timeSpent, xpEarned, onRe
         </Card>
       </div>
 
-      <Card className="border-none shadow-sm rounded-[2.5rem] bg-card p-8 border border-border">
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="font-black text-lg tracking-tight">Mixed Track Calibration</h3>
-            <Badge variant="outline" className="font-black uppercase text-[9px] tracking-widest">3 Categories Mix</Badge>
+      {mistakes.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-2">
+            <h3 className="font-black text-lg flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-rose-500" />
+              Mistake Analysis
+            </h3>
+            {Object.keys(explanations).length === 0 && (
+              <Button 
+                onClick={handleExplainAllWithAd} 
+                disabled={isExplaining}
+                variant="outline" 
+                size="sm" 
+                className="h-9 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 bg-primary/5 border-primary/20 text-primary hover:bg-primary/10"
+              >
+                {isExplaining ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+                {isExplaining ? "Revealing..." : "Watch Ad to Explain All"}
+              </Button>
+            )}
           </div>
-          
+
           <div className="space-y-3">
             {questions.map((q, i) => {
               const isCorrect = answers[q.id] === q.correctAnswer;
+              const hasExplanation = !!explanations[q.id];
+              
               return (
-                <div key={q.id} className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/50">
-                  <div className="flex items-center gap-4">
-                    <div className={cn(
-                      "w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs",
-                      isCorrect ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
-                    )}>
-                      {i + 1}
+                <div key={q.id} className="space-y-2">
+                  <div className={cn(
+                    "flex items-center justify-between p-4 rounded-2xl transition-all border",
+                    isCorrect ? "bg-muted/30 border-border/50" : "bg-rose-500/5 border-rose-500/20"
+                  )}>
+                    <div className="flex items-center gap-4">
+                      <div className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs",
+                        isCorrect ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
+                      )}>
+                        {i + 1}
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-muted-foreground opacity-60 leading-none mb-1">{q.subject}</p>
+                        <p className="text-xs font-bold text-foreground line-clamp-1">{q.text}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase text-muted-foreground opacity-60 leading-none mb-1">{q.subject}</p>
-                      <p className="text-xs font-bold text-foreground line-clamp-1">{q.text}</p>
-                    </div>
+                    {isCorrect ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <Zap className="w-5 h-5 text-rose-500 opacity-30" />}
                   </div>
-                  {isCorrect ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <Zap className="w-5 h-5 text-rose-500 opacity-30" />}
+                  
+                  <AnimatePresence>
+                    {!isCorrect && hasExplanation && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        className="bg-primary/5 p-4 rounded-2xl border border-primary/10 text-xs italic leading-relaxed text-foreground"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <MessageSquare className="w-3 h-3 text-primary" />
+                          <span className="text-[9px] font-black uppercase tracking-widest text-primary">AI Insight</span>
+                        </div>
+                        {explanations[q.id]}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               );
             })}
           </div>
         </div>
-      </Card>
+      )}
 
       <div className="grid grid-cols-1 gap-3">
         <Button onClick={onRestart} className="h-16 rounded-2xl font-black text-lg shadow-xl shadow-primary/30 gap-3">
