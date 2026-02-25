@@ -16,7 +16,8 @@ import {
   MessageSquare,
   AlertCircle,
   ShieldCheck,
-  ShieldAlert
+  ShieldAlert,
+  Coins
 } from "lucide-react";
 import { Question } from "@/app/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -88,7 +89,11 @@ export function QuickFireResults({ questions, answers, timeSpent, xpEarned, onRe
               mistakesReviewed: increment(mistakes.length)
             });
 
-            toast({ title: "Insights Unlocked!", description: "AI Pedagogical explanations are now visible below." });
+            toast({ 
+              variant: "reward",
+              title: "Insights Unlocked!", 
+              description: "AI Pedagogical explanations are now visible below." 
+            });
           }
         } catch (e) {
           toast({ variant: "destructive", title: "Sync Error", description: "Could not generate batch explanations." });

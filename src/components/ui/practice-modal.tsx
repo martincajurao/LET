@@ -271,7 +271,7 @@ export function PracticeModal({
                                   <Unlock className="w-4 h-4" />
                                   <span className="font-black">Unlock Mode</span>
                                 </div>
-                                <div className="bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 flex items-center gap-2">
+                                <div className="animate-breathing-primary px-3 py-1.5 rounded-xl border border-primary/20 flex items-center gap-2">
                                   <span className="font-black text-sm">{mode.unlockCost}</span>
                                   <Coins className="w-4 h-4 text-yellow-600 fill-current" />
                                   <span className="text-[8px] font-black opacity-80">CREDIT</span>

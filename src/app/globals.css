@@ -73,6 +73,22 @@
   .mb-safe {
     margin-bottom: env(safe-area-inset-bottom);
   }
+
+  @keyframes breathing-primary {
+    0%, 100% { background-color: hsla(var(--primary), 0.1); transform: scale(1); box-shadow: 0 0 0 0 hsla(var(--primary), 0); }
+    50% { background-color: hsla(var(--primary), 0.25); transform: scale(1.05); box-shadow: 0 0 15px 2px hsla(var(--primary), 0.2); }
+  }
+  .animate-breathing-primary {
+    animation: breathing-primary 3s ease-in-out infinite;
+  }
+
+  @keyframes breathing-gold {
+    0%, 100% { background-color: rgba(234, 179, 8, 0.1); transform: scale(1); box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+    50% { background-color: rgba(234, 179, 8, 0.25); transform: scale(1.05); box-shadow: 0 0 15px 2px rgba(234, 179, 8, 0.2); }
+  }
+  .animate-breathing-gold {
+    animation: breathing-gold 3s ease-in-out infinite;
+  }
 }
 
 /* Material Design 3 Animations */

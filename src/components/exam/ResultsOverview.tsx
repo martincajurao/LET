@@ -203,9 +203,13 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
     if (generatingIds.has(q.id) || localExplanations[q.id]) return;
 
     const isPro = !!user.isPro;
+    const unlocked = isUnlocked; // Use the session unlock status
     const credits = typeof user.credits === 'number' ? user.credits : 0;
 
-    if (!isPro && credits < 5) {
+    // Only charge 5 credits if the user is NOT pro AND hasn't unlocked the session analysis
+    const needsCharge = !isPro && !unlocked;
+
+    if (needsCharge && credits < 5) {
       toast({ 
         variant: "destructive", 
         title: "Insufficient Credits", 
@@ -217,7 +221,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
     setGeneratingIds(prev => new Set(prev).add(q.id));
     
     try {
-      if (!isPro) {
+      if (needsCharge) {
         const userRef = doc(firestore, 'users', user.uid);
         await updateDoc(userRef, {
           credits: increment(-5),
@@ -239,7 +243,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
       
       if (result.explanations && result.explanations.length > 0) {
         setLocalExplanations(prev => ({ ...prev, [q.id]: result.explanations[0].aiExplanation }));
-        if (!isPro) {
+        if (needsCharge) {
           toast({ 
             variant: "reward",
             title: "Insight Unlocked", 
@@ -380,10 +384,13 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                 variant="outline"
                 onClick={handleUnlockWithCredits} 
                 disabled={unlocking}
-                className="h-16 px-10 rounded-2xl font-black text-lg gap-3 border-white/20 text-white hover:bg-white/10"
+                className="h-16 px-10 rounded-2xl font-black text-lg gap-3 border-white/20 text-white hover:bg-white/10 relative overflow-hidden group"
               >
-                <Coins className="w-6 h-6 text-yellow-400" />
-                Unlock with 10 Credits
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl animate-breathing-gold">
+                  <Coins className="w-6 h-6 text-yellow-400 fill-current" />
+                  <span>10 Credits</span>
+                </div>
+                <span>Unlock Summary</span>
               </Button>
             )}
           </CardContent>
@@ -462,14 +469,32 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                               onClick={() => handleGenerateExplanation(q)} 
                               disabled={generatingIds.has(q.id)} 
                               size="sm" 
-                              className="w-full font-black gap-2 transition-all h-14 rounded-2xl shadow-lg active:scale-95"
+                              className="w-full font-black gap-3 transition-all h-14 rounded-2xl shadow-lg active:scale-95 group relative overflow-hidden"
                             >
                               {generatingIds.has(q.id) ? (
                                 <><Loader2 className="w-5 h-5 animate-spin" /> Deep Diving...</>
                               ) : (
                                 <>
-                                  <Sparkles className="w-5 h-5" /> 
-                                  Get AI Deep Dive {user?.isPro ? '(Free)' : '(5 Credits)'}
+                                  <div className="flex items-center gap-2">
+                                    <Sparkles className="w-5 h-5" /> 
+                                    <span>Get AI Deep Dive</span>
+                                  </div>
+                                  <div className={cn(
+                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] transition-all",
+                                    user?.isPro || isUnlocked ? "bg-emerald-500/20 text-emerald-600" : "animate-breathing-primary bg-primary/20 text-primary-foreground"
+                                  )}>
+                                    {(user?.isPro || isUnlocked) ? (
+                                      <>
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                        <span>FREE</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Coins className="w-3.5 h-3.5 fill-current" />
+                                        <span>5 Credits</span>
+                                      </>
+                                    )}
+                                  </div>
                                 </>
                               )}
                             </Button>
@@ -480,7 +505,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                                   <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0"><MessageSquare className="w-3.5 h-3.5 text-primary" /></div>
                                   <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mt-1">AI Tutor Insight</span>
                                 </div>
-                                {user?.isPro && <Crown className="w-3.5 h-3.5 text-yellow-600" />}
+                                {(user?.isPro || isUnlocked) && <Crown className="w-3.5 h-3.5 text-yellow-600" />}
                               </div>
                               <TypewriterText text={localExplanations[q.id]} />
                             </motion.div>
