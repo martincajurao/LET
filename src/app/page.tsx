@@ -189,13 +189,12 @@ function LetsPrepContent() {
   useEffect(() => {
     const fetchApkAndGenerateQR = async () => {
       try {
-        // Fetch official APK data from our API
         const res = await fetch('/api/apk');
         const data = await res.json();
         setApkInfo(data);
 
-        // Download link: prefer Firebase Storage URL if available, otherwise proxy
-        const downloadUrl = data.downloadURL || `${window.location.origin}/api/download`;
+        // We point the QR code to our download proxy which handles the confirmation token
+        const downloadUrl = `${window.location.origin}/api/download`;
         
         const qrDataUrl = await QRCode.toDataURL(downloadUrl, {
           width: 256,
@@ -254,22 +253,8 @@ function LetsPrepContent() {
       setQuickFireCooldown(Math.max(0, (user.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE - now));
     }, 1000);
 
-    if (user.xp && user.lastRewardedRank) {
-      const currentRank = getRankData(user.xp).rank;
-      if (currentRank > user.lastRewardedRank) {
-        const tier = getRankData(user.xp);
-        setCelebratedRank(currentRank);
-        setCelebratedReward(tier.rankUpReward);
-        setShowRankUp(true);
-        updateDoc(doc(firestore!, 'users', user.uid), { 
-          lastRewardedRank: currentRank, 
-          credits: increment(tier.rankUpReward) 
-        });
-      }
-    }
-
     return () => clearInterval(interval);
-  }, [user, firestore]);
+  }, [user]);
 
   const startExam = async (category: 'General Education' | 'Professional Education' | 'Specialization' | 'all' | 'quickfire') => {
     if (!user) { setAuthIssue(true); return; }
@@ -351,7 +336,8 @@ function LetsPrepContent() {
   };
 
   const handleDownloadApk = () => {
-    const downloadUrl = apkInfo?.downloadURL || '/api/download';
+    // We strictly use the proxy route to avoid redirects and handle confirmation tokens
+    const downloadUrl = '/api/download';
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = 'letpractice-app.apk';
