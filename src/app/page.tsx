@@ -154,7 +154,7 @@ const EducationalLoader = ({ message }: { message?: string }) => (
 );
 
 function LetsPrepContent() {
-  const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook, bypassLogin } = useUser();
+  const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const { isDark, toggleDarkMode } = useTheme();
@@ -194,7 +194,6 @@ function LetsPrepContent() {
         const data = await res.json();
         setApkInfo(data);
 
-        // Point QR code to our download proxy
         const downloadUrl = `${window.location.origin}/api/download`;
         
         const qrDataUrl = await QRCode.toDataURL(downloadUrl, {
@@ -252,8 +251,10 @@ function LetsPrepContent() {
     
     const interval = setInterval(() => {
       const now = Date.now();
-      setAdCooldown(Math.max(0, (user.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP - now));
-      setQuickFireCooldown(Math.max(0, (user.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE - now));
+      const lastAd = typeof user.lastAdXpTimestamp === 'number' ? user.lastAdXpTimestamp : 0;
+      const lastQf = typeof user.lastQuickFireTimestamp === 'number' ? user.lastQuickFireTimestamp : 0;
+      setAdCooldown(Math.max(0, lastAd + COOLDOWNS.AD_XP - now));
+      setQuickFireCooldown(Math.max(0, lastQf + COOLDOWNS.QUICK_FIRE - now));
     }, 1000);
 
     return () => clearInterval(interval);
@@ -339,7 +340,6 @@ function LetsPrepContent() {
   };
 
   const handleDownloadApk = () => {
-    // We use the proxy route which performs the background handshake
     const downloadUrl = '/api/download';
     const link = document.createElement('a');
     link.href = downloadUrl;
@@ -361,12 +361,10 @@ function LetsPrepContent() {
     }, 2500);
   };
 
-  // Onboarding states
   const [nickname, setNickname] = useState("");
   const [selectedMajorship, setSelectedMajorship] = useState("");
   const [savingOnboarding, setSavingOnboarding] = useState(false);
 
-  // Rank Up Celebration
   const [showRankUp, setShowRankUp] = useState(false);
   const [celebratedRank, setCelebratedRank] = useState(1);
   const [celebratedReward, setCelebratedReward] = useState(0);
@@ -397,10 +395,10 @@ function LetsPrepContent() {
   );
 
   const displayStats = user ? [
-    { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user?.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
+    { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: typeof user.credits === 'number' ? user.credits : 0, color: 'text-yellow-500 bg-yellow-500/10' },
     { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Arena', value: userRank, color: 'text-primary bg-primary/10' },
     { icon: user?.isPro ? <Crown className="w-4 h-4 text-yellow-600" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user?.isPro ? 'Platinum' : 'FREE', color: user?.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
-    { icon: <Flame className="w-4 h-4 text-orange-500" />, label: 'Streak', value: user?.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' }
+    { icon: <Flame className="w-4 h-4 text-orange-500" />, label: 'Streak', value: typeof user.streakCount === 'number' ? user.streakCount : 0, color: 'text-orange-500 bg-orange-500/10' }
   ] : [
     { icon: <Users className="w-4 h-4 text-blue-500" />, label: 'Community', value: '1.7K+', color: 'text-blue-500 bg-blue-500/5' },
     { icon: <Sparkles className="w-4 h-4 text-purple-500" />, label: 'AI Solved', value: '8.2K+', color: 'text-purple-500 bg-purple-500/5' },
@@ -417,7 +415,6 @@ function LetsPrepContent() {
     >
       <Toaster />
       
-      {/* Celebration Overlays */}
       <RankUpDialog 
         isOpen={showRankUp} 
         onClose={() => setShowRankUp(false)} 
@@ -426,16 +423,38 @@ function LetsPrepContent() {
       />
 
       <Dialog open={authIssue} onOpenChange={setAuthIssue}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm z-[1001] outline-none">
-          <DialogHeader className="text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4"><ShieldCheck className="w-8 h-8 text-primary" /></div>
-            <DialogTitle className="text-2xl font-black">Authentication Required</DialogTitle>
-            <DialogDescription className="text-muted-foreground">Sign in to track progress. <span className="text-primary font-bold">Free Forever Access.</span></DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-2 py-4">
-            <Button onClick={async () => { await loginWithGoogle(); setAuthIssue(false); }} className="h-12 rounded-xl font-bold gap-2 shadow-lg"><Zap className="w-4 h-4 fill-current" /> Continue with Google</Button>
-            <Button onClick={async () => { await loginWithFacebook(); setAuthIssue(false); }} className="h-12 rounded-xl font-bold gap-2 shadow-lg bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none"><Facebook className="w-4 h-4 fill-current" /> Continue with Facebook</Button>
-            <Button variant="outline" onClick={() => { bypassLogin(); setAuthIssue(false); }} className="h-12 rounded-xl font-bold border-2">Guest Simulation</Button>
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-[0_20px_50px_rgba(0,0,0,0.2)] p-0 max-w-sm z-[1001] outline-none overflow-hidden">
+          <div className="bg-emerald-500/10 p-10 flex flex-col items-center text-center relative">
+            <div className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-xl mb-4 relative z-10">
+              <ShieldCheck className="w-10 h-10 text-emerald-500" />
+            </div>
+            <div className="space-y-1 relative z-10">
+              <DialogTitle className="text-2xl font-black tracking-tight">Verified Access</DialogTitle>
+              <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest">
+                Professional Credentials Required
+              </DialogDescription>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent z-0" />
+          </div>
+          <div className="p-8 space-y-6 bg-card">
+            <div className="space-y-4">
+              <p className="text-center text-sm font-medium text-muted-foreground leading-relaxed">
+                Sign in to track your board readiness, maintain streaks, and sync across devices.
+              </p>
+              <div className="grid gap-3 pt-2">
+                <Button onClick={async () => { await loginWithGoogle(); setAuthIssue(false); }} className="h-14 rounded-2xl font-black gap-3 shadow-xl shadow-primary/25 hover:scale-[1.02] active:scale-95 transition-all">
+                  <Zap className="w-5 h-5 fill-current" /> Continue with Google
+                </Button>
+                <Button onClick={async () => { await loginWithFacebook(); setAuthIssue(false); }} className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none hover:scale-[1.02] active:scale-95 transition-all">
+                  <Facebook className="w-5 h-5 fill-current" /> Continue with Facebook
+                </Button>
+              </div>
+            </div>
+            <div className="pt-4 border-t border-border/50 text-center">
+              <Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest border-emerald-500/20 text-emerald-600 bg-emerald-500/5 py-1 px-4">
+                Free Forever Practice Access
+              </Badge>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

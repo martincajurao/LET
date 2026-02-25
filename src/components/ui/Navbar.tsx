@@ -58,7 +58,7 @@ import { NotificationsModal } from './notifications-modal';
 import { useRouter } from 'next/navigation';
 
 export function Navbar() {
-  const { user, loading, logout, loginWithGoogle, loginWithFacebook, bypassLogin } = useUser();
+  const { user, loading, logout, loginWithGoogle, loginWithFacebook } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
@@ -115,11 +115,8 @@ export function Navbar() {
     setWatchingAd(true);
     setVerifyingAd(false);
 
-    // Phase 1: Playback Lock (3.5s minimum)
     setTimeout(async () => {
       setVerifyingAd(true);
-      
-      // Phase 2: Professional Verification (1.5s buffer)
       setTimeout(async () => {
         try {
           const userRef = doc(firestore, 'users', user.uid);
@@ -175,9 +172,6 @@ export function Navbar() {
       onClick: () => setShowAlertsModal(true) 
     },
   ];
-
-  // Defensive values for UI to prevent object-as-child errors during increments
-  const creditsValue = typeof user?.credits === 'number' ? user.credits : (user as any)?._pendingCredits || 0;
 
   return (
     <>
@@ -263,7 +257,7 @@ export function Navbar() {
                   <div className="w-5 h-5 rounded-full bg-yellow-500/10 flex items-center justify-center">
                     <Coins className="w-3.5 h-3.5 text-yellow-600 fill-current" />
                   </div>
-                  <span className="text-sm font-black text-foreground">{creditsValue}</span>
+                  <span className="text-sm font-black text-foreground">{typeof user.credits === 'number' ? user.credits : 0}</span>
                   <Zap className="w-3 h-3 text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
                 </div>
               )}
@@ -335,24 +329,38 @@ export function Navbar() {
       </nav>
 
       <Dialog open={showAuthModal} onOpenChange={(open) => !watchingAd && setShowAuthModal(open)}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-sm">
-          <DialogHeader className="text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <ShieldCheck className="w-8 h-8 text-primary" />
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-[0_20px_50px_rgba(0,0,0,0.2)] p-0 max-w-sm outline-none overflow-hidden">
+          <div className="bg-emerald-500/10 p-10 flex flex-col items-center text-center relative">
+            <div className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-xl mb-4 relative z-10">
+              <ShieldCheck className="w-10 h-10 text-emerald-500" />
             </div>
-            <DialogTitle className="text-2xl font-black">Welcome to LET's Prep</DialogTitle>
-            <DialogDescription className="text-muted-foreground text-sm">Choose your preferred sign-in method to continue your professional journey. <span className="text-primary font-black">Free Forever Access.</span></DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-3 py-6">
-            <Button onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-bold gap-3 shadow-lg">
-              <Zap className="w-5 h-5 fill-current" /> Continue with Google
-            </Button>
-            <Button onClick={async () => { await loginWithFacebook(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-bold gap-3 shadow-lg bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none">
-              <Facebook className="w-5 h-5 fill-current" /> Continue with Facebook
-            </Button>
-            <Button variant="outline" onClick={() => { bypassLogin(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-bold border-2">
-              Guest Simulation
-            </Button>
+            <div className="space-y-1 relative z-10">
+              <DialogTitle className="text-2xl font-black tracking-tight">Access Pro Vault</DialogTitle>
+              <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest">
+                Professional Educator Sign In
+              </DialogDescription>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent z-0" />
+          </div>
+          <div className="p-8 space-y-6 bg-card">
+            <div className="space-y-4">
+              <div className="grid gap-3 pt-2">
+                <Button onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-black gap-3 shadow-xl shadow-primary/25 hover:scale-[1.02] active:scale-95 transition-all">
+                  <Zap className="w-5 h-5 fill-current" /> Continue with Google
+                </Button>
+                <Button onClick={async () => { await loginWithFacebook(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none hover:scale-[1.02] active:scale-95 transition-all">
+                  <Facebook className="w-5 h-5 fill-current" /> Continue with Facebook
+                </Button>
+              </div>
+              <p className="text-center text-[10px] font-medium text-muted-foreground leading-relaxed px-4">
+                Secure authentication ensures your progress, XP, and rank are synchronized across devices.
+              </p>
+            </div>
+            <div className="pt-4 border-t border-border/50 text-center">
+              <Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest border-emerald-500/20 text-emerald-600 bg-emerald-500/5 py-1 px-4">
+                Free Forever Access
+              </Badge>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
