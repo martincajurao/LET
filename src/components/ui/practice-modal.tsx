@@ -105,6 +105,8 @@ export function PracticeModal({
   ];
 
   const handleStartPractice = (mode: any) => {
+    if (loading) return;
+
     if (mode.requiresMajorship && !user?.majorship) {
       toast({
         variant: "destructive",
@@ -114,7 +116,9 @@ export function PracticeModal({
       return;
     }
     
-    if (!isTrackUnlocked(rankData.rank, mode.id, user?.unlockedTracks)) {
+    // Robust unlock check
+    const isUnlocked = isTrackUnlocked(rankData.rank, mode.id, user?.unlockedTracks);
+    if (!isUnlocked) {
       toast({
         variant: "destructive",
         title: "Track Locked",
@@ -129,7 +133,7 @@ export function PracticeModal({
 
   const handleUnlockEarly = async (e: React.MouseEvent, mode: any) => {
     e.stopPropagation();
-    if (!user) return;
+    if (!user || unlockingId) return;
     
     const cost = mode.unlockCost;
     if ((user.credits || 0) < cost) {
@@ -143,7 +147,7 @@ export function PracticeModal({
 
     setUnlockingId(mode.id);
     try {
-      // Use arrayUnion to safely append without overwriting previous data
+      // updateProfile now correctly handles sentinel preservation
       await updateProfile({
         credits: increment(-cost),
         unlockedTracks: arrayUnion(mode.id) as any
@@ -154,6 +158,7 @@ export function PracticeModal({
         description: `You now have permanent access to ${mode.name}.`,
       });
     } catch (e) {
+      console.error("Unlock sync error:", e);
       toast({ variant: "destructive", title: "Unlock Failed", description: "Cloud sync error. Please try again." });
     } finally {
       setUnlockingId(null);
@@ -204,7 +209,7 @@ export function PracticeModal({
                     !isUnlocked ? "border-muted opacity-85 grayscale-[0.5]" : "cursor-pointer hover:shadow-xl hover:-translate-y-1 " + mode.borderColor,
                     needsMajorship && "border-rose-200"
                   )}
-                  onClick={() => !loading && isUnlocked && handleStartPractice(mode)}
+                  onClick={() => isUnlocked && handleStartPractice(mode)}
                 >
                   <CardHeader className="pb-4 relative">
                     <div className={cn(
@@ -279,7 +284,10 @@ export function PracticeModal({
                           <Button
                             size="sm"
                             disabled={loading}
-                            onClick={() => handleStartPractice(mode)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStartPractice(mode);
+                            }}
                             className={cn(
                               "font-black text-[10px] uppercase tracking-widest px-6 h-9 rounded-xl transition-all duration-200 shadow-md",
                               mode.id === 'all' 
