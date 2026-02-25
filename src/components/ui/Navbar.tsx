@@ -344,9 +344,9 @@ export function Navbar() {
               <ShieldCheck className="w-10 h-10 text-emerald-500" />
             </div>
             <div className="space-y-1 relative z-10">
-              <DialogTitle className="text-2xl font-black tracking-tight">Professional Access</DialogTitle>
+              <DialogTitle className="text-2xl font-black tracking-tight">Verified Access</DialogTitle>
               <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest">
-                Verified Educator Login
+                Professional Credentials Required
               </DialogDescription>
             </div>
             <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent z-0" />
@@ -355,7 +355,7 @@ export function Navbar() {
             <div className="grid gap-3">
               <Button 
                 onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} 
-                className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-white text-foreground border border-border hover:bg-muted transition-all active:scale-95"
+                className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-white text-black border border-border hover:bg-muted transition-all active:scale-95"
               >
                 <GoogleIcon />
                 <span>Continue with Google</span>

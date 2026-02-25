@@ -45,7 +45,8 @@ import {
   BellRing,
   Download,
   QrCode,
-  Info
+  Info,
+  ShieldAlert
 } from "lucide-react";
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
@@ -85,10 +86,6 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return shuffled;
 };
 
-/**
- * Safely cleans data for Firestore by removing undefined values 
- * while protecting Firestore internal objects like FieldValue.
- */
 function sanitizeData(data: any): any {
   if (data === undefined) return null;
   if (data === null || typeof data !== 'object') return data;
@@ -163,7 +160,7 @@ const EducationalLoader = ({ message }: { message?: string }) => (
 );
 
 function LetsPrepContent() {
-  const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook } = useUser();
+  const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook, bypassLogin } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const { isDark, toggleDarkMode } = useTheme();
@@ -188,7 +185,6 @@ function LetsPrepContent() {
   const [quickFireCooldown, setQuickFireCooldown] = useState(0);
   const [claimingXp, setClaimingXp] = useState(false);
   
-  // APK State
   const [apkInfo, setApkInfo] = useState<any>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [isQrLoading, setIsQrLoading] = useState(true);
@@ -453,7 +449,7 @@ function LetsPrepContent() {
               <div className="grid gap-3 pt-2">
                 <Button 
                   onClick={async () => { await loginWithGoogle(); setAuthIssue(false); }} 
-                  className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-white text-foreground border border-border hover:bg-muted transition-all active:scale-95"
+                  className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-white text-black border border-border hover:bg-muted transition-all active:scale-95"
                 >
                   <GoogleIcon />
                   <span>Continue with Google</span>
