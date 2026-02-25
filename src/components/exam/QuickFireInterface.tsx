@@ -75,26 +75,28 @@ export function QuickFireInterface({ questions, onComplete, onExit }: QuickFireI
 
   return (
     <div className="fixed inset-0 z-[200] bg-background flex flex-col overflow-hidden">
-      {/* Thinner, Android-style Header */}
-      <header className="h-14 border-b bg-card/50 backdrop-blur-md flex items-center justify-between px-4 shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shadow-md">
-            <Zap className="w-4 h-4 text-primary-foreground fill-current" />
+      {/* Thinner, Android-style Header with Safe Area Inset */}
+      <header className="pt-[env(safe-area-inset-top)] border-b bg-card/50 backdrop-blur-md shrink-0">
+        <div className="h-14 flex items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shadow-md">
+              <Zap className="w-4 h-4 text-primary-foreground fill-current" />
+            </div>
+            <span className="font-black tracking-tight text-[10px] uppercase text-muted-foreground">Quick Fire</span>
           </div>
-          <span className="font-black tracking-tight text-[10px] uppercase text-muted-foreground">Quick Fire</span>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            "flex items-center gap-1.5 px-2 py-1 rounded-full border bg-background",
-            timeLeft < 20 ? "border-rose-500 text-rose-500 animate-pulse" : "border-border"
-          )}>
-            <Timer className="w-3.5 h-3.5" />
-            <span className="font-black font-mono text-xs">{Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span>
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "flex items-center gap-1.5 px-2 py-1 rounded-full border bg-background",
+              timeLeft < 20 ? "border-rose-500 text-rose-500 animate-pulse" : "border-border"
+            )}>
+              <Timer className="w-3.5 h-3.5" />
+              <span className="font-black font-mono text-xs">{Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span>
+            </div>
+            <Button variant="ghost" size="icon" onClick={onExit} className="h-8 w-8 rounded-full">
+              <X className="w-4 h-4" />
+            </Button>
           </div>
-          <Button variant="ghost" size="icon" onClick={onExit} className="h-8 w-8 rounded-full">
-            <X className="w-4 h-4" />
-          </Button>
         </div>
       </header>
 
@@ -169,11 +171,13 @@ export function QuickFireInterface({ questions, onComplete, onExit }: QuickFireI
         </div>
       </main>
 
-      {/* Minimal Footer */}
-      <footer className="p-4 flex justify-center border-t bg-card/30 backdrop-blur-sm">
-        <div className="flex items-center gap-2 text-muted-foreground font-black text-[8px] uppercase tracking-widest opacity-50">
-          <BrainCircuit className="w-3 h-3" />
-          <span>Analytical Teaser</span>
+      {/* Minimal Footer with Safe Area */}
+      <footer className="pb-[env(safe-area-inset-bottom)] border-t bg-card/30 backdrop-blur-sm shrink-0">
+        <div className="p-4 flex justify-center">
+          <div className="flex items-center gap-2 text-muted-foreground font-black text-[8px] uppercase tracking-widest opacity-50">
+            <BrainCircuit className="w-3 h-3" />
+            <span>Analytical Teaser</span>
+          </div>
         </div>
       </footer>
     </div>

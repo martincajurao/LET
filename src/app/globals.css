@@ -60,6 +60,21 @@
   }
 }
 
+@layer utilities {
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .mt-safe {
+    margin-top: env(safe-area-inset-top);
+  }
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 /* Material Design 3 Animations */
 @keyframes md-ripple {
   0% { transform: scale(0); opacity: 0.3; }
@@ -97,7 +112,7 @@
   scrollbar-width: none;
 }
 
-/* Safe Area Insets */
+/* Safe Area Insets (Legacy) */
 .safe-pb {
   padding-bottom: env(safe-area-inset-bottom);
 }

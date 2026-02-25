@@ -125,7 +125,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
   const handleBack = () => {
     if (currentInPhaseIdx > 0) {
-      setCurrentInPhaseIdx(prev => prev - 1);
+      setCurrentInPhaseIdx(prev => prev + 1);
     } else if (currentPhaseIdx > 0) {
       const prevPhaseIdx = currentPhaseIdx - 1;
       setCurrentPhaseIdx(prevPhaseIdx);
@@ -149,38 +149,40 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
   return (
     <div className="fixed inset-0 z-[200] bg-background flex flex-col overflow-hidden animate-in fade-in duration-300">
-      <header className="h-14 border-b bg-card/90 backdrop-blur-md flex items-center justify-between px-3 shrink-0 z-50">
-        <div className="flex items-center gap-2">
-          <div className={cn(
-            "flex items-center gap-1 px-2 py-0.5 rounded-full border transition-all",
-            timeLeft < 60 ? "bg-rose-500/10 border-rose-500 text-rose-600 animate-pulse" : "bg-primary/10 border-primary/20 text-primary"
-          )}>
-            <Timer className="w-3 h-3" />
-            <span className="text-[11px] font-black font-mono tracking-tighter">{formatTime(timeLeft)}</span>
+      <header className="pt-[env(safe-area-inset-top)] border-b bg-card/90 backdrop-blur-md shrink-0 z-50">
+        <div className="h-14 flex items-center justify-between px-3">
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              "flex items-center gap-1 px-2 py-0.5 rounded-full border transition-all",
+              timeLeft < 60 ? "bg-rose-500/10 border-rose-500 text-rose-600 animate-pulse" : "bg-primary/10 border-primary/20 text-primary"
+            )}>
+              <Timer className="w-3 h-3" />
+              <span className="text-[11px] font-black font-mono tracking-tighter">{formatTime(timeLeft)}</span>
+            </div>
+            <div className="hidden sm:flex items-center gap-1.5 text-muted-foreground">
+              <Layers className="w-3 h-3" />
+              <span className="text-[9px] font-black uppercase tracking-widest line-clamp-1">{currentPhase.subject}</span>
+            </div>
           </div>
-          <div className="hidden sm:flex items-center gap-1.5 text-muted-foreground">
-            <Layers className="w-3 h-3" />
-            <span className="text-[9px] font-black uppercase tracking-widest line-clamp-1">{currentPhase.subject}</span>
-          </div>
-        </div>
 
-        <div className="flex-1 max-w-[120px] mx-3 md:max-w-xs">
-          <div className="flex justify-between mb-0.5">
-            <span className="text-[7px] font-black uppercase text-muted-foreground opacity-60">Status</span>
-            <span className="text-[7px] font-black text-primary">{Math.round(progress)}%</span>
+          <div className="flex-1 max-w-[120px] mx-3 md:max-w-xs">
+            <div className="flex justify-between mb-0.5">
+              <span className="text-[7px] font-black uppercase text-muted-foreground opacity-60">Status</span>
+              <span className="text-[7px] font-black text-primary">{Math.round(progress)}%</span>
+            </div>
+            <Progress value={progress} className="h-1 rounded-full" />
           </div>
-          <Progress value={progress} className="h-1 rounded-full" />
-        </div>
 
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => setShowSubmitConfirm(true)}
-          className="font-black text-[9px] uppercase tracking-[0.15em] text-primary h-8 px-2.5 rounded-lg hover:bg-primary/5 transition-all"
-        >
-          <Send className="w-3 h-3 mr-1" />
-          Finish
-        </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setShowSubmitConfirm(true)}
+            className="font-black text-[9px] uppercase tracking-[0.15em] text-primary h-8 px-2.5 rounded-lg hover:bg-primary/5 transition-all"
+          >
+            <Send className="w-3 h-3 mr-1" />
+            Finish
+          </Button>
+        </div>
       </header>
 
       <main className="flex-1 overflow-hidden flex flex-col lg:flex-row">
@@ -321,30 +323,32 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </aside>
       </main>
 
-      <footer className="h-16 shrink-0 border-t bg-card/95 backdrop-blur-xl flex items-center justify-between px-5 pb-safe shadow-[0_-2px_15px_rgba(0,0,0,0.03)] z-50">
-        <Button 
-          variant="ghost" 
-          onClick={handleBack} 
-          disabled={currentPhaseIdx === 0 && currentInPhaseIdx === 0}
-          className="rounded-lg px-3 h-9 font-black text-[9px] uppercase tracking-wider hover:bg-muted/50 transition-all"
-        >
-          <ChevronLeft className="w-3.5 h-3.5 mr-1" />
-          Back
-        </Button>
+      <footer className="h-auto shrink-0 border-t bg-card/95 backdrop-blur-xl flex flex-col px-5 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_15px_rgba(0,0,0,0.03)] z-50">
+        <div className="h-16 flex items-center justify-between w-full">
+          <Button 
+            variant="ghost" 
+            onClick={handleBack} 
+            disabled={currentPhaseIdx === 0 && currentInPhaseIdx === 0}
+            className="rounded-lg px-3 h-9 font-black text-[9px] uppercase tracking-wider hover:bg-muted/50 transition-all"
+          >
+            <ChevronLeft className="w-3.5 h-3.5 mr-1" />
+            Back
+          </Button>
 
-        <div className="text-center">
-          <p className="text-[7px] font-black uppercase tracking-[0.25em] text-muted-foreground leading-none mb-0.5">Item</p>
-          <p className="text-[11px] font-black text-foreground">{overallCurrentIdx + 1} / {questions.length}</p>
+          <div className="text-center">
+            <p className="text-[7px] font-black uppercase tracking-[0.25em] text-muted-foreground leading-none mb-0.5">Item</p>
+            <p className="text-[11px] font-black text-foreground">{overallCurrentIdx + 1} / {questions.length}</p>
+          </div>
+
+          <Button 
+            variant="default" 
+            onClick={handleNext} 
+            className="rounded-lg px-5 h-9 font-black text-[9px] uppercase tracking-wider shadow-lg shadow-primary/20 hover:scale-[1.03] active:scale-95 transition-all"
+          >
+            {currentPhaseIdx === groupedPhases.length - 1 && currentInPhaseIdx === currentPhase.items.length - 1 ? 'Finish' : 'Next'}
+            <ChevronRight className="w-3.5 h-3.5 ml-1" />
+          </Button>
         </div>
-
-        <Button 
-          variant="default" 
-          onClick={handleNext} 
-          className="rounded-lg px-5 h-9 font-black text-[9px] uppercase tracking-wider shadow-lg shadow-primary/20 hover:scale-[1.03] active:scale-95 transition-all"
-        >
-          {currentPhaseIdx === groupedPhases.length - 1 && currentInPhaseIdx === currentPhase.items.length - 1 ? 'Finish' : 'Next'}
-          <ChevronRight className="w-3.5 h-3.5 ml-1" />
-        </Button>
       </footer>
 
       <Dialog open={showBreakScreen} onOpenChange={setShowBreakScreen}>
