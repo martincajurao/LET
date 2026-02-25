@@ -88,7 +88,11 @@ const AuthContext = createContext<AuthContextType>({
  */
 function isFirestoreInternal(val: any): boolean {
   if (!val || typeof val !== 'object') return false;
-  return val.constructor?.name === 'FieldValue' || (typeof val._methodName === 'string');
+  return (
+    val.constructor?.name === 'FieldValue' || 
+    (typeof val._methodName === 'string') ||
+    (val.type === 'increment' || val.type === 'arrayUnion' || val.type === 'serverTimestamp')
+  );
 }
 
 /**
@@ -110,20 +114,29 @@ function scrubUserData(data: any, prevUser: UserProfile | null): UserProfile {
     'lastTaskReset', 'lastQualityUpdate', 'lastExplanationRequest'
   ];
 
-  for (const key in scrubbed) {
-    if (isFirestoreInternal(scrubbed[key])) {
-      if (numFields.includes(key)) {
-        // Preserve last known numeric value if pending increment, otherwise default 0
-        scrubbed[key] = (prevUser as any)?.[key] ?? 0;
-      } else if (dateFields.includes(key)) {
-        // If it's a serverTimestamp, we assume it's roughly "now" for UI purposes
-        scrubbed[key] = Date.now();
-      } else {
-        scrubbed[key] = null;
-      }
+  // Atomic Field Scrubbing:
+  // If a field is currently an internal FieldValue (pending write) or null/undefined
+  // in the snapshot, we fill it from the last known good state (prevUser).
+  numFields.forEach(key => {
+    if (scrubbed[key] === undefined || scrubbed[key] === null || isFirestoreInternal(scrubbed[key])) {
+      scrubbed[key] = (prevUser as any)?.[key] ?? 0;
+    }
+  });
+
+  dateFields.forEach(key => {
+    if (scrubbed[key] === undefined || scrubbed[key] === null || isFirestoreInternal(scrubbed[key])) {
+      scrubbed[key] = (prevUser as any)?.[key] ?? Date.now();
     } else if (scrubbed[key] && typeof scrubbed[key] === 'object' && scrubbed[key].toMillis) {
-      // Standard Firestore Timestamp to numeric epoch
       scrubbed[key] = scrubbed[key].toMillis();
+    }
+  });
+
+  // Handle remaining fields
+  for (const key in scrubbed) {
+    if (!numFields.includes(key) && !dateFields.includes(key)) {
+      if (isFirestoreInternal(scrubbed[key])) {
+        scrubbed[key] = (prevUser as any)?.[key] ?? null;
+      }
     }
   }
 
@@ -199,7 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               email: firebaseUser.email,
               photoURL: firebaseUser.photoURL,
               onboardingComplete: false,
-              credits: 0,
+              credits: 20, // Default starting credits
               xp: 0,
               lastRewardedRank: 1,
               isPro: false,
@@ -250,18 +263,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [toast, firestore, auth]);
 
-  // Handle Daily Task Reset (24-hour / Calendar Day Check)
+  // Handle Daily Task Reset (Calendar Day Check)
   useEffect(() => {
     if (user && user.uid && user.uid !== 'bypass-user' && firestore && !isResettingRef.current) {
       const now = new Date();
       const lastReset = user.lastTaskReset || 0;
       
-      // If we have a valid last reset time
       if (lastReset !== 0) {
         const lastResetDate = new Date(lastReset).toDateString();
         const nowDate = now.toDateString();
         
-        // If the current date is different from the last reset date, reset counters
         if (lastResetDate !== nowDate) {
           isResettingRef.current = true;
           const userRef = doc(firestore, 'users', user.uid);
@@ -386,7 +397,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!firestore || !user?.uid) return;
     const cleaned = cleanFirestoreData(data);
     const userDocRef = doc(firestore, 'users', user.uid);
-    await setDoc(userDocRef, cleaned, { merge: true });
+    try {
+      // Use atomic updateDoc to preserve existing fields and handle FieldValues correctly
+      await updateDoc(userDocRef, cleaned);
+    } catch (e) {
+      // Fallback only if document missing
+      await setDoc(userDocRef, cleaned, { merge: true });
+    }
   };
 
   return (
