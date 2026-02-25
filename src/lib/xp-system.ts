@@ -49,16 +49,18 @@ export function getRankTierConfig(rank: number) {
   return CAREER_TIERS.find(t => rank >= t.minRank && rank <= t.maxRank) || CAREER_TIERS[CAREER_TIERS.length - 1];
 }
 
-export function getRankData(totalXp: number) {
-  let rank = 1;
-  let remainingXp = totalXp;
+export function getRankData(totalXp: any) {
+  const xpValue = typeof totalXp === 'number' ? totalXp : 0;
   
-  // Calculate current rank by iterating through tiers
+  let rank = 1;
+  let remainingXp = xpValue;
+  
   while (true) {
     const config = getRankTierConfig(rank);
     if (remainingXp < config.req) break;
     remainingXp -= config.req;
     rank++;
+    if (rank > 100) break;
   }
 
   const currentTier = getRankTierConfig(rank);
@@ -79,10 +81,17 @@ export function getCareerRankTitle(rank: number): string {
 }
 
 export function isTrackUnlocked(rank: number, track: string, unlockedTracks: string[] = []): boolean {
-  if (unlockedTracks.includes(track)) return true;
+  // Safety check for array existence
+  const unlocked = Array.isArray(unlockedTracks) ? unlockedTracks : [];
+  
+  // Purchases always override rank requirements
+  if (unlocked.includes(track)) return true;
+  
+  // Track-specific rank requirements
   if (track === 'General Education' || track === 'Gen Ed') return rank >= UNLOCK_RANKS.GENERAL_ED;
   if (track === 'Professional Education' || track === 'Prof Ed') return rank >= UNLOCK_RANKS.PROFESSIONAL_ED;
   if (track === 'Specialization' || track === 'Major') return rank >= UNLOCK_RANKS.SPECIALIZATION;
   if (track === 'all') return rank >= UNLOCK_RANKS.FULL_SIMULATION;
+  
   return true;
 }

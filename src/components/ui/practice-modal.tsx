@@ -16,7 +16,8 @@ import {
   Unlock,
   Coins,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import {
   Dialog,
@@ -27,7 +28,7 @@ import {
 import { cn } from '@/lib/utils';
 import { getRankData, isTrackUnlocked, UNLOCK_RANKS, getCareerRankTitle } from '@/lib/xp-system';
 import { useToast } from '@/hooks/use-toast';
-import { increment } from 'firebase/firestore';
+import { increment, arrayUnion } from 'firebase/firestore';
 
 interface PracticeModalProps {
   isOpen: boolean;
@@ -91,26 +92,46 @@ export function PracticeModal({
     {
       id: 'Specialization',
       name: user?.majorship || 'Specialization',
-      description: `Your chosen major: ${user?.majorship || 'Not selected'}`,
+      description: user?.majorship ? `Your chosen major: ${user.majorship}` : 'Please set your majorship in Profile first.',
       icon: <Star className="w-6 h-6" />,
       color: 'bg-emerald-500 text-white',
       borderColor: 'border-emerald-500',
       time: `~${limits.limitSpec} minutes`,
       questions: `${limits.limitSpec} items`,
       reqRank: UNLOCK_RANKS.SPECIALIZATION,
-      unlockCost: 60
+      unlockCost: 60,
+      requiresMajorship: true
     }
   ];
 
-  const handleStartPractice = (category: string, reqRank: number) => {
-    if (!isTrackUnlocked(rankData.rank, category, user?.unlockedTracks)) return;
-    onStartExam(category);
+  const handleStartPractice = (mode: any) => {
+    if (mode.requiresMajorship && !user?.majorship) {
+      toast({
+        variant: "destructive",
+        title: "Majorship Required",
+        description: "Please configure your academic track in your Profile before starting this track.",
+      });
+      return;
+    }
+    
+    if (!isTrackUnlocked(rankData.rank, mode.id, user?.unlockedTracks)) {
+      toast({
+        variant: "destructive",
+        title: "Track Locked",
+        description: `This simulation requires Rank ${mode.reqRank} or Credit Unlock.`,
+      });
+      return;
+    }
+    
+    onStartExam(mode.id);
     onClose();
   };
 
-  const handleUnlockEarly = async (e: React.MouseEvent, modeId: string, cost: number) => {
+  const handleUnlockEarly = async (e: React.MouseEvent, mode: any) => {
     e.stopPropagation();
     if (!user) return;
+    
+    const cost = mode.unlockCost;
     if ((user.credits || 0) < cost) {
       toast({ 
         variant: "destructive", 
@@ -120,19 +141,20 @@ export function PracticeModal({
       return;
     }
 
-    setUnlockingId(modeId);
+    setUnlockingId(mode.id);
     try {
-      const currentUnlocked = user.unlockedTracks || [];
+      // Use arrayUnion to safely append without overwriting previous data
       await updateProfile({
         credits: increment(-cost),
-        unlockedTracks: [...currentUnlocked, modeId]
+        unlockedTracks: arrayUnion(mode.id) as any
       });
+      
       toast({
         title: "Mode Unlocked!",
-        description: `You now have permanent access to ${modeId}.`,
+        description: `You now have permanent access to ${mode.name}.`,
       });
     } catch (e) {
-      toast({ variant: "destructive", title: "Unlock Failed", description: "Cloud sync error." });
+      toast({ variant: "destructive", title: "Unlock Failed", description: "Cloud sync error. Please try again." });
     } finally {
       setUnlockingId(null);
     }
@@ -140,7 +162,7 @@ export function PracticeModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-0 bg-background border-0 shadow-2xl practice-modal-overlay outline-none">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-0 bg-background border-0 shadow-2xl outline-none">
         <DialogHeader className="border-b border-border/50 bg-card p-8 pb-6 rounded-t-[2.5rem]">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
@@ -172,15 +194,17 @@ export function PracticeModal({
             {practiceModes.map((mode) => {
               const isUnlocked = isTrackUnlocked(rankData.rank, mode.id, user?.unlockedTracks);
               const isPermanentlyUnlocked = user?.unlockedTracks?.includes(mode.id);
+              const needsMajorship = mode.requiresMajorship && !user?.majorship;
               
               return (
                 <Card
                   key={mode.id}
                   className={cn(
                     "border-2 transition-all duration-300 relative overflow-hidden bg-card rounded-[2rem]",
-                    !isUnlocked ? "border-muted opacity-80" : "cursor-pointer hover:shadow-xl hover:-translate-y-1 " + mode.borderColor
+                    !isUnlocked ? "border-muted opacity-85 grayscale-[0.5]" : "cursor-pointer hover:shadow-xl hover:-translate-y-1 " + mode.borderColor,
+                    needsMajorship && "border-rose-200"
                   )}
-                  onClick={() => !loading && isUnlocked && handleStartPractice(mode.id, mode.reqRank)}
+                  onClick={() => !loading && isUnlocked && handleStartPractice(mode)}
                 >
                   <CardHeader className="pb-4 relative">
                     <div className={cn(
@@ -206,7 +230,7 @@ export function PracticeModal({
                         {isPermanentlyUnlocked && (
                           <div className="flex items-center gap-1 text-[8px] font-black uppercase text-emerald-600">
                             <CheckCircle2 className="w-2.5 h-2.5" />
-                            <span>Purchased</span>
+                            <span>Lifetime Access</span>
                           </div>
                         )}
                       </div>
@@ -217,9 +241,14 @@ export function PracticeModal({
                   
                   <CardContent className="pt-0 relative z-10">
                     <div className="flex items-center justify-between mt-4">
-                      {!isUnlocked ? (
+                      {needsMajorship ? (
+                        <div className="w-full flex items-center gap-2 p-3 bg-rose-50 rounded-xl border border-rose-100">
+                          <AlertCircle className="w-4 h-4 text-rose-500" />
+                          <span className="text-[9px] font-black uppercase text-rose-600 tracking-tighter">Set Majorship in Profile</span>
+                        </div>
+                      ) : !isUnlocked ? (
                         <button
-                          onClick={(e) => handleUnlockEarly(e, mode.id, mode.unlockCost)}
+                          onClick={(e) => handleUnlockEarly(e, mode)}
                           disabled={unlockingId === mode.id}
                           className="w-full h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-between px-4 border-2 border-primary bg-primary/5 text-primary transition-all hover:bg-primary/10 active:scale-95 disabled:opacity-50 disabled:grayscale group"
                         >
@@ -236,7 +265,7 @@ export function PracticeModal({
                               <div className="bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 flex items-center gap-2">
                                 <span className="font-black text-sm">{mode.unlockCost}</span>
                                 <Coins className="w-4 h-4 text-yellow-600 fill-current" />
-                                <span className="text-[8px] font-black opacity-80">AI CREDIT</span>
+                                <span className="text-[8px] font-black opacity-80">CREDIT</span>
                               </div>
                             </>
                           )}
@@ -250,6 +279,7 @@ export function PracticeModal({
                           <Button
                             size="sm"
                             disabled={loading}
+                            onClick={() => handleStartPractice(mode)}
                             className={cn(
                               "font-black text-[10px] uppercase tracking-widest px-6 h-9 rounded-xl transition-all duration-200 shadow-md",
                               mode.id === 'all' 
@@ -262,7 +292,7 @@ export function PracticeModal({
                         </div>
                       )}
                     </div>
-                    {!isUnlocked && (
+                    {!isUnlocked && !needsMajorship && (
                       <p className="text-[8px] font-bold text-muted-foreground uppercase text-center mt-4 tracking-wider">
                         Or reach Rank {mode.reqRank} ({getCareerRankTitle(mode.reqRank)})
                       </p>
@@ -284,8 +314,8 @@ export function PracticeModal({
                   <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                 </h4>
                 <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed font-medium">
-                  We've lowered our professional thresholds to help you start your specific majorship training sooner. 
-                  Reach Rank 5 to unlock the full 150-item simulation, or use credits to bypass the requirement today.
+                  We've calibrated professional thresholds to ensure you're ready for each stage. 
+                  Reach Rank 5 to unlock the full 150-item simulation, or use credits to bypass the requirement instantly.
                 </p>
               </div>
             </div>
