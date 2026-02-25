@@ -21,8 +21,8 @@ export const XP_REWARDS = {
 };
 
 export const COOLDOWNS = {
-  AD_XP: 2 * 60 * 60 * 1000, // 2 hours
-  QUICK_FIRE: 4 * 60 * 60 * 1000 // 4 hours
+  AD_XP: 30 * 60 * 1000, // 30 minutes
+  QUICK_FIRE: 60 * 60 * 1000 // 1 hour
 };
 
 /**

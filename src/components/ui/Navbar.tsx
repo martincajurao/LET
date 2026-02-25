@@ -111,7 +111,8 @@ export function Navbar() {
         await updateDoc(userRef, {
           credits: increment(5),
           xp: increment(XP_REWARDS.AD_WATCH_XP),
-          lastAdXpTimestamp: Date.now()
+          lastAdXpTimestamp: Date.now(),
+          dailyAdCount: increment(1)
         });
         toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added.` });
         setShowAdModal(false);
@@ -349,14 +350,14 @@ export function Navbar() {
             <Play className="w-14 h-14 text-primary opacity-20 mb-4" />
             <div className="flex flex-col items-center">
               <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Daily Allowance</p>
-              <p className="text-lg font-black text-foreground">{user?.dailyAdCount || 0} / 10</p>
+              <p className="text-lg font-black text-foreground">{user?.dailyAdCount || 0} / 20</p>
             </div>
           </div>
           <DialogFooter className="flex-col gap-3">
             <Button 
               className="w-full h-14 font-black rounded-2xl text-lg gap-3 shadow-lg shadow-primary/30 active:scale-[0.98] transition-all" 
               onClick={handleWatchAd} 
-              disabled={watchingAd || (user?.dailyAdCount || 0) >= 10}
+              disabled={watchingAd || (user?.dailyAdCount || 0) >= 20}
             >
               {watchingAd ? <Loader2 className="w-6 h-6 animate-spin" /> : <Play className="w-6 h-6 fill-current" />}
               {watchingAd ? "Connecting..." : "Watch & Earn +5"}
