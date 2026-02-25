@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useUser } from '@/firebase/auth/use-user';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +29,8 @@ import {
   Info,
   CheckCircle2,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  AlertTriangle
 } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
@@ -59,10 +60,10 @@ export function DailyTaskDashboard() {
   const [recovering, setRecovering] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [claimedReward, setLastClaimedReward] = useState(0);
+  const [serverWarning, setServerWarning] = useState<string | null>(null);
   const [deviceFingerprint, setDeviceFingerprint] = useState('');
   const [sessionStartTime] = useState(Date.now());
   const [questionTimes, setQuestionTimes] = useState<number[]>([]);
-  const [pacingFeedback, setPacingFeedback] = useState<{label: string, color: string}>({label: 'Calibrating...', color: 'text-muted-foreground'});
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -73,34 +74,65 @@ export function DailyTaskDashboard() {
 
   useEffect(() => {
     const handleQuestionAnswered = () => {
+      // In a real scenario, this would track actual time between events
+      // For this prototype, we simulate a tracked interval
       setQuestionTimes(prev => [...prev, Math.floor(Math.random() * 20) + 5]);
     };
     window.addEventListener('questionAnswered', handleQuestionAnswered);
     return () => window.removeEventListener('questionAnswered', handleQuestionAnswered);
   }, []);
 
-  useEffect(() => {
-    if (questionTimes.length === 0) return;
-    const avg = questionTimes.reduce((a, b) => a + b, 0) / questionTimes.length;
-    if (avg < 5) setPacingFeedback({label: 'High Speed Risk', color: 'text-rose-500'});
-    else if (avg < 15) setPacingFeedback({label: 'Good Pacing', color: 'text-amber-500'});
-    else setPacingFeedback({label: 'Deep Focus', color: 'text-emerald-500'});
-  }, [questionTimes]);
+  // Multiplier Logic (Synced with server)
+  const calibration = useMemo(() => {
+    const tierMultipliers: Record<string, number> = {
+      'Bronze': 1.0,
+      'Silver': 1.1,
+      'Gold': 1.2,
+      'Platinum': 1.3
+    };
+    
+    const tierMult = tierMultipliers[user?.userTier || 'Bronze'] || 1.0;
+    const avgTime = questionTimes.length > 0 
+      ? questionTimes.reduce((a, b) => a + b, 0) / questionTimes.length 
+      : (user?.averageQuestionTime || 0);
+    
+    let trustMultiplier = 1.0;
+    let feedback = { label: 'Standard Pacing', color: 'text-muted-foreground', icon: <Zap className="w-3 h-3" /> };
 
-  const tasks: Task[] = [
+    if ((user?.dailyQuestionsAnswered || 0) > 5) {
+      if (avgTime < 4) {
+        trustMultiplier = 0.3;
+        feedback = { label: 'Speed Penalty (0.3x)', color: 'text-rose-500', icon: <AlertTriangle className="w-3 h-3" /> };
+      } else if (avgTime >= 15 && avgTime <= 90) {
+        trustMultiplier = 1.2;
+        feedback = { label: 'Focus Bonus (1.2x)', color: 'text-emerald-500', icon: <Sparkles className="w-3 h-3" /> };
+      }
+    }
+
+    return { tierMult, trustMultiplier, feedback, totalMult: tierMult * trustMultiplier };
+  }, [user, questionTimes]);
+
+  const tasks: Task[] = useMemo(() => [
     { id: 'login', title: 'Daily Entrance', description: 'Access simulation vault', reward: 5, goal: 1, current: user ? 1 : 0, isClaimed: !!user?.taskLoginClaimed, icon: <Key className="w-5 h-5" />, color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' },
     { id: 'questions', title: 'Item Mastery', description: 'Complete board items', reward: 10, goal: user?.userTier === 'Platinum' ? 35 : 20, current: user?.dailyQuestionsAnswered || 0, isClaimed: !!user?.taskQuestionsClaimed, icon: <Target className="w-5 h-5" />, color: 'text-blue-600', bgColor: 'bg-blue-500/10' },
     { id: 'mock', title: 'Full Simulation', description: 'Finish a timed mock test', reward: 15, goal: 1, current: user?.dailyTestsFinished || 0, isClaimed: !!user?.taskMockClaimed, icon: <Trophy className="w-5 h-5" />, color: 'text-amber-600', bgColor: 'bg-amber-500/10' },
     { id: 'mistakes', title: 'Review Insights', description: 'Analyze pedagogical mistakes', reward: 10, goal: 10, current: user?.mistakesReviewed || 0, isClaimed: !!user?.taskMistakesClaimed, icon: <BookOpen className="w-5 h-5" />, color: 'text-rose-600', bgColor: 'bg-rose-500/10' }
-  ];
+  ], [user]);
 
   const totalProgress = tasks.reduce((acc, task) => acc + Math.min((task.current / task.goal) * 100, 100), 0) / tasks.length;
   const canClaimAny = tasks.some(t => t.current >= t.goal && !t.isClaimed);
-  const totalEarnedToday = tasks.filter(t => t.current >= t.goal && !t.isClaimed).reduce((acc, task) => acc + task.reward, 0);
+  
+  const estimatedReward = useMemo(() => {
+    const readyTasks = tasks.filter(t => t.current >= t.goal && !t.isClaimed);
+    const baseTotal = readyTasks.reduce((acc, task) => acc + task.reward, 0);
+    // Apply multipliers exactly like server
+    return Math.floor(baseTotal * calibration.totalMult);
+  }, [tasks, calibration]);
 
   const handleClaimReward = async (isRecovery = false) => {
     if (!user || !firestore || (claiming && !isRecovery)) return;
     if (isRecovery) setRecovering(true); else setClaiming(true);
+    setServerWarning(null);
     
     try {
       const avgTime = questionTimes.length > 0 ? questionTimes.reduce((a, b) => a + b, 0) / questionTimes.length : 0;
@@ -164,6 +196,7 @@ export function DailyTaskDashboard() {
         
         if (result.reward > 0) {
           setLastClaimedReward(result.reward);
+          if (result.warning) setServerWarning(result.warning);
           setShowSuccess(true);
         } else {
           toast({ 
@@ -194,7 +227,10 @@ export function DailyTaskDashboard() {
                 <CardTitle className="text-xl font-black tracking-tight">Daily Missions</CardTitle>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[8px] uppercase">{user?.userTier || 'Bronze'}</Badge>
-                  <div className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground"><Zap className="w-3 h-3 text-primary" /><span>{pacingFeedback.label}</span></div>
+                  <div className={cn("flex items-center gap-1 text-[9px] font-bold", calibration.feedback.color)}>
+                    {calibration.feedback.icon}
+                    <span>{calibration.feedback.label}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -206,7 +242,10 @@ export function DailyTaskDashboard() {
             </div>
           </div>
           <div className="space-y-2">
-            <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground"><span className="flex items-center gap-1.5"><ShieldCheck className="w-3 h-3 text-primary" /> Quality Score</span><span>{Math.round(totalProgress)}%</span></div>
+            <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span className="flex items-center gap-1.5"><ShieldCheck className="w-3 h-3 text-primary" /> Reward Calibration</span>
+              <span>{Math.round(totalProgress)}% Complete</span>
+            </div>
             <Progress value={totalProgress} className="h-2 rounded-full bg-muted shadow-inner" />
           </div>
         </CardHeader>
@@ -215,6 +254,8 @@ export function DailyTaskDashboard() {
           <div className="grid grid-cols-1 gap-3">
             {tasks.map((task) => {
               const isComplete = task.current >= task.goal;
+              const adjustedReward = Math.floor(task.reward * calibration.totalMult);
+              
               return (
                 <div key={task.id} className={cn("p-4 rounded-[1.5rem] border transition-all flex items-center justify-between group", task.isClaimed ? "opacity-40 bg-muted/20 grayscale" : isComplete ? "bg-accent/5 border-accent/30 shadow-sm" : "bg-card border-border hover:border-primary/30")}>
                   <div className="flex items-center gap-4">
@@ -224,7 +265,9 @@ export function DailyTaskDashboard() {
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1 bg-yellow-500/5 px-2 py-1 rounded-lg border border-yellow-500/10">
                       <Coins className="w-3 h-3 text-yellow-600 fill-current" />
-                      <span className="text-[10px] font-black text-yellow-700">+{task.reward}</span>
+                      <span className="text-[10px] font-black text-yellow-700">
+                        {task.isClaimed ? `+${task.reward}` : `+${adjustedReward}`}
+                      </span>
                     </div>
                     {task.isClaimed ? <Badge variant="outline" className="text-[8px] font-bold uppercase text-emerald-600">Claimed</Badge> : isComplete ? <Star className="w-4 h-4 text-amber-500 fill-current animate-bounce" /> : <span className="text-[10px] font-bold text-muted-foreground">{task.current}/{task.goal}</span>}
                   </div>
@@ -236,7 +279,7 @@ export function DailyTaskDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Button onClick={() => handleClaimReward()} disabled={!user || claiming || !canClaimAny} className="h-14 rounded-2xl font-black text-base gap-3 shadow-xl shadow-primary/20 group relative overflow-hidden">
               {claiming ? <Loader2 className="w-5 h-5 animate-spin" /> : canClaimAny ? <Gift className="w-5 h-5" /> : <Star className="w-5 h-5" />}
-              {claiming ? 'Syncing...' : canClaimAny ? `Claim ${totalEarnedToday} Credits` : 'Build Readiness'}
+              {claiming ? 'Syncing...' : canClaimAny ? `Claim ${estimatedReward} Credits` : 'Build Readiness'}
             </Button>
             <Button variant="outline" onClick={() => handleClaimReward(true)} disabled={recovering || (typeof user?.credits === 'number' ? user.credits : 0) < 50 || !!user?.taskLoginClaimed} className="h-14 rounded-2xl font-bold text-sm gap-2 border-2 border-orange-500/20 text-orange-600 hover:bg-orange-50">
               {recovering ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />} Streak Saver (50c)
@@ -245,7 +288,12 @@ export function DailyTaskDashboard() {
 
           <div className="p-4 bg-primary/5 rounded-2xl border-2 border-dashed border-primary/10 flex items-start gap-3">
             <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-            <p className="text-[10px] font-medium text-muted-foreground leading-relaxed"><span className="text-primary font-bold uppercase">Pedagogical Note:</span> Deeper focus (15s+ per item) maximizes reward calibration.</p>
+            <div className="space-y-1">
+              <p className="text-[10px] font-medium text-muted-foreground leading-relaxed">
+                <span className="text-primary font-bold uppercase">Pedagogical Note:</span> 
+                Deeper focus (15s+ per item) maximizes reward calibration. Items completed under 4s trigger quality penalties.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -301,6 +349,13 @@ export function DailyTaskDashboard() {
                 </DialogDescription>
               </DialogHeader>
             </motion.div>
+
+            {serverWarning && (
+              <div className="p-3 bg-rose-50 rounded-xl border border-rose-100 flex items-start gap-2 text-left">
+                <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+                <p className="text-[9px] font-bold text-rose-700 leading-tight">{serverWarning}</p>
+              </div>
+            )}
 
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
