@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
@@ -19,7 +18,7 @@ import {
 import { 
   GraduationCap, 
   BrainCircuit, 
-  ChevronRight,
+  ChevronRight, 
   Zap,
   Trophy,
   Flame,
@@ -183,12 +182,14 @@ function LetsPrepContent() {
   // APK State
   const [apkInfo, setApkInfo] = useState<any>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
+  const [isQrLoading, setIsQrLoading] = useState(true);
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
   useEffect(() => {
     const fetchApkAndGenerateQR = async () => {
       try {
+        setIsQrLoading(true);
         const res = await fetch('/api/apk');
         const data = await res.json();
         setApkInfo(data);
@@ -207,6 +208,8 @@ function LetsPrepContent() {
         setQrCodeUrl(qrDataUrl);
       } catch (e) {
         console.error('Error fetching APK info or generating QR code:', e);
+      } finally {
+        setIsQrLoading(false);
       }
     };
     fetchApkAndGenerateQR();
@@ -336,7 +339,7 @@ function LetsPrepContent() {
   };
 
   const handleDownloadApk = () => {
-    // We use the proxy route which points to the GitHub binary
+    // We use the proxy route which performs the background handshake
     const downloadUrl = '/api/download';
     const link = document.createElement('a');
     link.href = downloadUrl;
@@ -603,18 +606,40 @@ function LetsPrepContent() {
                       </Badge>
                     </div>
                     
-                    {qrCodeUrl && (
-                      <div className="flex flex-col items-center justify-center p-5 bg-white rounded-3xl border-2 border-dashed border-emerald-500/20 relative group">
-                        <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
-                        <div className="w-32 h-32 relative z-10 bg-white p-1 rounded-xl shadow-sm">
-                          <img src={qrCodeUrl} alt="Download QR Code" className="w-full h-full object-contain" />
-                        </div>
-                        <div className="flex items-center gap-2 mt-3 text-emerald-600">
-                          <QrCode className="w-3.5 h-3.5" />
-                          <p className="text-[10px] font-black uppercase tracking-[0.2em]">Scan to Download</p>
-                        </div>
-                      </div>
-                    )}
+                    <div className="flex flex-col items-center justify-center p-5 bg-white rounded-3xl border-2 border-dashed border-emerald-500/20 relative group overflow-hidden">
+                      <AnimatePresence mode="wait">
+                        {isQrLoading ? (
+                          <motion.div 
+                            key="loader"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="w-32 h-32 flex items-center justify-center"
+                          >
+                            <div className="w-full h-full bg-emerald-50/50 animate-pulse rounded-xl flex items-center justify-center">
+                              <Loader2 className="w-6 h-6 text-emerald-300 animate-spin" />
+                            </div>
+                          </motion.div>
+                        ) : qrCodeUrl ? (
+                          <motion.div 
+                            key="qr"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ type: "spring", damping: 15, stiffness: 200 }}
+                            className="flex flex-col items-center"
+                          >
+                            <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
+                            <div className="w-32 h-32 relative z-10 bg-white p-1 rounded-xl shadow-sm border border-emerald-100">
+                              <img src={qrCodeUrl} alt="Download QR Code" className="w-full h-full object-contain" />
+                            </div>
+                            <div className="flex items-center gap-2 mt-3 text-emerald-600 relative z-10">
+                              <QrCode className="w-3.5 h-3.5" />
+                              <p className="text-[10px] font-black uppercase tracking-[0.2em]">Scan to Download</p>
+                            </div>
+                          </motion.div>
+                        ) : null}
+                      </AnimatePresence>
+                    </div>
 
                     <div className="space-y-3">
                       <Button 
