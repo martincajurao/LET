@@ -186,6 +186,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
     setUnlocking(true);
     try {
       const userRef = doc(firestore, 'users', user.uid);
+      // Use increment(-10) to ensure atomicity
       await updateDoc(userRef, {
         credits: increment(-10)
       });

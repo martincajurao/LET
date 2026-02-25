@@ -176,12 +176,8 @@ export function Navbar() {
     },
   ];
 
-  // Defensive values for UI to prevent crash
-  const creditsValue = typeof user?.credits === 'number' ? user.credits : 0;
-  const xpValue = typeof user?.xp === 'number' ? user.xp : 0;
-  const xpInRank = typeof rankData?.xpInRank === 'number' ? rankData.xpInRank : 0;
-  const nextRankXp = typeof rankData?.nextRankXp === 'number' ? rankData.nextRankXp : 100;
-  const progressValue = typeof rankData?.progress === 'number' ? rankData.progress : 0;
+  // Defensive values for UI to prevent object-as-child errors during increments
+  const creditsValue = typeof user?.credits === 'number' ? user.credits : (user as any)?._pendingCredits || 0;
 
   return (
     <>
@@ -213,9 +209,9 @@ export function Navbar() {
               <div className="hidden lg:flex flex-col items-end gap-1 min-w-[120px] mr-2">
                 <div className="flex justify-between w-full px-1">
                   <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">{rankData?.title}</span>
-                  <span className="text-[8px] font-black text-primary">{Math.round(progressValue)}%</span>
+                  <span className="text-[8px] font-black text-primary">{Math.round(rankData?.progress || 0)}%</span>
                 </div>
-                <Progress value={progressValue} className="h-1 w-full bg-muted" />
+                <Progress value={rankData?.progress} className="h-1 w-full bg-muted" />
               </div>
             )}
 
@@ -310,9 +306,9 @@ export function Navbar() {
                       <div className="px-3 py-2 space-y-2">
                         <div className="flex justify-between items-center text-[10px] font-black uppercase">
                           <span className="text-muted-foreground">{rankData?.title}</span>
-                          <span className="text-primary">{xpInRank} / {nextRankXp} XP</span>
+                          <span className="text-primary">{rankData?.xpInRank || 0} / {rankData?.nextRankXp} XP</span>
                         </div>
-                        <Progress value={progressValue} className="h-1.5" />
+                        <Progress value={rankData?.progress} className="h-1.5" />
                       </div>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator className="my-2 bg-border/50" />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useRef } from 'react';
 import {
   onAuthStateChanged,
   signInWithPopup,
@@ -88,16 +88,16 @@ const AuthContext = createContext<AuthContextType>({
  */
 function isFirestoreInternal(val: any): boolean {
   if (!val || typeof val !== 'object') return false;
-  return val.constructor?.name === 'FieldValue' || typeof val._methodName === 'string';
+  return val.constructor?.name === 'FieldValue' || (val._methodName && typeof val._methodName === 'string');
 }
 
 /**
  * Scrubs the user object of any non-renderable Firestore objects.
+ * Uses previous state as a fallback to prevent "jumping to 0" during pending increments.
  */
-function scrubUserData(data: any): UserProfile {
+function scrubUserData(data: any, prevUser: UserProfile | null): UserProfile {
   const scrubbed: any = { ...data };
   
-  // Numerical fields prone to increment() latency objects
   const numFields = [
     'credits', 'xp', 'streakCount', 'dailyAdCount', 
     'dailyQuestionsAnswered', 'dailyTestsFinished', 
@@ -105,24 +105,25 @@ function scrubUserData(data: any): UserProfile {
     'mistakesReviewed', 'dailyAiUsage'
   ];
 
-  // Timestamp fields prone to serverTimestamp() latency objects
   const dateFields = ['lastAdXpTimestamp', 'lastQuickFireTimestamp', 'lastActiveDate', 'lastTaskReset', 'lastQualityUpdate', 'lastExplanationRequest'];
 
   for (const key in scrubbed) {
     if (isFirestoreInternal(scrubbed[key])) {
       if (numFields.includes(key)) {
-        scrubbed[key] = data[key]?.previousValue || 0; // Attempt to use previous value or fallback to 0
+        // Preserve last known numeric value if pending increment, otherwise default 0
+        scrubbed[key] = (prevUser as any)?.[key] ?? 0;
       } else if (dateFields.includes(key)) {
-        scrubbed[key] = Date.now(); // Fallback to current time
+        // Preserve last known timestamp or use current time
+        scrubbed[key] = (prevUser as any)?.[key] ?? Date.now();
       } else {
         scrubbed[key] = null;
       }
     }
   }
 
-  // Ensure these are always numbers for UI rendering
+  // Ensure primitives for UI
   numFields.forEach(field => {
-    if (typeof scrubbed[field] !== 'number') scrubbed[field] = 0;
+    if (typeof scrubbed[field] !== 'number') scrubbed[field] = (prevUser as any)?.[field] ?? 0;
   });
 
   return scrubbed as UserProfile;
@@ -157,6 +158,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const userRef = useRef<UserProfile | null>(null);
+
+  // Sync ref with state for use in the async scrub callback
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   useEffect(() => {
     if (!auth || !firestore) {
@@ -178,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         unsubFromProfile = onSnapshot(userDocRef, async (snap) => {
           if (snap.exists()) {
             const data = snap.data();
-            const scrubbed = scrubUserData(data);
+            const scrubbed = scrubUserData(data, userRef.current);
             setUser({
               ...scrubbed,
               uid: firebaseUser.uid,
@@ -216,7 +223,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             };
             try {
               await setDoc(userDocRef, newUserProfile);
-              // Note: setUser will be called by onSnapshot above once local setDoc resolves
             } catch (error) {
               console.error("Error creating user document:", error);
               toast({ variant: "destructive", title: "Setup Failed", description: "Could not create your user profile." });
