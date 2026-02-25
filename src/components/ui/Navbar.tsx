@@ -117,7 +117,7 @@ export function Navbar() {
   const handleWatchAd = async () => {
     if (!user || !firestore) return;
     if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
-      toast({ title: "Daily Limit Reached", description: "You've reached your daily professional clip allowance.", variant: "destructive" });
+      toast({ title: "Daily Limit Reached", description: "You've reached your daily professional allowance.", variant: "destructive" });
       return;
     }
     
@@ -135,7 +135,11 @@ export function Navbar() {
             lastAdXpTimestamp: Date.now(),
             dailyAdCount: increment(1)
           });
-          toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added.` });
+          toast({ 
+            variant: "reward",
+            title: "Growth Boost Received!", 
+            description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added to vault.` 
+          });
           setShowAdModal(false);
           setShowAlertsModal(false);
         } catch (e) {
@@ -388,7 +392,7 @@ export function Navbar() {
             </div>
             <DialogTitle className="text-2xl font-black text-center">{verifyingAd ? "Verifying Access..." : "Refill AI Credits"}</DialogTitle>
             <DialogDescription className="text-center text-muted-foreground font-medium">
-              {verifyingAd ? "Our system is validating your professional clip viewing." : "Watch a professional tutorial to earn "}<span className="text-primary font-black">+5 Credits</span>.
+              {verifyingAd ? "Our system is validating your professional viewing." : "Watch a professional tutorial to earn "}<span className="text-primary font-black">+5 Credits</span>.
             </DialogDescription>
           </DialogHeader>
           

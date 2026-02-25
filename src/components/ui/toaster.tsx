@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useToast } from "@/hooks/use-toast"
@@ -10,7 +9,7 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast"
-import { Copy, Check } from "lucide-react"
+import { Copy, Check, Star, Zap, Coins } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 
@@ -20,13 +19,27 @@ export function Toaster() {
   return (
     <ToastProvider>
       {toasts.map(function ({ id, title, description, action, ...props }) {
+        const isReward = props.variant === 'reward';
+        const titleStr = typeof title === 'string' ? title.toLowerCase() : '';
+        const isXp = titleStr.includes('xp') || titleStr.includes('growth');
+        const isCredit = titleStr.includes('credit') || titleStr.includes('refill');
+
         return (
           <Toast key={id} {...props}>
-            <div className="grid gap-1 pr-8">
-              {title && <ToastTitle>{title}</ToastTitle>}
-              {description && (
-                <ToastDescription>{description}</ToastDescription>
+            <div className="flex gap-4 w-full">
+              {isReward && (
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0 shadow-inner">
+                  {isXp ? <Zap className="w-5 h-5 fill-current" /> : 
+                   isCredit ? <Coins className="w-5 h-5 fill-current text-yellow-300" /> : 
+                   <Star className="w-5 h-5 fill-current" />}
+                </div>
               )}
+              <div className="grid gap-1 pr-8">
+                {title && <ToastTitle>{title}</ToastTitle>}
+                {description && (
+                  <ToastDescription>{description}</ToastDescription>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {props.variant === "destructive" && (

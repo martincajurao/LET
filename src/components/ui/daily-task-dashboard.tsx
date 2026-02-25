@@ -28,7 +28,8 @@ import {
   RotateCcw,
   Info,
   CheckCircle2,
-  ChevronRight
+  ChevronRight,
+  Sparkles
 } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
@@ -131,7 +132,6 @@ export function DailyTaskDashboard() {
       
       const userRef = doc(firestore, 'users', user.uid);
 
-      // Handle server-instructed reset
       if (result.shouldResetDaily) {
         await updateDoc(userRef, {
           dailyQuestionsAnswered: 0,
@@ -166,7 +166,11 @@ export function DailyTaskDashboard() {
           setLastClaimedReward(result.reward);
           setShowSuccess(true);
         } else {
-          toast({ title: isRecovery ? "Streak Recovered!" : "Mission Updated!" });
+          toast({ 
+            variant: "reward",
+            title: isRecovery ? "Streak Recovered!" : "Mission Refilled!", 
+            description: isRecovery ? "Your progress has been preserved." : "Keep up the analytical pace."
+          });
         }
       } else if (result.error) {
         toast({ variant: "destructive", title: "Sync Failed", description: result.error });
@@ -241,7 +245,7 @@ export function DailyTaskDashboard() {
 
           <div className="p-4 bg-primary/5 rounded-2xl border-2 border-dashed border-primary/10 flex items-start gap-3">
             <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-            <p className="text-[10px] font-medium text-muted-foreground leading-relaxed"><span className="text-primary font-bold uppercase">Pedagogical Note:</span> Deeper focus (15s+ per item) maximizes reward calibration. Rapid guessing triggers volume penalties.</p>
+            <p className="text-[10px] font-medium text-muted-foreground leading-relaxed"><span className="text-primary font-bold uppercase">Pedagogical Note:</span> Deeper focus (15s+ per item) maximizes reward calibration.</p>
           </div>
         </CardContent>
       </Card>
@@ -249,7 +253,7 @@ export function DailyTaskDashboard() {
       {/* Success Dialog */}
       <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
         <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-0 max-w-[320px] overflow-hidden outline-none">
-          <div className="bg-primary/10 p-10 flex flex-col items-center justify-center relative">
+          <div className="bg-primary/10 p-10 flex flex-col items-center justify-center relative overflow-hidden">
             <motion.div
               initial={{ scale: 0, rotate: -45 }}
               animate={{ scale: 1, rotate: 0 }}
@@ -258,7 +262,29 @@ export function DailyTaskDashboard() {
             >
               <CheckCircle2 className="w-10 h-10" />
             </motion.div>
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card z-0" />
+            
+            <motion.div 
+              animate={{ 
+                scale: [1, 1.2, 1],
+                opacity: [0.2, 0.4, 0.2] 
+              }}
+              transition={{ duration: 3, repeat: Infinity }}
+              className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent z-0" 
+            />
+            
+            <div className="absolute inset-0 z-5 pointer-events-none">
+              {[...Array(5)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 0 }}
+                  animate={{ opacity: [0, 1, 0], y: -80, x: (i - 2) * 30 }}
+                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.4 }}
+                  className="absolute bottom-0 left-1/2"
+                >
+                  <Sparkles className="w-3 h-3 text-primary fill-current" />
+                </motion.div>
+              ))}
+            </div>
           </div>
           
           <div className="p-8 pt-2 text-center space-y-6">
