@@ -29,8 +29,7 @@ import {
   Info,
   CheckCircle2,
   ChevronRight,
-  Sparkles,
-  AlertTriangle
+  Sparkles
 } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
@@ -63,7 +62,6 @@ export function DailyTaskDashboard() {
   const [serverWarning, setServerWarning] = useState<string | null>(null);
   const [deviceFingerprint, setDeviceFingerprint] = useState('');
   const [sessionStartTime] = useState(Date.now());
-  const [questionTimes, setQuestionTimes] = useState<number[]>([]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -71,46 +69,6 @@ export function DailyTaskDashboard() {
       setDeviceFingerprint(btoa(fingerprint).substring(0, 16));
     }
   }, []);
-
-  useEffect(() => {
-    const handleQuestionAnswered = () => {
-      // In a real scenario, this would track actual time between events
-      // For this prototype, we simulate a tracked interval
-      setQuestionTimes(prev => [...prev, Math.floor(Math.random() * 20) + 5]);
-    };
-    window.addEventListener('questionAnswered', handleQuestionAnswered);
-    return () => window.removeEventListener('questionAnswered', handleQuestionAnswered);
-  }, []);
-
-  // Multiplier Logic (Synced with server)
-  const calibration = useMemo(() => {
-    const tierMultipliers: Record<string, number> = {
-      'Bronze': 1.0,
-      'Silver': 1.1,
-      'Gold': 1.2,
-      'Platinum': 1.3
-    };
-    
-    const tierMult = tierMultipliers[user?.userTier || 'Bronze'] || 1.0;
-    const avgTime = questionTimes.length > 0 
-      ? questionTimes.reduce((a, b) => a + b, 0) / questionTimes.length 
-      : (user?.averageQuestionTime || 0);
-    
-    let trustMultiplier = 1.0;
-    let feedback = { label: 'Standard Pacing', color: 'text-muted-foreground', icon: <Zap className="w-3 h-3" /> };
-
-    if ((user?.dailyQuestionsAnswered || 0) > 5) {
-      if (avgTime < 4) {
-        trustMultiplier = 0.3;
-        feedback = { label: 'Speed Penalty (0.3x)', color: 'text-rose-500', icon: <AlertTriangle className="w-3 h-3" /> };
-      } else if (avgTime >= 15 && avgTime <= 90) {
-        trustMultiplier = 1.2;
-        feedback = { label: 'Focus Bonus (1.2x)', color: 'text-emerald-500', icon: <Sparkles className="w-3 h-3" /> };
-      }
-    }
-
-    return { tierMult, trustMultiplier, feedback, totalMult: tierMult * trustMultiplier };
-  }, [user, questionTimes]);
 
   const tasks: Task[] = useMemo(() => [
     { id: 'login', title: 'Daily Entrance', description: 'Access simulation vault', reward: 5, goal: 1, current: user ? 1 : 0, isClaimed: !!user?.taskLoginClaimed, icon: <Key className="w-5 h-5" />, color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' },
@@ -124,10 +82,8 @@ export function DailyTaskDashboard() {
   
   const estimatedReward = useMemo(() => {
     const readyTasks = tasks.filter(t => t.current >= t.goal && !t.isClaimed);
-    const baseTotal = readyTasks.reduce((acc, task) => acc + task.reward, 0);
-    // Apply multipliers exactly like server
-    return Math.floor(baseTotal * calibration.totalMult);
-  }, [tasks, calibration]);
+    return readyTasks.reduce((acc, task) => acc + task.reward, 0);
+  }, [tasks]);
 
   const handleClaimReward = async (isRecovery = false) => {
     if (!user || !firestore || (claiming && !isRecovery)) return;
@@ -135,7 +91,6 @@ export function DailyTaskDashboard() {
     setServerWarning(null);
     
     try {
-      const avgTime = questionTimes.length > 0 ? questionTimes.reduce((a, b) => a + b, 0) / questionTimes.length : 0;
       const response = await fetch('/api/daily-task', { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
@@ -153,7 +108,6 @@ export function DailyTaskDashboard() {
           lastActiveDate: user.lastActiveDate, 
           lastTaskReset: user.lastTaskReset,
           totalSessionTime: (Date.now() - sessionStartTime) / 1000, 
-          averageQuestionTime: avgTime, 
           isPro: !!user.isPro, 
           userTier: user.userTier || 'Bronze', 
           deviceFingerprint, 
@@ -227,9 +181,9 @@ export function DailyTaskDashboard() {
                 <CardTitle className="text-xl font-black tracking-tight">Daily Missions</CardTitle>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[8px] uppercase">{user?.userTier || 'Bronze'}</Badge>
-                  <div className={cn("flex items-center gap-1 text-[9px] font-bold", calibration.feedback.color)}>
-                    {calibration.feedback.icon}
-                    <span>{calibration.feedback.label}</span>
+                  <div className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground">
+                    <ShieldCheck className="w-3 h-3" />
+                    <span>Verified Professional Rate</span>
                   </div>
                 </div>
               </div>
@@ -243,7 +197,7 @@ export function DailyTaskDashboard() {
           </div>
           <div className="space-y-2">
             <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              <span className="flex items-center gap-1.5"><ShieldCheck className="w-3 h-3 text-primary" /> Reward Calibration</span>
+              <span>Mission Progress</span>
               <span>{Math.round(totalProgress)}% Complete</span>
             </div>
             <Progress value={totalProgress} className="h-2 rounded-full bg-muted shadow-inner" />
@@ -254,7 +208,6 @@ export function DailyTaskDashboard() {
           <div className="grid grid-cols-1 gap-3">
             {tasks.map((task) => {
               const isComplete = task.current >= task.goal;
-              const adjustedReward = Math.floor(task.reward * calibration.totalMult);
               
               return (
                 <div key={task.id} className={cn("p-4 rounded-[1.5rem] border transition-all flex items-center justify-between group", task.isClaimed ? "opacity-40 bg-muted/20 grayscale" : isComplete ? "bg-accent/5 border-accent/30 shadow-sm" : "bg-card border-border hover:border-primary/30")}>
@@ -265,9 +218,7 @@ export function DailyTaskDashboard() {
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1 bg-yellow-500/5 px-2 py-1 rounded-lg border border-yellow-500/10">
                       <Coins className="w-3 h-3 text-yellow-600 fill-current" />
-                      <span className="text-[10px] font-black text-yellow-700">
-                        {task.isClaimed ? `+${task.reward}` : `+${adjustedReward}`}
-                      </span>
+                      <span className="text-[10px] font-black text-yellow-700">+{task.reward}</span>
                     </div>
                     {task.isClaimed ? <Badge variant="outline" className="text-[8px] font-bold uppercase text-emerald-600">Claimed</Badge> : isComplete ? <Star className="w-4 h-4 text-amber-500 fill-current animate-bounce" /> : <span className="text-[10px] font-bold text-muted-foreground">{task.current}/{task.goal}</span>}
                   </div>
@@ -290,8 +241,8 @@ export function DailyTaskDashboard() {
             <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
             <div className="space-y-1">
               <p className="text-[10px] font-medium text-muted-foreground leading-relaxed">
-                <span className="text-primary font-bold uppercase">Pedagogical Note:</span> 
-                Deeper focus (15s+ per item) maximizes reward calibration. Items completed under 4s trigger quality penalties.
+                <span className="text-primary font-bold uppercase">Standard Rate:</span> 
+                All tasks are currently rewarded at baseline professional values. Complete your daily missions to maintain your board readiness.
               </p>
             </div>
           </div>
@@ -345,17 +296,10 @@ export function DailyTaskDashboard() {
               <DialogHeader>
                 <DialogTitle className="text-2xl font-black tracking-tight text-foreground">Mission Accomplished!</DialogTitle>
                 <DialogDescription className="text-muted-foreground font-semibold text-[10px] uppercase tracking-[0.2em]">
-                  Academic Calibration Successful
+                  Credits Added to Vault
                 </DialogDescription>
               </DialogHeader>
             </motion.div>
-
-            {serverWarning && (
-              <div className="p-3 bg-rose-50 rounded-xl border border-rose-100 flex items-start gap-2 text-left">
-                <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
-                <p className="text-[9px] font-bold text-rose-700 leading-tight">{serverWarning}</p>
-              </div>
-            )}
 
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -363,7 +307,7 @@ export function DailyTaskDashboard() {
               transition={{ delay: 0.5 }}
               className="bg-muted/30 rounded-2xl p-4 border border-border/50 flex flex-col items-center gap-1"
             >
-              <span className="text-[9px] font-black uppercase text-muted-foreground">Reward Added</span>
+              <span className="text-[9px] font-black uppercase text-muted-foreground">Reward Total</span>
               <div className="flex items-center gap-2">
                 <Coins className="w-6 h-6 text-yellow-600 fill-current" />
                 <span className="text-3xl font-black text-foreground">+{claimedReward}</span>

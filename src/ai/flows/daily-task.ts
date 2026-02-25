@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview Refined daily task processing with Adaptive Trust Scoring and Streak Recovery.
- * Implements trust-based multipliers and pedagogical pacing guidance.
+ * @fileOverview Standardized daily task processing.
+ * Restored to original rates by removing speed-based penalties and trust multipliers.
  */
 
 import { ai } from '@/ai/genkit';
@@ -72,8 +72,6 @@ const dailyTaskFlow = ai.defineFlow(
         taskMistakesClaimed = false,
         lastActiveDate,
         lastTaskReset,
-        totalSessionTime = 0,
-        averageQuestionTime = 0,
         isPro = false,
         userTier = 'Bronze',
         isStreakRecoveryRequested = false
@@ -83,10 +81,10 @@ const dailyTaskFlow = ai.defineFlow(
       const abuseFlags: string[] = [];
       const warnings: string[] = [];
       const recommendedActions: string[] = [];
-      let trustMultiplier = 1.0;
+      let trustMultiplier = 1.0; // RESTORED: Fixed at baseline
       let streakAction: 'none' | 'recovered' | 'lost' | 'maintained' = 'maintained';
       
-      // 0. DAILY RESET CHECK (Calendar Day logic)
+      // 0. DAILY RESET CHECK
       let shouldResetDaily = false;
       const lastReset = lastTaskReset?.toDate ? lastTaskReset.toDate() : (typeof lastTaskReset === 'number' ? new Date(lastTaskReset) : null);
       if (lastReset) {
@@ -95,20 +93,7 @@ const dailyTaskFlow = ai.defineFlow(
         }
       }
 
-      // 1. TRUST SCORE & ABUSE DETECTION
-      if (dailyQuestionsAnswered > 5) {
-        if (averageQuestionTime < 4) {
-          abuseFlags.push('suspicious_speed');
-          warnings.push('Speed too fast: Quality penalty applied.');
-          trustMultiplier = 0.3;
-          recommendedActions.push('Spend at least 15s per question to restore reward levels.');
-        } else if (averageQuestionTime >= 15 && averageQuestionTime <= 90) {
-          trustMultiplier = 1.2; // Bonus for high-quality deep focus
-          recommendedActions.push('Excellent pacing! Keep this analytical flow.');
-        }
-      }
-
-      // 2. STREAK VALIDATION & RECOVERY (Profitability Hack)
+      // 1. STREAK VALIDATION & RECOVERY
       const lastActive = lastActiveDate?.toDate ? lastActiveDate.toDate() : (typeof lastActiveDate === 'number' ? new Date(lastActiveDate) : null);
       const recoveryCost = 50; 
 
@@ -119,75 +104,54 @@ const dailyTaskFlow = ai.defineFlow(
         if (diffDays > 1) {
           if (isStreakRecoveryRequested && !taskLoginClaimed) {
             streakAction = 'recovered';
-            recommendedActions.push('Streak saved! 50 Credits spent on recovery.');
+            recommendedActions.push('Streak saved!');
           } else if (diffDays > 2) {
             streakAction = 'lost';
-            abuseFlags.push('streak_broken');
-            warnings.push('Long inactivity: Streak has been reset.');
+            warnings.push('Inactivity: Streak reset.');
           }
         }
       }
 
-      // 3. GOALS & REWARDS (Adaptive by Tier)
+      // 2. GOALS & REWARDS (Standard Rates Restored)
       const tasksCompleted: string[] = [];
       let totalReward = 0;
-      let qualityBonus = 0;
 
-      const tierMultipliers = {
-        'Bronze': { questions: 20, tests: 1, mistakes: 10, rewardMultiplier: 1.0 },
-        'Silver': { questions: 25, tests: 1, mistakes: 12, rewardMultiplier: 1.1 },
-        'Gold': { questions: 30, tests: 2, mistakes: 15, rewardMultiplier: 1.2 },
-        'Platinum': { questions: 35, tests: 2, mistakes: 18, rewardMultiplier: 1.3 }
+      const tierGoals = {
+        'Bronze': { questions: 20, tests: 1, mistakes: 10 },
+        'Silver': { questions: 25, tests: 1, mistakes: 12 },
+        'Gold': { questions: 30, tests: 2, mistakes: 15 },
+        'Platinum': { questions: 35, tests: 2, mistakes: 18 }
       };
 
-      const config = tierMultipliers[userTier as keyof typeof tierMultipliers] || tierMultipliers.Bronze;
+      const config = tierGoals[userTier as keyof typeof tierGoals] || tierGoals.Bronze;
 
-      // Only process rewards if no reset is pending (reset clears these anyway)
       if (!shouldResetDaily) {
-        // Login (Calibrated for baseline)
         if (!taskLoginClaimed) {
-          totalReward += Math.floor(5 * trustMultiplier);
+          totalReward += 5;
           tasksCompleted.push('login');
         }
 
-        // Question Goal
         if (dailyQuestionsAnswered >= config.questions && !taskQuestionsClaimed) {
-          totalReward += Math.floor(10 * config.rewardMultiplier * trustMultiplier);
+          totalReward += 10;
           tasksCompleted.push('questions');
-          if (trustMultiplier >= 1.2) qualityBonus += 5;
         }
 
-        // Mock Test Goal
         if (dailyTestsFinished >= config.tests && !taskMockClaimed) {
-          totalReward += Math.floor(15 * config.rewardMultiplier * trustMultiplier);
+          totalReward += 15;
           tasksCompleted.push('mock');
         }
 
-        // Mistakes Goal
         if (mistakesReviewed >= config.mistakes && !taskMistakesClaimed) {
-          totalReward += Math.floor(10 * config.rewardMultiplier * trustMultiplier);
+          totalReward += 10;
           tasksCompleted.push('mistakes');
         }
-
-        // Perfect Day Bonus
-        if (tasksCompleted.length >= 4) {
-          qualityBonus += 10;
-          recommendedActions.push('Perfect daily performance! Maximum calibration reached.');
-        }
       }
 
-      // 4. PROGRESSIVE LIMITS
-      let maxDaily = isPro ? 200 : (userTier === 'Platinum' ? 120 : 80);
-      if (abuseFlags.includes('suspicious_speed')) maxDaily = 30;
-
-      const potentialTotal = totalReward + qualityBonus;
-      const actualReward = (dailyCreditEarned + potentialTotal > maxDaily) 
+      // 3. PROGRESSIVE LIMITS
+      const maxDaily = isPro ? 200 : 80;
+      const actualReward = (dailyCreditEarned + totalReward > maxDaily) 
         ? Math.max(0, maxDaily - dailyCreditEarned) 
-        : potentialTotal;
-
-      if (actualReward === 0 && potentialTotal > 0) {
-        warnings.push('Daily earning limit reached. Simulations remain free.');
-      }
+        : totalReward;
 
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -197,13 +161,12 @@ const dailyTaskFlow = ai.defineFlow(
         reward: actualReward,
         tasksCompleted,
         streakBonus: 0, 
-        qualityBonus,
-        trustMultiplier,
+        qualityBonus: 0,
+        trustMultiplier: 1.0,
         nextResetTime: tomorrow.getTime(),
         shouldResetDaily,
         recommendedActions,
         warning: warnings.join(' '),
-        abuseFlags: abuseFlags.length > 0 ? abuseFlags : undefined,
         streakAction,
         recoveryCost: streakAction === 'lost' ? recoveryCost : undefined
       };
