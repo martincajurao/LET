@@ -22,7 +22,7 @@ import {
   ChevronRight,
   Flame
 } from 'lucide-react';
-import { COOLDOWNS, XP_REWARDS } from '@/lib/xp-system';
+import { COOLDOWNS, XP_REWARDS, DAILY_AD_LIMIT } from '@/lib/xp-system';
 import { cn } from '@/lib/utils';
 
 interface NotificationsModalProps {
@@ -64,7 +64,8 @@ export function NotificationsModal({
     return `${mins}m`;
   };
 
-  const adAvailable = adTimeLeft === 0;
+  const adReachedLimit = (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT;
+  const adAvailable = adTimeLeft === 0 && !adReachedLimit;
   const qfAvailable = qfTimeLeft === 0;
 
   return (
@@ -142,7 +143,9 @@ export function NotificationsModal({
                   <p className="text-[10px] font-medium text-muted-foreground">+{XP_REWARDS.AD_WATCH_XP} XP & +5 Credits</p>
                 </div>
               </div>
-              {adAvailable ? (
+              {adReachedLimit ? (
+                <Badge variant="outline" className="text-rose-500 border-rose-500/30 font-black text-[9px] uppercase">Limit Reached</Badge>
+              ) : adAvailable ? (
                 <Badge className="bg-yellow-500/10 text-yellow-600 border-none font-black text-[9px] uppercase">Available</Badge>
               ) : (
                 <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground">
@@ -163,9 +166,12 @@ export function NotificationsModal({
                 adAvailable ? "bg-yellow-500 hover:bg-yellow-600 text-white shadow-yellow-500/20" : ""
               )}
             >
-              {isWatchingAd ? <Loader2 className="w-4 h-4 animate-spin" /> : adAvailable ? <Play className="w-4 h-4 fill-current" /> : <CheckCircle2 className="w-4 h-4" />}
-              {isWatchingAd ? "Loading Clip..." : adAvailable ? "Refill Growth Boost" : `Next: ${formatTime(adTimeLeft)}`}
+              {isWatchingAd ? <Loader2 className="w-4 h-4 animate-spin" /> : adReachedLimit ? <CheckCircle2 className="w-4 h-4" /> : adAvailable ? "Refill Growth Boost" : `Next: ${formatTime(adTimeLeft)}`}
+              {isWatchingAd ? "Loading Clip..." : adReachedLimit ? "Limit Reached" : ""}
             </Button>
+            {adReachedLimit && (
+              <p className="text-[8px] font-bold text-center text-muted-foreground uppercase mt-2 tracking-widest">Allowance: {DAILY_AD_LIMIT}/{DAILY_AD_LIMIT} clips</p>
+            )}
           </div>
         </div>
 

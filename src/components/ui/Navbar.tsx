@@ -52,7 +52,7 @@ import { doc, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/hooks/use-theme';
 import { cn } from '@/lib/utils';
-import { getRankData, XP_REWARDS, COOLDOWNS } from '@/lib/xp-system';
+import { getRankData, XP_REWARDS, COOLDOWNS, DAILY_AD_LIMIT } from '@/lib/xp-system';
 import { NotificationsModal } from './notifications-modal';
 import { useRouter } from 'next/navigation';
 
@@ -80,7 +80,7 @@ export function Navbar() {
 
     const calculateAvailable = () => {
       const now = Date.now();
-      const adAvailable = (user.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP <= now;
+      const adAvailable = (user.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP <= now && (user.dailyAdCount || 0) < DAILY_AD_LIMIT;
       const qfAvailable = (user.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE <= now;
       setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
 
@@ -104,6 +104,10 @@ export function Navbar() {
 
   const handleWatchAd = async () => {
     if (!user || !firestore) return;
+    if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
+      toast({ title: "Daily Limit Reached", description: "You've reached your professional clip allowance for today.", variant: "destructive" });
+      return;
+    }
     setWatchingAd(true);
     setTimeout(async () => {
       try {
@@ -350,17 +354,17 @@ export function Navbar() {
             <Play className="w-14 h-14 text-primary opacity-20 mb-4" />
             <div className="flex flex-col items-center">
               <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Daily Allowance</p>
-              <p className="text-lg font-black text-foreground">{user?.dailyAdCount || 0} / 20</p>
+              <p className="text-lg font-black text-foreground">{user?.dailyAdCount || 0} / {DAILY_AD_LIMIT}</p>
             </div>
           </div>
           <DialogFooter className="flex-col gap-3">
             <Button 
               className="w-full h-14 font-black rounded-2xl text-lg gap-3 shadow-lg shadow-primary/30 active:scale-[0.98] transition-all" 
               onClick={handleWatchAd} 
-              disabled={watchingAd || (user?.dailyAdCount || 0) >= 20}
+              disabled={watchingAd || (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT}
             >
               {watchingAd ? <Loader2 className="w-6 h-6 animate-spin" /> : <Play className="w-6 h-6 fill-current" />}
-              {watchingAd ? "Connecting..." : "Watch & Earn +5"}
+              {watchingAd ? "Connecting..." : (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT ? "Limit Reached" : "Watch & Earn +5"}
             </Button>
             <Button variant="ghost" className="w-full font-bold text-muted-foreground" onClick={() => setShowAdModal(false)}>Maybe Later</Button>
           </DialogFooter>

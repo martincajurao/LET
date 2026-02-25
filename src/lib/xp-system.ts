@@ -25,6 +25,8 @@ export const COOLDOWNS = {
   QUICK_FIRE: 60 * 60 * 1000 // 1 hour
 };
 
+export const DAILY_AD_LIMIT = 20;
+
 /**
  * TIERED ECONOMY CONFIGURATION
  * Requirements and rewards scale based on academic title groups.

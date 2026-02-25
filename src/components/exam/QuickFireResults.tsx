@@ -26,6 +26,9 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { explainMistakesBatch } from "@/ai/flows/explain-mistakes-batch-flow";
 import { useToast } from "@/hooks/use-toast";
+import { useUser, useFirestore } from '@/firebase';
+import { doc, updateDoc, increment } from 'firebase/firestore';
+import { DAILY_AD_LIMIT } from '@/lib/xp-system';
 
 interface QuickFireResultsProps {
   questions: Question[];
@@ -36,6 +39,8 @@ interface QuickFireResultsProps {
 }
 
 export function QuickFireResults({ questions, answers, timeSpent, xpEarned, onRestart }: QuickFireResultsProps) {
+  const { user } = useUser();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const [isExplaining, setIsExplaining] = useState(false);
   const [explanations, setExplanations] = useState<Record<string, string>>({});
@@ -46,6 +51,13 @@ export function QuickFireResults({ questions, answers, timeSpent, xpEarned, onRe
 
   const handleExplainAllWithAd = async () => {
     if (mistakes.length === 0) return;
+    if (!user || !firestore) return;
+    
+    if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
+      toast({ title: "Ad Limit Reached", description: "You've reached your daily professional clip allowance.", variant: "destructive" });
+      return;
+    }
+
     setIsExplaining(true);
     
     // Simulate Ad sequence
@@ -66,6 +78,14 @@ export function QuickFireResults({ questions, answers, timeSpent, xpEarned, onRe
           const mapping: Record<string, string> = {};
           result.explanations.forEach(e => mapping[e.questionId] = e.aiExplanation);
           setExplanations(mapping);
+          
+          // Update ad count in profile
+          const userRef = doc(firestore, 'users', user.uid);
+          await updateDoc(userRef, {
+            dailyAdCount: increment(1),
+            mistakesReviewed: increment(mistakes.length)
+          });
+
           toast({ title: "Insights Unlocked!", description: "AI Pedagogical explanations are now visible below." });
         }
       } catch (e) {
@@ -127,13 +147,13 @@ export function QuickFireResults({ questions, answers, timeSpent, xpEarned, onRe
             {Object.keys(explanations).length === 0 && (
               <Button 
                 onClick={handleExplainAllWithAd} 
-                disabled={isExplaining}
+                disabled={isExplaining || (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT}
                 variant="outline" 
                 size="sm" 
                 className="h-9 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 bg-primary/5 border-primary/20 text-primary hover:bg-primary/10"
               >
                 {isExplaining ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                {isExplaining ? "Revealing..." : "Watch Ad to Explain All"}
+                {isExplaining ? "Revealing..." : (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT ? "Limit Reached" : "Watch Ad to Explain All"}
               </Button>
             )}
           </div>
