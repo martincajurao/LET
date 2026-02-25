@@ -39,7 +39,8 @@ import {
   Zap,
   Clock,
   ExternalLink,
-  Ban
+  Ban,
+  Trophy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -365,7 +366,7 @@ export default function AdminDashboard() {
                               <div className="min-w-0">
                                 <div className="flex items-center gap-1.5">
                                   <p className="text-sm font-black truncate max-w-[120px]">{user.displayName || 'Unnamed'}</p>
-                                  {user.isPro && <Crown className="w-3 h-3 text-yellow-500 fill-current shrink-0" />}
+                                  {user.isPro && <Crown className="w-3 h-3 text-yellow-500 fill-current" />}
                                   {user.isBlocked && <Ban className="w-3 h-3 text-destructive shrink-0" />}
                                 </div>
                                 <p className="text-[10px] text-muted-foreground truncate max-w-[150px]">{user.email || 'No email'}</p>
