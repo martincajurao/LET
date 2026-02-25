@@ -19,6 +19,7 @@ const DailyTaskInputSchema = z.object({
   taskMockClaimed: z.boolean().optional().describe('Whether mock test task reward was already claimed'),
   taskMistakesClaimed: z.boolean().optional().describe('Whether mistakes review task reward was already claimed'),
   lastActiveDate: z.any().optional().describe('Last active date for streak validation'),
+  lastTaskReset: z.any().optional().describe('Last time daily tasks were reset'),
   totalSessionTime: z.number().optional().describe('Total time spent in app today (seconds)'),
   averageQuestionTime: z.number().optional().describe('Average time per question (seconds)'),
   isPro: z.boolean().optional().describe('Whether user has Pro subscription'),
@@ -39,6 +40,7 @@ const DailyTaskOutputSchema = z.object({
   warning: z.string().optional(),
   abuseFlags: z.array(z.string()).optional().describe('Potential abuse detected'),
   nextResetTime: z.number().optional().describe('Timestamp for next daily reset'),
+  shouldResetDaily: z.boolean().optional().describe('Whether the daily tasks should be reset now'),
   recommendedActions: z.array(z.string()).optional().describe('Recommended actions for user'),
   streakAction: z.enum(['none', 'recovered', 'lost', 'maintained']).default('maintained'),
   recoveryCost: z.number().optional().describe('Cost to recover a broken streak'),
@@ -69,6 +71,7 @@ const dailyTaskFlow = ai.defineFlow(
         taskMockClaimed = false, 
         taskMistakesClaimed = false,
         lastActiveDate,
+        lastTaskReset,
         totalSessionTime = 0,
         averageQuestionTime = 0,
         isPro = false,
@@ -76,12 +79,22 @@ const dailyTaskFlow = ai.defineFlow(
         isStreakRecoveryRequested = false
       } = input;
 
+      const now = new Date();
       const abuseFlags: string[] = [];
       const warnings: string[] = [];
       const recommendedActions: string[] = [];
       let trustMultiplier = 1.0;
       let streakAction: 'none' | 'recovered' | 'lost' | 'maintained' = 'maintained';
       
+      // 0. DAILY RESET CHECK (Calendar Day logic)
+      let shouldResetDaily = false;
+      const lastReset = lastTaskReset?.toDate ? lastTaskReset.toDate() : (typeof lastTaskReset === 'number' ? new Date(lastTaskReset) : null);
+      if (lastReset) {
+        if (now.toDateString() !== lastReset.toDateString()) {
+          shouldResetDaily = true;
+        }
+      }
+
       // 1. TRUST SCORE & ABUSE DETECTION
       if (dailyQuestionsAnswered > 5) {
         if (averageQuestionTime < 4) {
@@ -96,9 +109,8 @@ const dailyTaskFlow = ai.defineFlow(
       }
 
       // 2. STREAK VALIDATION & RECOVERY (Profitability Hack)
-      const now = new Date();
-      const lastActive = lastActiveDate?.toDate ? lastActiveDate.toDate() : null;
-      const recoveryCost = 50; // Significant credit sink
+      const lastActive = lastActiveDate?.toDate ? lastActiveDate.toDate() : (typeof lastActiveDate === 'number' ? new Date(lastActiveDate) : null);
+      const recoveryCost = 50; 
 
       if (lastActive) {
         const diffMs = now.getTime() - lastActive.getTime();
@@ -130,35 +142,38 @@ const dailyTaskFlow = ai.defineFlow(
 
       const config = tierMultipliers[userTier as keyof typeof tierMultipliers] || tierMultipliers.Bronze;
 
-      // Login (Calibrated for baseline)
-      if (!taskLoginClaimed) {
-        totalReward += Math.floor(5 * trustMultiplier);
-        tasksCompleted.push('login');
-      }
+      // Only process rewards if no reset is pending (reset clears these anyway)
+      if (!shouldResetDaily) {
+        // Login (Calibrated for baseline)
+        if (!taskLoginClaimed) {
+          totalReward += Math.floor(5 * trustMultiplier);
+          tasksCompleted.push('login');
+        }
 
-      // Question Goal
-      if (dailyQuestionsAnswered >= config.questions && !taskQuestionsClaimed) {
-        totalReward += Math.floor(10 * config.rewardMultiplier * trustMultiplier);
-        tasksCompleted.push('questions');
-        if (trustMultiplier >= 1.2) qualityBonus += 5;
-      }
+        // Question Goal
+        if (dailyQuestionsAnswered >= config.questions && !taskQuestionsClaimed) {
+          totalReward += Math.floor(10 * config.rewardMultiplier * trustMultiplier);
+          tasksCompleted.push('questions');
+          if (trustMultiplier >= 1.2) qualityBonus += 5;
+        }
 
-      // Mock Test Goal
-      if (dailyTestsFinished >= config.tests && !taskMockClaimed) {
-        totalReward += Math.floor(15 * config.rewardMultiplier * trustMultiplier);
-        tasksCompleted.push('mock');
-      }
+        // Mock Test Goal
+        if (dailyTestsFinished >= config.tests && !taskMockClaimed) {
+          totalReward += Math.floor(15 * config.rewardMultiplier * trustMultiplier);
+          tasksCompleted.push('mock');
+        }
 
-      // Mistakes Goal
-      if (mistakesReviewed >= config.mistakes && !taskMistakesClaimed) {
-        totalReward += Math.floor(10 * config.rewardMultiplier * trustMultiplier);
-        tasksCompleted.push('mistakes');
-      }
+        // Mistakes Goal
+        if (mistakesReviewed >= config.mistakes && !taskMistakesClaimed) {
+          totalReward += Math.floor(10 * config.rewardMultiplier * trustMultiplier);
+          tasksCompleted.push('mistakes');
+        }
 
-      // Perfect Day Bonus
-      if (tasksCompleted.length >= 4) {
-        qualityBonus += 10;
-        recommendedActions.push('Perfect daily performance! Maximum calibration reached.');
+        // Perfect Day Bonus
+        if (tasksCompleted.length >= 4) {
+          qualityBonus += 10;
+          recommendedActions.push('Perfect daily performance! Maximum calibration reached.');
+        }
       }
 
       // 4. PROGRESSIVE LIMITS
@@ -181,10 +196,11 @@ const dailyTaskFlow = ai.defineFlow(
       return {
         reward: actualReward,
         tasksCompleted,
-        streakBonus: 0, // Integrated into base for simplicity
+        streakBonus: 0, 
         qualityBonus,
         trustMultiplier,
         nextResetTime: tomorrow.getTime(),
+        shouldResetDaily,
         recommendedActions,
         warning: warnings.join(' '),
         abuseFlags: abuseFlags.length > 0 ? abuseFlags : undefined,

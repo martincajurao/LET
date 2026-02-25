@@ -88,7 +88,7 @@ const AuthContext = createContext<AuthContextType>({
  */
 function isFirestoreInternal(val: any): boolean {
   if (!val || typeof val !== 'object') return false;
-  return val.constructor?.name === 'FieldValue' || (val._methodName && typeof val._methodName === 'string');
+  return val.constructor?.name === 'FieldValue' || (typeof val._methodName === 'string');
 }
 
 /**
@@ -105,7 +105,10 @@ function scrubUserData(data: any, prevUser: UserProfile | null): UserProfile {
     'mistakesReviewed', 'dailyAiUsage'
   ];
 
-  const dateFields = ['lastAdXpTimestamp', 'lastQuickFireTimestamp', 'lastActiveDate', 'lastTaskReset', 'lastQualityUpdate', 'lastExplanationRequest'];
+  const dateFields = [
+    'lastAdXpTimestamp', 'lastQuickFireTimestamp', 'lastActiveDate', 
+    'lastTaskReset', 'lastQualityUpdate', 'lastExplanationRequest'
+  ];
 
   for (const key in scrubbed) {
     if (isFirestoreInternal(scrubbed[key])) {
@@ -113,18 +116,16 @@ function scrubUserData(data: any, prevUser: UserProfile | null): UserProfile {
         // Preserve last known numeric value if pending increment, otherwise default 0
         scrubbed[key] = (prevUser as any)?.[key] ?? 0;
       } else if (dateFields.includes(key)) {
-        // Preserve last known timestamp or use current time
-        scrubbed[key] = (prevUser as any)?.[key] ?? Date.now();
+        // If it's a serverTimestamp, we assume it's roughly "now" for UI purposes
+        scrubbed[key] = Date.now();
       } else {
         scrubbed[key] = null;
       }
+    } else if (scrubbed[key] && typeof scrubbed[key] === 'object' && scrubbed[key].toMillis) {
+      // Standard Firestore Timestamp to numeric epoch
+      scrubbed[key] = scrubbed[key].toMillis();
     }
   }
-
-  // Ensure primitives for UI
-  numFields.forEach(field => {
-    if (typeof scrubbed[field] !== 'number') scrubbed[field] = (prevUser as any)?.[field] ?? 0;
-  });
 
   return scrubbed as UserProfile;
 }
@@ -159,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const userRef = useRef<UserProfile | null>(null);
+  const isResettingRef = useRef(false);
 
   // Sync ref with state for use in the async scrub callback
   useEffect(() => {
@@ -248,6 +250,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [toast, firestore, auth]);
 
+  // Handle Daily Task Reset (24-hour / Calendar Day Check)
+  useEffect(() => {
+    if (user && user.uid && user.uid !== 'bypass-user' && firestore && !isResettingRef.current) {
+      const now = new Date();
+      const lastReset = user.lastTaskReset || 0;
+      
+      // If we have a valid last reset time
+      if (lastReset !== 0) {
+        const lastResetDate = new Date(lastReset).toDateString();
+        const nowDate = now.toDateString();
+        
+        // If the current date is different from the last reset date, reset counters
+        if (lastResetDate !== nowDate) {
+          isResettingRef.current = true;
+          const userRef = doc(firestore, 'users', user.uid);
+          
+          updateDoc(userRef, {
+            dailyQuestionsAnswered: 0,
+            dailyTestsFinished: 0,
+            dailyAiUsage: 0,
+            dailyCreditEarned: 0,
+            dailyAdCount: 0,
+            taskLoginClaimed: false,
+            taskQuestionsClaimed: false,
+            taskMockClaimed: false,
+            taskMistakesClaimed: false,
+            lastTaskReset: serverTimestamp()
+          })
+          .catch(err => console.error("Auto Reset Failed:", err))
+          .finally(() => {
+            isResettingRef.current = false;
+          });
+        }
+      }
+    }
+  }, [user?.uid, user?.lastTaskReset, firestore]);
+
   const addXp = async (amount: number) => {
     if (!user || !firestore) return;
     try {
@@ -330,6 +369,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       dailyAiUsage: 25,
       dailyQuestionsAnswered: 40,
       dailyTestsFinished: 2,
+      lastTaskReset: Date.now(),
       unlockedTracks: []
     });
     setLoading(false);

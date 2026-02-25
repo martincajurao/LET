@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
       taskMockClaimed,
       taskMistakesClaimed,
       lastActiveDate,
+      lastTaskReset,
       totalSessionTime,
       averageQuestionTime,
       isPro,
@@ -74,6 +75,7 @@ export async function POST(req: NextRequest) {
       taskMockClaimed: taskMockClaimed || false,
       taskMistakesClaimed: taskMistakesClaimed || false,
       lastActiveDate,
+      lastTaskReset,
       totalSessionTime: totalSessionTime || 0,
       averageQuestionTime: averageQuestionTime || 0,
       isPro: isPro || false,
@@ -99,7 +101,7 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   return NextResponse.json({ 
     status: 'online',
-    engine: 'DailyTaskFlow v2.1.0',
+    engine: 'DailyTaskFlow v2.2.0',
     timestamp: Date.now()
   });
 }

@@ -118,6 +118,7 @@ export function DailyTaskDashboard() {
           taskMockClaimed: !!user.taskMockClaimed, 
           taskMistakesClaimed: !!user.taskMistakesClaimed, 
           lastActiveDate: user.lastActiveDate, 
+          lastTaskReset: user.lastTaskReset,
           totalSessionTime: (Date.now() - sessionStartTime) / 1000, 
           averageQuestionTime: avgTime, 
           isPro: !!user.isPro, 
@@ -128,8 +129,27 @@ export function DailyTaskDashboard() {
       });
       const result = await response.json();
       
+      const userRef = doc(firestore, 'users', user.uid);
+
+      // Handle server-instructed reset
+      if (result.shouldResetDaily) {
+        await updateDoc(userRef, {
+          dailyQuestionsAnswered: 0,
+          dailyTestsFinished: 0,
+          dailyAiUsage: 0,
+          dailyCreditEarned: 0,
+          dailyAdCount: 0,
+          taskLoginClaimed: false,
+          taskQuestionsClaimed: false,
+          taskMockClaimed: false,
+          taskMistakesClaimed: false,
+          lastTaskReset: serverTimestamp()
+        });
+        toast({ title: "New Academic Day!", description: "Daily tasks have been reset." });
+        return;
+      }
+
       if (result.reward > 0 || result.streakAction === 'recovered') {
-        const userRef = doc(firestore, 'users', user.uid);
         const updateData: any = { 
           credits: increment(result.reward - (isRecovery ? 50 : 0)), 
           dailyCreditEarned: increment(result.reward), 
@@ -177,7 +197,7 @@ export function DailyTaskDashboard() {
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-end">
                 <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Active Streak</span>
-                <div className="flex items-center gap-2"><Flame className="w-6 h-6 text-orange-500 fill-current" /><span className="text-2xl font-black text-foreground">{user?.streakCount || 0}</span></div>
+                <div className="flex items-center gap-2"><Flame className="w-6 h-6 text-orange-500 fill-current" /><span className="text-2xl font-black text-foreground">{typeof user?.streakCount === 'number' ? user.streakCount : 0}</span></div>
               </div>
             </div>
           </div>
@@ -191,7 +211,6 @@ export function DailyTaskDashboard() {
           <div className="grid grid-cols-1 gap-3">
             {tasks.map((task) => {
               const isComplete = task.current >= task.goal;
-              const progress = Math.min((task.current / task.goal) * 100, 100);
               return (
                 <div key={task.id} className={cn("p-4 rounded-[1.5rem] border transition-all flex items-center justify-between group", task.isClaimed ? "opacity-40 bg-muted/20 grayscale" : isComplete ? "bg-accent/5 border-accent/30 shadow-sm" : "bg-card border-border hover:border-primary/30")}>
                   <div className="flex items-center gap-4">
@@ -215,7 +234,7 @@ export function DailyTaskDashboard() {
               {claiming ? <Loader2 className="w-5 h-5 animate-spin" /> : canClaimAny ? <Gift className="w-5 h-5" /> : <Star className="w-5 h-5" />}
               {claiming ? 'Syncing...' : canClaimAny ? `Claim ${totalEarnedToday} Credits` : 'Build Readiness'}
             </Button>
-            <Button variant="outline" onClick={() => handleClaimReward(true)} disabled={recovering || (user?.credits || 0) < 50 || !!user?.taskLoginClaimed} className="h-14 rounded-2xl font-bold text-sm gap-2 border-2 border-orange-500/20 text-orange-600 hover:bg-orange-50">
+            <Button variant="outline" onClick={() => handleClaimReward(true)} disabled={recovering || (typeof user?.credits === 'number' ? user.credits : 0) < 50 || !!user?.taskLoginClaimed} className="h-14 rounded-2xl font-bold text-sm gap-2 border-2 border-orange-500/20 text-orange-600 hover:bg-orange-50">
               {recovering ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />} Streak Saver (50c)
             </Button>
           </div>
