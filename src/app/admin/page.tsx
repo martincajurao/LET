@@ -564,8 +564,8 @@ export default function AdminDashboard() {
 
       {/* Edit Question Dialog - Viewport Optimized */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl rounded-[2rem] p-0 border-none shadow-2xl overflow-hidden flex flex-col max-h-[90vh] outline-none">
-          <div className="bg-primary/10 p-6 border-b shrink-0 flex items-center justify-between">
+        <DialogContent className="max-w-2xl rounded-[2rem] p-0 border-none shadow-2xl overflow-hidden flex flex-col max-h-[95vh] outline-none">
+          <div className="bg-primary/10 p-5 border-b shrink-0 flex items-center justify-between">
             <DialogTitle className="text-xl font-black flex items-center gap-3">
               <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center text-primary-foreground shadow-lg"><Brain className="w-5 h-5" /></div>
               {editingQuestion?.id ? 'Edit Item' : 'New Item'}
@@ -575,16 +575,16 @@ export default function AdminDashboard() {
             </DialogClose>
           </div>
           
-          <form onSubmit={handleSaveQuestion} className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-6">
+          <form onSubmit={handleSaveQuestion} className="flex-1 overflow-y-auto no-scrollbar p-5 space-y-5">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Simulation Track</label>
                 <Select value={editingQuestion?.subject || ""} onValueChange={(val) => setEditingQuestion({...editingQuestion, subject: val})}>
                   <SelectTrigger className="rounded-xl h-11 font-bold border-2"><SelectValue placeholder="Select Track" /></SelectTrigger>
                   <SelectContent className="rounded-xl">{SUBJECTS.map(s => <SelectItem key={s} value={s} className="font-bold">{s}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Difficulty</label>
                 <Select value={editingQuestion?.difficulty || ""} onValueChange={(val: any) => setEditingQuestion({...editingQuestion, difficulty: val})}>
                   <SelectTrigger className="rounded-xl h-11 font-bold border-2"><SelectValue placeholder="Difficulty" /></SelectTrigger>
@@ -596,17 +596,17 @@ export default function AdminDashboard() {
                 </Select>
               </div>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Item Majorship</label>
               <Input value={editingQuestion?.subCategory || ""} onChange={(e) => setEditingQuestion({...editingQuestion, subCategory: e.target.value})} className="rounded-xl h-11 font-bold border-2" placeholder="e.g. Mathematics" />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Question content</label>
-              <Textarea value={editingQuestion?.text || ""} onChange={(e) => setEditingQuestion({...editingQuestion, text: e.target.value})} className="rounded-2xl font-medium min-h-[100px] border-2 p-4 text-sm" placeholder="Enter text..." />
+              <Textarea value={editingQuestion?.text || ""} onChange={(e) => setEditingQuestion({...editingQuestion, text: e.target.value})} className="rounded-2xl font-medium min-h-[80px] border-2 p-4 text-sm" placeholder="Enter text..." />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[0, 1, 2, 3].map((idx) => (
-                <div key={idx} className="space-y-1.5">
+                <div key={idx} className="space-y-1">
                   <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex justify-between">
                     Option {String.fromCharCode(65 + idx)}
                     {editingQuestion?.correctAnswer === editingQuestion?.options?.[idx] && editingQuestion?.options?.[idx] !== "" && <span className="text-emerald-600 font-black">Correct</span>}
@@ -622,7 +622,7 @@ export default function AdminDashboard() {
             </div>
           </form>
           
-          <div className="p-6 border-t bg-muted/5 mt-auto shrink-0">
+          <div className="p-5 border-t bg-muted/5 mt-auto shrink-0">
             <DialogFooter className="gap-3 sm:flex-row flex-col">
               <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-xl font-bold h-11 w-full sm:w-auto">Discard</Button>
               <Button onClick={handleSaveQuestion} className="rounded-xl font-black h-11 px-10 shadow-xl shadow-primary/20 w-full sm:flex-1">Commit to Vault</Button>
@@ -633,16 +633,16 @@ export default function AdminDashboard() {
 
       {/* Full User Management Dialog - Viewport Optimized */}
       <Dialog open={!!manageUser} onOpenChange={() => setManageUser(null)}>
-        <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 border-none shadow-[0_30px_100px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col max-h-[90vh] outline-none">
+        <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 border-none shadow-[0_30px_100px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col max-h-[95vh] outline-none">
           {/* Header Zone */}
-          <div className="bg-foreground text-background p-6 flex flex-col sm:flex-row items-center gap-4 relative overflow-hidden shrink-0">
+          <div className="bg-foreground text-background p-5 flex flex-col sm:flex-row items-center gap-4 relative overflow-hidden shrink-0">
             <div className="absolute top-0 right-0 p-6 opacity-5"><User className="w-32 h-32" /></div>
-            <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-black text-2xl shadow-xl relative z-10 shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-black text-2xl shadow-xl relative z-10 shrink-0">
               {manageUser?.displayName?.charAt(0) || 'E'}
             </div>
-            <div className="space-y-1 text-center sm:text-left relative z-10 flex-1">
+            <div className="space-y-0.5 text-center sm:text-left relative z-10 flex-1">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight">{editUserForm.displayName || 'Educator Profile'}</DialogTitle>
+                <DialogTitle className="text-xl font-black tracking-tight">{editUserForm.displayName || 'Educator Profile'}</DialogTitle>
                 <div className="flex justify-center gap-1.5">
                   {editUserForm.isPro && <Badge className="bg-yellow-500 text-yellow-900 font-black px-2 py-0.5 rounded-lg border-none text-[9px]">PLATINUM</Badge>}
                   {editUserForm.isBlocked && <Badge className="bg-rose-500 text-white font-black px-2 py-0.5 rounded-lg border-none text-[9px]">BLOCKED</Badge>}
@@ -656,13 +656,13 @@ export default function AdminDashboard() {
           </div>
 
           {/* Scrollable Content Zone */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar bg-background">
+          <div className="flex-1 overflow-y-auto p-5 space-y-5 no-scrollbar bg-background">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Nickname</label>
                 <Input value={editUserForm.displayName} onChange={(e) => setEditUserForm({...editUserForm, displayName: e.target.value})} className="rounded-xl h-11 font-bold border-2 bg-muted/10" />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Specialization</label>
                 <Select value={editUserForm.majorship} onValueChange={(val) => setEditUserForm({...editUserForm, majorship: val})}>
                   <SelectTrigger className="rounded-xl h-11 font-bold border-2 bg-muted/10"><SelectValue placeholder="Select Majorship" /></SelectTrigger>
@@ -674,7 +674,7 @@ export default function AdminDashboard() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-3 p-4 bg-muted/20 rounded-2xl border border-border/50">
+              <div className="space-y-2 p-4 bg-muted/20 rounded-2xl border border-border/50">
                 <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-2">
                   <Coins className="w-3 h-3 text-yellow-600" /> Current Credits
                 </label>
@@ -684,11 +684,11 @@ export default function AdminDashboard() {
                   <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl border-2 shrink-0" onClick={() => setEditUserForm({...editUserForm, credits: editUserForm.credits + 10})}><Plus className="w-3.5 h-3.5" /></Button>
                 </div>
               </div>
-              <div className="space-y-3 p-4 bg-muted/20 rounded-2xl border border-border/50">
+              <div className="space-y-2 p-4 bg-muted/20 rounded-2xl border border-border/50">
                 <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-2">
                   <Trophy className="w-3 h-3 text-primary" /> Total XP
                 </label>
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <Input type="number" value={editUserForm.xp} onChange={(e) => setEditUserForm({...editUserForm, xp: parseInt(e.target.value) || 0})} className="rounded-xl h-10 font-black border-2 bg-card" />
                   <div className="flex items-center justify-between px-1">
                     <span className="text-[8px] font-black uppercase text-primary tracking-widest">Rank {getRankData(editUserForm.xp).rank}</span>
@@ -762,7 +762,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Action Zone Footer */}
-          <div className="p-6 bg-muted/5 border-t shrink-0">
+          <div className="p-5 bg-muted/5 border-t shrink-0">
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <Button variant="ghost" onClick={() => setManageUser(null)} className="w-full sm:w-auto h-12 px-6 rounded-xl font-bold text-muted-foreground">Cancel</Button>
               <Button onClick={handleUpdateUser} disabled={isUpdatingUser} className="w-full sm:flex-1 h-14 rounded-2xl font-black text-base gap-2 shadow-xl shadow-primary/30">
