@@ -32,7 +32,8 @@ import {
   Clock,
   Ban,
   Trophy,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -53,6 +54,7 @@ import {
   DialogHeader, 
   DialogTitle, 
   DialogFooter,
+  DialogClose
 } from "@/components/ui/dialog";
 import { 
   AlertDialog,
@@ -562,229 +564,209 @@ export default function AdminDashboard() {
 
       {/* Edit Question Dialog - Viewport Optimized */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 border-none shadow-[0_30px_80px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col max-h-[95vh] outline-none">
-          <div className="bg-primary/10 p-8 border-b shrink-0">
-            <DialogTitle className="text-2xl font-black flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground shadow-lg"><Brain className="w-6 h-6" /></div>
-              {editingQuestion?.id ? 'Edit Academic Item' : 'New Simulation Item'}
+        <DialogContent className="max-w-2xl rounded-[2rem] p-0 border-none shadow-2xl overflow-hidden flex flex-col max-h-[90vh] outline-none">
+          <div className="bg-primary/10 p-6 border-b shrink-0 flex items-center justify-between">
+            <DialogTitle className="text-xl font-black flex items-center gap-3">
+              <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center text-primary-foreground shadow-lg"><Brain className="w-5 h-5" /></div>
+              {editingQuestion?.id ? 'Edit Item' : 'New Item'}
             </DialogTitle>
+            <DialogClose className="rounded-full h-8 w-8 bg-background/50 hover:bg-muted transition-colors flex items-center justify-center">
+              <X className="w-4 h-4" />
+            </DialogClose>
           </div>
           
-          <form onSubmit={handleSaveQuestion} className="flex-1 overflow-y-auto no-scrollbar">
-            <div className="p-8 space-y-6">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Simulation Track</label>
-                  <Select value={editingQuestion?.subject || ""} onValueChange={(val) => setEditingQuestion({...editingQuestion, subject: val})}>
-                    <SelectTrigger className="rounded-xl h-12 font-bold border-2"><SelectValue placeholder="Select Track" /></SelectTrigger>
-                    <SelectContent className="rounded-xl">{SUBJECTS.map(s => <SelectItem key={s} value={s} className="font-bold">{s}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Calibrated Difficulty</label>
-                  <Select value={editingQuestion?.difficulty || ""} onValueChange={(val: any) => setEditingQuestion({...editingQuestion, difficulty: val})}>
-                    <SelectTrigger className="rounded-xl h-12 font-bold border-2"><SelectValue placeholder="Difficulty" /></SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      <SelectItem value="easy" className="text-emerald-600 font-bold">Low (Easy)</SelectItem>
-                      <SelectItem value="medium" className="text-amber-600 font-bold">Standard (Medium)</SelectItem>
-                      <SelectItem value="hard" className="text-rose-600 font-bold">High (Hard)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          <form onSubmit={handleSaveQuestion} className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Simulation Track</label>
+                <Select value={editingQuestion?.subject || ""} onValueChange={(val) => setEditingQuestion({...editingQuestion, subject: val})}>
+                  <SelectTrigger className="rounded-xl h-11 font-bold border-2"><SelectValue placeholder="Select Track" /></SelectTrigger>
+                  <SelectContent className="rounded-xl">{SUBJECTS.map(s => <SelectItem key={s} value={s} className="font-bold">{s}</SelectItem>)}</SelectContent>
+                </Select>
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Item Majorship (Sub-category)</label>
-                <Input value={editingQuestion?.subCategory || ""} onChange={(e) => setEditingQuestion({...editingQuestion, subCategory: e.target.value})} className="rounded-xl h-12 font-bold border-2" placeholder="e.g. Mathematics, Child Development" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Pedagogical content</label>
-                <Textarea value={editingQuestion?.text || ""} onChange={(e) => setEditingQuestion({...editingQuestion, text: e.target.value})} className="rounded-[1.5rem] font-medium min-h-[120px] border-2 p-4 text-base" placeholder="Enter the question text here..." />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {[0, 1, 2, 3].map((idx) => (
-                  <div key={idx} className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Option {String.fromCharCode(65 + idx)} {editingQuestion?.correctAnswer === editingQuestion?.options?.[idx] && editingQuestion?.options?.[idx] !== "" && <Badge variant="secondary" className="ml-2 bg-emerald-500/10 text-emerald-600 text-[8px] h-4">Correct</Badge>}</label>
-                    <div className="flex gap-2">
-                      <Input value={editingQuestion?.options?.[idx] || ""} onChange={(e) => { const n = [...(editingQuestion?.options || ["","","",""])]; n[idx] = e.target.value; setEditingQuestion({...editingQuestion, options: n}); }} className="rounded-xl h-12 font-medium border-2" />
-                      <Button type="button" variant="outline" size="icon" className={cn("h-12 w-12 rounded-xl shrink-0 border-2", editingQuestion?.correctAnswer === editingQuestion?.options?.[idx] ? "bg-emerald-500 border-emerald-500 text-white" : "")} onClick={() => setEditingQuestion({...editingQuestion, correctAnswer: editingQuestion?.options?.[idx]})}>
-                        <Check className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Difficulty</label>
+                <Select value={editingQuestion?.difficulty || ""} onValueChange={(val: any) => setEditingQuestion({...editingQuestion, difficulty: val})}>
+                  <SelectTrigger className="rounded-xl h-11 font-bold border-2"><SelectValue placeholder="Difficulty" /></SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="easy" className="text-emerald-600 font-bold">Low (Easy)</SelectItem>
+                    <SelectItem value="medium" className="text-amber-600 font-bold">Standard (Medium)</SelectItem>
+                    <SelectItem value="hard" className="text-rose-600 font-bold">High (Hard)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            
-            <div className="p-8 border-t bg-muted/5 mt-auto shrink-0">
-              <DialogFooter className="gap-3 sm:flex-row flex-col">
-                <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-xl font-bold h-12 w-full sm:w-auto">Discard</Button>
-                <Button type="submit" className="rounded-xl font-black h-12 px-12 shadow-xl shadow-primary/20 w-full sm:flex-1">Commit to Vault</Button>
-              </DialogFooter>
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Item Majorship</label>
+              <Input value={editingQuestion?.subCategory || ""} onChange={(e) => setEditingQuestion({...editingQuestion, subCategory: e.target.value})} className="rounded-xl h-11 font-bold border-2" placeholder="e.g. Mathematics" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Question content</label>
+              <Textarea value={editingQuestion?.text || ""} onChange={(e) => setEditingQuestion({...editingQuestion, text: e.target.value})} className="rounded-2xl font-medium min-h-[100px] border-2 p-4 text-sm" placeholder="Enter text..." />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[0, 1, 2, 3].map((idx) => (
+                <div key={idx} className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex justify-between">
+                    Option {String.fromCharCode(65 + idx)}
+                    {editingQuestion?.correctAnswer === editingQuestion?.options?.[idx] && editingQuestion?.options?.[idx] !== "" && <span className="text-emerald-600 font-black">Correct</span>}
+                  </label>
+                  <div className="flex gap-2">
+                    <Input value={editingQuestion?.options?.[idx] || ""} onChange={(e) => { const n = [...(editingQuestion?.options || ["","","",""])]; n[idx] = e.target.value; setEditingQuestion({...editingQuestion, options: n}); }} className="rounded-xl h-11 font-medium border-2 text-sm" />
+                    <Button type="button" variant="outline" size="icon" className={cn("h-11 w-11 rounded-xl shrink-0 border-2", editingQuestion?.correctAnswer === editingQuestion?.options?.[idx] ? "bg-emerald-500 border-emerald-500 text-white" : "")} onClick={() => setEditingQuestion({...editingQuestion, correctAnswer: editingQuestion?.options?.[idx]})}>
+                      <Check className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
           </form>
+          
+          <div className="p-6 border-t bg-muted/5 mt-auto shrink-0">
+            <DialogFooter className="gap-3 sm:flex-row flex-col">
+              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-xl font-bold h-11 w-full sm:w-auto">Discard</Button>
+              <Button onClick={handleSaveQuestion} className="rounded-xl font-black h-11 px-10 shadow-xl shadow-primary/20 w-full sm:flex-1">Commit to Vault</Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Full User Management Dialog - Viewport Optimized */}
       <Dialog open={!!manageUser} onOpenChange={() => setManageUser(null)}>
-        <DialogContent className="max-w-2xl rounded-[3rem] p-0 border-none shadow-[0_30px_100px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col max-h-[95vh] outline-none">
-          {/* Header Zone (Fixed) */}
-          <div className="bg-foreground text-background p-8 sm:p-10 flex flex-col sm:flex-row items-center gap-6 sm:gap-8 relative overflow-hidden shrink-0">
-            <div className="absolute top-0 right-0 p-10 opacity-10"><User className="w-40 h-40" /></div>
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-[2rem] bg-primary flex items-center justify-center text-primary-foreground font-black text-3xl sm:text-4xl shadow-2xl relative z-10 shrink-0">
+        <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 border-none shadow-[0_30px_100px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col max-h-[90vh] outline-none">
+          {/* Header Zone */}
+          <div className="bg-foreground text-background p-6 flex flex-col sm:flex-row items-center gap-4 relative overflow-hidden shrink-0">
+            <div className="absolute top-0 right-0 p-6 opacity-5"><User className="w-32 h-32" /></div>
+            <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-black text-2xl shadow-xl relative z-10 shrink-0">
               {manageUser?.displayName?.charAt(0) || 'E'}
             </div>
-            <div className="space-y-2 text-center sm:text-left relative z-10 flex-1">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                <DialogTitle className="text-2xl sm:text-3xl font-black tracking-tight">{editUserForm.displayName || 'Educator Profile'}</DialogTitle>
-                <div className="flex justify-center gap-2">
-                  {editUserForm.isPro && <Badge className="bg-yellow-500 text-yellow-900 font-black px-2 py-0.5 rounded-lg border-none shadow-lg text-[10px]">PLATINUM</Badge>}
-                  {editUserForm.isBlocked && <Badge className="bg-rose-500 text-white font-black px-2 py-0.5 rounded-lg border-none text-[10px]">BLOCKED</Badge>}
+            <div className="space-y-1 text-center sm:text-left relative z-10 flex-1">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight">{editUserForm.displayName || 'Educator Profile'}</DialogTitle>
+                <div className="flex justify-center gap-1.5">
+                  {editUserForm.isPro && <Badge className="bg-yellow-500 text-yellow-900 font-black px-2 py-0.5 rounded-lg border-none text-[9px]">PLATINUM</Badge>}
+                  {editUserForm.isBlocked && <Badge className="bg-rose-500 text-white font-black px-2 py-0.5 rounded-lg border-none text-[9px]">BLOCKED</Badge>}
                 </div>
               </div>
-              <p className="text-muted-foreground font-bold uppercase tracking-[0.2em] text-[9px] opacity-60">{manageUser?.email || 'Authenticated User'}</p>
-              <p className="text-[9px] font-black text-primary/80 uppercase tracking-widest">ID: {manageUser?.id}</p>
+              <p className="text-muted-foreground font-bold uppercase tracking-widest text-[8px] opacity-60">{manageUser?.email || 'Authenticated User'}</p>
             </div>
+            <DialogClose className="absolute right-4 top-4 rounded-full h-8 w-8 bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center z-20">
+              <X className="w-4 h-4 text-white" />
+            </DialogClose>
           </div>
 
           {/* Scrollable Content Zone */}
-          <div className="flex-1 overflow-y-auto p-6 sm:p-10 space-y-8 no-scrollbar bg-background">
-            {/* Zone 1: Identity & Tracks */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-1 h-4 bg-primary rounded-full" />
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Core Identity</h4>
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar bg-background">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Nickname</label>
+                <Input value={editUserForm.displayName} onChange={(e) => setEditUserForm({...editUserForm, displayName: e.target.value})} className="rounded-xl h-11 font-bold border-2 bg-muted/10" />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Nickname</label>
-                  <Input value={editUserForm.displayName} onChange={(e) => setEditUserForm({...editUserForm, displayName: e.target.value})} className="rounded-xl h-12 font-bold border-2 bg-muted/10" />
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Specialization</label>
+                <Select value={editUserForm.majorship} onValueChange={(val) => setEditUserForm({...editUserForm, majorship: val})}>
+                  <SelectTrigger className="rounded-xl h-11 font-bold border-2 bg-muted/10"><SelectValue placeholder="Select Majorship" /></SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {MAJORSHIPS.map(m => <SelectItem key={m} value={m} className="font-bold">{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-3 p-4 bg-muted/20 rounded-2xl border border-border/50">
+                <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-2">
+                  <Coins className="w-3 h-3 text-yellow-600" /> Current Credits
+                </label>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl border-2 shrink-0" onClick={() => setEditUserForm({...editUserForm, credits: Math.max(0, editUserForm.credits - 10)})}><Minus className="w-3.5 h-3.5" /></Button>
+                  <Input type="number" value={editUserForm.credits} onChange={(e) => setEditUserForm({...editUserForm, credits: parseInt(e.target.value) || 0})} className="rounded-xl h-10 font-black text-center border-2 text-base bg-card" />
+                  <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl border-2 shrink-0" onClick={() => setEditUserForm({...editUserForm, credits: editUserForm.credits + 10})}><Plus className="w-3.5 h-3.5" /></Button>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Specialization</label>
-                  <Select value={editUserForm.majorship} onValueChange={(val) => setEditUserForm({...editUserForm, majorship: val})}>
-                    <SelectTrigger className="rounded-xl h-12 font-bold border-2 bg-muted/10"><SelectValue placeholder="Select Majorship" /></SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      {MAJORSHIPS.map(m => <SelectItem key={m} value={m} className="font-bold">{m}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+              </div>
+              <div className="space-y-3 p-4 bg-muted/20 rounded-2xl border border-border/50">
+                <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-2">
+                  <Trophy className="w-3 h-3 text-primary" /> Total XP
+                </label>
+                <div className="space-y-1.5">
+                  <Input type="number" value={editUserForm.xp} onChange={(e) => setEditUserForm({...editUserForm, xp: parseInt(e.target.value) || 0})} className="rounded-xl h-10 font-black border-2 bg-card" />
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-[8px] font-black uppercase text-primary tracking-widest">Rank {getRankData(editUserForm.xp).rank}</span>
+                    <span className="text-[8px] font-bold text-muted-foreground tracking-tight">{getRankData(editUserForm.xp).title}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Zone 2: Progress & Economy */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-1 h-4 bg-primary rounded-full" />
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Progression & Balance</h4>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-3 p-5 bg-muted/20 rounded-[2rem] border-2 border-dashed border-border/50">
-                  <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-2">
-                    <Coins className="w-3 h-3 text-yellow-600" /> Current Credits
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-2 shrink-0" onClick={() => setEditUserForm({...editUserForm, credits: Math.max(0, editUserForm.credits - 10)})}><Minus className="w-4 h-4" /></Button>
-                    <Input type="number" value={editUserForm.credits} onChange={(e) => setEditUserForm({...editUserForm, credits: parseInt(e.target.value) || 0})} className="rounded-xl h-12 font-black text-center border-2 text-lg bg-card" />
-                    <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-2 shrink-0" onClick={() => setEditUserForm({...editUserForm, credits: editUserForm.credits + 10})}><Plus className="w-4 h-4" /></Button>
-                  </div>
-                </div>
-                <div className="space-y-3 p-5 bg-muted/20 rounded-[2rem] border-2 border-dashed border-border/50">
-                  <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-2">
-                    <Trophy className="w-3 h-3 text-primary" /> Total Experience (XP)
-                  </label>
-                  <div className="space-y-2">
-                    <Input type="number" value={editUserForm.xp} onChange={(e) => setEditUserForm({...editUserForm, xp: parseInt(e.target.value) || 0})} className="rounded-xl h-12 font-black border-2 bg-card" />
-                    <div className="flex items-center justify-between px-1">
-                      <span className="text-[8px] font-black uppercase text-primary tracking-widest">Rank {getRankData(editUserForm.xp).rank}</span>
-                      <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">{getRankData(editUserForm.xp).title}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Button 
+                variant="outline" 
+                onClick={handleResetDailyTasks} 
+                disabled={isResettingTasks}
+                className="h-12 rounded-xl font-black text-[9px] uppercase tracking-widest gap-2 border-2 border-amber-200 text-amber-700 bg-amber-50/30"
+              >
+                {isResettingTasks ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+                Reset Missions
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="h-12 rounded-xl font-black text-[9px] uppercase tracking-widest gap-2 border-2 border-rose-200 text-rose-600 bg-rose-50/30">
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete Account
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="rounded-[2rem] border-none shadow-2xl p-6 outline-none">
+                  <AlertDialogHeader>
+                    <div className="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center mb-2 mx-auto">
+                      <AlertTriangle className="w-6 h-6 text-rose-600" />
                     </div>
-                  </div>
-                </div>
-              </div>
+                    <AlertDialogTitle className="text-xl font-black text-center">Irreversible Purge</AlertDialogTitle>
+                    <AlertDialogDescription className="text-center text-sm font-medium">
+                      Remove <strong>{editUserForm.displayName}</strong> from the LET Practice base? All XP, credits, and history will be lost.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="sm:flex-col gap-2 mt-4">
+                    <AlertDialogAction onClick={handleDeleteUser} className="bg-rose-600 hover:bg-rose-700 text-white h-12 rounded-xl font-black w-full">
+                      {isDeletingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm Deletion'}
+                    </AlertDialogAction>
+                    <AlertDialogCancel className="h-11 rounded-xl font-bold border-2 w-full">Cancel</AlertDialogCancel>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
 
-            {/* Zone 3: Special Tools */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-1 h-4 bg-primary rounded-full" />
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Administrative Utilities</h4>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Button 
-                  variant="outline" 
-                  onClick={handleResetDailyTasks} 
-                  disabled={isResettingTasks}
-                  className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-3 border-2 border-amber-200 text-amber-700 bg-amber-50/30 hover:bg-amber-100 transition-all"
-                >
-                  {isResettingTasks ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-                  Force Reset Missions
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-3 border-2 border-rose-200 text-rose-600 bg-rose-50/30 hover:bg-rose-100 transition-all">
-                      <Trash2 className="w-4 h-4" />
-                      Delete Account
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl p-8 outline-none">
-                    <AlertDialogHeader>
-                      <div className="w-16 h-16 bg-rose-500/10 rounded-2xl flex items-center justify-center mb-4 mx-auto">
-                        <AlertTriangle className="w-8 h-8 text-rose-600" />
-                      </div>
-                      <AlertDialogTitle className="text-2xl font-black text-center">Irreversible Purge</AlertDialogTitle>
-                      <AlertDialogDescription className="text-center font-medium">
-                        Remove <strong>{editUserForm.displayName}</strong> from the LET Practice base? All XP, credits, and simulation history will be lost.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="sm:flex-col gap-3 mt-6">
-                      <AlertDialogAction onClick={handleDeleteUser} className="bg-rose-600 hover:bg-rose-700 text-white h-14 rounded-2xl font-black w-full">
-                        {isDeletingUser ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Execute Permanent Deletion'}
-                      </AlertDialogAction>
-                      <AlertDialogCancel className="h-14 rounded-2xl font-bold border-2 w-full">Cancel</AlertDialogCancel>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </div>
-
-            {/* Zone 4: Standing Toggles */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button 
                 variant={editUserForm.isPro ? "outline" : "default"} 
                 onClick={() => setEditUserForm({...editUserForm, isPro: !editUserForm.isPro})} 
                 className={cn(
-                  "flex-1 h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-3 border-2 transition-all", 
-                  editUserForm.isPro 
-                    ? "border-yellow-500/30 text-yellow-700 bg-yellow-500/5 hover:bg-yellow-500/10" 
-                    : "bg-yellow-500 hover:bg-yellow-600 text-yellow-950 shadow-lg shadow-yellow-500/20"
+                  "flex-1 h-12 rounded-xl font-black text-[9px] uppercase tracking-widest gap-2 border-2 transition-all", 
+                  editUserForm.isPro ? "border-yellow-500/30 text-yellow-700" : "bg-yellow-500 text-yellow-950"
                 )}
               >
-                <Crown className={cn("w-4 h-4", !editUserForm.isPro && "fill-current")} /> 
-                {editUserForm.isPro ? 'Revoke Platinum Access' : 'Grant Platinum Status'}
+                <Crown className={cn("w-3.5 h-3.5", !editUserForm.isPro && "fill-current")} /> 
+                {editUserForm.isPro ? 'Revoke Platinum' : 'Grant Platinum'}
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => setEditUserForm({...editUserForm, isBlocked: !editUserForm.isBlocked})} 
                 className={cn(
-                  "flex-1 h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-3 border-2 transition-all", 
-                  editUserForm.isBlocked 
-                    ? "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100" 
-                    : "bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100"
+                  "flex-1 h-12 rounded-xl font-black text-[9px] uppercase tracking-widest gap-2 border-2 transition-all", 
+                  editUserForm.isBlocked ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-rose-50 border-rose-200 text-rose-700"
                 )}
               >
-                {editUserForm.isBlocked ? <ShieldCheck className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
-                {editUserForm.isBlocked ? 'Restore Educator Access' : 'Restrict Account (Block)'}
+                {editUserForm.isBlocked ? <ShieldCheck className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
+                {editUserForm.isBlocked ? 'Restore Access' : 'Restrict (Block)'}
               </Button>
             </div>
           </div>
 
-          {/* Action Zone Footer (Fixed) */}
-          <div className="p-6 sm:p-10 bg-muted/5 border-t shrink-0">
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <Button variant="ghost" onClick={() => setManageUser(null)} className="w-full sm:w-auto h-14 px-8 rounded-2xl font-bold text-muted-foreground">Discard Changes</Button>
-              <Button onClick={handleUpdateUser} disabled={isUpdatingUser} className="w-full sm:flex-1 h-16 rounded-[2rem] font-black text-lg gap-3 shadow-2xl shadow-primary/30">
-                {isUpdatingUser ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />} Save Educator Profile
+          {/* Action Zone Footer */}
+          <div className="p-6 bg-muted/5 border-t shrink-0">
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <Button variant="ghost" onClick={() => setManageUser(null)} className="w-full sm:w-auto h-12 px-6 rounded-xl font-bold text-muted-foreground">Cancel</Button>
+              <Button onClick={handleUpdateUser} disabled={isUpdatingUser} className="w-full sm:flex-1 h-14 rounded-2xl font-black text-base gap-2 shadow-xl shadow-primary/30">
+                {isUpdatingUser ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />} Save Profile
               </Button>
             </div>
           </div>
