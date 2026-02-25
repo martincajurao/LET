@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Settings, 
   Plus, 
@@ -13,39 +13,29 @@ import {
   RefreshCw,
   CheckCircle2,
   FileText,
-  FileUp,
   Brain,
-  Type,
-  Database,
   Users,
   RotateCcw,
   Coins,
   ShieldCheck,
-  MoreVertical,
   Minus,
-  Wrench,
   ChevronRight,
   Crown,
   Download,
   Smartphone,
-  Trash,
   Check,
-  X,
   Upload,
   User,
   Activity,
   ShieldAlert,
-  GraduationCap,
   Zap,
   Clock,
-  ExternalLink,
   Ban,
   Trophy,
-  AlertTriangle,
-  History
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -63,7 +53,6 @@ import {
   DialogHeader, 
   DialogTitle, 
   DialogFooter,
-  DialogDescription
 } from "@/components/ui/dialog";
 import { 
   AlertDialog,
@@ -76,14 +65,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFirestore } from "@/firebase";
@@ -95,7 +76,6 @@ import {
   updateDoc, 
   getDoc,
   setDoc,
-  writeBatch,
   query,
   orderBy,
   limit as queryLimit,
@@ -580,72 +560,78 @@ export default function AdminDashboard() {
         </Tabs>
       </main>
 
-      {/* Edit Question Dialog */}
+      {/* Edit Question Dialog - Viewport Optimized */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 border-none shadow-[0_30px_80px_rgba(0,0,0,0.3)] overflow-hidden">
-          <div className="bg-primary/10 p-8 border-b">
+        <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 border-none shadow-[0_30px_80px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col max-h-[95vh] outline-none">
+          <div className="bg-primary/10 p-8 border-b shrink-0">
             <DialogTitle className="text-2xl font-black flex items-center gap-3">
               <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground shadow-lg"><Brain className="w-6 h-6" /></div>
               {editingQuestion?.id ? 'Edit Academic Item' : 'New Simulation Item'}
             </DialogTitle>
           </div>
-          <form onSubmit={handleSaveQuestion} className="p-8 space-y-6">
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Simulation Track</label>
-                <Select value={editingQuestion?.subject || ""} onValueChange={(val) => setEditingQuestion({...editingQuestion, subject: val})}>
-                  <SelectTrigger className="rounded-xl h-12 font-bold border-2"><SelectValue placeholder="Select Track" /></SelectTrigger>
-                  <SelectContent className="rounded-xl">{SUBJECTS.map(s => <SelectItem key={s} value={s} className="font-bold">{s}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Calibrated Difficulty</label>
-                <Select value={editingQuestion?.difficulty || ""} onValueChange={(val: any) => setEditingQuestion({...editingQuestion, difficulty: val})}>
-                  <SelectTrigger className="rounded-xl h-12 font-bold border-2"><SelectValue placeholder="Difficulty" /></SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="easy" className="text-emerald-600 font-bold">Low (Easy)</SelectItem>
-                    <SelectItem value="medium" className="text-amber-600 font-bold">Standard (Medium)</SelectItem>
-                    <SelectItem value="hard" className="text-rose-600 font-bold">High (Hard)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Item Majorship (Sub-category)</label>
-              <Input value={editingQuestion?.subCategory || ""} onChange={(e) => setEditingQuestion({...editingQuestion, subCategory: e.target.value})} className="rounded-xl h-12 font-bold border-2" placeholder="e.g. Mathematics, Child Development" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Pedagogical content</label>
-              <Textarea value={editingQuestion?.text || ""} onChange={(e) => setEditingQuestion({...editingQuestion, text: e.target.value})} className="rounded-[1.5rem] font-medium min-h-[120px] border-2 p-4 text-base" placeholder="Enter the question text here..." />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[0, 1, 2, 3].map((idx) => (
-                <div key={idx} className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Option {String.fromCharCode(65 + idx)} {editingQuestion?.correctAnswer === editingQuestion?.options?.[idx] && editingQuestion?.options?.[idx] !== "" && <Badge variant="secondary" className="ml-2 bg-emerald-500/10 text-emerald-600 text-[8px] h-4">Correct</Badge>}</label>
-                  <div className="flex gap-2">
-                    <Input value={editingQuestion?.options?.[idx] || ""} onChange={(e) => { const n = [...(editingQuestion?.options || ["","","",""])]; n[idx] = e.target.value; setEditingQuestion({...editingQuestion, options: n}); }} className="rounded-xl h-12 font-medium border-2" />
-                    <Button type="button" variant="outline" size="icon" className={cn("h-12 w-12 rounded-xl shrink-0 border-2", editingQuestion?.correctAnswer === editingQuestion?.options?.[idx] ? "bg-emerald-500 border-emerald-500 text-white" : "")} onClick={() => setEditingQuestion({...editingQuestion, correctAnswer: editingQuestion?.options?.[idx]})}>
-                      <Check className="w-4 h-4" />
-                    </Button>
-                  </div>
+          
+          <form onSubmit={handleSaveQuestion} className="flex-1 overflow-y-auto no-scrollbar">
+            <div className="p-8 space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Simulation Track</label>
+                  <Select value={editingQuestion?.subject || ""} onValueChange={(val) => setEditingQuestion({...editingQuestion, subject: val})}>
+                    <SelectTrigger className="rounded-xl h-12 font-bold border-2"><SelectValue placeholder="Select Track" /></SelectTrigger>
+                    <SelectContent className="rounded-xl">{SUBJECTS.map(s => <SelectItem key={s} value={s} className="font-bold">{s}</SelectItem>)}</SelectContent>
+                  </Select>
                 </div>
-              ))}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Calibrated Difficulty</label>
+                  <Select value={editingQuestion?.difficulty || ""} onValueChange={(val: any) => setEditingQuestion({...editingQuestion, difficulty: val})}>
+                    <SelectTrigger className="rounded-xl h-12 font-bold border-2"><SelectValue placeholder="Difficulty" /></SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="easy" className="text-emerald-600 font-bold">Low (Easy)</SelectItem>
+                      <SelectItem value="medium" className="text-amber-600 font-bold">Standard (Medium)</SelectItem>
+                      <SelectItem value="hard" className="text-rose-600 font-bold">High (Hard)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Item Majorship (Sub-category)</label>
+                <Input value={editingQuestion?.subCategory || ""} onChange={(e) => setEditingQuestion({...editingQuestion, subCategory: e.target.value})} className="rounded-xl h-12 font-bold border-2" placeholder="e.g. Mathematics, Child Development" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Pedagogical content</label>
+                <Textarea value={editingQuestion?.text || ""} onChange={(e) => setEditingQuestion({...editingQuestion, text: e.target.value})} className="rounded-[1.5rem] font-medium min-h-[120px] border-2 p-4 text-base" placeholder="Enter the question text here..." />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[0, 1, 2, 3].map((idx) => (
+                  <div key={idx} className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Option {String.fromCharCode(65 + idx)} {editingQuestion?.correctAnswer === editingQuestion?.options?.[idx] && editingQuestion?.options?.[idx] !== "" && <Badge variant="secondary" className="ml-2 bg-emerald-500/10 text-emerald-600 text-[8px] h-4">Correct</Badge>}</label>
+                    <div className="flex gap-2">
+                      <Input value={editingQuestion?.options?.[idx] || ""} onChange={(e) => { const n = [...(editingQuestion?.options || ["","","",""])]; n[idx] = e.target.value; setEditingQuestion({...editingQuestion, options: n}); }} className="rounded-xl h-12 font-medium border-2" />
+                      <Button type="button" variant="outline" size="icon" className={cn("h-12 w-12 rounded-xl shrink-0 border-2", editingQuestion?.correctAnswer === editingQuestion?.options?.[idx] ? "bg-emerald-500 border-emerald-500 text-white" : "")} onClick={() => setEditingQuestion({...editingQuestion, correctAnswer: editingQuestion?.options?.[idx]})}>
+                        <Check className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <DialogFooter className="pt-4 gap-3">
-              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-xl font-bold h-12">Discard</Button>
-              <Button type="submit" className="rounded-xl font-black h-12 px-12 shadow-xl shadow-primary/20">Commit to Vault</Button>
-            </DialogFooter>
+            
+            <div className="p-8 border-t bg-muted/5 mt-auto shrink-0">
+              <DialogFooter className="gap-3 sm:flex-row flex-col">
+                <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-xl font-bold h-12 w-full sm:w-auto">Discard</Button>
+                <Button type="submit" className="rounded-xl font-black h-12 px-12 shadow-xl shadow-primary/20 w-full sm:flex-1">Commit to Vault</Button>
+              </DialogFooter>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Full User Management Dialog - Android Native Refactor */}
+      {/* Full User Management Dialog - Viewport Optimized */}
       <Dialog open={!!manageUser} onOpenChange={() => setManageUser(null)}>
-        <DialogContent className="max-w-2xl rounded-[3rem] p-0 border-none shadow-[0_30px_100px_rgba(0,0,0,0.4)] overflow-hidden outline-none">
-          {/* Header Zone */}
-          <div className="bg-foreground text-background p-8 sm:p-10 flex flex-col sm:flex-row items-center gap-6 sm:gap-8 relative overflow-hidden">
+        <DialogContent className="max-w-2xl rounded-[3rem] p-0 border-none shadow-[0_30px_100px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col max-h-[95vh] outline-none">
+          {/* Header Zone (Fixed) */}
+          <div className="bg-foreground text-background p-8 sm:p-10 flex flex-col sm:flex-row items-center gap-6 sm:gap-8 relative overflow-hidden shrink-0">
             <div className="absolute top-0 right-0 p-10 opacity-10"><User className="w-40 h-40" /></div>
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-[2rem] bg-primary flex items-center justify-center text-primary-foreground font-black text-3xl sm:text-4xl shadow-2xl relative z-10">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-[2rem] bg-primary flex items-center justify-center text-primary-foreground font-black text-3xl sm:text-4xl shadow-2xl relative z-10 shrink-0">
               {manageUser?.displayName?.charAt(0) || 'E'}
             </div>
             <div className="space-y-2 text-center sm:text-left relative z-10 flex-1">
@@ -661,7 +647,8 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="p-6 sm:p-10 space-y-8 max-h-[70vh] overflow-y-auto no-scrollbar">
+          {/* Scrollable Content Zone */}
+          <div className="flex-1 overflow-y-auto p-6 sm:p-10 space-y-8 no-scrollbar bg-background">
             {/* Zone 1: Identity & Tracks */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-2">
@@ -792,8 +779,8 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Action Zone Footer */}
-          <div className="p-6 sm:p-10 pt-0 bg-muted/5 border-t">
+          {/* Action Zone Footer (Fixed) */}
+          <div className="p-6 sm:p-10 bg-muted/5 border-t shrink-0">
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <Button variant="ghost" onClick={() => setManageUser(null)} className="w-full sm:w-auto h-14 px-8 rounded-2xl font-bold text-muted-foreground">Discard Changes</Button>
               <Button onClick={handleUpdateUser} disabled={isUpdatingUser} className="w-full sm:flex-1 h-16 rounded-[2rem] font-black text-lg gap-3 shadow-2xl shadow-primary/30">
