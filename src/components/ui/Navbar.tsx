@@ -112,11 +112,11 @@ export function Navbar() {
     setWatchingAd(true);
     setVerifyingAd(false);
 
-    // Phase 1: Playback Lock
+    // Phase 1: Playback Lock (3.5s minimum)
     setTimeout(async () => {
       setVerifyingAd(true);
       
-      // Phase 2: Professional Verification
+      // Phase 2: Professional Verification (1.5s buffer)
       setTimeout(async () => {
         try {
           const userRef = doc(firestore, 'users', user.uid);
@@ -135,8 +135,8 @@ export function Navbar() {
           setWatchingAd(false);
           setVerifyingAd(false);
         }
-      }, 1500); // Verification buffer
-    }, 3500); // Standard playback duration
+      }, 1500); 
+    }, 3500);
   };
 
   const navItems = [
@@ -350,7 +350,7 @@ export function Navbar() {
       </Dialog>
 
       <Dialog open={showAdModal} onOpenChange={(open) => !watchingAd && setShowAdModal(open)}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl max-w-[380px] outline-none">
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl max-w-[380px] outline-none" hideCloseButton={watchingAd}>
           <DialogHeader className="space-y-3">
             <div className="w-16 h-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-2">
               {verifyingAd ? <ShieldAlert className="w-8 h-8 text-primary animate-pulse" /> : <Zap className="w-8 h-8 text-primary" />}
@@ -394,6 +394,7 @@ export function Navbar() {
         onStartQuickFire={() => router.push('/?start=quickfire')}
         onWatchAd={handleWatchAd}
         isWatchingAd={watchingAd}
+        isVerifyingAd={verifyingAd}
       />
     </>
   );

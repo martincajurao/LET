@@ -7,20 +7,16 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Trophy, 
   Zap, 
-  ChevronRight, 
-  Home, 
-  ArrowLeft,
   Star,
   CheckCircle2,
-  TrendingUp,
   BrainCircuit,
   History,
   Play,
   Loader2,
-  Sparkles,
   MessageSquare,
   AlertCircle,
-  ShieldCheck
+  ShieldCheck,
+  ShieldAlert
 } from "lucide-react";
 import { Question } from "@/app/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -63,11 +59,11 @@ export function QuickFireResults({ questions, answers, timeSpent, xpEarned, onRe
     setIsExplaining(true);
     setVerifying(false);
     
-    // Hard-locked duration to prevent skipping
+    // Hard-locked duration: Playback window (3.5s)
     setTimeout(async () => {
       setVerifying(true);
       
-      // Verification buffer
+      // Professional verification phase (1.5s)
       setTimeout(async () => {
         try {
           const result = await explainMistakesBatch({
@@ -161,7 +157,7 @@ export function QuickFireResults({ questions, answers, timeSpent, xpEarned, onRe
                 className="h-10 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 transition-all shadow-sm"
               >
                 {isExplaining ? (
-                  verifying ? <><ShieldCheck className="w-4 h-4 animate-pulse" /> Verifying...</> : <><Loader2 className="w-4 h-4 animate-spin" /> Watching...</>
+                  verifying ? <><ShieldAlert className="w-4 h-4 animate-pulse" /> Verifying...</> : <><Loader2 className="w-4 h-4 animate-spin" /> Watching...</>
                 ) : (
                   <>
                     <Play className="w-3.5 h-3.5 fill-current" />

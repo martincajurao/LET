@@ -20,7 +20,8 @@ import {
   Loader2,
   Sparkles,
   ChevronRight,
-  Flame
+  Flame,
+  ShieldAlert
 } from 'lucide-react';
 import { COOLDOWNS, XP_REWARDS, DAILY_AD_LIMIT } from '@/lib/xp-system';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,7 @@ interface NotificationsModalProps {
   onStartQuickFire: () => void;
   onWatchAd: () => void;
   isWatchingAd?: boolean;
+  isVerifyingAd?: boolean;
 }
 
 export function NotificationsModal({ 
@@ -38,7 +40,8 @@ export function NotificationsModal({
   onClose, 
   onStartQuickFire, 
   onWatchAd,
-  isWatchingAd = false
+  isWatchingAd = false,
+  isVerifyingAd = false
 }: NotificationsModalProps) {
   const { user } = useUser();
   const [adTimeLeft, setAdTimeLeft] = useState(0);
@@ -70,15 +73,15 @@ export function NotificationsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm sm:max-w-md overflow-hidden outline-none">
+      <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm sm:max-w-md overflow-hidden outline-none" hideCloseButton={isWatchingAd}>
         <DialogHeader className="text-left space-y-2 mb-6">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center">
-              <Bell className="w-6 h-6 text-primary" />
+              {isVerifyingAd ? <ShieldAlert className="w-6 h-6 text-primary animate-pulse" /> : <Bell className="w-6 h-6 text-primary" />}
             </div>
             <div>
-              <DialogTitle className="text-2xl font-black tracking-tight">Academic Alerts</DialogTitle>
-              <DialogDescription className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Professional Rewards Hub</DialogDescription>
+              <DialogTitle className="text-2xl font-black tracking-tight">{isVerifyingAd ? "Verifying Access" : "Academic Alerts"}</DialogTitle>
+              <DialogDescription className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{isVerifyingAd ? "Syncing professional record..." : "Professional Rewards Hub"}</DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -112,7 +115,7 @@ export function NotificationsModal({
               )}
             </div>
             <Button 
-              disabled={!qfAvailable}
+              disabled={!qfAvailable || isWatchingAd}
               onClick={(e) => { 
                 e.stopPropagation();
                 onStartQuickFire(); 
@@ -136,7 +139,7 @@ export function NotificationsModal({
                   "w-10 h-10 rounded-xl flex items-center justify-center shadow-sm",
                   adAvailable ? "bg-yellow-500 text-white" : "bg-background text-muted-foreground"
                 )}>
-                  <Sparkles className="w-5 h-5" />
+                  {isVerifyingAd ? <ShieldAlert className="w-5 h-5 animate-pulse" /> : <Sparkles className="w-5 h-5" />}
                 </div>
                 <div>
                   <p className="font-black text-sm">Professional Insight</p>
@@ -166,8 +169,18 @@ export function NotificationsModal({
                 adAvailable ? "bg-yellow-500 hover:bg-yellow-600 text-white shadow-yellow-500/20" : ""
               )}
             >
-              {isWatchingAd ? <Loader2 className="w-4 h-4 animate-spin" /> : adReachedLimit ? <CheckCircle2 className="w-4 h-4" /> : adAvailable ? "Refill Growth Boost" : `Next: ${formatTime(adTimeLeft)}`}
-              {isWatchingAd ? "Loading Clip..." : adReachedLimit ? "Limit Reached" : ""}
+              {isWatchingAd ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {isVerifyingAd ? "Verifying..." : "Loading Clip..."}
+                </div>
+              ) : adReachedLimit ? (
+                <><CheckCircle2 className="w-4 h-4" /> Limit Reached</>
+              ) : adAvailable ? (
+                "Refill Growth Boost"
+              ) : (
+                `Next: ${formatTime(adTimeLeft)}`
+              )}
             </Button>
             {adReachedLimit && (
               <p className="text-[8px] font-bold text-center text-muted-foreground uppercase mt-2 tracking-widest">Allowance: {DAILY_AD_LIMIT}/{DAILY_AD_LIMIT} clips</p>

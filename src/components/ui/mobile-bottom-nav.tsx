@@ -17,7 +17,7 @@ import { NotificationsModal } from './notifications-modal';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { XP_REWARDS, COOLDOWNS } from '@/lib/xp-system';
+import { XP_REWARDS, COOLDOWNS, DAILY_AD_LIMIT } from '@/lib/xp-system';
 
 interface NavItem {
   id: string;
@@ -40,6 +40,7 @@ function NavContent() {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
   const [watchingAd, setWatchingAd] = useState(false);
+  const [verifyingAd, setVerifyingAd] = useState(false);
   const [availableTasksCount, setAvailableTasksCount] = useState(0);
   const [claimableTasksCount, setClaimableTasksCount] = useState(0);
 
@@ -67,11 +68,10 @@ function NavContent() {
 
     const calculateAvailable = () => {
       const now = Date.now();
-      const adAvailable = (user.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP <= now;
+      const adAvailable = (user.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP <= now && (user.dailyAdCount || 0) < DAILY_AD_LIMIT;
       const qfAvailable = (user.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE <= now;
       setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
 
-      // Calculate claimable daily missions
       let claimableCount = 0;
       const qGoal = user.userTier === 'Platinum' ? 35 : 20;
       if (!user.taskLoginClaimed) claimableCount++;
@@ -150,23 +150,38 @@ function NavContent() {
 
   const handleWatchAd = async () => {
     if (!user || !firestore) return;
+    if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
+      toast({ title: "Allowance Reached", description: "Daily professional clip limit reached.", variant: "destructive" });
+      return;
+    }
+
     setWatchingAd(true);
+    setVerifyingAd(false);
+
+    // Locked Playback Window (3.5s)
     setTimeout(async () => {
-      try {
-        const userRef = doc(firestore, 'users', user.uid);
-        await updateDoc(userRef, {
-          credits: increment(5),
-          xp: increment(XP_REWARDS.AD_WATCH_XP),
-          lastAdXpTimestamp: Date.now()
-        });
-        toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added.` });
-        setIsAlertsOpen(false);
-      } catch (e) {
-        toast({ variant: "destructive", title: "Sync Failed", description: "Could not grant reward." });
-      } finally {
-        setWatchingAd(false);
-      }
-    }, 3000);
+      setVerifyingAd(true);
+      
+      // Professional Verification (1.5s)
+      setTimeout(async () => {
+        try {
+          const userRef = doc(firestore, 'users', user.uid);
+          await updateDoc(userRef, {
+            credits: increment(5),
+            xp: increment(XP_REWARDS.AD_WATCH_XP),
+            lastAdXpTimestamp: Date.now(),
+            dailyAdCount: increment(1)
+          });
+          toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added.` });
+          setIsAlertsOpen(false);
+        } catch (e) {
+          toast({ variant: "destructive", title: "Sync Failed", description: "Could not grant reward." });
+        } finally {
+          setWatchingAd(false);
+          setVerifyingAd(false);
+        }
+      }, 1500);
+    }, 3500);
   };
 
   const isActive = (item: NavItem) => {
@@ -177,7 +192,6 @@ function NavContent() {
     return false;
   };
 
-  // Only show bottom navbar if user is signed in
   if (authLoading || !user) return null;
 
   return (
@@ -242,10 +256,11 @@ function NavContent() {
 
       <NotificationsModal 
         isOpen={isAlertsOpen}
-        onClose={() => setIsAlertsOpen(false)}
+        onClose={() => !watchingAd && setIsAlertsOpen(false)}
         onStartQuickFire={() => router.push('/?start=quickfire')}
         onWatchAd={handleWatchAd}
         isWatchingAd={watchingAd}
+        isVerifyingAd={verifyingAd}
       />
     </>
   );

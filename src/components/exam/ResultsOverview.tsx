@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LabelList } from 'recharts';
-import { CheckCircle2, XCircle, Trophy, Target, BookOpen, ArrowLeft, BrainCircuit, Sparkles, Loader2, AlertCircle, LayoutDashboard, ChevronRight, Lock, Play, MessageSquare, Coins, Crown, ShieldCheck } from "lucide-react";
+import { CheckCircle2, XCircle, Trophy, Target, BookOpen, ArrowLeft, BrainCircuit, Sparkles, Loader2, AlertCircle, LayoutDashboard, ChevronRight, Lock, Play, MessageSquare, Coins, Crown, ShieldCheck, ShieldAlert } from "lucide-react";
 import { PersonalizedPerformanceSummaryOutput } from "@/ai/flows/personalized-performance-summary-flow";
 import { explainMistakesBatch } from "@/ai/flows/explain-mistakes-batch-flow";
 import { Question } from "@/app/lib/mock-data";
@@ -125,11 +125,11 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
     setUnlocking(true);
     setVerifying(false);
 
-    // Locked Playback Duration
+    // Hard-locked duration (3.5s)
     setTimeout(async () => {
       setVerifying(true);
       
-      // Verification buffer
+      // Professional verification phase (1.5s)
       setTimeout(async () => {
         try {
           const userRef = doc(firestore, 'users', user.uid);
@@ -312,10 +312,10 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
       {!isUnlocked ? (
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-foreground text-background p-12 text-center relative overflow-hidden">
           <div className="absolute top-0 right-0 p-10 opacity-10">
-            {verifying ? <ShieldCheck className="w-32 h-32 text-primary animate-pulse" /> : <Lock className="w-32 h-32" />}
+            {verifying ? <ShieldAlert className="w-32 h-32 text-primary animate-pulse" /> : <Lock className="w-32 h-32" />}
           </div>
           <CardHeader className="space-y-4">
-            <CardTitle className="text-4xl font-black tracking-tight">{verifying ? "Verifying Viewing..." : "Unlock Detailed Analysis"}</CardTitle>
+            <CardTitle className="text-4xl font-black tracking-tight">{verifying ? "Verifying Access..." : "Unlock Detailed Analysis"}</CardTitle>
             <CardDescription className="text-muted-foreground font-medium max-w-lg mx-auto text-lg">
               {verifying ? "Our academic system is confirming your professional clip completion." : "Access AI pedagogical summaries and mistake review by supporting the platform."}
             </CardDescription>
@@ -328,7 +328,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
               className="h-16 px-10 rounded-2xl font-black text-lg gap-3 shadow-2xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-95"
             >
               {unlocking ? (
-                verifying ? <><ShieldCheck className="w-6 h-6 animate-pulse" /> Finalizing...</> : <><Loader2 className="w-6 h-6 animate-spin" /> Playing...</>
+                verifying ? <><ShieldAlert className="w-6 h-6 animate-pulse" /> Finalizing...</> : <><Loader2 className="w-6 h-6 animate-spin" /> Playing...</>
               ) : (
                 <><Play className="w-6 h-6 fill-current" /> Watch Ad to Unlock</>
               )}
