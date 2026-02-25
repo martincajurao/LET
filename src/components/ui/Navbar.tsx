@@ -82,8 +82,11 @@ export function Navbar() {
 
     const calculateAvailable = () => {
       const now = Date.now();
-      const adAvailable = (user.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP <= now && (user.dailyAdCount || 0) < DAILY_AD_LIMIT;
-      const qfAvailable = (user.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE <= now;
+      const lastAd = typeof user.lastAdXpTimestamp === 'number' ? user.lastAdXpTimestamp : 0;
+      const lastQf = typeof user.lastQuickFireTimestamp === 'number' ? user.lastQuickFireTimestamp : 0;
+      
+      const adAvailable = lastAd + COOLDOWNS.AD_XP <= now && (user.dailyAdCount || 0) < DAILY_AD_LIMIT;
+      const qfAvailable = lastQf + COOLDOWNS.QUICK_FIRE <= now;
       setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
 
       let claimableCount = 0;
@@ -173,6 +176,13 @@ export function Navbar() {
     },
   ];
 
+  // Defensive values for UI to prevent crash
+  const creditsValue = typeof user?.credits === 'number' ? user.credits : 0;
+  const xpValue = typeof user?.xp === 'number' ? user.xp : 0;
+  const xpInRank = typeof rankData?.xpInRank === 'number' ? rankData.xpInRank : 0;
+  const nextRankXp = typeof rankData?.nextRankXp === 'number' ? rankData.nextRankXp : 100;
+  const progressValue = typeof rankData?.progress === 'number' ? rankData.progress : 0;
+
   return (
     <>
       <nav className="min-h-16 pt-[env(safe-area-inset-top)] flex items-center justify-between px-4 md:px-8 bg-background/80 backdrop-blur-xl border-b sticky top-0 z-[100] transition-all duration-300 shadow-sm">
@@ -203,9 +213,9 @@ export function Navbar() {
               <div className="hidden lg:flex flex-col items-end gap-1 min-w-[120px] mr-2">
                 <div className="flex justify-between w-full px-1">
                   <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">{rankData?.title}</span>
-                  <span className="text-[8px] font-black text-primary">{Math.round(rankData?.progress || 0)}%</span>
+                  <span className="text-[8px] font-black text-primary">{Math.round(progressValue)}%</span>
                 </div>
-                <Progress value={rankData?.progress} className="h-1 w-full bg-muted" />
+                <Progress value={progressValue} className="h-1 w-full bg-muted" />
               </div>
             )}
 
@@ -257,7 +267,7 @@ export function Navbar() {
                   <div className="w-5 h-5 rounded-full bg-yellow-500/10 flex items-center justify-center">
                     <Coins className="w-3.5 h-3.5 text-yellow-600 fill-current" />
                   </div>
-                  <span className="text-sm font-black text-foreground">{user.credits ?? 0}</span>
+                  <span className="text-sm font-black text-foreground">{creditsValue}</span>
                   <Zap className="w-3 h-3 text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
                 </div>
               )}
@@ -300,9 +310,9 @@ export function Navbar() {
                       <div className="px-3 py-2 space-y-2">
                         <div className="flex justify-between items-center text-[10px] font-black uppercase">
                           <span className="text-muted-foreground">{rankData?.title}</span>
-                          <span className="text-primary">{rankData?.xpInRank || 0} / {rankData?.nextRankXp} XP</span>
+                          <span className="text-primary">{xpInRank} / {nextRankXp} XP</span>
                         </div>
-                        <Progress value={rankData?.progress} className="h-1.5" />
+                        <Progress value={progressValue} className="h-1.5" />
                       </div>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator className="my-2 bg-border/50" />

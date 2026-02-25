@@ -83,6 +83,52 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 /**
+ * Detects if a value is an internal Firestore FieldValue object 
+ * (like increment or serverTimestamp) that cannot be rendered by React.
+ */
+function isFirestoreInternal(val: any): boolean {
+  if (!val || typeof val !== 'object') return false;
+  return val.constructor?.name === 'FieldValue' || typeof val._methodName === 'string';
+}
+
+/**
+ * Scrubs the user object of any non-renderable Firestore objects.
+ */
+function scrubUserData(data: any): UserProfile {
+  const scrubbed: any = { ...data };
+  
+  // Numerical fields prone to increment() latency objects
+  const numFields = [
+    'credits', 'xp', 'streakCount', 'dailyAdCount', 
+    'dailyQuestionsAnswered', 'dailyTestsFinished', 
+    'dailyCreditEarned', 'referralCount', 'referralCreditsEarned', 
+    'mistakesReviewed', 'dailyAiUsage'
+  ];
+
+  // Timestamp fields prone to serverTimestamp() latency objects
+  const dateFields = ['lastAdXpTimestamp', 'lastQuickFireTimestamp', 'lastActiveDate', 'lastTaskReset', 'lastQualityUpdate', 'lastExplanationRequest'];
+
+  for (const key in scrubbed) {
+    if (isFirestoreInternal(scrubbed[key])) {
+      if (numFields.includes(key)) {
+        scrubbed[key] = data[key]?.previousValue || 0; // Attempt to use previous value or fallback to 0
+      } else if (dateFields.includes(key)) {
+        scrubbed[key] = Date.now(); // Fallback to current time
+      } else {
+        scrubbed[key] = null;
+      }
+    }
+  }
+
+  // Ensure these are always numbers for UI rendering
+  numFields.forEach(field => {
+    if (typeof scrubbed[field] !== 'number') scrubbed[field] = 0;
+  });
+
+  return scrubbed as UserProfile;
+}
+
+/**
  * Safely cleans data for Firestore by removing undefined values 
  * while protecting Firestore internal objects like FieldValue.
  */
@@ -131,12 +177,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         unsubFromProfile = onSnapshot(userDocRef, async (snap) => {
           if (snap.exists()) {
+            const data = snap.data();
+            const scrubbed = scrubUserData(data);
             setUser({
-              ...snap.data() as UserProfile,
+              ...scrubbed,
               uid: firebaseUser.uid,
             });
           } else {
-            const newUserProfile: UserProfile = {
+            const newUserProfile: any = {
               uid: firebaseUser.uid,
               displayName: firebaseUser.displayName || (firebaseUser.isAnonymous ? 'Guest Educator' : 'Educator'),
               email: firebaseUser.email,
@@ -168,7 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             };
             try {
               await setDoc(userDocRef, newUserProfile);
-              setUser(newUserProfile);
+              // Note: setUser will be called by onSnapshot above once local setDoc resolves
             } catch (error) {
               console.error("Error creating user document:", error);
               toast({ variant: "destructive", title: "Setup Failed", description: "Could not create your user profile." });
