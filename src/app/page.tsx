@@ -42,8 +42,11 @@ import {
   Lock,
   Timer,
   Play,
-  BellRing
+  BellRing,
+  Download,
+  QrCode
 } from "lucide-react";
+import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
 import { QuickFireInterface } from "@/components/exam/QuickFireInterface";
@@ -185,119 +188,116 @@ function LetsPrepContent() {
   const [celebratedRank, setCelebratedRank] = useState(1);
   const [celebratedReward, setCelebratedReward] = useState(0);
 
+  // APK Download
+  const [apkInfo, setApkInfo] = useState<{version: string; downloadURL: string} | null>(null);
+  const [loadingApk, setLoadingApk] = useState(true);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
+
+  // Generate QR code on mount
+  useEffect(() => {
+    const generateQRCode = async () => {
+      try {
+        const downloadUrl = `${window.location.origin}/api/download`;
+        const qrCodeDataUrl = await QRCode.toDataURL(downloadUrl, {
+          width: 200,
+          margin: 1,
+          color: {
+            dark: '#10b981',
+            light: '#ffffff'
+          }
+        });
+        setQrCodeUrl(qrCodeDataUrl);
+      } catch (e) {
+        console.error('Error generating QR code:', e);
+      }
+    };
+    generateQRCode();
+  }, []);
+
+  // Download Card with QR Code
+  const downloadCard = (
+    <Card className="border-none shadow-xl rounded-[2rem] bg-gradient-to-br from-green-500/20 via-card to-background p-6 overflow-hidden">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-green-500/20 rounded-2xl flex items-center justify-center">
+              <Smartphone className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="font-black text-lg">Get Mobile App</h3>
+              <p className="text-xs text-muted-foreground">Study anywhere, anytime</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="text-right">
+              <div className="text-xs text-muted-foreground">Version</div>
+              <Badge variant="secondary" className="font-bold bg-green-500/10 text-green-600">v1.0.0</Badge>
+            </div>
+          </div>
+        </div>
+        
+        {/* QR Code Display */}
+        {qrCodeUrl && (
+          <div className="flex justify-center mb-4">
+            <div className="text-center mb-2">
+              <QrCode className="w-5 h-5 text-green-500" />
+              <p className="text-xs text-muted-foreground">Scan to download</p>
+            </div>
+            <div className="w-32 h-32 bg-white p-2 rounded-xl">
+              <img src={qrCodeUrl} alt="Download QR Code" className="w-full h-full object-contain" />
+            </div>
+          </div>
+        )}
+
+        <Button 
+          onClick={() => {
+            const link = document.createElement('a');
+            link.href = '/api/download';
+            link.download = 'letpractice-app.apk';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }}
+          className="w-full h-12 rounded-xl font-black gap-2 bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/30"
+        >
+          <Download className="w-5 h-5" />
+          Download App
+        </Button>
+      </div>
+    </Card>
+  );
+
+  return downloadCard;
+
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
-  // Rank-up logic listener
+  // Generate QR code on mount
   useEffect(() => {
-    if (!user || !firestore || user.uid.startsWith('bypass')) return;
-    
-    const currentRank = rankData?.rank || 1;
-    const lastRewarded = user.lastRewardedRank || 1;
-
-    if (currentRank > lastRewarded) {
-      const triggerCelebration = async () => {
-        setCelebratedRank(currentRank);
-        setCelebratedReward(rankData?.rankUpReward || 25);
-        setShowRankUp(true);
-        try {
-          const userRef = doc(firestore, 'users', user.uid);
-          await updateDoc(userRef, {
-            lastRewardedRank: currentRank,
-            credits: increment(rankData?.rankUpReward || 25)
-          });
-        } catch (e) {
-          console.error("Rank up reward sync failed:", e);
-        }
-      };
-      triggerCelebration();
-    }
-  }, [user, rankData?.rank, rankData?.rankUpReward, firestore]);
-
-  useEffect(() => {
-    const fetchRank = async () => {
-      if (!firestore || !user?.xp || user.uid.startsWith('bypass')) return;
+    const generateQRCode = async () => {
       try {
-        const q = query(collection(firestore, 'users'), where('xp', '>', user.xp));
-        const snapshot = await getCountFromServer(q);
-        setUserRank(`#${snapshot.data().count + 1}`);
-      } catch (e) { console.error("Rank fetch error:", e); }
-    };
-    fetchRank();
-  }, [firestore, user?.xp, user?.uid]);
-
-  useEffect(() => {
-    if (!user) return;
-    const interval = setInterval(() => {
-      const now = Date.now();
-      setAdCooldown(Math.max(0, (user.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP - now));
-      setQuickFireCooldown(Math.max(0, (user.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE - now));
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [user]);
-
-  useEffect(() => {
-    const startCat = searchParams.get('start');
-    if (startCat && user) {
-      if (state !== 'dashboard') setState('dashboard');
-      startExam(startCat as any);
-      router.replace('/');
-    }
-  }, [searchParams, user, state, router]);
-
-  useEffect(() => {
-    if (user && !user.onboardingComplete && state === 'dashboard' && !user.uid.startsWith('bypass')) {
-      setState('onboarding');
-      if (user.displayName) setNickname(user.displayName);
-      if (user.majorship) setSelectedMajorship(user.majorship);
-    }
-  }, [user, state]);
-
-  useEffect(() => {
-    if (!firestore) return;
-    const unsub = onSnapshot(doc(firestore, "system_configs", "global"), (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setTimePerQuestion(data.timePerQuestion || 60);
-        setLimits({ limitGenEd: data.limitGenEd || 10, limitProfEd: data.limitProfEd || 10, limitSpec: data.limitSpec || 10 });
-      }
-    });
-    return () => unsub();
-  }, [firestore]);
-
-  const startExam = async (category: string | 'all' | 'quickfire' = 'all') => {
-    if (loading) return;
-    if (category !== 'quickfire' && user && !isTrackUnlocked(rankData?.rank || 1, category as string, user.unlockedTracks)) {
-      const reqRank = category === 'all' ? UNLOCK_RANKS.FULL_SIMULATION : (category === 'Professional Education' ? UNLOCK_RANKS.PROFESSIONAL_ED : UNLOCK_RANKS.SPECIALIZATION);
-      toast({ title: "Mode Locked", description: `Requires Rank ${reqRank} or early credit unlock.`, variant: "destructive" });
-      return;
-    }
-
-    setLoading(true);
-    setLoadingStep(5);
-    setLoadingMessage("Opening Vault...");
-
-    if (!user) { setAuthIssue(true); setLoading(false); return; }
-
-    try {
-      if (!firestore) throw new Error("Cloud sync error.");
-      const questionPool = await fetchQuestionsFromFirestore(firestore);
-      if (!questionPool || questionPool.length === 0) { await seedInitialQuestions(firestore); throw new Error("Initializing Bank. Please retry."); }
-
-      let finalQuestions: Question[] = [];
-      if (category === 'all') {
-        const sequenceOrder = ['General Education', 'Professional Education', 'Specialization'];
-        for (const subjectName of sequenceOrder) {
-          const pool = questionPool.filter(q => subjectName === 'Specialization' ? (q.subject === 'Specialization' && q.subCategory === (user?.majorship || 'English')) : q.subject === subjectName);
-          if (pool.length > 0) {
-            let limitCount = subjectName === 'Professional Education' ? limits.limitProfEd : (subjectName === 'Specialization' ? limits.limitSpec : limits.limitGenEd);
-            finalQuestions = [...finalQuestions, ...shuffleArray(pool).slice(0, limitCount)];
+        const downloadUrl = `${window.location.origin}/api/download`;
+        const qrCodeDataUrl = await QRCode.toDataURL(downloadUrl, {
+          width: 200,
+          margin: 1,
+          color: {
+            dark: '#10b981',
+            light: '#ffffff'
           }
-        }
-      } else if (category === 'quickfire') {
-        const genEdPool = questionPool.filter(q => q.subject === 'General Education');
-        const profEdPool = questionPool.filter(q => q.subject === 'Professional Education');
-        const specPool = questionPool.filter(q => q.subject === 'Specialization');
-        const selection: Question[] = [];
+        });
+        setQrCodeUrl(qrCodeDataUrl);
+      } catch (e) {
+        console.error('Error generating QR code:', e);
+      }
+    };
+    generateQRCode();
+  }, []);
+
+  // Generate QR code on mount
+  useEffect(() => {
+    const generateQRCode = async () => {
+      try {
+        const downloadUrl = `${window.location.origin}/api/download`;
+        const qrCodeDataUrl =
         if (genEdPool.length > 0) selection.push(shuffleArray(genEdPool)[0]);
         if (profEdPool.length > 0) selection.push(shuffleArray(profEdPool)[0]);
         if (specPool.length > 0) selection.push(shuffleArray(specPool)[0]);

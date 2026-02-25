@@ -1,4 +1,3 @@
-
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -36,17 +35,15 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+    unoptimized: true,
   },
   serverExternalPackages: ['genkit', '@genkit-ai/google-genai'],
   experimental: {
-    allowedDevOrigins: [
-      'localhost:9002',
-      '*.cluster-c36dgv2kibakqwbbbsgmia3fny.cloudworkstations.dev'
-    ],
     serverActions: {
       bodySizeLimit: '10mb'
     }
-  }
+  },
+  distDir: 'out'
 };
 
 export default nextConfig;

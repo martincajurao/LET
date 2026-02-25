@@ -25,7 +25,13 @@ import {
   Minus,
   Wrench,
   ChevronRight,
-  Crown
+  Crown,
+  Download,
+  Smartphone,
+  Trash,
+  Check,
+  X,
+  Upload
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -112,6 +118,13 @@ export default function AdminDashboard() {
   const [extractedPreview, setExtractedPreview] = useState<Partial<Question>[]>([]);
   const [seeding, setSeeding] = useState(false);
 
+  // APK Upload state
+  const [apkVersion, setApkVersion] = useState("");
+  const [apkFile, setApkFile] = useState<File | null>(null);
+  const [uploadingApk, setUploadingApk] = useState(false);
+  const [currentApkInfo, setCurrentApkInfo] = useState<any>(null);
+  const [loadingApkInfo, setLoadingApkInfo] = useState(false);
+
   const fetchData = async () => {
     if (!firestore) return;
     setLoading(true);
@@ -137,7 +150,20 @@ export default function AdminDashboard() {
     } catch (error) { console.error(error); }
   };
 
-  useEffect(() => { if (firestore) { fetchData(); fetchUsers(); } }, [firestore]);
+  const fetchApkInfo = async () => {
+    setLoadingApkInfo(true);
+    try {
+      const res = await fetch('/api/apk');
+      const data = await res.json();
+      setCurrentApkInfo(data);
+    } catch (error) {
+      console.error('Error fetching APK info:', error);
+    } finally {
+      setLoadingApkInfo(false);
+    }
+  };
+
+  useEffect(() => { if (firestore) { fetchData(); fetchUsers(); fetchApkInfo(); } }, [firestore]);
 
   const filteredUsers = useMemo(() => users.filter(u => (u.email?.toLowerCase() || "").includes(userSearchQuery.toLowerCase()) || (u.displayName?.toLowerCase() || "").includes(userSearchQuery.toLowerCase())), [users, userSearchQuery]);
 
@@ -156,6 +182,38 @@ export default function AdminDashboard() {
     if (!firestore) return; setIsUpdatingUser(true);
     try { await updateDoc(doc(firestore, 'users', userId), { credits: increment(amount) }); fetchUsers(); setManageUser(null); toast({ title: "Credits Adjusted" }); }
     catch (e: any) { toast({ variant: "destructive", title: "Failed", description: e.message }); } finally { setIsUpdatingUser(false); }
+  };
+
+  const handleUploadApk = async () => {
+    if (!apkFile || !apkVersion) {
+      toast({ variant: "destructive", title: "Error", description: "Please select a file and enter version" });
+      return;
+    }
+    setUploadingApk(true);
+    try {
+      const formData = new FormData();
+      formData.append('apk', apkFile);
+      formData.append('version', apkVersion);
+      
+      const response = await fetch('/api/apk', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        toast({ title: "Success", description: "APK uploaded successfully" });
+        setApkFile(null);
+        setApkVersion("");
+        fetchApkInfo();
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Upload Failed", description: error.message });
+    } finally {
+      setUploadingApk(false);
+    }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
@@ -177,6 +235,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="users" className="font-bold rounded-xl flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Users className="w-3.5 h-3.5" /> User Base</TabsTrigger>
             <TabsTrigger value="pdf-import" className="font-bold rounded-xl flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><FileUp className="w-3.5 h-3.5" /> AI Import</TabsTrigger>
             <TabsTrigger value="config" className="font-bold rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Settings</TabsTrigger>
+            <TabsTrigger value="apk-upload" className="font-bold rounded-xl flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Smartphone className="w-3.5 h-3.5" /> APK Upload</TabsTrigger>
           </TabsList>
 
           <TabsContent value="questions" className="space-y-4">
@@ -248,6 +307,105 @@ export default function AdminDashboard() {
                   <div className="space-y-2"><label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Spec Items</label><Input type="number" value={limits.limitSpec} onChange={(e) => setLimits({...limits, limitSpec: parseInt(e.target.value) || 10})} className="rounded-xl font-bold" /></div>
                 </div>
                 <Button onClick={async () => { setSavingSettings(true); await setDoc(doc(firestore!, "system_configs", "global"), { timePerQuestion, limitGenEd: limits.limitGenEd, limitProfEd: limits.limitProfEd, limitSpec: limits.limitSpec, updatedAt: serverTimestamp() }, { merge: true }); setSavingSettings(false); toast({ title: "Config Saved" }); }} disabled={savingSettings} className="font-black h-12 rounded-xl w-full sm:w-auto px-12">{savingSettings ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />} Save System Configuration</Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="apk-upload" className="space-y-6">
+            <Card className="android-surface rounded-[2rem] border-none">
+              <CardHeader>
+                <CardTitle className="text-lg font-black flex items-center gap-2">
+                  <Smartphone className="w-5 h-5 text-primary" /> APK Management
+                </CardTitle>
+                <CardDescription className="font-medium">
+                  Upload and manage the Android app APK file for users to download.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="bg-muted/20 rounded-2xl p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Current Version</h4>
+                    {loadingApkInfo ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                    ) : currentApkInfo?.version ? (
+                      <Badge variant="default" className="font-black bg-primary text-primary-foreground">
+                        v{currentApkInfo.version}
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="font-bold">No APK uploaded</Badge>
+                    )}
+                  </div>
+                  {currentApkInfo?.version && (
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        <p>File: {currentApkInfo.fileName}</p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => window.open(currentApkInfo.downloadURL, '_blank')}
+                        className="rounded-xl font-bold gap-2"
+                      >
+                        <Download className="w-4 h-4" /> Download
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">APK Version</label>
+                    <Input 
+                      type="text" 
+                      placeholder="e.g., 1.0.0" 
+                      value={apkVersion} 
+                      onChange={(e) => setApkVersion(e.target.value)}
+                      className="rounded-xl font-bold"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Select APK File</label>
+                    <div className="border-2 border-dashed border-border rounded-2xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer relative">
+                      <input 
+                        type="file" 
+                        accept=".apk"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) setApkFile(file);
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <div className="space-y-2">
+                        {apkFile ? (
+                          <>
+                            <Check className="w-8 h-8 text-green-500 mx-auto" />
+                            <p className="font-bold text-sm">{apkFile.name}</p>
+                            <p className="text-xs text-muted-foreground">{(apkFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                          </>
+                        ) : (
+                          <>
+                            <FileUp className="w-8 h-8 text-muted-foreground mx-auto" />
+                            <p className="font-bold text-sm">Click to select APK file</p>
+                            <p className="text-xs text-muted-foreground">Only .apk files are allowed</p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button 
+                    onClick={handleUploadApk}
+                    disabled={uploadingApk}
+                    className="w-full h-14 rounded-2xl font-black gap-2 shadow-lg"
+                  >
+                    {uploadingApk ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Upload className="w-5 h-5" />
+                    )}
+                    {uploadingApk ? "Uploading..." : "Upload APK"}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

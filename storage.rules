@@ -1,0 +1,15 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // APK files can be read by anyone and written by anyone (for server uploads)
+    match /apk/{allPaths=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Default deny all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
