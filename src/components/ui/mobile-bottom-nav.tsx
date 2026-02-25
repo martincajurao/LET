@@ -158,11 +158,8 @@ function NavContent() {
     setWatchingAd(true);
     setVerifyingAd(false);
 
-    // Locked Playback Window (3.5s)
     setTimeout(async () => {
       setVerifyingAd(true);
-      
-      // Professional Verification (1.5s)
       setTimeout(async () => {
         try {
           const userRef = doc(firestore, 'users', user.uid);
@@ -192,7 +189,8 @@ function NavContent() {
     return false;
   };
 
-  if (authLoading || !user) return null;
+  // Only hide while initial auth is loading
+  if (authLoading) return null;
 
   return (
     <>
