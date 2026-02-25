@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
@@ -177,6 +178,7 @@ function LetsPrepContent() {
   const [adCooldown, setAdCooldown] = useState(0);
   const [quickFireCooldown, setQuickFireCooldown] = useState(0);
   const [claimingXp, setClaimingXp] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
 
   // Onboarding
   const [nickname, setNickname] = useState("");
@@ -188,103 +190,21 @@ function LetsPrepContent() {
   const [celebratedRank, setCelebratedRank] = useState(1);
   const [celebratedReward, setCelebratedReward] = useState(0);
 
-  // APK Download
-  const [apkInfo, setApkInfo] = useState<{version: string; downloadURL: string} | null>(null);
-  const [loadingApk, setLoadingApk] = useState(true);
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
-
-  // Generate QR code on mount
-  useEffect(() => {
-    const generateQRCode = async () => {
-      try {
-        const downloadUrl = `${window.location.origin}/api/download`;
-        const qrCodeDataUrl = await QRCode.toDataURL(downloadUrl, {
-          width: 200,
-          margin: 1,
-          color: {
-            dark: '#10b981',
-            light: '#ffffff'
-          }
-        });
-        setQrCodeUrl(qrCodeDataUrl);
-      } catch (e) {
-        console.error('Error generating QR code:', e);
-      }
-    };
-    generateQRCode();
-  }, []);
-
-  // Download Card with QR Code
-  const downloadCard = (
-    <Card className="border-none shadow-xl rounded-[2rem] bg-gradient-to-br from-green-500/20 via-card to-background p-6 overflow-hidden">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-green-500/20 rounded-2xl flex items-center justify-center">
-              <Smartphone className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 className="font-black text-lg">Get Mobile App</h3>
-              <p className="text-xs text-muted-foreground">Study anywhere, anytime</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="text-right">
-              <div className="text-xs text-muted-foreground">Version</div>
-              <Badge variant="secondary" className="font-bold bg-green-500/10 text-green-600">v1.0.0</Badge>
-            </div>
-          </div>
-        </div>
-        
-        {/* QR Code Display */}
-        {qrCodeUrl && (
-          <div className="flex justify-center mb-4">
-            <div className="text-center mb-2">
-              <QrCode className="w-5 h-5 text-green-500" />
-              <p className="text-xs text-muted-foreground">Scan to download</p>
-            </div>
-            <div className="w-32 h-32 bg-white p-2 rounded-xl">
-              <img src={qrCodeUrl} alt="Download QR Code" className="w-full h-full object-contain" />
-            </div>
-          </div>
-        )}
-
-        <Button 
-          onClick={() => {
-            const link = document.createElement('a');
-            link.href = '/api/download';
-            link.download = 'letpractice-app.apk';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }}
-          className="w-full h-12 rounded-xl font-black gap-2 bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/30"
-        >
-          <Download className="w-5 h-5" />
-          Download App
-        </Button>
-      </div>
-    </Card>
-  );
-
-  return downloadCard;
-
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
-  // Generate QR code on mount
   useEffect(() => {
     const generateQRCode = async () => {
       try {
         const downloadUrl = `${window.location.origin}/api/download`;
-        const qrCodeDataUrl = await QRCode.toDataURL(downloadUrl, {
-          width: 200,
-          margin: 1,
+        const dataUrl = await QRCode.toDataURL(downloadUrl, {
+          width: 256,
+          margin: 2,
           color: {
             dark: '#10b981',
             light: '#ffffff'
           }
         });
-        setQrCodeUrl(qrCodeDataUrl);
+        setQrCodeUrl(dataUrl);
       } catch (e) {
         console.error('Error generating QR code:', e);
       }
@@ -292,12 +212,86 @@ function LetsPrepContent() {
     generateQRCode();
   }, []);
 
-  // Generate QR code on mount
   useEffect(() => {
-    const generateQRCode = async () => {
-      try {
-        const downloadUrl = `${window.location.origin}/api/download`;
-        const qrCodeDataUrl =
+    if (searchParams.get('start') === 'quickfire') {
+      startExam('quickfire');
+    } else if (searchParams.get('start')) {
+      startExam(searchParams.get('start') as any);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!firestore) return;
+    const unsub = onSnapshot(doc(firestore, "system_configs", "global"), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setTimePerQuestion(data.timePerQuestion || 60);
+        setLimits({ limitGenEd: data.limitGenEd || 10, limitProfEd: data.limitProfEd || 10, limitSpec: data.limitSpec || 10 });
+      }
+    });
+    return () => unsub();
+  }, [firestore]);
+
+  useEffect(() => {
+    if (!user || !firestore) return;
+    const q = query(collection(firestore, "exam_results"), where("userId", "==", user.uid));
+    const unsub = onSnapshot(q, async () => {
+      const snap = await getCountFromServer(q);
+      const count = snap.data().count;
+      setUserRank(count > 0 ? `#${count}` : '---');
+    });
+    return () => unsub();
+  }, [user, firestore]);
+
+  useEffect(() => {
+    if (!user) return;
+    if (user.uid !== 'bypass-user' && !user.onboardingComplete) { setState('onboarding'); return; }
+    
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setAdCooldown(Math.max(0, (user.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP - now));
+      setQuickFireCooldown(Math.max(0, (user.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE - now));
+    }, 1000);
+
+    if (user.xp && user.lastRewardedRank) {
+      const currentRank = getRankData(user.xp).rank;
+      if (currentRank > user.lastRewardedRank) {
+        const tier = getRankData(user.xp);
+        setCelebratedRank(currentRank);
+        setCelebratedReward(tier.rankUpReward);
+        setShowRankUp(true);
+        updateDoc(doc(firestore!, 'users', user.uid), { 
+          lastRewardedRank: currentRank, 
+          credits: increment(tier.rankUpReward) 
+        });
+      }
+    }
+
+    return () => clearInterval(interval);
+  }, [user, firestore]);
+
+  const startExam = async (category: 'General Education' | 'Professional Education' | 'Specialization' | 'all' | 'quickfire') => {
+    if (!user) { setAuthIssue(true); return; }
+    setLoading(true);
+    setLoadingStep(0);
+    setLoadingMessage("Calibrating Learning Path...");
+
+    try {
+      setLoadingStep(20);
+      const questionPool = await fetchQuestionsFromFirestore(firestore!);
+      setLoadingStep(60);
+      
+      let finalQuestions: Question[] = [];
+      if (category === 'all') {
+        const genEd = shuffleArray(questionPool.filter(q => q.subject === 'General Education')).slice(0, limits.limitGenEd);
+        const profEd = shuffleArray(questionPool.filter(q => q.subject === 'Professional Education')).slice(0, limits.limitProfEd);
+        const spec = shuffleArray(questionPool.filter(q => q.subject === 'Specialization' && q.subCategory === (user?.majorship || 'English'))).slice(0, limits.limitSpec);
+        finalQuestions = [...genEd, ...profEd, ...spec];
+      } else if (category === 'quickfire') {
+        const selection: Question[] = [];
+        const genEdPool = questionPool.filter(q => q.subject === 'General Education');
+        const profEdPool = questionPool.filter(q => q.subject === 'Professional Education');
+        const specPool = questionPool.filter(q => q.subject === 'Specialization');
         if (genEdPool.length > 0) selection.push(shuffleArray(genEdPool)[0]);
         if (profEdPool.length > 0) selection.push(shuffleArray(profEdPool)[0]);
         if (specPool.length > 0) selection.push(shuffleArray(specPool)[0]);
@@ -584,7 +578,52 @@ function LetsPrepContent() {
               </div>
 
               <div className="lg:col-span-4 space-y-6">
-                <Card className="border-none shadow-xl rounded-[2rem] bg-foreground text-background p-8 relative overflow-hidden group h-full">
+                <Card className="border-none shadow-xl rounded-[2.25rem] bg-gradient-to-br from-emerald-500/20 via-card to-background p-6 overflow-hidden">
+                  <div className="space-y-5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center">
+                          <Smartphone className="w-6 h-6 text-emerald-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-black text-lg text-foreground">Get Mobile App</h3>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Study anywhere</p>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="font-black text-[9px] border-emerald-500/30 text-emerald-600 bg-emerald-500/5 uppercase">Native APK</Badge>
+                    </div>
+                    
+                    {qrCodeUrl && (
+                      <div className="flex flex-col items-center justify-center p-5 bg-white rounded-3xl border-2 border-dashed border-emerald-500/20 relative group">
+                        <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
+                        <div className="w-32 h-32 relative z-10 bg-white p-1 rounded-xl shadow-sm">
+                          <img src={qrCodeUrl} alt="Download QR Code" className="w-full h-full object-contain" />
+                        </div>
+                        <div className="flex items-center gap-2 mt-3 text-emerald-600">
+                          <QrCode className="w-3.5 h-3.5" />
+                          <p className="text-[10px] font-black uppercase tracking-[0.2em]">Scan to Download</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <Button 
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = '/api/download';
+                        link.download = 'letpractice-app.apk';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="w-full h-14 rounded-2xl font-black gap-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl shadow-emerald-500/30 transition-all hover:scale-[1.02] active:scale-95"
+                    >
+                      <Download className="w-5 h-5" />
+                      Direct Download
+                    </Button>
+                  </div>
+                </Card>
+
+                <Card className="border-none shadow-xl rounded-[2.25rem] bg-foreground text-background p-8 relative overflow-hidden group">
                   <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
                   <CardHeader className="p-0 mb-6"><CardTitle className="text-xl font-black tracking-tight flex items-center gap-3"><ShieldCheck className="w-6 h-6 text-primary" /> Verified Hub</CardTitle></CardHeader>
                   <CardContent className="p-0 space-y-8">
