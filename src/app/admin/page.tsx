@@ -40,7 +40,9 @@ import {
   Clock,
   ExternalLink,
   Ban,
-  Trophy
+  Trophy,
+  AlertTriangle,
+  History
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -63,6 +65,17 @@ import {
   DialogFooter,
   DialogDescription
 } from "@/components/ui/dialog";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -115,6 +128,8 @@ export default function AdminDashboard() {
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [manageUser, setManageUser] = useState<any | null>(null);
   const [isUpdatingUser, setIsUpdatingUser] = useState(false);
+  const [isResettingTasks, setIsResettingTasks] = useState(false);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
   const [editUserForm, setEditUserForm] = useState({
     displayName: "",
     majorship: "",
@@ -222,6 +237,46 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleResetDailyTasks = async () => {
+    if (!firestore || !manageUser) return;
+    setIsResettingTasks(true);
+    try {
+      await updateDoc(doc(firestore, 'users', manageUser.id), {
+        dailyQuestionsAnswered: 0,
+        dailyTestsFinished: 0,
+        dailyAiUsage: 0,
+        dailyCreditEarned: 0,
+        dailyAdCount: 0,
+        taskLoginClaimed: false,
+        taskQuestionsClaimed: false,
+        taskMockClaimed: false,
+        taskMistakesClaimed: false,
+        lastTaskReset: serverTimestamp()
+      });
+      toast({ title: "Missions Reset", description: `Daily progress cleared for ${editUserForm.displayName}` });
+      fetchUsers();
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Reset Failed", description: e.message });
+    } finally {
+      setIsResettingTasks(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!firestore || !manageUser) return;
+    setIsDeletingUser(true);
+    try {
+      await deleteDoc(doc(firestore, 'users', manageUser.id));
+      toast({ title: "Account Deleted", description: "Educator record has been removed." });
+      fetchUsers();
+      setManageUser(null);
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Deletion Failed", description: e.message });
+    } finally {
+      setIsDeletingUser(false);
+    }
+  };
+
   const handleUploadApk = async () => {
     if (!apkFile || !apkVersion) {
       toast({ variant: "destructive", title: "Error", description: "Please select a file and enter version" });
@@ -259,7 +314,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background font-body transition-colors duration-300">
       <Toaster />
-      <header className="bg-card/80 backdrop-blur-md border-b sticky top-0 z-[100] h-16 pt-safe flex items-center justify-between px-4 sm:px-8">
+      <header className="bg-card/80 backdrop-blur-md border-b sticky top-0 z-[100] pt-safe flex items-center justify-between px-4 sm:px-8 h-16 sm:h-20">
         <div className="flex items-center gap-4">
           <Link href="/"><Button variant="ghost" size="sm" className="gap-2 font-bold text-muted-foreground"><ArrowLeft className="w-4 h-4" /> Exit</Button></Link>
           <div className="h-8 w-[1px] bg-border mx-2 hidden sm:block" />
@@ -584,7 +639,7 @@ export default function AdminDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Full User Management Dialog */}
+      {/* Full User Management Dialog - Android Native Styling */}
       <Dialog open={!!manageUser} onOpenChange={() => setManageUser(null)}>
         <DialogContent className="max-w-2xl rounded-[3rem] p-0 border-none shadow-[0_30px_100px_rgba(0,0,0,0.4)] overflow-hidden">
           <div className="bg-foreground text-background p-10 flex flex-col sm:flex-row items-center gap-8 relative overflow-hidden">
@@ -605,7 +660,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="p-10 space-y-8">
+          <div className="p-10 space-y-10">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Identity Section */}
               <div className="space-y-6">
@@ -655,6 +710,46 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 mb-2"><Wrench className="w-4 h-4 text-primary" /><h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Special Tools & Utilities</h4></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Button 
+                  variant="outline" 
+                  onClick={handleResetDailyTasks} 
+                  disabled={isResettingTasks}
+                  className="h-14 rounded-2xl font-black text-xs gap-3 border-2 hover:bg-primary/5 transition-all"
+                >
+                  {isResettingTasks ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4 text-primary" />}
+                  Force Reset Daily Missions
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" className="h-14 rounded-2xl font-black text-xs gap-3 border-2 border-rose-200 text-rose-600 hover:bg-rose-50 transition-all">
+                      <Trash2 className="w-4 h-4" />
+                      Delete Educator Account
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl p-8 outline-none">
+                    <AlertDialogHeader>
+                      <div className="w-16 h-16 bg-rose-500/10 rounded-2xl flex items-center justify-center mb-4 mx-auto">
+                        <AlertTriangle className="w-8 h-8 text-rose-600" />
+                      </div>
+                      <AlertDialogTitle className="text-2xl font-black text-center">Irreversible Deletion</AlertDialogTitle>
+                      <AlertDialogDescription className="text-center font-medium">
+                        Are you certain you want to purge <strong>{editUserForm.displayName}</strong> from the database? This will clear all XP, credits, and simulation history.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="sm:flex-col gap-3 mt-6">
+                      <AlertDialogAction onClick={handleDeleteUser} className="bg-rose-600 hover:bg-rose-700 text-white h-14 rounded-2xl font-black w-full">
+                        {isDeletingUser ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirm Permanent Deletion'}
+                      </AlertDialogAction>
+                      <AlertDialogCancel className="h-14 rounded-2xl font-bold border-2 w-full">Abort Action</AlertDialogCancel>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
 
