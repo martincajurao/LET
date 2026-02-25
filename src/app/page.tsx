@@ -45,7 +45,8 @@ import {
   Play,
   BellRing,
   Download,
-  QrCode
+  QrCode,
+  Info
 } from "lucide-react";
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
@@ -178,25 +179,25 @@ function LetsPrepContent() {
   const [adCooldown, setAdCooldown] = useState(0);
   const [quickFireCooldown, setQuickFireCooldown] = useState(0);
   const [claimingXp, setClaimingXp] = useState(false);
+  
+  // APK State
+  const [apkInfo, setApkInfo] = useState<any>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
-
-  // Onboarding
-  const [nickname, setNickname] = useState("");
-  const [selectedMajorship, setSelectedMajorship] = useState("");
-  const [savingOnboarding, setSavingOnboarding] = useState(false);
-
-  // Rank Up Celebration
-  const [showRankUp, setShowRankUp] = useState(false);
-  const [celebratedRank, setCelebratedRank] = useState(1);
-  const [celebratedReward, setCelebratedReward] = useState(0);
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
   useEffect(() => {
-    const generateQRCode = async () => {
+    const fetchApkAndGenerateQR = async () => {
       try {
-        const downloadUrl = `${window.location.origin}/api/download`;
-        const dataUrl = await QRCode.toDataURL(downloadUrl, {
+        // Fetch official APK data from our API
+        const res = await fetch('/api/apk');
+        const data = await res.json();
+        setApkInfo(data);
+
+        // Download link: prefer Firebase Storage URL if available, otherwise proxy
+        const downloadUrl = data.downloadURL || `${window.location.origin}/api/download`;
+        
+        const qrDataUrl = await QRCode.toDataURL(downloadUrl, {
           width: 256,
           margin: 2,
           color: {
@@ -204,12 +205,12 @@ function LetsPrepContent() {
             light: '#ffffff'
           }
         });
-        setQrCodeUrl(dataUrl);
+        setQrCodeUrl(qrDataUrl);
       } catch (e) {
-        console.error('Error generating QR code:', e);
+        console.error('Error fetching APK info or generating QR code:', e);
       }
     };
-    generateQRCode();
+    fetchApkAndGenerateQR();
   }, []);
 
   useEffect(() => {
@@ -349,6 +350,17 @@ function LetsPrepContent() {
     setTimeout(() => { setState(isQuickFire ? 'quickfire_results' : 'results'); setLoading(false); }, 500);
   };
 
+  const handleDownloadApk = () => {
+    const downloadUrl = apkInfo?.downloadURL || '/api/download';
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = 'letpractice-app.apk';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: "Starting Download", description: "Your professional mobile tool is being prepared." });
+  };
+
   const handleWatchXpAd = async () => {
     if (!user || !firestore || adCooldown > 0) return;
     setClaimingXp(true);
@@ -359,6 +371,16 @@ function LetsPrepContent() {
       } catch (e) { toast({ variant: "destructive", title: "Claim Failed", description: "Sync error." }); } finally { setClaimingXp(false); }
     }, 2500);
   };
+
+  // Onboarding states
+  const [nickname, setNickname] = useState("");
+  const [selectedMajorship, setSelectedMajorship] = useState("");
+  const [savingOnboarding, setSavingOnboarding] = useState(false);
+
+  // Rank Up Celebration
+  const [showRankUp, setShowRankUp] = useState(false);
+  const [celebratedRank, setCelebratedRank] = useState(1);
+  const [celebratedReward, setCelebratedReward] = useState(0);
 
   const finishOnboarding = async () => {
     if (!selectedMajorship || !nickname) { toast({ title: "Missing Info", description: "Complete the setup." }); return; }
@@ -590,7 +612,9 @@ function LetsPrepContent() {
                           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Study anywhere</p>
                         </div>
                       </div>
-                      <Badge variant="outline" className="font-black text-[9px] border-emerald-500/30 text-emerald-600 bg-emerald-500/5 uppercase">Native APK</Badge>
+                      <Badge variant="outline" className="font-black text-[9px] border-emerald-500/30 text-emerald-600 bg-emerald-500/5 uppercase">
+                        {apkInfo?.version ? `v${apkInfo.version}` : 'Official APK'}
+                      </Badge>
                     </div>
                     
                     {qrCodeUrl && (
@@ -606,20 +630,19 @@ function LetsPrepContent() {
                       </div>
                     )}
 
-                    <Button 
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = '/api/download';
-                        link.download = 'letpractice-app.apk';
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }}
-                      className="w-full h-14 rounded-2xl font-black gap-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl shadow-emerald-500/30 transition-all hover:scale-[1.02] active:scale-95"
-                    >
-                      <Download className="w-5 h-5" />
-                      Direct Download
-                    </Button>
+                    <div className="space-y-3">
+                      <Button 
+                        onClick={handleDownloadApk}
+                        className="w-full h-14 rounded-2xl font-black gap-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl shadow-emerald-500/30 transition-all hover:scale-[1.02] active:scale-95"
+                      >
+                        <Download className="w-5 h-5" />
+                        Direct Download
+                      </Button>
+                      <div className="flex items-center justify-center gap-2 text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
+                        <ShieldCheck className="w-3 h-3" />
+                        <span>Verified Professional Installer</span>
+                      </div>
+                    </div>
                   </div>
                 </Card>
 
