@@ -155,8 +155,10 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
     setUnlocking(true);
     setVerifying(false);
 
+    // Hard-locked duration: Playback window (3.5s)
     setTimeout(async () => {
       setVerifying(true);
+      // Professional verification phase (1.5s)
       setTimeout(async () => {
         try {
           const userRef = doc(firestore, 'users', user.uid);
@@ -186,7 +188,6 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
     setUnlocking(true);
     try {
       const userRef = doc(firestore, 'users', user.uid);
-      // Use increment(-10) to ensure atomicity
       await updateDoc(userRef, {
         credits: increment(-10)
       });
@@ -203,15 +204,6 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
     if (!isUnlocked) return;
     if (!user || !firestore) return;
     if (generatingIds.has(q.id) || localExplanations[q.id]) return;
-    
-    const costPerInsight = 5;
-    const isPro = !!user.isPro;
-    const userCredits = typeof user.credits === 'number' ? user.credits : 0;
-
-    if (!isPro && userCredits < costPerInsight) {
-      toast({ variant: "destructive", title: "Insufficient AI Credits", description: `You need ${costPerInsight} Credits per insight.` });
-      return;
-    }
     
     setGeneratingIds(prev => new Set(prev).add(q.id));
     
@@ -230,13 +222,12 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
       if (result.explanations && result.explanations.length > 0) {
         setLocalExplanations(prev => ({ ...prev, [q.id]: result.explanations[0].aiExplanation }));
         
+        // Track AI usage but no longer charging per explanation if analysis is already unlocked
         const userRef = doc(firestore, 'users', user.uid);
-        const updateData: any = { mistakesReviewed: increment(1) };
-        if (!isPro) {
-          updateData.credits = increment(-costPerInsight);
-          updateData.dailyAiUsage = increment(1);
-        }
-        await updateDoc(userRef, updateData);
+        await updateDoc(userRef, {
+          mistakesReviewed: increment(1),
+          dailyAiUsage: increment(1)
+        });
       }
     } catch (e) {
       setLocalExplanations(prev => ({ ...prev, [q.id]: q.explanation || "Review core concepts for this track." }));
@@ -347,7 +338,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
           <CardHeader className="space-y-4">
             <CardTitle className="text-4xl font-black tracking-tight">{verifying ? "Verifying Access..." : "Unlock Detailed Analysis"}</CardTitle>
             <CardDescription className="text-muted-foreground font-medium max-w-lg mx-auto text-lg">
-              {verifying ? "Our academic system is confirming your professional clip completion." : "Access AI pedagogical summaries and mistake review by supporting the platform."}
+              {verifying ? "Our academic system is confirming your professional clip completion." : "Access AI pedagogical summaries and free mistake explanations for this session."}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6 flex flex-col sm:flex-row justify-center items-center gap-4">
@@ -450,16 +441,9 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                           <div className="space-y-4">
                             <AnimatePresence mode="wait">
                               {!localExplanations[q.id] ? (
-                                !!user?.isPro ? (
-                                  <div className="flex flex-col items-center justify-center py-6 gap-3 bg-primary/5 rounded-xl border border-dashed border-primary/20">
-                                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-primary">Pro: Instant reveal active...</p>
-                                  </div>
-                                ) : (
-                                  <Button onClick={() => handleGenerateExplanation(q)} disabled={generatingIds.has(q.id)} size="sm" className="w-full font-black gap-2 transition-all h-12 rounded-xl">
-                                    {generatingIds.has(q.id) ? <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing...</> : <><Sparkles className="w-4 h-4" /> Get AI Explanation (5 Credits)</>}
-                                  </Button>
-                                )
+                                <Button onClick={() => handleGenerateExplanation(q)} disabled={generatingIds.has(q.id)} size="sm" className="w-full font-black gap-2 transition-all h-12 rounded-xl">
+                                  {generatingIds.has(q.id) ? <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing...</> : <><Sparkles className="w-4 h-4" /> Get AI Explanation (Unlocked)</>}
+                                </Button>
                               ) : (
                                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-primary/5 p-5 rounded-xl border border-primary/20 italic text-sm text-foreground relative">
                                   <div className="flex items-start justify-between gap-2 mb-3">
