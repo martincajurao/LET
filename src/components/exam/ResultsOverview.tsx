@@ -155,10 +155,8 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
     setUnlocking(true);
     setVerifying(false);
 
-    // Hard-locked duration: Playback window (3.5s)
     setTimeout(async () => {
       setVerifying(true);
-      // Professional verification phase (1.5s)
       setTimeout(async () => {
         try {
           const userRef = doc(firestore, 'users', user.uid);
@@ -201,13 +199,33 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
   };
 
   const handleGenerateExplanation = async (q: Question) => {
-    if (!isUnlocked) return;
     if (!user || !firestore) return;
     if (generatingIds.has(q.id) || localExplanations[q.id]) return;
+
+    const isPro = !!user.isPro;
+    const credits = typeof user.credits === 'number' ? user.credits : 0;
+
+    if (!isPro && credits < 5) {
+      toast({ 
+        variant: "destructive", 
+        title: "Insufficient Credits", 
+        description: "You need 5 Credits for an AI Deep Dive. Refill via Tasks or Ads!" 
+      });
+      return;
+    }
     
     setGeneratingIds(prev => new Set(prev).add(q.id));
     
     try {
+      if (!isPro) {
+        const userRef = doc(firestore, 'users', user.uid);
+        await updateDoc(userRef, {
+          credits: increment(-5),
+          mistakesReviewed: increment(1),
+          dailyAiUsage: increment(1)
+        });
+      }
+
       const result = await explainMistakesBatch({
         mistakes: [{
           questionId: q.id,
@@ -221,13 +239,13 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
       
       if (result.explanations && result.explanations.length > 0) {
         setLocalExplanations(prev => ({ ...prev, [q.id]: result.explanations[0].aiExplanation }));
-        
-        // Track AI usage but no longer charging per explanation if analysis is already unlocked
-        const userRef = doc(firestore, 'users', user.uid);
-        await updateDoc(userRef, {
-          mistakesReviewed: increment(1),
-          dailyAiUsage: increment(1)
-        });
+        if (!isPro) {
+          toast({ 
+            variant: "reward",
+            title: "Insight Unlocked", 
+            description: "-5 Credits spent on AI Deep Dive." 
+          });
+        }
       }
     } catch (e) {
       setLocalExplanations(prev => ({ ...prev, [q.id]: q.explanation || "Review core concepts for this track." }));
@@ -336,9 +354,9 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
             {verifying ? <ShieldAlert className="w-32 h-32 text-primary animate-pulse" /> : <Lock className="w-32 h-32" />}
           </div>
           <CardHeader className="space-y-4">
-            <CardTitle className="text-4xl font-black tracking-tight">{verifying ? "Verifying Access..." : "Unlock Detailed Analysis"}</CardTitle>
+            <CardTitle className="text-4xl font-black tracking-tight">{verifying ? "Verifying Access..." : "Unlock Full Analysis"}</CardTitle>
             <CardDescription className="text-muted-foreground font-medium max-w-lg mx-auto text-lg">
-              {verifying ? "Our academic system is confirming your professional clip completion." : "Access AI pedagogical summaries and free mistake explanations for this session."}
+              {verifying ? "Our academic system is confirming your professional clip completion." : "Access the AI Pedagogical Summary and Actionable Roadmap for this session."}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6 flex flex-col sm:flex-row justify-center items-center gap-4">
@@ -352,14 +370,9 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                 {unlocking ? (
                   verifying ? <><ShieldAlert className="w-6 h-6 animate-pulse" /> Finalizing...</> : <><Loader2 className="w-6 h-6 animate-spin" /> Playing...</>
                 ) : (
-                  <><Play className="w-6 h-6 fill-current" /> Watch Ad to Unlock</>
+                  <><Play className="w-6 h-6 fill-current" /> Watch Ad to Unlock Summary</>
                 )}
               </Button>
-              {unlocking && (
-                <p className="text-[10px] font-black uppercase text-primary animate-pulse tracking-widest">
-                  Finish video to unlock insights
-                </p>
-              )}
             </div>
             {!unlocking && (
               <Button 
@@ -374,7 +387,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
               </Button>
             )}
           </CardContent>
-          <p className="mt-6 text-[10px] text-muted-foreground font-bold uppercase tracking-[0.25em]">Immediate Access for Platinum Users</p>
+          <p className="mt-6 text-[10px] text-muted-foreground font-bold uppercase tracking-[0.25em]">Mistake Review list is available below</p>
         </Card>
       ) : (
         <>
@@ -408,68 +421,82 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
               </Card>
             </div>
           )}
-
-          <div className="space-y-6">
-            <h2 className="text-2xl font-black font-headline tracking-tight flex items-center gap-3 text-foreground">
-              <BrainCircuit className="w-6 h-6 text-primary" /> Mistake Review & AI Tutor
-            </h2>
-            {totalMistakes > 0 ? (
-              <Accordion type="single" collapsible className="w-full space-y-4">
-                {Object.entries(categorizedMistakes).map(([subject, mistakes]) => (
-                  <div key={subject} className="space-y-2">
-                    <p className="text-[10px] font-black uppercase text-primary px-2">{subject}</p>
-                    {mistakes.map((q) => (
-                      <AccordionItem 
-                        key={q.id} 
-                        value={q.id} 
-                        className="border-none bg-card rounded-2xl px-2 overflow-hidden shadow-sm"
-                        onPointerEnter={() => !!user?.isPro && handleGenerateExplanation(q)}
-                      >
-                        <AccordionTrigger className="hover:no-underline py-4 px-4 text-left"><span className="text-xs font-bold line-clamp-1 text-foreground">{q.text}</span></AccordionTrigger>
-                        <AccordionContent className="p-6 pt-0 space-y-4">
-                          <div className="bg-muted/30 p-4 rounded-xl border border-border">
-                            <p className="font-bold text-sm mb-3 text-foreground">{q.text}</p>
-                            <div className="grid gap-2">
-                              {q.options.map((opt, i) => (
-                                <div key={i} className={cn("p-3 rounded-lg border text-xs flex items-center gap-2", opt === answers[q.id] ? "bg-orange-500/10 border-orange-500/30 text-orange-600 font-bold" : "bg-card text-muted-foreground opacity-70")}>
-                                  <span className="w-5 h-5 rounded-full border flex items-center justify-center text-[9px] shrink-0 border-border">{String.fromCharCode(65 + i)}</span>
-                                  {opt}{opt === answers[q.id] && <span className="ml-auto text-[10px] font-black uppercase">Your Choice</span>}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="space-y-4">
-                            <AnimatePresence mode="wait">
-                              {!localExplanations[q.id] ? (
-                                <Button onClick={() => handleGenerateExplanation(q)} disabled={generatingIds.has(q.id)} size="sm" className="w-full font-black gap-2 transition-all h-12 rounded-xl">
-                                  {generatingIds.has(q.id) ? <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing...</> : <><Sparkles className="w-4 h-4" /> Get AI Explanation (Unlocked)</>}
-                                </Button>
-                              ) : (
-                                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-primary/5 p-5 rounded-xl border border-primary/20 italic text-sm text-foreground relative">
-                                  <div className="flex items-start justify-between gap-2 mb-3">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0"><MessageSquare className="w-3.5 h-3.5 text-primary" /></div>
-                                      <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mt-1">AI Tutor Insight</span>
-                                    </div>
-                                    {user?.isPro && <Crown className="w-3.5 h-3.5 text-yellow-600" />}
-                                  </div>
-                                  <TypewriterText text={localExplanations[q.id]} />
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </div>
-                ))}
-              </Accordion>
-            ) : (
-              <div className="text-center py-20 bg-emerald-500/5 rounded-[3rem] border-2 border-dashed border-emerald-500/20"><Trophy className="w-16 h-16 text-emerald-500 mx-auto mb-4" /><h3 className="text-2xl font-black text-foreground">Exceptional Mastery!</h3></div>
-            )}
-          </div>
         </>
       )}
+
+      {/* Mistake Review & Individual AI Tutor always visible below */}
+      <div className="space-y-6">
+        <h2 className="text-2xl font-black font-headline tracking-tight flex items-center gap-3 text-foreground">
+          <BrainCircuit className="w-6 h-6 text-primary" /> Mistake Review & AI Tutor
+        </h2>
+        {totalMistakes > 0 ? (
+          <Accordion type="single" collapsible className="w-full space-y-4">
+            {Object.entries(categorizedMistakes).map(([subject, mistakes]) => (
+              <div key={subject} className="space-y-2">
+                <p className="text-[10px] font-black uppercase text-primary px-2">{subject}</p>
+                {mistakes.map((q) => (
+                  <AccordionItem 
+                    key={q.id} 
+                    value={q.id} 
+                    className="border-none bg-card rounded-2xl px-2 overflow-hidden shadow-sm"
+                  >
+                    <AccordionTrigger className="hover:no-underline py-4 px-4 text-left">
+                      <span className="text-xs font-bold line-clamp-1 text-foreground">{q.text}</span>
+                    </AccordionTrigger>
+                    <AccordionContent className="p-6 pt-0 space-y-4">
+                      <div className="bg-muted/30 p-4 rounded-xl border border-border">
+                        <p className="font-bold text-sm mb-3 text-foreground">{q.text}</p>
+                        <div className="grid gap-2">
+                          {q.options.map((opt, i) => (
+                            <div key={i} className={cn("p-3 rounded-lg border text-xs flex items-center gap-2", opt === answers[q.id] ? "bg-orange-500/10 border-orange-500/30 text-orange-600 font-bold" : "bg-card text-muted-foreground opacity-70")}>
+                              <span className="w-5 h-5 rounded-full border flex items-center justify-center text-[9px] shrink-0 border-border">{String.fromCharCode(65 + i)}</span>
+                              {opt}{opt === answers[q.id] && <span className="ml-auto text-[10px] font-black uppercase">Your Choice</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <AnimatePresence mode="wait">
+                          {!localExplanations[q.id] ? (
+                            <Button 
+                              onClick={() => handleGenerateExplanation(q)} 
+                              disabled={generatingIds.has(q.id)} 
+                              size="sm" 
+                              className="w-full font-black gap-2 transition-all h-14 rounded-2xl shadow-lg active:scale-95"
+                            >
+                              {generatingIds.has(q.id) ? (
+                                <><Loader2 className="w-5 h-5 animate-spin" /> Deep Diving...</>
+                              ) : (
+                                <>
+                                  <Sparkles className="w-5 h-5" /> 
+                                  Get AI Deep Dive {user?.isPro ? '(Free)' : '(5 Credits)'}
+                                </>
+                              )}
+                            </Button>
+                          ) : (
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-primary/5 p-5 rounded-xl border border-primary/20 italic text-sm text-foreground relative">
+                              <div className="flex items-start justify-between gap-2 mb-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0"><MessageSquare className="w-3.5 h-3.5 text-primary" /></div>
+                                  <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mt-1">AI Tutor Insight</span>
+                                </div>
+                                {user?.isPro && <Crown className="w-3.5 h-3.5 text-yellow-600" />}
+                              </div>
+                              <TypewriterText text={localExplanations[q.id]} />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </div>
+            ))}
+          </Accordion>
+        ) : (
+          <div className="text-center py-20 bg-emerald-500/5 rounded-[3rem] border-2 border-dashed border-emerald-500/20"><Trophy className="w-16 h-16 text-emerald-500 mx-auto mb-4" /><h3 className="text-2xl font-black text-foreground">Exceptional Mastery!</h3></div>
+        )}
+      </div>
 
       {/* Purchase Success Dialog */}
       <Dialog open={showPurchaseSuccess} onOpenChange={setShowPurchaseSuccess}>
@@ -518,7 +545,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
               <DialogHeader>
                 <div className="flex flex-col items-center">
                   <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600 mb-1">Access Granted</span>
-                  <DialogTitle className="text-2xl font-black tracking-tight text-foreground">Analysis Unlocked!</DialogTitle>
+                  <DialogTitle className="text-2xl font-black tracking-tight text-foreground">Summary Unlocked!</DialogTitle>
                   <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest mt-1">
                     Pedagogical insights are now active
                   </DialogDescription>
@@ -535,7 +562,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
               <span className="text-[9px] font-black uppercase text-muted-foreground">Session Value</span>
               <div className="flex items-center gap-2">
                 <BrainCircuit className="w-5 h-5 text-primary" />
-                <span className="text-2xl font-black text-foreground">AI Review Ready</span>
+                <span className="text-2xl font-black text-foreground">Summary Ready</span>
               </div>
             </motion.div>
 
