@@ -144,10 +144,17 @@ export function QuickFireResults({ questions, answers, timeSpent, xpEarned, onRe
       {mistakes.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between px-2">
-            <h3 className="font-black text-lg flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-rose-500" />
-              Mistake Analysis
-            </h3>
+            <div className="space-y-1">
+              <h3 className="font-black text-lg flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-rose-500" />
+                Mistake Analysis
+              </h3>
+              {isExplaining && (
+                <p className="text-[9px] font-black uppercase text-primary animate-pulse tracking-widest">
+                  Finish video to unlock insights
+                </p>
+              )}
+            </div>
             {Object.keys(explanations).length === 0 && (
               <Button 
                 onClick={handleExplainAllWithAd} 

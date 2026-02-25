@@ -172,7 +172,7 @@ export function NotificationsModal({
               {isWatchingAd ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  {isVerifyingAd ? "Verifying..." : "Loading Clip..."}
+                  {isVerifyingAd ? "Finalizing..." : "Watching Clip..."}
                 </div>
               ) : adReachedLimit ? (
                 <><CheckCircle2 className="w-4 h-4" /> Limit Reached</>
@@ -182,6 +182,11 @@ export function NotificationsModal({
                 `Next: ${formatTime(adTimeLeft)}`
               )}
             </Button>
+            {isWatchingAd && (
+              <p className="text-[9px] font-black text-center text-primary uppercase mt-3 tracking-widest animate-pulse">
+                Finish the clip to receive your reward
+              </p>
+            )}
             {adReachedLimit && (
               <p className="text-[8px] font-bold text-center text-muted-foreground uppercase mt-2 tracking-widest">Allowance: {DAILY_AD_LIMIT}/{DAILY_AD_LIMIT} clips</p>
             )}

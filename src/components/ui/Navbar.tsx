@@ -105,7 +105,7 @@ export function Navbar() {
   const handleWatchAd = async () => {
     if (!user || !firestore) return;
     if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
-      toast({ title: "Daily Limit Reached", description: "You've reached your professional clip allowance.", variant: "destructive" });
+      toast({ title: "Daily Limit Reached", description: "You've reached your daily professional clip allowance.", variant: "destructive" });
       return;
     }
     
@@ -367,8 +367,10 @@ export function Navbar() {
             )}
             <Play className={cn("w-14 h-14 transition-all duration-500", watchingAd ? "text-primary scale-110" : "text-primary opacity-20")} />
             <div className="flex flex-col items-center mt-4">
-              <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Daily Allowance</p>
-              <p className="text-lg font-black text-foreground">{user?.dailyAdCount || 0} / {DAILY_AD_LIMIT}</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Status</p>
+              <p className="text-sm font-bold text-center px-6 leading-tight">
+                {watchingAd ? "Please complete the clip to claim your reward." : `Daily Allowance: ${user?.dailyAdCount || 0} / ${DAILY_AD_LIMIT}`}
+              </p>
             </div>
           </div>
 

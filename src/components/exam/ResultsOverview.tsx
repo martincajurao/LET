@@ -320,19 +320,26 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
               {verifying ? "Our academic system is confirming your professional clip completion." : "Access AI pedagogical summaries and mistake review by supporting the platform."}
             </CardDescription>
           </CardHeader>
-          <CardContent className="pt-6 flex flex-col sm:flex-row justify-center gap-4">
-            <Button 
-              size="lg" 
-              onClick={handleUnlockAnalysisWithAd} 
-              disabled={unlocking}
-              className="h-16 px-10 rounded-2xl font-black text-lg gap-3 shadow-2xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-95"
-            >
-              {unlocking ? (
-                verifying ? <><ShieldAlert className="w-6 h-6 animate-pulse" /> Finalizing...</> : <><Loader2 className="w-6 h-6 animate-spin" /> Playing...</>
-              ) : (
-                <><Play className="w-6 h-6 fill-current" /> Watch Ad to Unlock</>
+          <CardContent className="pt-6 flex flex-col sm:flex-row justify-center items-center gap-4">
+            <div className="flex flex-col gap-2">
+              <Button 
+                size="lg" 
+                onClick={handleUnlockAnalysisWithAd} 
+                disabled={unlocking}
+                className="h-16 px-10 rounded-2xl font-black text-lg gap-3 shadow-2xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-95"
+              >
+                {unlocking ? (
+                  verifying ? <><ShieldAlert className="w-6 h-6 animate-pulse" /> Finalizing...</> : <><Loader2 className="w-6 h-6 animate-spin" /> Playing...</>
+                ) : (
+                  <><Play className="w-6 h-6 fill-current" /> Watch Ad to Unlock</>
+                )}
+              </Button>
+              {unlocking && (
+                <p className="text-[10px] font-black uppercase text-primary animate-pulse tracking-widest">
+                  Finish video to unlock insights
+                </p>
               )}
-            </Button>
+            </div>
             {!unlocking && (
               <Button 
                 size="lg" 
