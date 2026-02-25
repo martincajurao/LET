@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LabelList } from 'recharts';
-import { CheckCircle2, XCircle, Trophy, Target, BookOpen, ArrowLeft, BrainCircuit, Sparkles, Loader2, AlertCircle, LayoutDashboard, ChevronRight, Lock, Play, MessageSquare, Coins, Crown } from "lucide-react";
+import { CheckCircle2, XCircle, Trophy, Target, BookOpen, ArrowLeft, BrainCircuit, Sparkles, Loader2, AlertCircle, LayoutDashboard, ChevronRight, Lock, Play, MessageSquare, Coins, Crown, ShieldCheck } from "lucide-react";
 import { PersonalizedPerformanceSummaryOutput } from "@/ai/flows/personalized-performance-summary-flow";
 import { explainMistakesBatch } from "@/ai/flows/explain-mistakes-batch-flow";
 import { Question } from "@/app/lib/mock-data";
@@ -16,6 +15,7 @@ import { useUser, useFirestore } from '@/firebase';
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DAILY_AD_LIMIT } from '@/lib/xp-system';
 
 interface ResultsOverviewProps {
   questions: Question[];
@@ -49,6 +49,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
   const [generatingIds, setGeneratingIds] = useState<Set<string>>(new Set());
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   useEffect(() => {
     if (user?.isPro) {
@@ -116,21 +117,35 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
 
   const handleUnlockAnalysisWithAd = async () => {
     if (!user || !firestore) return;
+    if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
+      toast({ title: "Allowance Reached", description: "Daily professional clip limit reached.", variant: "destructive" });
+      return;
+    }
+
     setUnlocking(true);
+    setVerifying(false);
+
+    // Locked Playback Duration
     setTimeout(async () => {
-      try {
-        const userRef = doc(firestore, 'users', user.uid);
-        await updateDoc(userRef, {
-          dailyAdCount: increment(1)
-        });
-        setIsUnlocked(true);
-        toast({ title: "Analysis Unlocked", description: "Detailed pedagogical insights are now active." });
-      } catch (e) {
-        toast({ variant: "destructive", title: "Unlock Failed", description: "Could not verify ad completion." });
-      } finally {
-        setUnlocking(false);
-      }
-    }, 2000);
+      setVerifying(true);
+      
+      // Verification buffer
+      setTimeout(async () => {
+        try {
+          const userRef = doc(firestore, 'users', user.uid);
+          await updateDoc(userRef, {
+            dailyAdCount: increment(1)
+          });
+          setIsUnlocked(true);
+          toast({ title: "Analysis Unlocked", description: "Pedagogical insights are now active." });
+        } catch (e) {
+          toast({ variant: "destructive", title: "Unlock Failed", description: "Could not verify clip completion." });
+        } finally {
+          setUnlocking(false);
+          setVerifying(false);
+        }
+      }, 1500);
+    }, 3500);
   };
 
   const handleUnlockWithCredits = async () => {
@@ -164,7 +179,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
     const isPro = user.isPro;
 
     if (!isPro && (user.credits || 0) < costPerInsight) {
-      toast({ variant: "destructive", title: "Insufficient AI Credits", description: `You need ${costPerInsight} Credits per insight. Watch an ad to refill!` });
+      toast({ variant: "destructive", title: "Insufficient AI Credits", description: `You need ${costPerInsight} Credits per insight.` });
       return;
     }
     
@@ -194,7 +209,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
         await updateDoc(userRef, updateData);
       }
     } catch (e) {
-      setLocalExplanations(prev => ({ ...prev, [q.id]: q.explanation || "Review the core concepts related to this subject track." }));
+      setLocalExplanations(prev => ({ ...prev, [q.id]: q.explanation || "Review core concepts for this track." }));
     } finally {
       setGeneratingIds(prev => {
         const next = new Set(prev);
@@ -215,11 +230,11 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
           <p className="text-muted-foreground text-sm font-medium">Verified analytical results based on LET board standards.</p>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
-          <Button variant="outline" onClick={onRestart} className="flex-1 md:flex-none h-12 px-6 rounded-xl font-black text-xs gap-2">
+          <Button variant="outline" disabled={unlocking} onClick={onRestart} className="flex-1 md:flex-none h-12 px-6 rounded-xl font-black text-xs gap-2">
             <LayoutDashboard className="w-4 h-4" />
             Exit
           </Button>
-          <Button onClick={onRestart} className="flex-1 md:flex-none h-12 px-8 rounded-xl font-black text-xs shadow-lg gap-2">
+          <Button onClick={onRestart} disabled={unlocking} className="flex-1 md:flex-none h-12 px-8 rounded-xl font-black text-xs shadow-lg gap-2">
             Retake Track
             <ChevronRight className="w-4 h-4" />
           </Button>
@@ -296,10 +311,14 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
 
       {!isUnlocked ? (
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-foreground text-background p-12 text-center relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-10 opacity-10"><Lock className="w-32 h-32" /></div>
+          <div className="absolute top-0 right-0 p-10 opacity-10">
+            {verifying ? <ShieldCheck className="w-32 h-32 text-primary animate-pulse" /> : <Lock className="w-32 h-32" />}
+          </div>
           <CardHeader className="space-y-4">
-            <CardTitle className="text-4xl font-black tracking-tight">Unlock Detailed Analysis</CardTitle>
-            <CardDescription className="text-muted-foreground font-medium max-w-lg mx-auto text-lg">Access AI pedagogical summaries and mistake review by supporting the platform.</CardDescription>
+            <CardTitle className="text-4xl font-black tracking-tight">{verifying ? "Verifying Viewing..." : "Unlock Detailed Analysis"}</CardTitle>
+            <CardDescription className="text-muted-foreground font-medium max-w-lg mx-auto text-lg">
+              {verifying ? "Our academic system is confirming your professional clip completion." : "Access AI pedagogical summaries and mistake review by supporting the platform."}
+            </CardDescription>
           </CardHeader>
           <CardContent className="pt-6 flex flex-col sm:flex-row justify-center gap-4">
             <Button 
@@ -308,19 +327,24 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
               disabled={unlocking}
               className="h-16 px-10 rounded-2xl font-black text-lg gap-3 shadow-2xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-95"
             >
-              {unlocking ? <Loader2 className="w-6 h-6 animate-spin" /> : <Play className="w-6 h-6 fill-current" />}
-              {unlocking ? "Connecting..." : "Watch Ad to Unlock"}
+              {unlocking ? (
+                verifying ? <><ShieldCheck className="w-6 h-6 animate-pulse" /> Finalizing...</> : <><Loader2 className="w-6 h-6 animate-spin" /> Playing...</>
+              ) : (
+                <><Play className="w-6 h-6 fill-current" /> Watch Ad to Unlock</>
+              )}
             </Button>
-            <Button 
-              size="lg" 
-              variant="outline"
-              onClick={handleUnlockWithCredits} 
-              disabled={unlocking}
-              className="h-16 px-10 rounded-2xl font-black text-lg gap-3 border-white/20 text-white hover:bg-white/10"
-            >
-              <Coins className="w-6 h-6 text-yellow-400" />
-              Unlock with 10 Credits
-            </Button>
+            {!unlocking && (
+              <Button 
+                size="lg" 
+                variant="outline"
+                onClick={handleUnlockWithCredits} 
+                disabled={unlocking}
+                className="h-16 px-10 rounded-2xl font-black text-lg gap-3 border-white/20 text-white hover:bg-white/10"
+              >
+                <Coins className="w-6 h-6 text-yellow-400" />
+                Unlock with 10 Credits
+              </Button>
+            )}
           </CardContent>
           <p className="mt-6 text-[10px] text-muted-foreground font-bold uppercase tracking-[0.25em]">Immediate Access for Platinum Users</p>
         </Card>

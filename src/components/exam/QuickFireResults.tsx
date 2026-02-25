@@ -19,7 +19,8 @@ import {
   Loader2,
   Sparkles,
   MessageSquare,
-  AlertCircle
+  AlertCircle,
+  ShieldCheck
 } from "lucide-react";
 import { Question } from "@/app/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -43,6 +44,7 @@ export function QuickFireResults({ questions, answers, timeSpent, xpEarned, onRe
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isExplaining, setIsExplaining] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [explanations, setExplanations] = useState<Record<string, string>>({});
   
   const mistakes = questions.filter(q => answers[q.id] !== q.correctAnswer);
@@ -59,41 +61,47 @@ export function QuickFireResults({ questions, answers, timeSpent, xpEarned, onRe
     }
 
     setIsExplaining(true);
+    setVerifying(false);
     
-    // Simulate Ad sequence
+    // Hard-locked duration to prevent skipping
     setTimeout(async () => {
-      try {
-        const result = await explainMistakesBatch({
-          mistakes: mistakes.map(m => ({
-            questionId: m.id,
-            text: m.text,
-            options: m.options,
-            correctAnswer: m.correctAnswer,
-            userAnswer: answers[m.id] || "No Answer",
-            subject: m.subject
-          }))
-        });
-
-        if (result.explanations) {
-          const mapping: Record<string, string> = {};
-          result.explanations.forEach(e => mapping[e.questionId] = e.aiExplanation);
-          setExplanations(mapping);
-          
-          // Update ad count in profile
-          const userRef = doc(firestore, 'users', user.uid);
-          await updateDoc(userRef, {
-            dailyAdCount: increment(1),
-            mistakesReviewed: increment(mistakes.length)
+      setVerifying(true);
+      
+      // Verification buffer
+      setTimeout(async () => {
+        try {
+          const result = await explainMistakesBatch({
+            mistakes: mistakes.map(m => ({
+              questionId: m.id,
+              text: m.text,
+              options: m.options,
+              correctAnswer: m.correctAnswer,
+              userAnswer: answers[m.id] || "No Answer",
+              subject: m.subject
+            }))
           });
 
-          toast({ title: "Insights Unlocked!", description: "AI Pedagogical explanations are now visible below." });
+          if (result.explanations) {
+            const mapping: Record<string, string> = {};
+            result.explanations.forEach(e => mapping[e.questionId] = e.aiExplanation);
+            setExplanations(mapping);
+            
+            const userRef = doc(firestore, 'users', user.uid);
+            await updateDoc(userRef, {
+              dailyAdCount: increment(1),
+              mistakesReviewed: increment(mistakes.length)
+            });
+
+            toast({ title: "Insights Unlocked!", description: "AI Pedagogical explanations are now visible below." });
+          }
+        } catch (e) {
+          toast({ variant: "destructive", title: "Sync Error", description: "Could not generate batch explanations." });
+        } finally {
+          setIsExplaining(false);
+          setVerifying(false);
         }
-      } catch (e) {
-        toast({ variant: "destructive", title: "Sync Error", description: "Could not generate batch explanations." });
-      } finally {
-        setIsExplaining(false);
-      }
-    }, 2500);
+      }, 1500);
+    }, 3500);
   };
 
   return (
@@ -150,10 +158,16 @@ export function QuickFireResults({ questions, answers, timeSpent, xpEarned, onRe
                 disabled={isExplaining || (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT}
                 variant="outline" 
                 size="sm" 
-                className="h-9 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 bg-primary/5 border-primary/20 text-primary hover:bg-primary/10"
+                className="h-10 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 transition-all shadow-sm"
               >
-                {isExplaining ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                {isExplaining ? "Revealing..." : (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT ? "Limit Reached" : "Watch Ad to Explain All"}
+                {isExplaining ? (
+                  verifying ? <><ShieldCheck className="w-4 h-4 animate-pulse" /> Verifying...</> : <><Loader2 className="w-4 h-4 animate-spin" /> Watching...</>
+                ) : (
+                  <>
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    {(user?.dailyAdCount || 0) >= DAILY_AD_LIMIT ? "Limit Reached" : "Watch Ad to Reveal All"}
+                  </>
+                )}
               </Button>
             )}
           </div>
@@ -207,7 +221,7 @@ export function QuickFireResults({ questions, answers, timeSpent, xpEarned, onRe
       )}
 
       <div className="grid grid-cols-1 gap-3">
-        <Button onClick={onRestart} className="h-16 rounded-2xl font-black text-lg shadow-xl shadow-primary/30 gap-3">
+        <Button onClick={onRestart} disabled={isExplaining} className="h-16 rounded-2xl font-black text-lg shadow-xl shadow-primary/30 gap-3">
           <Zap className="w-5 h-5 fill-current" />
           Back to Dashboard
         </Button>

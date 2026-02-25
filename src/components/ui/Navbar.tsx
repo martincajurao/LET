@@ -27,7 +27,8 @@ import {
   Trophy,
   Crown,
   Shield,
-  Star
+  Star,
+  ShieldAlert
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -66,6 +67,7 @@ export function Navbar() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAlertsModal, setShowAlertsModal] = useState(false);
   const [watchingAd, setWatchingAd] = useState(false);
+  const [verifyingAd, setVerifyingAd] = useState(false);
   const [availableTasksCount, setAvailableTasksCount] = useState(0);
   const [claimableTasksCount, setClaimableTasksCount] = useState(0);
 
@@ -84,7 +86,6 @@ export function Navbar() {
       const qfAvailable = (user.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE <= now;
       setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
 
-      // Calculate claimable daily missions
       let claimableCount = 0;
       const qGoal = user.userTier === 'Platinum' ? 35 : 20;
       if (!user.taskLoginClaimed) claimableCount++;
@@ -95,38 +96,47 @@ export function Navbar() {
     };
 
     calculateAvailable();
-    const interval = setInterval(calculateAvailable, 10000); // Check every 10s
+    const interval = setInterval(calculateAvailable, 10000);
     return () => clearInterval(interval);
   }, [user]);
 
-  // Prevent Navbar from flashing during initialization splash
   if (loading) return null;
 
   const handleWatchAd = async () => {
     if (!user || !firestore) return;
     if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
-      toast({ title: "Daily Limit Reached", description: "You've reached your professional clip allowance for today.", variant: "destructive" });
+      toast({ title: "Daily Limit Reached", description: "You've reached your professional clip allowance.", variant: "destructive" });
       return;
     }
+    
     setWatchingAd(true);
+    setVerifyingAd(false);
+
+    // Phase 1: Playback Lock
     setTimeout(async () => {
-      try {
-        const userRef = doc(firestore, 'users', user.uid);
-        await updateDoc(userRef, {
-          credits: increment(5),
-          xp: increment(XP_REWARDS.AD_WATCH_XP),
-          lastAdXpTimestamp: Date.now(),
-          dailyAdCount: increment(1)
-        });
-        toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added.` });
-        setShowAdModal(false);
-        setShowAlertsModal(false);
-      } catch (e) {
-        toast({ variant: "destructive", title: "Sync Failed", description: "Could not grant reward." });
-      } finally {
-        setWatchingAd(false);
-      }
-    }, 3000);
+      setVerifyingAd(true);
+      
+      // Phase 2: Professional Verification
+      setTimeout(async () => {
+        try {
+          const userRef = doc(firestore, 'users', user.uid);
+          await updateDoc(userRef, {
+            credits: increment(5),
+            xp: increment(XP_REWARDS.AD_WATCH_XP),
+            lastAdXpTimestamp: Date.now(),
+            dailyAdCount: increment(1)
+          });
+          toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added.` });
+          setShowAdModal(false);
+          setShowAlertsModal(false);
+        } catch (e) {
+          toast({ variant: "destructive", title: "Sync Failed", description: "Could not verify reward completion." });
+        } finally {
+          setWatchingAd(false);
+          setVerifyingAd(false);
+        }
+      }, 1500); // Verification buffer
+    }, 3500); // Standard playback duration
   };
 
   const navItems = [
@@ -316,7 +326,7 @@ export function Navbar() {
         </div>
       </nav>
 
-      <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
+      <Dialog open={showAuthModal} onOpenChange={(open) => !watchingAd && setShowAuthModal(open)}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-sm">
           <DialogHeader className="text-center">
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -339,41 +349,48 @@ export function Navbar() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showAdModal} onOpenChange={setShowAdModal}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl max-w-[380px]">
+      <Dialog open={showAdModal} onOpenChange={(open) => !watchingAd && setShowAdModal(open)}>
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl max-w-[380px] outline-none">
           <DialogHeader className="space-y-3">
             <div className="w-16 h-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-2">
-              <Zap className="w-8 h-8 text-primary" />
+              {verifyingAd ? <ShieldAlert className="w-8 h-8 text-primary animate-pulse" /> : <Zap className="w-8 h-8 text-primary" />}
             </div>
-            <DialogTitle className="text-2xl font-black text-center">Refill AI Credits</DialogTitle>
+            <DialogTitle className="text-2xl font-black text-center">{verifyingAd ? "Verifying Access..." : "Refill AI Credits"}</DialogTitle>
             <DialogDescription className="text-center text-muted-foreground font-medium">
-              Watch a professional tutorial or academic promo to earn <span className="text-primary font-black">+5 Credits</span>.
+              {verifyingAd ? "Our system is validating your professional clip viewing." : "Watch a professional tutorial to earn "}<span className="text-primary font-black">+5 Credits</span>.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-10 flex flex-col items-center justify-center bg-muted/30 rounded-[2rem] border-2 border-dashed border-border/50">
-            <Play className="w-14 h-14 text-primary opacity-20 mb-4" />
-            <div className="flex flex-col items-center">
+          
+          <div className="py-10 flex flex-col items-center justify-center bg-muted/30 rounded-[2rem] border-2 border-dashed border-border/50 relative overflow-hidden">
+            {watchingAd && !verifyingAd && (
+              <div className="absolute inset-0 bg-primary/5 animate-pulse" />
+            )}
+            <Play className={cn("w-14 h-14 transition-all duration-500", watchingAd ? "text-primary scale-110" : "text-primary opacity-20")} />
+            <div className="flex flex-col items-center mt-4">
               <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Daily Allowance</p>
               <p className="text-lg font-black text-foreground">{user?.dailyAdCount || 0} / {DAILY_AD_LIMIT}</p>
             </div>
           </div>
+
           <DialogFooter className="flex-col gap-3">
             <Button 
               className="w-full h-14 font-black rounded-2xl text-lg gap-3 shadow-lg shadow-primary/30 active:scale-[0.98] transition-all" 
               onClick={handleWatchAd} 
               disabled={watchingAd || (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT}
             >
-              {watchingAd ? <Loader2 className="w-6 h-6 animate-spin" /> : <Play className="w-6 h-6 fill-current" />}
-              {watchingAd ? "Connecting..." : (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT ? "Limit Reached" : "Watch & Earn +5"}
+              {verifyingAd ? <Loader2 className="w-6 h-6 animate-spin" /> : watchingAd ? <div className="flex items-center gap-2">Watching... <Loader2 className="w-4 h-4 animate-spin" /></div> : <Play className="w-6 h-6 fill-current" />}
+              {!watchingAd && ((user?.dailyAdCount || 0) >= DAILY_AD_LIMIT ? "Limit Reached" : "Watch & Earn +5")}
             </Button>
-            <Button variant="ghost" className="w-full font-bold text-muted-foreground" onClick={() => setShowAdModal(false)}>Maybe Later</Button>
+            {!watchingAd && (
+              <Button variant="ghost" className="w-full font-bold text-muted-foreground" onClick={() => setShowAdModal(false)}>Maybe Later</Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <NotificationsModal 
         isOpen={showAlertsModal}
-        onClose={() => setShowAlertsModal(false)}
+        onClose={() => !watchingAd && setShowAlertsModal(false)}
         onStartQuickFire={() => router.push('/?start=quickfire')}
         onWatchAd={handleWatchAd}
         isWatchingAd={watchingAd}
