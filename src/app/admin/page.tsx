@@ -85,7 +85,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/select";
 import { useFirestore } from "@/firebase";
 import { 
   collection, 
@@ -639,97 +639,105 @@ export default function AdminDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Full User Management Dialog - Android Native Styling */}
+      {/* Full User Management Dialog - Android Native Refactor */}
       <Dialog open={!!manageUser} onOpenChange={() => setManageUser(null)}>
-        <DialogContent className="max-w-2xl rounded-[3rem] p-0 border-none shadow-[0_30px_100px_rgba(0,0,0,0.4)] overflow-hidden">
-          <div className="bg-foreground text-background p-10 flex flex-col sm:flex-row items-center gap-8 relative overflow-hidden">
+        <DialogContent className="max-w-2xl rounded-[3rem] p-0 border-none shadow-[0_30px_100px_rgba(0,0,0,0.4)] overflow-hidden outline-none">
+          {/* Header Zone */}
+          <div className="bg-foreground text-background p-8 sm:p-10 flex flex-col sm:flex-row items-center gap-6 sm:gap-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-10 opacity-10"><User className="w-40 h-40" /></div>
-            <div className="w-24 h-24 rounded-[2rem] bg-primary flex items-center justify-center text-primary-foreground font-black text-4xl shadow-2xl relative z-10">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-[2rem] bg-primary flex items-center justify-center text-primary-foreground font-black text-3xl sm:text-4xl shadow-2xl relative z-10">
               {manageUser?.displayName?.charAt(0) || 'E'}
             </div>
-            <div className="space-y-2 text-center sm:text-left relative z-10">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                <DialogTitle className="text-3xl font-black tracking-tight">{editUserForm.displayName || 'Educator Profile'}</DialogTitle>
+            <div className="space-y-2 text-center sm:text-left relative z-10 flex-1">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                <DialogTitle className="text-2xl sm:text-3xl font-black tracking-tight">{editUserForm.displayName || 'Educator Profile'}</DialogTitle>
                 <div className="flex justify-center gap-2">
-                  {editUserForm.isPro && <Badge className="bg-yellow-500 text-yellow-900 font-black px-3 py-1 rounded-lg border-none shadow-lg">PLATINUM</Badge>}
-                  {editUserForm.isBlocked && <Badge className="bg-rose-500 text-white font-black px-3 py-1 rounded-lg border-none">BLOCKED</Badge>}
+                  {editUserForm.isPro && <Badge className="bg-yellow-500 text-yellow-900 font-black px-2 py-0.5 rounded-lg border-none shadow-lg text-[10px]">PLATINUM</Badge>}
+                  {editUserForm.isBlocked && <Badge className="bg-rose-500 text-white font-black px-2 py-0.5 rounded-lg border-none text-[10px]">BLOCKED</Badge>}
                 </div>
               </div>
-              <p className="text-muted-foreground font-bold uppercase tracking-[0.2em] text-[10px] opacity-60">{manageUser?.email || 'Authenticated User'}</p>
-              <p className="text-[10px] font-black text-primary/80 uppercase tracking-widest">ID: {manageUser?.id}</p>
+              <p className="text-muted-foreground font-bold uppercase tracking-[0.2em] text-[9px] opacity-60">{manageUser?.email || 'Authenticated User'}</p>
+              <p className="text-[9px] font-black text-primary/80 uppercase tracking-widest">ID: {manageUser?.id}</p>
             </div>
           </div>
 
-          <div className="p-10 space-y-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Identity Section */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-2 mb-2"><User className="w-4 h-4 text-primary" /><h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Identity & Focus</h4></div>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Public Display Name</label>
-                    <Input value={editUserForm.displayName} onChange={(e) => setEditUserForm({...editUserForm, displayName: e.target.value})} className="rounded-xl h-12 font-bold border-2" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Assigned Majorship</label>
-                    <Select value={editUserForm.majorship} onValueChange={(val) => setEditUserForm({...editUserForm, majorship: val})}>
-                      <SelectTrigger className="rounded-xl h-12 font-bold border-2"><SelectValue placeholder="Select Majorship" /></SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        {MAJORSHIPS.map(m => <SelectItem key={m} value={m} className="font-bold">{m}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
+          <div className="p-6 sm:p-10 space-y-8 max-h-[70vh] overflow-y-auto no-scrollbar">
+            {/* Zone 1: Identity & Tracks */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-1 h-4 bg-primary rounded-full" />
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Core Identity</h4>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Nickname</label>
+                  <Input value={editUserForm.displayName} onChange={(e) => setEditUserForm({...editUserForm, displayName: e.target.value})} className="rounded-xl h-12 font-bold border-2 bg-muted/10" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1">Specialization</label>
+                  <Select value={editUserForm.majorship} onValueChange={(val) => setEditUserForm({...editUserForm, majorship: val})}>
+                    <SelectTrigger className="rounded-xl h-12 font-bold border-2 bg-muted/10"><SelectValue placeholder="Select Majorship" /></SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {MAJORSHIPS.map(m => <SelectItem key={m} value={m} className="font-bold">{m}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+            </div>
 
-              {/* Economic Section */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-2 mb-2"><Zap className="w-4 h-4 text-primary" /><h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Economy & Experience</h4></div>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">AI Credits</label>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-2" onClick={() => setEditUserForm({...editUserForm, credits: Math.max(0, editUserForm.credits - 10)})}><Minus className="w-4 h-4" /></Button>
-                        <Input type="number" value={editUserForm.credits} onChange={(e) => setEditUserForm({...editUserForm, credits: parseInt(e.target.value) || 0})} className="rounded-xl h-12 font-black text-center border-2" />
-                        <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-2" onClick={() => setEditUserForm({...editUserForm, credits: editUserForm.credits + 10})}><Plus className="w-4 h-4" /></Button>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Total XP</label>
-                      <Input type="number" value={editUserForm.xp} onChange={(e) => setEditUserForm({...editUserForm, xp: parseInt(e.target.value) || 0})} className="rounded-xl h-12 font-black border-2" />
-                    </div>
+            {/* Zone 2: Progress & Economy */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-1 h-4 bg-primary rounded-full" />
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Progression & Balance</h4>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-3 p-5 bg-muted/20 rounded-[2rem] border-2 border-dashed border-border/50">
+                  <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-2">
+                    <Coins className="w-3 h-3 text-yellow-600" /> Current Credits
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-2 shrink-0" onClick={() => setEditUserForm({...editUserForm, credits: Math.max(0, editUserForm.credits - 10)})}><Minus className="w-4 h-4" /></Button>
+                    <Input type="number" value={editUserForm.credits} onChange={(e) => setEditUserForm({...editUserForm, credits: parseInt(e.target.value) || 0})} className="rounded-xl h-12 font-black text-center border-2 text-lg bg-card" />
+                    <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-2 shrink-0" onClick={() => setEditUserForm({...editUserForm, credits: editUserForm.credits + 10})}><Plus className="w-4 h-4" /></Button>
                   </div>
-                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border-2 border-dashed">
-                    <div className="flex items-center gap-3">
-                      <Trophy className="w-5 h-5 text-primary" />
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Projected Rank</span>
-                        <span className="text-sm font-black text-foreground">Rank {getRankData(editUserForm.xp).rank} ({getRankData(editUserForm.xp).title})</span>
-                      </div>
+                </div>
+                <div className="space-y-3 p-5 bg-muted/20 rounded-[2rem] border-2 border-dashed border-border/50">
+                  <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-2">
+                    <Trophy className="w-3 h-3 text-primary" /> Total Experience (XP)
+                  </label>
+                  <div className="space-y-2">
+                    <Input type="number" value={editUserForm.xp} onChange={(e) => setEditUserForm({...editUserForm, xp: parseInt(e.target.value) || 0})} className="rounded-xl h-12 font-black border-2 bg-card" />
+                    <div className="flex items-center justify-between px-1">
+                      <span className="text-[8px] font-black uppercase text-primary tracking-widest">Rank {getRankData(editUserForm.xp).rank}</span>
+                      <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">{getRankData(editUserForm.xp).title}</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-2"><Wrench className="w-4 h-4 text-primary" /><h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Special Tools & Utilities</h4></div>
+            {/* Zone 3: Special Tools */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-1 h-4 bg-primary rounded-full" />
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Administrative Utilities</h4>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Button 
                   variant="outline" 
                   onClick={handleResetDailyTasks} 
                   disabled={isResettingTasks}
-                  className="h-14 rounded-2xl font-black text-xs gap-3 border-2 hover:bg-primary/5 transition-all"
+                  className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-3 border-2 border-amber-200 text-amber-700 bg-amber-50/30 hover:bg-amber-100 transition-all"
                 >
-                  {isResettingTasks ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4 text-primary" />}
-                  Force Reset Daily Missions
+                  {isResettingTasks ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                  Force Reset Missions
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" className="h-14 rounded-2xl font-black text-xs gap-3 border-2 border-rose-200 text-rose-600 hover:bg-rose-50 transition-all">
+                    <Button variant="outline" className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-3 border-2 border-rose-200 text-rose-600 bg-rose-50/30 hover:bg-rose-100 transition-all">
                       <Trash2 className="w-4 h-4" />
-                      Delete Educator Account
+                      Delete Account
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl p-8 outline-none">
@@ -737,38 +745,60 @@ export default function AdminDashboard() {
                       <div className="w-16 h-16 bg-rose-500/10 rounded-2xl flex items-center justify-center mb-4 mx-auto">
                         <AlertTriangle className="w-8 h-8 text-rose-600" />
                       </div>
-                      <AlertDialogTitle className="text-2xl font-black text-center">Irreversible Deletion</AlertDialogTitle>
+                      <AlertDialogTitle className="text-2xl font-black text-center">Irreversible Purge</AlertDialogTitle>
                       <AlertDialogDescription className="text-center font-medium">
-                        Are you certain you want to purge <strong>{editUserForm.displayName}</strong> from the database? This will clear all XP, credits, and simulation history.
+                        Remove <strong>{editUserForm.displayName}</strong> from the LET Practice base? All XP, credits, and simulation history will be lost.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="sm:flex-col gap-3 mt-6">
                       <AlertDialogAction onClick={handleDeleteUser} className="bg-rose-600 hover:bg-rose-700 text-white h-14 rounded-2xl font-black w-full">
-                        {isDeletingUser ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirm Permanent Deletion'}
+                        {isDeletingUser ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Execute Permanent Deletion'}
                       </AlertDialogAction>
-                      <AlertDialogCancel className="h-14 rounded-2xl font-bold border-2 w-full">Abort Action</AlertDialogCancel>
+                      <AlertDialogCancel className="h-14 rounded-2xl font-bold border-2 w-full">Cancel</AlertDialogCancel>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
             </div>
 
-            <div className="pt-8 border-t border-border/50 space-y-6">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button variant={editUserForm.isPro ? "outline" : "default"} onClick={() => setEditUserForm({...editUserForm, isPro: !editUserForm.isPro})} className={cn("flex-1 h-14 rounded-2xl font-black text-xs gap-3", editUserForm.isPro ? "border-yellow-500/20 text-yellow-600 bg-yellow-500/5" : "bg-yellow-500 hover:bg-yellow-600 text-yellow-900 shadow-lg shadow-yellow-500/20")}>
-                  <Crown className="w-5 h-5" /> {editUserForm.isPro ? 'Revoke Platinum Access' : 'Grant Platinum Status'}
-                </Button>
-                <Button variant="outline" onClick={() => setEditUserForm({...editUserForm, isBlocked: !editUserForm.isBlocked})} className={cn("flex-1 h-14 rounded-2xl font-black text-xs gap-3 border-2", editUserForm.isBlocked ? "bg-emerald-50 border-emerald-200 text-emerald-600" : "bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100")}>
-                  <Ban className="w-5 h-5" /> {editUserForm.isBlocked ? 'Restore Educator Access' : 'Restrict Account (Block)'}
-                </Button>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
-                <Button variant="ghost" onClick={() => setManageUser(null)} className="w-full sm:w-auto h-14 px-8 rounded-2xl font-bold">Discard Changes</Button>
-                <Button onClick={handleUpdateUser} disabled={isUpdatingUser} className="w-full sm:flex-1 h-16 rounded-[2rem] font-black text-lg gap-3 shadow-2xl shadow-primary/30">
-                  {isUpdatingUser ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />} Save Educator Profile
-                </Button>
-              </div>
+            {/* Zone 4: Standing Toggles */}
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <Button 
+                variant={editUserForm.isPro ? "outline" : "default"} 
+                onClick={() => setEditUserForm({...editUserForm, isPro: !editUserForm.isPro})} 
+                className={cn(
+                  "flex-1 h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-3 border-2 transition-all", 
+                  editUserForm.isPro 
+                    ? "border-yellow-500/30 text-yellow-700 bg-yellow-500/5 hover:bg-yellow-500/10" 
+                    : "bg-yellow-500 hover:bg-yellow-600 text-yellow-950 shadow-lg shadow-yellow-500/20"
+                )}
+              >
+                <Crown className={cn("w-4 h-4", !editUserForm.isPro && "fill-current")} /> 
+                {editUserForm.isPro ? 'Revoke Platinum Access' : 'Grant Platinum Status'}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setEditUserForm({...editUserForm, isBlocked: !editUserForm.isBlocked})} 
+                className={cn(
+                  "flex-1 h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-3 border-2 transition-all", 
+                  editUserForm.isBlocked 
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100" 
+                    : "bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100"
+                )}
+              >
+                {editUserForm.isBlocked ? <ShieldCheck className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
+                {editUserForm.isBlocked ? 'Restore Educator Access' : 'Restrict Account (Block)'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Action Zone Footer */}
+          <div className="p-6 sm:p-10 pt-0 bg-muted/5 border-t">
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <Button variant="ghost" onClick={() => setManageUser(null)} className="w-full sm:w-auto h-14 px-8 rounded-2xl font-bold text-muted-foreground">Discard Changes</Button>
+              <Button onClick={handleUpdateUser} disabled={isUpdatingUser} className="w-full sm:flex-1 h-16 rounded-[2rem] font-black text-lg gap-3 shadow-2xl shadow-primary/30">
+                {isUpdatingUser ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />} Save Educator Profile
+              </Button>
             </div>
           </div>
         </DialogContent>
