@@ -1,0 +1,15 @@
+ext.minSdkVersion = 23
+ext.compileSdkVersion = 35
+ext.targetSdkVersion = 35
+ext.androidXActivityVersion = '1.9.2'
+ext.androidXAppCompatVersion = '1.7.0'
+ext.androidXCoordinatorLayoutVersion = '1.2.0'
+ext.androidXCoreVersion = '1.15.0'
+ext.androidXFragmentVersion = '1.8.4'
+ext.coreSplashScreenVersion = '1.0.1'
+ext.androidXWebkitVersion = '1.12.1'
+ext.junitVersion = '4.13.2'
+ext.androidXJUnitVersion = '1.2.1'
+ext.androidXEspressoCoreVersion = '3.6.1'
+ext.cordovaAndroidVersion = '10.1.1'
+ext.rgcfaIncludeGoogle = true

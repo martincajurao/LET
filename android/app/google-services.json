@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "322612236786",
+    "project_id": "letpractice",
+    "storage_bucket": "letpractice.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:322612236786:android:ae83d386e0a24542621b6b",
+        "android_client_info": {
+          "package_name": "com.let.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "322612236786-ddd7p2f10qhnknc6on67sieas6mgue79.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9IagblcFtrFUk3dmT1p_zTX0YTN-lXs4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "322612236786-ddd7p2f10qhnknc6on67sieas6mgue79.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

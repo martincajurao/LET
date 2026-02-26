@@ -1,0 +1,17 @@
+{
+	"appId": "com.let.app",
+	"appName": "Let App",
+	"webDir": "out",
+	"server": {
+		"hostname": "letpractice.firebaseapp.com",
+		"androidScheme": "https"
+	},
+	"plugins": {
+		"FirebaseAuthentication": {
+			"skipNativeAuth": false,
+			"providers": [
+				"google.com"
+			]
+		}
+	}
+}
