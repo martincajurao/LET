@@ -352,49 +352,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
       </div>
 
       {!isUnlocked ? (
-        <Card className="border-none shadow-xl rounded-[2.5rem] bg-foreground text-background p-12 text-center relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-10 opacity-10">
-            {verifying ? <ShieldAlert className="w-32 h-32 text-primary animate-pulse" /> : <Lock className="w-32 h-32" />}
-          </div>
-          <CardHeader className="space-y-4">
-            <CardTitle className="text-4xl font-black tracking-tight">{verifying ? "Verifying Access..." : "Unlock Full Analysis"}</CardTitle>
-            <CardDescription className="text-muted-foreground font-medium max-w-lg mx-auto text-lg">
-              {verifying ? "Our academic system is confirming your professional clip completion." : "Access the AI Pedagogical Summary and Actionable Roadmap for this session."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6 flex flex-col sm:flex-row justify-center items-center gap-4">
-            <div className="flex flex-col gap-2">
-              <Button 
-                size="lg" 
-                onClick={handleUnlockAnalysisWithAd} 
-                disabled={unlocking}
-                className="h-16 px-10 rounded-2xl font-black text-lg gap-3 shadow-2xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-95"
-              >
-                {unlocking ? (
-                  verifying ? <><ShieldAlert className="w-6 h-6 animate-pulse" /> Finalizing...</> : <><Loader2 className="w-6 h-6 animate-spin" /> Playing...</>
-                ) : (
-                  <><Play className="w-6 h-6 fill-current" /> Watch Ad to Unlock Summary</>
-                )}
-              </Button>
-            </div>
-            {!unlocking && (
-              <Button 
-                size="lg" 
-                variant="outline"
-                onClick={handleUnlockWithCredits} 
-                disabled={unlocking}
-                className="h-16 px-10 rounded-2xl font-black text-lg gap-3 border-white/20 text-white hover:bg-white/10 relative overflow-hidden group"
-              >
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl animate-breathing-gold border-2 border-yellow-500/20">
-                  <Coins className="w-6 h-6 text-yellow-400 fill-current" />
-                  <span className="text-yellow-400">10 Credits</span>
-                </div>
-                <span>Unlock Summary</span>
-              </Button>
-            )}
-          </CardContent>
-          <p className="mt-6 text-[10px] text-muted-foreground font-bold uppercase tracking-[0.25em]">Mistake Review list is available below</p>
-        </Card>
+        <div></div>
       ) : (
         <>
           {aiSummary && (
@@ -461,54 +419,159 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                         </div>
                       </div>
                       <div className="space-y-4">
-                        <AnimatePresence mode="wait">
-                          {!localExplanations[q.id] ? (
-                            <Button 
-                              onClick={() => handleGenerateExplanation(q)} 
-                              disabled={generatingIds.has(q.id)} 
-                              size="sm" 
-                              className="w-full font-black gap-3 transition-all h-14 rounded-2xl shadow-lg active:scale-95 group relative overflow-hidden"
-                            >
-                              {generatingIds.has(q.id) ? (
-                                <><Loader2 className="w-5 h-5 animate-spin" /> Deep Diving...</>
-                              ) : (
-                                <>
-                                  <div className="flex items-center gap-2">
-                                    <Sparkles className="w-5 h-5" /> 
-                                    <span>Get AI Deep Dive</span>
-                                  </div>
-                                  <div className={cn(
-                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] transition-all border-2",
-                                    user?.isPro || isUnlocked ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600" : "animate-breathing-primary bg-primary/10 border-primary/20 text-primary"
-                                  )}>
-                                    {(user?.isPro || isUnlocked) ? (
-                                      <>
-                                        <CheckCircle2 className="w-3.5 h-3.5" />
-                                        <span>FREE</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Coins className="w-3.5 h-3.5 fill-current text-primary" />
-                                        <span className="text-primary font-black">5 CREDITS</span>
-                                      </>
-                                    )}
-                                  </div>
-                                </>
-                              )}
-                            </Button>
-                          ) : (
-                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-primary/5 p-5 rounded-xl border border-primary/20 italic text-sm text-foreground relative">
-                              <div className="flex items-start justify-between gap-2 mb-3">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0"><MessageSquare className="w-3.5 h-3.5 text-primary" /></div>
-                                  <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mt-1">AI Tutor Insight</span>
-                                </div>
-                                {(user?.isPro || isUnlocked) && <Crown className="w-3.5 h-3.5 text-yellow-600" />}
+                      <AnimatePresence mode="wait">
+                        {!localExplanations[q.id] ? (
+                          <Button 
+                            onClick={() => handleGenerateExplanation(q)} 
+                            disabled={generatingIds.has(q.id)} 
+                            size="sm" 
+                            className={cn(
+                              "w-full font-black gap-3 transition-all h-16 rounded-2xl shadow-lg active:scale-95 group relative overflow-hidden border-2",
+                              generatingIds.has(q.id) 
+                                ? "border-primary/30 bg-primary/10 text-primary" 
+                                : (user?.isPro || isUnlocked)
+                                  ? "border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-700 hover:text-emerald-800"
+                                  : "border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary hover:shadow-primary/30"
+                            )}
+                          >
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center gap-3">
+                                {generatingIds.has(q.id) ? (
+                                  <>
+                                    <div className="relative">
+                                      <Loader2 className="w-5 h-5 animate-spin" />
+                                      <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-ping" />
+                                    </div>
+                                    <div className="flex flex-col items-start">
+                                      <span className="font-black text-sm">AI Processing</span>
+                                      <span className="text-[10px] opacity-80">Analyzing mistake patterns...</span>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="flex items-center gap-2">
+                                      <Sparkles className={cn(
+                                        "w-5 h-5",
+                                        (user?.isPro || isUnlocked) ? "text-emerald-600" : "text-primary"
+                                      )} />
+                                      <span className="font-black">Get AI Deep Dive</span>
+                                    </div>
+                                  </>
+                                )}
                               </div>
+                              
+                              {!generatingIds.has(q.id) && (
+                                <div className={cn(
+                                  "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] transition-all border-2 font-bold",
+                                  (user?.isPro || isUnlocked) 
+                                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600" 
+                                    : "animate-breathing-primary bg-primary/10 border-primary/20 text-primary"
+                                )}>
+                                  {(user?.isPro || isUnlocked) ? (
+                                    <>
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      <span>FREE</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Coins className="w-3.5 h-3.5 fill-current text-primary" />
+                                      <span className="text-primary">5 CREDITS</span>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Progress bar for generation */}
+                            {generatingIds.has(q.id) && (
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: "100%" }}
+                                transition={{ duration: 3, ease: "easeInOut" }}
+                                className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-primary/50 to-primary"
+                              />
+                            )}
+                          </Button>
+                        ) : (
+                          <motion.div 
+                            initial={{ opacity: 0, y: 10 }} 
+                            animate={{ opacity: 1, y: 0 }} 
+                            className={cn(
+                              "bg-gradient-to-br p-6 rounded-2xl border relative overflow-hidden group",
+                              (user?.isPro || isUnlocked)
+                                ? "from-emerald-500/10 to-emerald-500/5 border-emerald-500/20"
+                                : "from-primary/10 to-primary/5 border-primary/20"
+                            )}
+                          >
+                            {/* Background decoration */}
+                            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-transparent to-current opacity-5 rounded-full -translate-y-1/2 translate-x-1/2" />
+                            
+                            <div className="flex items-start justify-between gap-3 mb-4">
+                              <div className="flex items-center gap-3">
+                                <div className={cn(
+                                  "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border-2",
+                                  (user?.isPro || isUnlocked)
+                                    ? "bg-emerald-500/10 border-emerald-500/20"
+                                    : "bg-primary/10 border-primary/20"
+                                )}>
+                                  <MessageSquare className={cn(
+                                    "w-4 h-4",
+                                    (user?.isPro || isUnlocked) ? "text-emerald-600" : "text-primary"
+                                  )} />
+                                </div>
+                                <div>
+                                  <span className={cn(
+                                    "text-[10px] font-black uppercase tracking-[0.2em] block",
+                                    (user?.isPro || isUnlocked) ? "text-emerald-600" : "text-primary"
+                                  )}>
+                                    AI Tutor Insight
+                                  </span>
+                                  <span className="text-[8px] text-muted-foreground font-medium">
+                                    Personalized explanation ready
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {(user?.isPro || isUnlocked) && (
+                                  <div className="flex items-center gap-1 px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                                    <Crown className="w-3 h-3 text-yellow-600" />
+                                    <span className="text-[8px] font-black text-emerald-600">PRO</span>
+                                  </div>
+                                )}
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                              </div>
+                            </div>
+                            
+                            <div className={cn(
+                              "text-sm leading-relaxed font-medium rounded-xl p-4 border",
+                              (user?.isPro || isUnlocked)
+                                ? "bg-emerald-50/50 border-emerald-500/10 text-emerald-800"
+                                : "bg-primary/50 border-primary/10 text-primary"
+                            )}>
                               <TypewriterText text={localExplanations[q.id]} />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+                            </div>
+                            
+                            {/* Action buttons for unlocked content */}
+                            <div className="flex items-center gap-2 mt-4">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 px-3 rounded-lg text-[10px] font-black border-current/20 hover:bg-current/5"
+                              >
+                                <BrainCircuit className="w-3 h-3 mr-1" />
+                                Related Topics
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 px-3 rounded-lg text-[10px] font-black hover:bg-current/5"
+                              >
+                                Save Note
+                              </Button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                       </div>
                     </AccordionContent>
                   </AccordionItem>

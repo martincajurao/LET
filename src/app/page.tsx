@@ -53,6 +53,7 @@ import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
 import { QuickFireInterface } from "@/components/exam/QuickFireInterface";
 import { QuickFireResults } from "@/components/exam/QuickFireResults";
+import { ResultUnlockDialog } from "@/components/exam/ResultUnlockDialog";
 import { RankUpDialog } from "@/components/ui/rank-up-dialog";
 import { Question, MAJORSHIPS } from "@/app/lib/mock-data";
 import { useUser, useFirestore } from "@/firebase";
@@ -188,6 +189,10 @@ function LetsPrepContent() {
   const [apkInfo, setApkInfo] = useState<any>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [isQrLoading, setIsQrLoading] = useState(true);
+  
+  // Result unlock dialog state
+  const [showResultUnlock, setShowResultUnlock] = useState(false);
+  const [resultsUnlocked, setResultsUnlocked] = useState(false);
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
@@ -195,11 +200,24 @@ function LetsPrepContent() {
     const fetchApkAndGenerateQR = async () => {
       try {
         setIsQrLoading(true);
-        const res = await fetch('/api/apk');
+        // Use Firebase Functions URL with fallback
+        const getFunctionsUrl = () => {
+          if (process.env.NODE_ENV === 'development') {
+            return process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_DEV_URL || 'http://localhost:5001/your-project-id/us-central1';
+          }
+          return process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL || 'https://us-central1-your-project-id.cloudfunctions.net';
+        };
+        
+        const functionsUrl = getFunctionsUrl();
+        
+        const res = await fetch(`${functionsUrl}/apk`).catch(err => {
+          console.error('Failed to fetch APK info:', err);
+          throw err;
+        });
         const data = await res.json();
         setApkInfo(data);
 
-        const downloadUrl = `${window.location.origin}/api/download`;
+        const downloadUrl = `${functionsUrl}/download`;
         
         const qrDataUrl = await QRCode.toDataURL(downloadUrl, {
           width: 256,
@@ -265,7 +283,7 @@ function LetsPrepContent() {
     return () => clearInterval(interval);
   }, [user]);
 
-  const startExam = async (category: 'General Education' | 'Professional Education' | 'Specialization' | 'all' | 'quickfire') => {
+  const startExam = async (category: 'General Education' | 'Professional Education' | 'Specialization' | 'all' | 'quickfire' | 'Major' | 'Prof Ed') => {
     if (!user) { setAuthIssue(true); return; }
     setLoading(true);
     setLoadingStep(0);
@@ -341,11 +359,27 @@ function LetsPrepContent() {
     }
 
     setLoadingStep(100);
-    setTimeout(() => { setState(isQuickFire ? 'quickfire_results' : 'results'); setLoading(false); }, 500);
+    setLoading(false);
+    
+    // Show unlock dialog for non-pro users on full exams
+    if (!user.isPro && !isQuickFire) {
+      setShowResultUnlock(true);
+    } else {
+      setResultsUnlocked(true);
+      setTimeout(() => { setState(isQuickFire ? 'quickfire_results' : 'results'); }, 300);
+    }
+  };
+
+  const handleResultUnlock = () => {
+    setResultsUnlocked(true);
+    setTimeout(() => { setState('results'); }, 300);
   };
 
   const handleDownloadApk = () => {
-    const downloadUrl = '/api/download';
+    const functionsUrl = process.env.NODE_ENV === 'development' 
+      ? 'http://localhost:5001/your-project-id/us-central1'
+      : 'https://us-central1-your-project-id.cloudfunctions.net';
+    const downloadUrl = `${functionsUrl}/download`;
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = 'letpractice-app.apk';
@@ -425,6 +459,18 @@ function LetsPrepContent() {
         onClose={() => setShowRankUp(false)} 
         rank={celebratedRank} 
         reward={celebratedReward} 
+      />
+
+      <ResultUnlockDialog
+        open={showResultUnlock}
+        onClose={() => setShowResultUnlock(false)}
+        onUnlock={handleResultUnlock}
+        questionsCount={currentQuestions.length}
+        correctAnswers={Object.values(examAnswers).filter((answer, index) => {
+          const question = currentQuestions[index];
+          return question && answer === question.correctAnswer;
+        }).length}
+        timeSpent={examTime}
       />
 
       <Dialog open={authIssue} onOpenChange={setAuthIssue}>

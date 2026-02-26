@@ -7,14 +7,49 @@
     "rules": "storage.rules"
   },
   "hosting": {
-    "source": ".",
+    "public": "out",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
-    "frameworksBackend": {
-      "runtime": "nodejs20"
-    }
+    "cleanUrls": true,
+    "trailingSlash": false,
+    "headers": [
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=31536000"
+          }
+        ]
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/api/daily-task",
+        "function": "dailyTask",
+        "region": "us-central1"
+      },
+      {
+        "source": "/api/events",
+        "function": "events",
+        "region": "us-central1"
+      },
+      {
+        "source": "/api/download",
+        "function": "download",
+        "region": "us-central1"
+      },
+      {
+        "source": "/api/apk",
+        "function": "apk",
+        "region": "us-central1"
+      }
+    ]
+  },
+  "functions": {
+    "runtime": "nodejs20"
   }
 }

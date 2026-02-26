@@ -91,7 +91,11 @@ export function DailyTaskDashboard() {
     setServerWarning(null);
     
     try {
-      const response = await fetch('/api/daily-task', { 
+      const functionsUrl = process.env.NODE_ENV === 'development' 
+        ? process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_DEV_URL || 'http://localhost:5001/your-project-id/us-central1'
+        : process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL || 'https://us-central1-your-project-id.cloudfunctions.net';
+      
+      const response = await fetch(`${functionsUrl}/dailyTask`, { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
         body: JSON.stringify({ 
@@ -113,6 +117,9 @@ export function DailyTaskDashboard() {
           deviceFingerprint, 
           isStreakRecoveryRequested: isRecovery 
         }) 
+      }).catch(err => {
+        console.error('Failed to fetch daily task:', err);
+        throw err;
       });
       const result = await response.json();
       

@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ShieldAlert, CheckCircle2, LogOut, Info, Zap } from 'lucide-react';
+import { Loader2, ShieldCheck, ShieldAlert, CheckCircle2, LogOut, Info, Zap } from 'lucide-react';
 import { firebaseConfig } from '@/firebase/config';
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
