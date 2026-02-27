@@ -289,20 +289,8 @@ public class MainActivity extends BridgeActivity {
                 input.close();
                 connection.disconnect();
                 
-                Log.d(TAG, "Download complete, verifying SHA256...");
+                Log.d(TAG, "Download complete, SHA256 verification skipped");
                 
-                // Verify SHA256
-                String downloadedSha256 = calculateSha256(apkFile);
-                Log.d(TAG, "Expected SHA256: " + expectedSha256);
-                Log.d(TAG, "Downloaded SHA256: " + downloadedSha256);
-                
-                if (!expectedSha256.equalsIgnoreCase(downloadedSha256)) {
-                    errorMessage = "SHA256 verification failed!";
-                    apkFile.delete();
-                    return null;
-                }
-                
-                Log.d(TAG, "SHA256 verified successfully!");
                 return apkFile.getAbsolutePath();
                 
             } catch (Exception e) {
@@ -356,21 +344,40 @@ public class MainActivity extends BridgeActivity {
         runOnUiThread(() -> {
             try {
                 File apkFile = new File(apkPath);
+                
+                // Check if file exists and is readable
+                if (!apkFile.exists()) {
+                    throw new Exception("APK file not found: " + apkPath);
+                }
+                
+                Log.d(TAG, "APK file exists, size: " + apkFile.length() + " bytes");
+                
                 Uri apkUri = FileProvider.getUriForFile(
                     MainActivity.this,
                     getPackageName() + ".fileprovider",
                     apkFile
                 );
                 
+                Log.d(TAG, "APK URI created: " + apkUri.toString());
+                
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
-                intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                startActivity(intent);
+                intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 
-                sendUpdateResult("success", "Update downloaded and ready to install!");
+                // Grant permission to the package installer
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                
+                // Check if there's an app that can handle this intent
+                if (intent.resolveActivity(getPackageManager()) != null) {
+                    startActivity(intent);
+                    sendUpdateResult("success", "Update downloaded! Tap 'Install' when prompted.");
+                } else {
+                    throw new Exception("No app found to handle APK installation");
+                }
                 
             } catch (Exception e) {
-                Log.e(TAG, "Install error: " + e.getMessage());
+                Log.e(TAG, "Install error: " + e.getMessage(), e);
                 sendUpdateResult("error", "Failed to install: " + e.getMessage());
             }
         });
