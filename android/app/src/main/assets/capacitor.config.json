@@ -4,13 +4,26 @@
 	"webDir": "out",
 	"server": {
 		"hostname": "letpractice.firebaseapp.com",
-		"androidScheme": "https"
+		"androidScheme": "https",
+		"cleartext": true
+	},
+	"android": {
+		"useLegacyBridge": false,
+		"webContentsDebuggingEnabled": true
 	},
 	"plugins": {
 		"FirebaseAuthentication": {
 			"skipNativeAuth": false,
 			"providers": [
 				"google.com"
+			]
+		},
+		"DeepLinks": {
+			"hosts": [
+				"letpractice.firebaseapp.com"
+			],
+			"linkedDomains": [
+				"letpractice.web.app"
 			]
 		}
 	}

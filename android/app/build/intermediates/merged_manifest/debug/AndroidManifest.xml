@@ -25,11 +25,13 @@
         android:appComponentFactory="androidx.core.app.CoreComponentFactory"
         android:debuggable="true"
         android:extractNativeLibs="false"
+        android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="true" >
         <activity
             android:name="com.let.app.MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"
@@ -41,6 +43,32 @@
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Deep link intent filter for Firebase Hosting -->
+            <intent-filter android:autoVerify="true" >
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="letpractice.firebaseapp.com"
+                    android:pathPrefix="/"
+                    android:scheme="https" />
+            </intent-filter>
+
+            <!-- App Links for Android -->
+            <intent-filter android:autoVerify="true" >
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="www.letpractice.firebaseapp.com"
+                    android:pathPrefix="/"
+                    android:scheme="https" />
             </intent-filter>
         </activity>
 

@@ -1,20 +1,20 @@
 -- Merging decision tree log ---
 provider#androidx.core.content.FileProvider
-INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:27:9-35:20
+INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:51:9-59:20
 	android:grantUriPermissions
-		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:31:13-47
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:55:13-47
 	android:authorities
 		INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml
-		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:29:13-64
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:53:13-64
 	android:exported
-		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:30:13-37
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:54:13-37
 	android:name
-		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:28:13-62
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:52:13-62
 manifest
-ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:2:1-41:12
-INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:2:1-41:12
-INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:2:1-41:12
-INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:2:1-41:12
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:2:1-66:12
+INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:2:1-66:12
+INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:2:1-66:12
+INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:2:1-66:12
 MERGED from [:capacitor-firebase-authentication] C:\Users\Admin\Desktop\LET\node_modules\@capacitor-firebase\authentication\android\build\intermediates\merged_manifest\debug\AndroidManifest.xml:2:1-7:12
 MERGED from [:capacitor-android] C:\Users\Admin\Desktop\LET\node_modules\@capacitor\android\capacitor\build\intermediates\merged_manifest\debug\AndroidManifest.xml:2:1-7:12
 MERGED from [:capacitor-cordova-android-plugins] C:\Users\Admin\Desktop\LET\android\capacitor-cordova-android-plugins\build\intermediates\merged_manifest\debug\AndroidManifest.xml:2:1-11:12
@@ -76,8 +76,8 @@ MERGED from [org.apache.cordova:framework:10.1.1] C:\Users\Admin\.gradle\caches\
 	xmlns:android
 		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:2:11-69
 application
-ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:4:5-36:19
-INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:4:5-36:19
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:4:5-60:19
+INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:4:5-60:19
 MERGED from [:capacitor-cordova-android-plugins] C:\Users\Admin\Desktop\LET\android\capacitor-cordova-android-plugins\build\intermediates\merged_manifest\debug\AndroidManifest.xml:8:5-9:19
 MERGED from [:capacitor-cordova-android-plugins] C:\Users\Admin\Desktop\LET\android\capacitor-cordova-android-plugins\build\intermediates\merged_manifest\debug\AndroidManifest.xml:8:5-9:19
 MERGED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:28:5-73:19
@@ -122,6 +122,8 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\Admin\.gradle\cach
 		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:9:9-35
 	android:label
 		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:7:9-41
+	android:hardwareAccelerated
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:12:9-43
 	android:roundIcon
 		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:8:9-54
 	android:icon
@@ -130,44 +132,82 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\Admin\.gradle\cach
 		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:5:9-35
 	android:theme
 		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:10:9-40
+	android:usesCleartextTraffic
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:11:9-44
 activity#com.let.app.MainActivity
-ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:12:9-25:20
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:14:9-49:20
 	android:label
-		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:15:13-56
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:17:13-56
 	android:launchMode
-		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:17:13-44
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:19:13-44
 	android:exported
-		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:18:13-36
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:20:13-36
 	android:configChanges
-		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:13:13-140
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:15:13-140
 	android:theme
-		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:16:13-62
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:18:13-62
 	android:name
-		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:14:13-41
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:16:13-41
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:20:13-23:29
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:22:13-25:29
 action#android.intent.action.MAIN
-ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:21:17-69
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:23:17-69
 	android:name
-		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:21:25-66
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:23:25-66
 category#android.intent.category.LAUNCHER
-ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:22:17-77
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:24:17-77
 	android:name
-		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:22:27-74
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:24:27-74
+intent-filter#action:name:android.intent.action.VIEW+category:name:android.intent.category.BROWSABLE+category:name:android.intent.category.DEFAULT+data:host:letpractice.firebaseapp.com+data:pathPrefix:/+data:scheme:https
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:28:13-36:29
+	android:autoVerify
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:28:28-53
+action#android.intent.action.VIEW
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:29:17-69
+	android:name
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:29:25-66
+category#android.intent.category.DEFAULT
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:30:17-76
+	android:name
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:30:27-73
+category#android.intent.category.BROWSABLE
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:31:17-78
+	android:name
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:31:27-75
+data
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:32:17-35:46
+	android:host
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:34:21-63
+	android:scheme
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:33:21-43
+	android:pathPrefix
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:35:21-43
+intent-filter#action:name:android.intent.action.VIEW+category:name:android.intent.category.BROWSABLE+category:name:android.intent.category.DEFAULT+data:host:www.letpractice.firebaseapp.com+data:pathPrefix:/+data:scheme:https
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:39:13-47:29
+	android:autoVerify
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:39:28-53
 uses-permission#android.permission.INTERNET
-ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:40:5-67
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:64:5-67
 MERGED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:25:5-67
 MERGED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:25:5-67
 MERGED from [com.google.android.recaptcha:recaptcha:18.4.0] C:\Users\Admin\.gradle\caches\8.11.1\transforms\468cb1a27b86f35747856eb020fa0edd\transformed\recaptcha-18.4.0\AndroidManifest.xml:7:5-67
 MERGED from [com.google.android.recaptcha:recaptcha:18.4.0] C:\Users\Admin\.gradle\caches\8.11.1\transforms\468cb1a27b86f35747856eb020fa0edd\transformed\recaptcha-18.4.0\AndroidManifest.xml:7:5-67
 	android:name
-		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:40:22-64
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:64:22-64
+uses-permission#android.permission.ACCESS_NETWORK_STATE
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:65:5-79
+MERGED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:26:5-79
+MERGED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:26:5-79
+MERGED from [com.google.android.recaptcha:recaptcha:18.4.0] C:\Users\Admin\.gradle\caches\8.11.1\transforms\468cb1a27b86f35747856eb020fa0edd\transformed\recaptcha-18.4.0\AndroidManifest.xml:8:5-79
+MERGED from [com.google.android.recaptcha:recaptcha:18.4.0] C:\Users\Admin\.gradle\caches\8.11.1\transforms\468cb1a27b86f35747856eb020fa0edd\transformed\recaptcha-18.4.0\AndroidManifest.xml:8:5-79
+	android:name
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:65:22-76
 meta-data#android.support.FILE_PROVIDER_PATHS
-ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:32:13-34:64
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:56:13-58:64
 	android:resource
-		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:34:17-51
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:58:17-51
 	android:name
-		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:33:17-67
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:57:17-67
 uses-sdk
 INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml
@@ -282,12 +322,6 @@ MERGED from [org.apache.cordova:framework:10.1.1] C:\Users\Admin\.gradle\caches\
 		INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml
 	android:minSdkVersion
 		INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml
-uses-permission#android.permission.ACCESS_NETWORK_STATE
-ADDED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:26:5-79
-MERGED from [com.google.android.recaptcha:recaptcha:18.4.0] C:\Users\Admin\.gradle\caches\8.11.1\transforms\468cb1a27b86f35747856eb020fa0edd\transformed\recaptcha-18.4.0\AndroidManifest.xml:8:5-79
-MERGED from [com.google.android.recaptcha:recaptcha:18.4.0] C:\Users\Admin\.gradle\caches\8.11.1\transforms\468cb1a27b86f35747856eb020fa0edd\transformed\recaptcha-18.4.0\AndroidManifest.xml:8:5-79
-	android:name
-		ADDED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:26:22-76
 activity#com.google.firebase.auth.internal.GenericIdpActivity
 ADDED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:29:9-46:20
 	android:excludeFromRecents
@@ -302,26 +336,6 @@ ADDED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\cac
 		ADDED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:30:13-80
 intent-filter#action:name:android.intent.action.VIEW+category:name:android.intent.category.BROWSABLE+category:name:android.intent.category.DEFAULT+data:host:firebase.auth+data:path:/+data:scheme:genericidp
 ADDED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:35:13-45:29
-action#android.intent.action.VIEW
-ADDED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:36:17-69
-	android:name
-		ADDED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:36:25-66
-category#android.intent.category.DEFAULT
-ADDED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:38:17-76
-	android:name
-		ADDED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:38:27-73
-category#android.intent.category.BROWSABLE
-ADDED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:39:17-78
-	android:name
-		ADDED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:39:27-75
-data
-ADDED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:41:17-44:51
-	android:path
-		ADDED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:43:21-37
-	android:host
-		ADDED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:42:21-49
-	android:scheme
-		ADDED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:44:21-48
 activity#com.google.firebase.auth.internal.RecaptchaActivity
 ADDED from [com.google.firebase:firebase-auth:22.3.1] C:\Users\Admin\.gradle\caches\8.11.1\transforms\6f23cbcba3811a610daffba5d00443e8\transformed\firebase-auth-22.3.1\AndroidManifest.xml:47:9-64:20
 	android:excludeFromRecents
