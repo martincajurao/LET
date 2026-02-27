@@ -4,14 +4,18 @@
 	"webDir": "out",
 	"server": {
 		"hostname": "letpractice.firebaseapp.com",
-		"androidScheme": "https",
-		"cleartext": true
+		"androidScheme": "https"
 	},
 	"android": {
-		"useLegacyBridge": false,
-		"webContentsDebuggingEnabled": true
+		"useLegacyBridge": false
 	},
 	"plugins": {
+		"CapacitorCookies": {
+			"enabled": true
+		},
+		"CapacitorHttp": {
+			"enabled": false
+		},
 		"FirebaseAuthentication": {
 			"skipNativeAuth": false,
 			"providers": [
@@ -21,9 +25,6 @@
 		"DeepLinks": {
 			"hosts": [
 				"letpractice.firebaseapp.com"
-			],
-			"linkedDomains": [
-				"letpractice.web.app"
 			]
 		}
 	}

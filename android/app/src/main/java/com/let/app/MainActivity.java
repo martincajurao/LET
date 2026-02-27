@@ -5,14 +5,18 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
+import android.webkit.CookieManager;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
 
     private WebView webView;
-    private String currentUrl = "";
+    private String baseUrl = "https://letpractice.firebaseapp.com/";
+    private static final String TAG = "MainActivity";
+    private boolean isFirstLoad = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,18 +38,15 @@ public class MainActivity extends BridgeActivity {
     }
     
     private void handleIntent(Intent intent) {
-        if (intent == null) return;
+        if (intent == null || webView == null) return;
         
         String action = intent.getAction();
         Uri data = intent.getData();
         
         if (Intent.ACTION_VIEW.equals(action) && data != null) {
-            // Handle deep links
             String url = data.toString();
-            if (webView != null) {
-                // Load the deep link URL
-                webView.loadUrl(url);
-            }
+            // Handle deep link - load it directly
+            webView.loadUrl(url);
         }
     }
     
@@ -53,7 +54,13 @@ public class MainActivity extends BridgeActivity {
         webView = this.getBridge().getWebView();
         if (webView == null) return;
         
-        // Enable DOM storage and JavaScript for proper routing
+        Log.d(TAG, "Configuring WebView");
+        
+        // Enable cookies globally
+        CookieManager.getInstance().setAcceptCookie(true);
+        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
+        
+        // Enable DOM storage and JavaScript
         WebSettings settings = webView.getSettings();
         settings.setDomStorageEnabled(true);
         settings.setJavaScriptEnabled(true);
@@ -62,37 +69,35 @@ public class MainActivity extends BridgeActivity {
         settings.setSupportZoom(false);
         settings.setBuiltInZoomControls(false);
         settings.setMediaPlaybackRequiresUserGesture(false);
+        
+        // Cache settings - use cache but validate
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         
-        // Enable mixed content for Firebase hosting
-        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
+        // Enable mixed content for Firebase
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         
-        // Enable HTML5 geolocation
+        // Enable database for IndexedDB
+        settings.setDatabaseEnabled(true);
+        settings.setDatabasePath(getApplicationContext().getFilesDir().getPath());
+        
+        // Enable geolocation
         settings.setGeolocationEnabled(true);
         
-        // Set custom WebViewClient to handle routing
+        // Load the base URL
+        webView.loadUrl(baseUrl);
+        Log.d(TAG, "Loading base URL: " + baseUrl);
+        
+        // Set custom WebViewClient
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String url = request.getUrl().toString();
+                Log.d(TAG, "shouldOverrideUrlLoading: " + url);
                 
-                // Skip if this is the same URL (prevent unnecessary reloads)
-                if (url != null && url.equals(currentUrl)) {
-                    return true;
-                }
-                
-                // Handle deep links and internal navigation
-                if (url != null && isInternalUrl(url)) {
-                    // Check if it's a hash route (Next.js client-side routing)
-                    if (url.contains("#")) {
-                        // Handle hash routes - load the base URL and let JS handle routing
-                        String baseUrl = url.split("#")[0];
-                        if (!baseUrl.equals(currentUrl)) {
-                            view.loadUrl(baseUrl);
-                        }
-                        return true;
-                    }
-                    // Allow internal navigation to proceed without full reload
+                // If it's the same base URL, handle internally
+                if (url != null && (url.startsWith(baseUrl) || url.startsWith("https://letpractice.web.app"))) {
+                    // For internal URLs, just return false to let WebView handle it
+                    // This prevents full page reloads
                     return false;
                 }
                 
@@ -103,58 +108,70 @@ public class MainActivity extends BridgeActivity {
                     return true;
                 }
                 
-                // Allow local file URLs and javascript
+                // Allow everything else
                 return false;
             }
 
             @Override
             public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
-                currentUrl = url;
+                Log.d(TAG, "onPageStarted: " + url);
                 super.onPageStarted(view, url, favicon);
             }
 
             @Override
             public void onPageFinished(WebView view, String url) {
+                Log.d(TAG, "onPageFinished: " + url);
                 super.onPageFinished(view, url);
-                currentUrl = url;
                 
-                // Simple JavaScript injection for History API handling
-                // Keep it minimal to avoid client-side errors
-                view.evaluateJavascript(
-                    "(function() {" +
-                    "  try {" +
-                    "    var originalPushState = history.pushState;" +
-                    "    history.pushState = function(state, title, url) {" +
-                    "      originalPushState.call(history, state, title, url);" +
-                    "      if (url && !url.startsWith('http')) {" +
-                    "        window.location.hash = url;" +
-                    "      }" +
-                    "    };" +
-                    "    var originalReplaceState = history.replaceState;" +
-                    "    history.replaceState = function(state, title, url) {" +
-                    "      originalReplaceState.call(history, state, title, url);" +
-                    "      if (url && !url.startsWith('http')) {" +
-                    "        window.location.hash = url;" +
-                    "      }" +
-                    "    };" +
-                    "  } catch(e) {}" +
-                    "})();",
-                    null
-                );
+                // Flush cookies to persist them
+                CookieManager.getInstance().flush();
+                
+                // Skip JS injection on first load to avoid issues
+                if (!isFirstLoad) {
+                    injectRoutingHandler(view);
+                }
+                isFirstLoad = false;
             }
+        });
+        
+        // Enable back button navigation
+        webView.setOnKeyListener((v, keyCode, event) -> {
+            if (event.getAction() == android.view.KeyEvent.ACTION_DOWN) {
+                if (keyCode == android.view.KeyEvent.KEYCODE_BACK) {
+                    if (webView.canGoBack()) {
+                        webView.goBack();
+                        return true;
+                    }
+                }
+            }
+            return false;
         });
     }
     
-    private boolean isInternalUrl(String url) {
-        // Allow internal app navigation (Firebase Hosting URL and local files)
-        return url != null && (
-            url.startsWith("https://letpractice.firebaseapp.com") ||
-            url.startsWith("https://letpractice.web.app") ||
-            url.startsWith("file://") ||
-            url.startsWith("javascript:") ||
-            url.startsWith("about:blank") ||
-            url.startsWith("data:") ||
-            !url.startsWith("http")
+    private void injectRoutingHandler(WebView view) {
+        view.evaluateJavascript(
+            "(function() {" +
+            "  console.log('[WebView] Injecting routing handler');" +
+            "  try {" +
+            "    // Intercept link clicks" +
+            "    document.addEventListener('click', function(e) {" +
+            "      var link = e.target.closest('a');" +
+            "      if (link) {" +
+            "        var href = link.getAttribute('href');" +
+            "        if (href && (href.startsWith('/') || href.indexOf('letpractice') !== -1)) {" +
+            "          e.preventDefault();" +
+            "          console.log('[WebView] Intercepted link:', href);" +
+            "          // Use location.assign for internal navigation" +
+            "          window.location.assign(href);" +
+            "        }" +
+            "      }" +
+            "    }, true);" +
+            "    console.log('[WebView] Routing handler injected');" +
+            "  } catch(e) {" +
+            "    console.log('[WebView] Error:', e);" +
+            "  }" +
+            "})();",
+            null
         );
     }
 }
