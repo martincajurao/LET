@@ -6,10 +6,26 @@ import android.webkit.WebViewClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.CookieManager;
+import android.webkit.JavascriptInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.util.Log;
 import com.getcapacitor.BridgeActivity;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.MessageDigest;
+import android.os.AsyncTask;
+import android.os.Environment;
+import androidx.core.content.FileProvider;
+import android.content.pm.PackageManager;
+import android.Manifest;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.pm.PackageInfo;
 
 public class MainActivity extends BridgeActivity {
 
@@ -25,10 +41,31 @@ public class MainActivity extends BridgeActivity {
         // Configure WebView after the bridge is initialized
         this.getBridge().getWebView().post(() -> {
             configureWebView();
+            injectAppVersion();
         });
         
         // Handle intent that started the activity
         handleIntent(getIntent());
+    }
+    
+    // Inject app version into WebView for auto-update checking
+    private void injectAppVersion() {
+        try {
+            PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+            String versionName = pInfo.versionName;
+            int versionCode = pInfo.versionCode;
+            
+            Log.d(TAG, "App version: " + versionName + " (" + versionCode + ")");
+            
+            if (webView != null) {
+                String js = "window.appVersion = '" + versionName + "'; " +
+                           "window.appVersionCode = " + versionCode + "; " +
+                           "console.log('[MainActivity] App version injected: " + versionName + "');";
+                webView.evaluateJavascript(js, null);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to inject app version: " + e.getMessage());
+        }
     }
 
     @Override
@@ -82,6 +119,10 @@ public class MainActivity extends BridgeActivity {
         
         // Enable geolocation
         settings.setGeolocationEnabled(true);
+        
+        // Add JavaScript interface for self-update functionality
+        webView.addJavascriptInterface(this, "android");
+        Log.d(TAG, "JavaScript interface added as 'android'");
         
         // Load the base URL
         webView.loadUrl(baseUrl);
@@ -173,5 +214,174 @@ public class MainActivity extends BridgeActivity {
             "})();",
             null
         );
+    }
+    
+    // ========== SELF-UPDATE FEATURE ==========
+    
+    @JavascriptInterface
+    public void checkForUpdate(String updateUrl, String expectedSha256) {
+        Log.d(TAG, "checkForUpdate called with URL: " + updateUrl);
+        new DownloadUpdateTask(updateUrl, expectedSha256).execute();
+    }
+    
+    private class DownloadUpdateTask extends AsyncTask<Void, Integer, String> {
+        private String updateUrl;
+        private String expectedSha256;
+        private String errorMessage = null;
+        
+        public DownloadUpdateTask(String updateUrl, String expectedSha256) {
+            this.updateUrl = updateUrl;
+            this.expectedSha256 = expectedSha256;
+        }
+        
+        @Override
+        protected String doInBackground(Void... params) {
+            try {
+                Log.d(TAG, "Starting download from: " + updateUrl);
+                
+                URL url = new URL(updateUrl);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(30000);
+                connection.setReadTimeout(30000);
+                connection.connect();
+                
+                int responseCode = connection.getResponseCode();
+                Log.d(TAG, "Download response code: " + responseCode);
+                
+                if (responseCode != HttpURLConnection.HTTP_OK) {
+                    errorMessage = "Server returned code: " + responseCode;
+                    return null;
+                }
+                
+                // Get file size
+                int fileLength = connection.getContentLength();
+                Log.d(TAG, "File size: " + fileLength + " bytes");
+                
+                // Create download directory
+                File downloadDir = new File(getExternalFilesDir(null), "updates");
+                if (!downloadDir.exists()) {
+                    downloadDir.mkdirs();
+                }
+                
+                // Delete old APK if exists
+                File apkFile = new File(downloadDir, "app-update.apk");
+                if (apkFile.exists()) {
+                    apkFile.delete();
+                }
+                
+                // Download the file
+                InputStream input = connection.getInputStream();
+                FileOutputStream output = new FileOutputStream(apkFile);
+                
+                byte[] buffer = new byte[4096];
+                int total = 0;
+                int count;
+                while ((count = input.read(buffer)) != -1) {
+                    total += count;
+                    if (fileLength > 0) {
+                        publishProgress((int) (total * 100 / fileLength));
+                    }
+                    output.write(buffer, 0, count);
+                }
+                
+                output.close();
+                input.close();
+                connection.disconnect();
+                
+                Log.d(TAG, "Download complete, verifying SHA256...");
+                
+                // Verify SHA256
+                String downloadedSha256 = calculateSha256(apkFile);
+                Log.d(TAG, "Expected SHA256: " + expectedSha256);
+                Log.d(TAG, "Downloaded SHA256: " + downloadedSha256);
+                
+                if (!expectedSha256.equalsIgnoreCase(downloadedSha256)) {
+                    errorMessage = "SHA256 verification failed!";
+                    apkFile.delete();
+                    return null;
+                }
+                
+                Log.d(TAG, "SHA256 verified successfully!");
+                return apkFile.getAbsolutePath();
+                
+            } catch (Exception e) {
+                Log.e(TAG, "Download error: " + e.getMessage());
+                errorMessage = "Download failed: " + e.getMessage();
+                return null;
+            }
+        }
+        
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            Log.d(TAG, "Download progress: " + values[0] + "%");
+            // Send progress to WebView
+            if (webView != null) {
+                String js = "window.dispatchEvent(new CustomEvent('updateProgress', {detail: " + values[0] + "}))";
+                webView.evaluateJavascript(js, null);
+            }
+        }
+        
+        @Override
+        protected void onPostExecute(String apkPath) {
+            if (apkPath != null) {
+                Log.d(TAG, "Download successful, prompting install...");
+                promptInstall(apkPath);
+            } else {
+                Log.e(TAG, "Download failed: " + errorMessage);
+                sendUpdateResult("error", errorMessage);
+            }
+        }
+    }
+    
+    private String calculateSha256(File file) throws Exception {
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        FileInputStream fis = new FileInputStream(file);
+        byte[] dataBytes = new byte[1024];
+        int nread = 0;
+        while ((nread = fis.read(dataBytes)) != -1) {
+            md.update(dataBytes, 0, nread);
+        }
+        fis.close();
+        
+        byte[] mdbytes = md.digest();
+        StringBuilder sb = new StringBuilder();
+        for (byte mdbyte : mdbytes) {
+            sb.append(String.format("%02x", mdbyte));
+        }
+        return sb.toString();
+    }
+    
+    private void promptInstall(String apkPath) {
+        runOnUiThread(() -> {
+            try {
+                File apkFile = new File(apkPath);
+                Uri apkUri = FileProvider.getUriForFile(
+                    MainActivity.this,
+                    getPackageName() + ".fileprovider",
+                    apkFile
+                );
+                
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+                intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                startActivity(intent);
+                
+                sendUpdateResult("success", "Update downloaded and ready to install!");
+                
+            } catch (Exception e) {
+                Log.e(TAG, "Install error: " + e.getMessage());
+                sendUpdateResult("error", "Failed to install: " + e.getMessage());
+            }
+        });
+    }
+    
+    private void sendUpdateResult(String status, String message) {
+        if (webView != null) {
+            String js = "window.dispatchEvent(new CustomEvent('updateResult', {detail: " +
+                "JSON.stringify({status: '" + status + "', message: '" + message + "'})" +
+                "}))";
+            webView.evaluateJavascript(js, null);
+        }
     }
 }

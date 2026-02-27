@@ -11,10 +11,10 @@ INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xm
 	android:name
 		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:52:13-62
 manifest
-ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:2:1-66:12
-INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:2:1-66:12
-INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:2:1-66:12
-INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:2:1-66:12
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:2:1-69:12
+INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:2:1-69:12
+INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:2:1-69:12
+INJECTED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:2:1-69:12
 MERGED from [:capacitor-firebase-authentication] C:\Users\Admin\Desktop\LET\node_modules\@capacitor-firebase\authentication\android\build\intermediates\merged_manifest\debug\AndroidManifest.xml:2:1-7:12
 MERGED from [:capacitor-android] C:\Users\Admin\Desktop\LET\node_modules\@capacitor\android\capacitor\build\intermediates\merged_manifest\debug\AndroidManifest.xml:2:1-7:12
 MERGED from [:capacitor-cordova-android-plugins] C:\Users\Admin\Desktop\LET\android\capacitor-cordova-android-plugins\build\intermediates\merged_manifest\debug\AndroidManifest.xml:2:1-11:12
@@ -202,6 +202,18 @@ MERGED from [com.google.android.recaptcha:recaptcha:18.4.0] C:\Users\Admin\.grad
 MERGED from [com.google.android.recaptcha:recaptcha:18.4.0] C:\Users\Admin\.gradle\caches\8.11.1\transforms\468cb1a27b86f35747856eb020fa0edd\transformed\recaptcha-18.4.0\AndroidManifest.xml:8:5-79
 	android:name
 		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:65:22-76
+uses-permission#android.permission.REQUEST_INSTALL_PACKAGES
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:66:5-83
+	android:name
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:66:22-80
+uses-permission#android.permission.WRITE_EXTERNAL_STORAGE
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:67:5-81
+	android:name
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:67:22-78
+uses-permission#android.permission.READ_EXTERNAL_STORAGE
+ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:68:5-80
+	android:name
+		ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:68:22-77
 meta-data#android.support.FILE_PROVIDER_PATHS
 ADDED from C:\Users\Admin\Desktop\LET\android\app\src\main\AndroidManifest.xml:56:13-58:64
 	android:resource
