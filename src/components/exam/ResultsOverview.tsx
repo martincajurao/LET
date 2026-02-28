@@ -51,6 +51,7 @@ interface ResultsOverviewProps {
   timeSpent: number;
   onRestart: () => void;
   resultId?: string;
+  isHistorical?: boolean;
 }
 
 function TypewriterText({ text, speed = 15 }: { text: string; speed?: number }) {
@@ -69,12 +70,12 @@ function TypewriterText({ text, speed = 15 }: { text: string; speed?: number }) 
   return <span>{displayedText}</span>;
 }
 
-export function ResultsOverview({ questions, answers, timeSpent, onRestart, resultId }: ResultsOverviewProps) {
+export function ResultsOverview({ questions, answers, timeSpent, onRestart, resultId, isHistorical = false }: ResultsOverviewProps) {
   const { user, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(isHistorical);
   const [unlocking, setUnlocking] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [showPurchaseSuccess, setShowPurchaseSuccess] = useState(false);
@@ -97,10 +98,10 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
   }, [questions]);
 
   useEffect(() => {
-    if (user?.isPro) {
+    if (user?.isPro || isHistorical) {
       setIsUnlocked(true);
     }
-  }, [user]);
+  }, [user, isHistorical]);
 
   const stats = useMemo(() => {
     let correct = 0;
@@ -384,7 +385,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
               </Card>
             </div>
 
-            {/* Itemized Review - Android Native MD3 Refined - VISIBLE ONLY WHEN UNLOCKED */}
+            {/* Itemized Review - Android Native MD3 Refined */}
             <div className="space-y-4 pt-2">
               <div className="flex items-center justify-between px-4">
                 <h2 className="text-2xl font-black tracking-tight flex items-center gap-3 text-foreground"><div className="w-10 h-10 bg-rose-500/10 rounded-xl flex items-center justify-center shadow-inner"><BrainCircuit className="w-6 h-6 text-rose-600" /></div>Itemized Review</h2>

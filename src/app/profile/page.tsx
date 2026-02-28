@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
@@ -451,7 +452,6 @@ function ProfilePageContent() {
                   correctAnswer: r.correctAnswer || "",
                   subject: r.subject || "General",
                   difficulty: r.difficulty || "medium",
-                  // CRITICAL: Ensure stored AI explanations are passed through to avoid redundant prompts
                   aiExplanation: r.aiExplanation
                 } as Question))}
                 answers={(selectedRecord.results || []).reduce((acc, curr) => {
@@ -461,6 +461,7 @@ function ProfilePageContent() {
                 timeSpent={selectedRecord.timeSpent || 0}
                 onRestart={() => setIsDetailViewOpen(false)}
                 resultId={selectedRecord.id}
+                isHistorical={true}
               />
             )}
           </div>
