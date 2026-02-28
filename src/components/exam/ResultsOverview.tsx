@@ -82,7 +82,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
   const [aiSummary, setAiSummary] = useState<PersonalizedPerformanceSummaryOutput | null>(null);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [localExplanations, setLocalExplanations] = useState<Record<string, string>>(() => {
-    // Initialize with any explanations already present in the question objects (from vault snapshots)
+    // PRE-LOAD: Initialize with any explanations already present in the question objects (from vault snapshots)
     const initial: Record<string, string> = {};
     questions.forEach(q => {
       if ((q as any).aiExplanation) {
@@ -92,6 +92,17 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
     return initial;
   });
   const [generatingIds, setGeneratingIds] = useState<Set<string>>(new Set());
+
+  // Ensure state stays synced with incoming question data (for vault navigation)
+  useEffect(() => {
+    const initial: Record<string, string> = {};
+    questions.forEach(q => {
+      if ((q as any).aiExplanation) {
+        initial[q.id] = (q as any).aiExplanation;
+      }
+    });
+    setLocalExplanations(prev => ({ ...initial, ...prev }));
+  }, [questions]);
 
   useEffect(() => {
     if (user?.isPro) {
@@ -212,6 +223,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
 
   const handleGenerateExplanation = async (q: Question) => {
     if (!user || !firestore) return;
+    // CRITICAL: Block duplicate generation if data already exists in source
     if (generatingIds.has(q.id) || localExplanations[q.id]) return;
 
     const isPro = !!user.isPro;
@@ -247,7 +259,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
         const explanation = result.explanations[0].aiExplanation;
         setLocalExplanations(prev => ({ ...prev, [q.id]: explanation }));
         
-        // Save to Firestore permanently if resultId is present
+        // Save to Firestore permanently if resultId is present (Vault Persistence)
         if (resultId && !user.uid.startsWith('bypass')) {
           const examDocRef = doc(firestore, 'exam_results', resultId);
           const docSnap = await getDoc(examDocRef);
@@ -391,7 +403,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
         )}
       </AnimatePresence>
 
-      {/* Itemized Review - Always Visible to Burn Credits */}
+      {/* Itemized Review - Always Visible */}
       <div className="space-y-8 pt-4">
         <div className="flex items-center justify-between px-2">
           <h2 className="text-3xl font-black tracking-tight flex items-center gap-4 text-foreground"><div className="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center shadow-inner"><BrainCircuit className="w-7 h-7 text-rose-600" /></div>Itemized Review</h2>
