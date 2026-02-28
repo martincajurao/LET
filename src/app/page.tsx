@@ -29,6 +29,7 @@ import {
   ShieldCheck,
   Languages,
   User,
+  Users,
   Moon,
   Sun,
   Crown,
@@ -49,7 +50,6 @@ import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
 import { QuickFireResults } from "@/components/exam/QuickFireResults";
-import { RankUpDialog } from "@/components/ui/rank-up-dialog";
 import { Question, MAJORSHIPS, INITIAL_QUESTIONS } from "@/app/lib/mock-data";
 import { useUser, useFirestore } from "@/firebase";
 import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp, query, where, getCountFromServer } from "firebase/firestore";
@@ -355,28 +355,6 @@ function LetsPrepContent() {
     setTimeout(() => { setState(isQuickFire ? 'quickfire_results' : 'results'); }, 300);
   };
 
-  const handleDownloadApk = () => {
-    const downloadUrl = getDownloadUrl();
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = 'letpractice-app.apk';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast({ title: "Starting Download", description: "Your professional mobile tool is being prepared." });
-  };
-
-  const handleWatchXpAd = async () => {
-    if (!user || !firestore || adCooldown > 0) return;
-    setClaimingXp(true);
-    setTimeout(async () => {
-      try {
-        await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(XP_REWARDS.AD_WATCH_XP), credits: increment(5), lastAdXpTimestamp: Date.now() });
-        toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP earned.` });
-      } catch (e) { toast({ variant: "destructive", title: "Claim Failed", description: "Sync error." }); } finally { setClaimingXp(false); }
-    }, 2500);
-  };
-
   const [nickname, setNickname] = useState("");
   const [selectedMajorship, setSelectedMajorship] = useState("");
   const [savingOnboarding, setSavingOnboarding] = useState(false);
@@ -388,6 +366,17 @@ function LetsPrepContent() {
       await updateProfile({ displayName: nickname, majorship: selectedMajorship, onboardingComplete: true });
       setState('dashboard');
     } catch (e: any) { toast({ variant: "destructive", title: "Setup Error", description: e.message }); } finally { setSavingOnboarding(false); }
+  };
+
+  const handleWatchXpAd = async () => {
+    if (!user || !firestore || adCooldown > 0) return;
+    setClaimingXp(true);
+    setTimeout(async () => {
+      try {
+        await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(XP_REWARDS.AD_WATCH_XP), credits: increment(5), lastAdXpTimestamp: Date.now() });
+        toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP earned.` });
+      } catch (e) { toast({ variant: "destructive", title: "Claim Failed", description: "Sync error." }); } finally { setClaimingXp(false); }
+    }, 2500);
   };
 
   const formatCooldown = (ms: number) => {
