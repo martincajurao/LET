@@ -74,11 +74,9 @@ import { getApkInfoUrl, getDownloadUrl } from '@/lib/config';
 import { DailyLoginRewards } from '@/components/ui/daily-login-rewards';
 import { QuestionOfTheDay } from '@/components/ui/question-of-the-day';
 import { StudyTimer } from '@/components/ui/study-timer';
-import { AchievementSystem } from '@/components/ui/achievement-system';
 import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
 import { Leaderboard } from '@/components/ui/leaderboard';
 import { ReferralSystem } from '@/components/ui/referral-system';
-import { NotificationsModal } from '@/components/ui/notifications-modal';
 
 type AppState = 'dashboard' | 'exam' | 'results' | 'onboarding' | 'quickfire' | 'quickfire_results';
 
@@ -173,9 +171,6 @@ function LetsPrepContent() {
   
   const [showResultUnlock, setShowResultUnlock] = useState(false);
   const [resultsUnlocked, setResultsUnlocked] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [isWatchingAd, setIsWatchingAd] = useState(false);
-  const [isVerifyingAd, setIsVerifyingAd] = useState(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (window.scrollY <= 10) {
@@ -346,7 +341,6 @@ function LetsPrepContent() {
     const overallScore = Math.round((correctCount / (currentQuestions.length || 1)) * 100);
     
     let xpEarned = correctCount * XP_REWARDS.CORRECT_ANSWER;
-    // Apply confidence bonuses/penalties
     results.forEach(r => {
       if (r.isConfident) {
         if (r.isCorrect) xpEarned += XP_REWARDS.CONFIDENT_CORRECT_BONUS;
@@ -452,6 +446,10 @@ function LetsPrepContent() {
 
       <Dialog open={loading}>
         <DialogContent className="max-w-[320px] border-none shadow-2xl bg-card rounded-[3rem] p-10 z-[1001] outline-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Analytical Calibration</DialogTitle>
+            <DialogDescription>Synchronizing simulation engine parameters...</DialogDescription>
+          </DialogHeader>
           <div className="space-y-8">
             <EducationalLoader message={loadingMessage} />
             <div className="space-y-3">
@@ -469,7 +467,7 @@ function LetsPrepContent() {
         {state === 'exam' ? (
           <motion.div key="exam" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full"><ExamInterface questions={currentQuestions} timePerQuestion={timePerQuestion} onComplete={handleExamComplete} /></motion.div>
         ) : state === 'results' ? (
-          <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4"><ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} aiSummary={aiSummary} onRestart={() => setState('dashboard')} /></motion.div>
+          <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4"><ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} onRestart={() => setState('dashboard')} /></motion.div>
         ) : state === 'onboarding' ? (
           <motion.div key="onboarding" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-[85vh] flex items-center justify-center p-4">
             <Card className="w-full max-w-md rounded-[3rem] bg-card border-none shadow-2xl overflow-hidden">
@@ -501,7 +499,6 @@ function LetsPrepContent() {
           </motion.div>
         ) : (
           <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-7xl mx-auto px-4 pt-6 pb-24 space-y-8">
-            {/* CHARACTER STATS GRID */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {displayStats.map((stat, i) => (
                 <motion.div key={i} whileTap={{ scale: 0.95 }} className="android-surface rounded-[2rem] p-5 flex items-center gap-4 bg-card border-none shadow-md hover:shadow-xl transition-all group">
@@ -516,7 +513,6 @@ function LetsPrepContent() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               <div className="lg:col-span-8 space-y-8">
-                {/* CAREER ASCENSION CARD */}
                 {user && (
                   <Card className="border-none shadow-xl rounded-[3rem] bg-card overflow-hidden group">
                     <div className="h-2 bg-primary w-full opacity-20" />
@@ -556,7 +552,6 @@ function LetsPrepContent() {
                   </Card>
                 )}
 
-                {/* MAIN HERO ACTION */}
                 <Card className="overflow-hidden border-none shadow-2xl rounded-[3.5rem] bg-gradient-to-br from-primary/30 via-card to-background relative p-10 md:p-16 group">
                   <div className="relative z-10 space-y-8">
                     <Badge className="font-black text-[10px] uppercase px-5 py-1.5 bg-foreground text-background border-none shadow-lg tracking-[0.3em]">Official Simulation Engine</Badge>
@@ -576,7 +571,6 @@ function LetsPrepContent() {
                   <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full translate-y-1/2 -translate-x-1/3 blur-2xl" />
                 </Card>
 
-                {/* MISSION ZONES */}
                 <div className="space-y-6">
                   <div className="flex items-center justify-between px-4">
                     <h3 className="text-2xl font-black tracking-tight flex items-center gap-3"><Target className="w-7 h-7 text-primary" /> Training Zones</h3>
@@ -621,7 +615,6 @@ function LetsPrepContent() {
               </div>
 
               <div className="lg:col-span-4 space-y-8">
-                {/* DAILY QUESTS SIDEBAR */}
                 {user && (
                   <div className="space-y-8">
                     <DailyLoginRewards currentDay={Math.min(((user?.streakCount || 0) % 7) + 1, 7)} onClaim={async (day, xp, credits) => { if (user && firestore) { await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(xp), credits: increment(credits) }); toast({ title: "Reward Claimed!", description: `+${xp} XP & +${credits} Credits added.` }); } }} />
@@ -645,7 +638,6 @@ function LetsPrepContent() {
                   </div>
                 )}
 
-                {/* APP VAULT CARD */}
                 <Card className="border-none shadow-2xl rounded-[3rem] bg-foreground text-background p-10 relative overflow-hidden group">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-700" />
                   <div className="relative z-10 space-y-10">

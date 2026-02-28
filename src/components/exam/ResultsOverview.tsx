@@ -47,7 +47,7 @@ import { useUser, useFirestore } from '@/firebase';
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DAILY_AD_LIMIT } from '@/lib/xp-system';
+import { getRankData, XP_REWARDS, DAILY_AD_LIMIT } from '@/lib/xp-system';
 
 interface ResultsOverviewProps {
   questions: Question[];
@@ -266,7 +266,6 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-32">
-      {/* Session Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-card p-8 rounded-[2.5rem] shadow-sm border border-border/50">
         <div className="space-y-1">
           <Badge className="bg-primary/10 text-primary border-primary/20 px-3 py-0.5 text-[10px] font-black uppercase tracking-[0.25em] mb-2 shadow-sm">
@@ -360,7 +359,6 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
             animate={{ opacity: 1 }} 
             className="space-y-8"
           >
-            {/* Performance Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <Card className={cn(
                 "lg:col-span-1 border-none shadow-xl flex flex-col items-center justify-center p-8 rounded-[3rem] relative overflow-hidden",
@@ -433,7 +431,6 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
               </Card>
             </div>
 
-            {/* AI Summary Grid */}
             {aiSummary && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-8">
                 <Card className="lg:col-span-2 border-none shadow-xl bg-card overflow-hidden rounded-[3rem]">
@@ -470,7 +467,6 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
               </div>
             )}
 
-            {/* Mistake Review Section - ONLY revealed after unlock */}
             <div className="space-y-8 pt-4">
               <div className="flex items-center justify-between px-2">
                 <h2 className="text-3xl font-black tracking-tight flex items-center gap-4 text-foreground">
@@ -606,11 +602,13 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
             <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 3, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 to-transparent z-0" />
           </div>
           <div className="p-10 pt-4 text-center space-y-8">
-            <div className="space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-600">Access Granted</span>
-              <h3 className="text-3xl font-black tracking-tight">Report Sync Complete</h3>
-              <p className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest">Pedagogical analysis is now active</p>
-            </div>
+            <DialogHeader>
+              <div className="space-y-2">
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-600">Access Granted</span>
+                <DialogTitle className="text-3xl font-black tracking-tight">Report Sync Complete</DialogTitle>
+                <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest">Pedagogical analysis is now active</DialogDescription>
+              </div>
+            </DialogHeader>
             <Button onClick={() => setShowPurchaseSuccess(false)} className="w-full h-16 rounded-[1.75rem] font-black text-sm gap-3 shadow-2xl shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 transition-all">
               Launch Dashboard <ChevronRight className="w-5 h-5" />
             </Button>
