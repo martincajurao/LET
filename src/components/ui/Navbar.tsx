@@ -54,11 +54,9 @@ import { doc, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/hooks/use-theme';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { nativeAuth } from '@/lib/native-auth';
 import { cn } from '@/lib/utils';
 import { getRankData, XP_REWARDS, COOLDOWNS, DAILY_AD_LIMIT } from '@/lib/xp-system';
 import { NotificationsModal } from './notifications-modal';
-import { SelfUpdate } from '@/components/self-update';
 import { useRouter } from 'next/navigation';
 
 const GoogleIcon = () => (
@@ -80,7 +78,6 @@ export function Navbar() {
   const [showAdModal, setShowAdModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAlertsModal, setShowAlertsModal] = useState(false);
-  const [showRewardModal, setShowRewardModal] = useState(false);
   const [watchingAd, setWatchingAd] = useState(false);
   const [verifyingAd, setVerifyingAd] = useState(false);
   const [availableTasksCount, setAvailableTasksCount] = useState(0);
@@ -88,7 +85,6 @@ export function Navbar() {
 
   const rankData = user ? getRankData(user.xp || 0) : null;
 
-  // Use ref to always have latest user data in interval callback
   const userRef = useRef(user);
   userRef.current = user;
 
@@ -121,7 +117,6 @@ export function Navbar() {
     };
 
     calculateAvailable();
-    // Update every second for real-time countdown
     const interval = setInterval(calculateAvailable, 1000);
     return () => clearInterval(interval);
   }, [user]);
@@ -149,7 +144,6 @@ export function Navbar() {
             lastAdXpTimestamp: Date.now(),
             dailyAdCount: increment(1)
           });
-          // Refresh user data to ensure UI updates properly
           await refreshUser();
           toast({ 
             variant: "reward",
@@ -169,7 +163,7 @@ export function Navbar() {
   };
 
   const navItems = [
-{ label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, href: '/dashboard' },
+    { label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, href: '/dashboard' },
     { 
       label: 'Daily Tasks', 
       icon: (
@@ -336,18 +330,13 @@ export function Navbar() {
                     </DropdownMenuItem>
                     <DropdownMenuSeparator className="my-2 bg-border/50" />
                     <DropdownMenuItem asChild>
-                      <Link href="/profile" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
-                        <User className="w-4 h-4 text-primary" /> Profile Overview
+                      <Link href="/profile?tab=settings" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
+                        <Settings className="w-4 h-4 text-primary" /> Profile Settings
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/profile?tab=history" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
                         <History className="w-4 h-4 text-emerald-500" /> Analysis Vault
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/settings" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
-                        <Settings className="w-4 h-4 text-blue-500" /> App Settings
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator className="my-2 bg-border/50" />

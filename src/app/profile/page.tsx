@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { MAJORSHIPS } from "@/app/lib/mock-data";
 import {
   ArrowLeft,
@@ -16,26 +15,15 @@ import {
   Mail,
   History,
   Target,
-  TrendingUp,
-  Clock,
-  ClipboardList,
+  Trophy,
+  Zap,
   Loader2,
-  LogOut,
   Settings,
   ShieldCheck,
-  Trophy,
-  Coins,
-  Zap,
-  CalendarDays,
-  Smartphone,
-  Users,
-  Moon,
-  Sun,
-  Bell,
+  ClipboardList,
   RefreshCw,
   Check,
-  Info,
-  Sparkles
+  ChevronRight
 } from "lucide-react";
 
 import Link from 'next/link';
@@ -45,25 +33,20 @@ import { Toaster } from "@/components/ui/toaster";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { collection, query, where, getDocs, limit, orderBy } from "firebase/firestore";
 import { format } from 'date-fns';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts';
 import { getRankData } from '@/lib/xp-system';
-import { SelfUpdate } from '@/components/self-update';
-import { motion, AnimatePresence } from 'framer-motion';
-
 
 interface ExamRecord {
   id: string;
   timestamp: number;
   overallScore: number;
   timeSpent: number;
-  aiSummary?: any;
   subjectBreakdown?: any[];
 }
 
 function ProfilePageContent() {
-  const { user, loading: userLoading, updateProfile, logout, refreshUser } = useUser();
+  const { user, loading: userLoading, updateProfile, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -73,7 +56,6 @@ function ProfilePageContent() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Get tab from URL query params
   const activeTab = searchParams.get('tab') || 'history';
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
@@ -92,7 +74,6 @@ function ProfilePageContent() {
     fetchHistory();
   }, [user, firestore]);
 
-  // Handler for refreshing user data
   const handleRefreshData = async () => {
     setRefreshing(true);
     try {
@@ -105,7 +86,6 @@ function ProfilePageContent() {
     }
   };
 
-  // Handler for saving profile with reactivity
   const handleSaveProfile = async () => {
     setSavingProfile(true);
     try {
@@ -199,7 +179,7 @@ function ProfilePageContent() {
         <Tabs defaultValue={activeTab} className="space-y-6">
           <TabsList className="bg-muted/30 p-1 rounded-2xl w-full grid grid-cols-2 h-14">
             <TabsTrigger value="history" className="font-bold rounded-xl gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"><History className="w-4 h-4" /> Vault</TabsTrigger>
-            <TabsTrigger value="calibration" className="font-bold rounded-xl gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"><Settings className="w-4 h-4" /> Calibration</TabsTrigger>
+            <TabsTrigger value="settings" className="font-bold rounded-xl gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"><Settings className="w-4 h-4" /> Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="history" className="space-y-6 animate-in slide-in-from-bottom-4">
@@ -241,8 +221,7 @@ function ProfilePageContent() {
             )}
           </TabsContent>
 
-          <TabsContent value="calibration" className="space-y-6 animate-in slide-in-from-bottom-4">
-            {/* Academic Focus Section - Calibration */}
+          <TabsContent value="settings" className="space-y-6 animate-in slide-in-from-bottom-4">
             <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card">
               <CardContent className="p-8 space-y-6">
                 <div className="flex items-center gap-4">
@@ -278,16 +257,34 @@ function ProfilePageContent() {
                     <>
                       <Loader2 className="w-5 h-5 animate-spin mr-2" />
                       Saving...
-
                     </>
                   ) : (
                     <>
                       <Check className="w-5 h-5 mr-2" />
                       Save Preferences
-
                     </>
                   )}
                 </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card">
+              <CardContent className="p-8 space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-muted rounded-2xl flex items-center justify-center">
+                      <RefreshCw className={cn("w-7 h-7 text-muted-foreground", refreshing && "animate-spin")} />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black tracking-tight">Data Sync</h3>
+                      <p className="text-xs text-muted-foreground font-medium">Refresh your character metadata from vault</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" onClick={handleRefreshData} disabled={refreshing} className="rounded-xl font-bold h-12 border-2 gap-2">
+                    {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                    Sync Now
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
