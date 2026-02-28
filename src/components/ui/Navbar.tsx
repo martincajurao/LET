@@ -29,7 +29,8 @@ import {
   Shield,
   Star,
   ShieldAlert,
-  Smartphone
+  Smartphone,
+  Sparkles
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -185,8 +186,9 @@ export function Navbar() {
       href: '/tasks' 
     },
     { label: 'Global Arena', icon: <Trophy className="w-4 h-4" />, href: '/events' },
+    { label: 'Features', icon: <Sparkles className="w-4 h-4" />, href: '/features' },
     { 
-      label: 'Notifications', 
+      label: 'Notifications',
       icon: (
         <div className="relative">
           <Bell className="w-4 h-4" />

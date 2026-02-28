@@ -10,7 +10,8 @@ import {
   Zap,
   Target,
   Bell,
-  Loader2
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import { PracticeModal } from './practice-modal';
 import { NotificationsModal } from './notifications-modal';
@@ -133,7 +134,8 @@ const { user, loading: authLoading, refreshUser } = useUser();
         </div>
       ), 
       href: '#' 
-    }
+    },
+    { id: 'features', label: 'Features', icon: <Sparkles className="w-5 h-5" />, href: '/features' }
   ], [availableTasksCount, claimableTasksCount]);
 
   const handleNavClick = (item: NavItem) => {
@@ -188,6 +190,7 @@ await updateDoc(userRef, {
     if (item.id === 'tasks' && pathname === '/tasks') return true;
     if (item.id === 'events' && pathname === '/events') return true;
     if (item.id === 'notifications' && isAlertsOpen) return true;
+    if (item.id === 'features' && pathname === '/features') return true;
     return false;
   };
 

@@ -46,7 +46,10 @@ import {
   Download,
   QrCode,
   Info,
-  ShieldAlert
+  ShieldAlert,
+  Gift,
+  Lightbulb,
+  Award
 } from "lucide-react";
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
@@ -55,7 +58,7 @@ import { QuickFireInterface } from "@/components/exam/QuickFireInterface";
 import { QuickFireResults } from "@/components/exam/QuickFireResults";
 import { ResultUnlockDialog } from "@/components/exam/ResultUnlockDialog";
 import { RankUpDialog } from "@/components/ui/rank-up-dialog";
-import { Question, MAJORSHIPS } from "@/app/lib/mock-data";
+import { Question, MAJORSHIPS, INITIAL_QUESTIONS } from "@/app/lib/mock-data";
 import { useUser, useFirestore } from "@/firebase";
 import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp, query, where, getCountFromServer } from "firebase/firestore";
 import { fetchQuestionsFromFirestore, seedInitialQuestions } from "@/lib/db-seed";
@@ -67,6 +70,14 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, getCareerRankTitle } from '@/lib/xp-system';
 import { getApkInfoUrl, getDownloadUrl } from '@/lib/config';
+import { DailyLoginRewards } from '@/components/ui/daily-login-rewards';
+import { QuestionOfTheDay } from '@/components/ui/question-of-the-day';
+import { StudyTimer } from '@/components/ui/study-timer';
+import { AchievementSystem, ACHIEVEMENTS } from '@/components/ui/achievement-system';
+import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
+import { Leaderboard } from '@/components/ui/leaderboard';
+import { ReferralSystem } from '@/components/ui/referral-system';
+import { NotificationsModal } from '@/components/ui/notifications-modal';
 
 type AppState = 'dashboard' | 'exam' | 'results' | 'onboarding' | 'quickfire' | 'quickfire_results';
 
@@ -197,9 +208,14 @@ function LetsPrepContent() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const pullStartY = React.useRef<number | null>(null);
   
-  // Result unlock dialog state
+// Result unlock dialog state
   const [showResultUnlock, setShowResultUnlock] = useState(false);
   const [resultsUnlocked, setResultsUnlocked] = useState(false);
+
+  // Notifications modal state
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [isWatchingAd, setIsWatchingAd] = useState(false);
+  const [isVerifyingAd, setIsVerifyingAd] = useState(false);
 
   // Pull to refresh handlers - Fixed for mobile
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -529,9 +545,39 @@ await updateDoc(doc(firestore, 'users', user.uid), updateData);
           </span>
         </div>
       )}
-      <Toaster />
+<Toaster />
       
-      <RankUpDialog 
+      {/* Notifications Modal */}
+      <NotificationsModal 
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        onStartQuickFire={() => startExam('quickfire')}
+        onWatchAd={() => {
+          setIsWatchingAd(true);
+          // Simulate ad watching
+          setTimeout(() => {
+            setIsWatchingAd(false);
+            setIsVerifyingAd(true);
+            setTimeout(async () => {
+              if (user && firestore) {
+                await updateDoc(doc(firestore, 'users', user.uid), {
+                  xp: increment(XP_REWARDS.AD_WATCH_XP),
+                  credits: increment(5),
+                  dailyAdCount: increment(1),
+                  lastAdXpTimestamp: Date.now()
+                });
+                toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP & +5 Credits!` });
+                refreshUser();
+              }
+              setIsVerifyingAd(false);
+            }, 1500);
+          }, 3000);
+        }}
+        isWatchingAd={isWatchingAd}
+        isVerifyingAd={isVerifyingAd}
+      />
+
+      <RankUpDialog
         isOpen={showRankUp} 
         onClose={() => setShowRankUp(false)} 
         rank={celebratedRank} 
@@ -811,6 +857,120 @@ await updateDoc(doc(firestore, 'users', user.uid), updateData);
                     </div>
                   </div>
                 </Card>
+
+                {/* Daily Login Rewards */}
+                {user && (
+                  <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
+                    <CardHeader className="p-4 pb-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Gift className="w-5 h-5 text-pink-500" />
+                          <CardTitle className="text-base font-black">Daily Rewards</CardTitle>
+                        </div>
+                        <Badge variant="outline" className="text-[10px] font-bold">
+                          Day {Math.min(((user?.streakCount || 0) % 7) + 1, 7)}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <DailyLoginRewards 
+                        currentDay={Math.min(((user?.streakCount || 0) % 7) + 1, 7)}
+                        lastClaimDate={undefined}
+                        onClaim={async (day, xp, credits) => {
+                          if (user && firestore) {
+                            await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(xp) });
+                            toast({ title: "Reward Claimed!", description: `+${xp} XP earned!` });
+                          }
+                        }}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Question of the Day */}
+                {user && INITIAL_QUESTIONS.length > 0 && (
+                  <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
+                    <CardHeader className="p-4 pb-2">
+                      <div className="flex items-center gap-2">
+                        <Lightbulb className="w-5 h-5 text-amber-500" />
+                        <CardTitle className="text-base font-black">Question of the Day</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <QuestionOfTheDay 
+                        question={INITIAL_QUESTIONS[Math.floor(Date.now() / 86400000) % INITIAL_QUESTIONS.length]}
+                        onComplete={async (isCorrect, xpEarned) => {
+                          if (user && firestore && isCorrect) {
+                            await updateDoc(doc(firestore, 'users', user.uid), { 
+                              xp: increment(xpEarned),
+                              dailyQuestionsAnswered: increment(1)
+                            });
+                            toast({ title: "Correct!", description: `+${xpEarned} XP earned!` });
+                          }
+                        }}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Study Timer */}
+                <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
+                  <CardHeader className="p-4 pb-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Timer className="w-5 h-5 text-primary" />
+                        <CardTitle className="text-base font-black">Focus Timer</CardTitle>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] font-bold">
+                        Pomodoro
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
+                    <StudyTimer 
+                      onComplete={async (sessions, xpEarned) => {
+                        if (user && firestore) {
+                          await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(xpEarned) });
+                          toast({ title: "Focus session complete!", description: `+${xpEarned} XP earned!` });
+                        }
+                      }}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Achievements Preview */}
+                {user && (
+                  <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
+                    <CardHeader className="p-4 pb-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Award className="w-5 h-5 text-yellow-500" />
+                          <CardTitle className="text-base font-black">Achievements</CardTitle>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-xs font-bold h-7"
+                          onClick={() => router.push('/features')}
+                        >
+                          View All
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <AchievementSystem 
+                        userStats={{
+                          streakCount: user?.streakCount || 0,
+                          totalQuestionsAnswered: user?.dailyQuestionsAnswered || 0,
+                          highestScore: 0,
+                          rank: rankData?.rank || 1,
+                          dailyQuestionsCompleted: 0
+                        }}
+                        unlockedAchievements={[]}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
 
                 <Card className="border-none shadow-xl rounded-[2.25rem] bg-foreground text-background p-8 relative overflow-hidden group">
                   <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
