@@ -37,17 +37,24 @@ export function PullToRefresh({ onRefresh, children, disabled = false }: PullToR
   const handleTouchEnd = async () => {
     if (pullDistance > 60 && !disabled) {
       setIsRefreshing(true);
-      setPullDistance(0);
       try {
         await onRefresh();
+        
+        // Force page reload for Android WebView to ensure full state refresh
+       
+          window.location.reload();
+        
       } catch (error) {
         console.error('Pull to refresh failed:', error);
       } finally {
         setIsRefreshing(false);
+        setIsPulling(false);
+        setPullDistance(0);
       }
+    } else {
+      setPullDistance(0);
+      setIsPulling(false);
     }
-    setPullDistance(0);
-    setIsPulling(false);
     pullStartY.current = null;
   };
 
@@ -64,7 +71,7 @@ export function PullToRefresh({ onRefresh, children, disabled = false }: PullToR
         <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center py-3 bg-primary/10 backdrop-blur-sm border-b border-primary/10">
           <Loader2 className={cn("w-5 h-5 text-primary animate-spin mr-2", isRefreshing ? "block" : "block")} />
           <span className="text-xs font-bold text-primary">
-            {isRefreshing ? "Refreshing..." : pullDistance > 60 ? "Release to refresh" : "Pull down to refresh"}
+            {isRefreshing ? "xRefreshing..." : pullDistance > 60 ? "Release to refreshhx" : "Pull down to refresh"}
           </span>
         </div>
       )}

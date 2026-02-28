@@ -197,10 +197,9 @@ function ProfilePageContent() {
         </div>
 
         <Tabs defaultValue={activeTab} className="space-y-6">
-          <TabsList className="bg-muted/30 p-1 rounded-2xl w-full grid grid-cols-3 h-14">
+          <TabsList className="bg-muted/30 p-1 rounded-2xl w-full grid grid-cols-2 h-14">
             <TabsTrigger value="history" className="font-bold rounded-xl gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"><History className="w-4 h-4" /> Vault</TabsTrigger>
-            <TabsTrigger value="collaboration" className="font-bold rounded-xl gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"><Users className="w-4 h-4" /> Collab</TabsTrigger>
-            <TabsTrigger value="settings" className="font-bold rounded-xl gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"><Settings className="w-4 h-4" /> Calibration</TabsTrigger>
+            <TabsTrigger value="calibration" className="font-bold rounded-xl gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"><Settings className="w-4 h-4" /> Calibration</TabsTrigger>
           </TabsList>
 
           <TabsContent value="history" className="space-y-6 animate-in slide-in-from-bottom-4">
@@ -242,34 +241,8 @@ function ProfilePageContent() {
             )}
           </TabsContent>
 
-          <TabsContent value="settings" className="space-y-6 animate-in slide-in-from-bottom-4">
-            {/* Data Refresh Section */}
-            <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card">
-              <CardContent className="p-8">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
-                      <RefreshCw className={cn("w-7 h-7 text-primary", refreshing && "animate-spin")} />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-black tracking-tight">Sync Data</h3>
-                      <p className="text-xs text-muted-foreground font-medium">Refresh your latest progress</p>
-                    </div>
-                  </div>
-                  <Button 
-                    onClick={handleRefreshData} 
-                    disabled={refreshing}
-                    variant="outline" 
-                    className="h-12 rounded-2xl font-bold gap-2"
-                  >
-                    {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                    {refreshing ? "Syncing..." : "Sync Now"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Academic Focus Section */}
+          <TabsContent value="calibration" className="space-y-6 animate-in slide-in-from-bottom-4">
+            {/* Academic Focus Section - Calibration */}
             <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card">
               <CardContent className="p-8 space-y-6">
                 <div className="flex items-center gap-4">
@@ -305,61 +278,18 @@ function ProfilePageContent() {
                     <>
                       <Loader2 className="w-5 h-5 animate-spin mr-2" />
                       Saving...
+
                     </>
                   ) : (
                     <>
                       <Check className="w-5 h-5 mr-2" />
                       Save Preferences
+
                     </>
                   )}
                 </Button>
               </CardContent>
             </Card>
-
-            {/* App Updates Section */}
-            <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card">
-              <CardContent className="p-8 space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
-                    <Smartphone className="w-7 h-7 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black tracking-tight">App Updates</h3>
-                    <p className="text-xs text-muted-foreground font-medium">Manage native Android client updates</p>
-                  </div>
-                </div>
-                <SelfUpdate />
-              </CardContent>
-            </Card>
-
-            {/* Account Section */}
-            <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card">
-              <CardContent className="p-8 space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-destructive/10 rounded-2xl flex items-center justify-center">
-                    <LogOut className="w-7 h-7 text-destructive" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black tracking-tight">Account</h3>
-                    <p className="text-xs text-muted-foreground font-medium">Sign out of your account</p>
-                  </div>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  onClick={logout} 
-                  className="w-full h-14 text-destructive font-bold gap-3 hover:bg-destructive/5 rounded-2xl border-2 border-destructive/20"
-                >
-                  <LogOut className="w-5 h-5" />
-                  Log Out of learning vault
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Info Section */}
-            <div className="flex items-center justify-center gap-2 text-muted-foreground/60">
-              <Info className="w-4 h-4" />
-              <span className="text-xs font-medium">LET's Prep v2.0.0 • Firestore Spark Plan</span>
-            </div>
           </TabsContent>
         </Tabs>
       </div>

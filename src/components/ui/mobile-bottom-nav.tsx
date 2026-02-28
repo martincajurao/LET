@@ -31,7 +31,7 @@ function NavContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const firestore = useFirestore();
-  const { user, loading: authLoading } = useUser();
+const { user, loading: authLoading, refreshUser } = useUser();
   const { toast } = useToast();
   
   const [isPracticeOpen, setIsPracticeOpen] = useState(false);
@@ -163,12 +163,14 @@ function NavContent() {
       setTimeout(async () => {
         try {
           const userRef = doc(firestore, 'users', user.uid);
-          await updateDoc(userRef, {
+await updateDoc(userRef, {
             credits: increment(5),
             xp: increment(XP_REWARDS.AD_WATCH_XP),
             lastAdXpTimestamp: Date.now(),
             dailyAdCount: increment(1)
           });
+          // Refresh user data to ensure UI updates properly
+          await refreshUser();
           toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added.` });
           setIsAlertsOpen(false);
         } catch (e) {

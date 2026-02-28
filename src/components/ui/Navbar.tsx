@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useUser, useFirestore } from '@/firebase/index';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Link from 'next/link';
@@ -88,33 +88,41 @@ export function Navbar() {
 
   const rankData = user ? getRankData(user.xp || 0) : null;
 
+  // Use ref to always have latest user data in interval callback
+  const userRef = useRef(user);
+  userRef.current = user;
+
   useEffect(() => {
-    if (!user) {
+    if (!userRef.current) {
       setAvailableTasksCount(0);
       setClaimableTasksCount(0);
       return;
     }
 
     const calculateAvailable = () => {
+      const currentUser = userRef.current;
+      if (!currentUser) return;
+
       const now = Date.now();
-      const lastAd = typeof user.lastAdXpTimestamp === 'number' ? user.lastAdXpTimestamp : 0;
-      const lastQf = typeof user.lastQuickFireTimestamp === 'number' ? user.lastQuickFireTimestamp : 0;
+      const lastAd = typeof currentUser.lastAdXpTimestamp === 'number' ? currentUser.lastAdXpTimestamp : 0;
+      const lastQf = typeof currentUser.lastQuickFireTimestamp === 'number' ? currentUser.lastQuickFireTimestamp : 0;
       
-      const adAvailable = lastAd + COOLDOWNS.AD_XP <= now && (user.dailyAdCount || 0) < DAILY_AD_LIMIT;
+      const adAvailable = lastAd + COOLDOWNS.AD_XP <= now && (currentUser.dailyAdCount || 0) < DAILY_AD_LIMIT;
       const qfAvailable = lastQf + COOLDOWNS.QUICK_FIRE <= now;
       setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
 
       let claimableCount = 0;
-      const qGoal = user.userTier === 'Platinum' ? 35 : 20;
-      if (!user.taskLoginClaimed) claimableCount++;
-      if ((user.dailyQuestionsAnswered || 0) >= qGoal && !user.taskQuestionsClaimed) claimableCount++;
-      if ((user.dailyTestsFinished || 0) >= 1 && !user.taskMockClaimed) claimableCount++;
-      if ((user.mistakesReviewed || 0) >= 10 && !user.taskMistakesClaimed) claimableCount++;
+      const qGoal = currentUser.userTier === 'Platinum' ? 35 : 20;
+      if (!currentUser.taskLoginClaimed) claimableCount++;
+      if ((currentUser.dailyQuestionsAnswered || 0) >= qGoal && !currentUser.taskQuestionsClaimed) claimableCount++;
+      if ((currentUser.dailyTestsFinished || 0) >= 1 && !currentUser.taskMockClaimed) claimableCount++;
+      if ((currentUser.mistakesReviewed || 0) >= 10 && !currentUser.taskMistakesClaimed) claimableCount++;
       setClaimableTasksCount(claimableCount);
     };
 
     calculateAvailable();
-    const interval = setInterval(calculateAvailable, 10000);
+    // Update every second for real-time countdown
+    const interval = setInterval(calculateAvailable, 1000);
     return () => clearInterval(interval);
   }, [user]);
 
@@ -190,7 +198,7 @@ export function Navbar() {
         </div>
       ), 
       href: '#', 
-      onClick: () => setShowAlertsModal(true) 
+      onClick: async () => { await refreshUser(); setShowAlertsModal(true); } 
     },
   ];
 
@@ -338,7 +346,7 @@ export function Navbar() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/profile?tab=settings" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
+                      <Link href="/settings" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
                         <Settings className="w-4 h-4 text-blue-500" /> App Settings
                       </Link>
                     </DropdownMenuItem>

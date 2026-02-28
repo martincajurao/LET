@@ -37,7 +37,7 @@ interface QuickFireResultsProps {
 }
 
 export function QuickFireResults({ questions, answers, timeSpent, xpEarned, onRestart }: QuickFireResultsProps) {
-  const { user } = useUser();
+  const { user, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isExplaining, setIsExplaining] = useState(false);
@@ -84,10 +84,12 @@ export function QuickFireResults({ questions, answers, timeSpent, xpEarned, onRe
             setExplanations(mapping);
             
             const userRef = doc(firestore, 'users', user.uid);
-            await updateDoc(userRef, {
+await updateDoc(userRef, {
               dailyAdCount: increment(1),
               mistakesReviewed: increment(mistakes.length)
             });
+            // Refresh user data to ensure UI updates properly
+            await refreshUser();
 
             toast({ 
               variant: "reward",

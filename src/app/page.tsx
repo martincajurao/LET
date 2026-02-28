@@ -201,9 +201,10 @@ function LetsPrepContent() {
   const [showResultUnlock, setShowResultUnlock] = useState(false);
   const [resultsUnlocked, setResultsUnlocked] = useState(false);
 
-  // Pull to refresh handlers
+  // Pull to refresh handlers - Fixed for mobile
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (window.scrollY === 0) {
+    // Only allow pull down when at top of page (with small tolerance for mobile)
+    if (window.scrollY <= 10) {
       pullStartY.current = e.touches[0].clientY;
       setIsPulling(true);
     }
@@ -213,15 +214,20 @@ function LetsPrepContent() {
     if (!isPulling || pullStartY.current === null) return;
     const currentY = e.touches[0].clientY;
     const diff = currentY - pullStartY.current;
+    // Only allow pulling down, not up
     if (diff > 0) {
       setPullDistance(Math.min(diff * 0.5, 100));
+      // Prevent default to stop page scrolling while pulling
+      if (diff > 10) {
+        e.preventDefault();
+      }
     }
   };
 
   const handleTouchEnd = async () => {
-    if (pullDistance > 60) {
+    // Only trigger refresh if pulled enough distance
+    if (pullDistance > 50 && !isRefreshing) {
       setIsRefreshing(true);
-      setPullDistance(0);
       // Trigger refresh - refetch user data and APK info
       try {
         // Refresh user data from Firestore
@@ -238,15 +244,25 @@ function LetsPrepContent() {
           color: { dark: '#10b981', light: '#ffffff' }
         });
         setQrCodeUrl(qrDataUrl);
+        
+        // Force page reload for Android WebView to ensure full state refresh
+        if (typeof window !== 'undefined') {
+          window.location.reload();
+        }
+        
         toast({ title: "Refreshed", description: "Latest data loaded." });
       } catch (e) {
+        console.error('Pull to refresh error:', e);
         toast({ variant: "destructive", title: "Refresh Failed", description: "Could not fetch latest data." });
       } finally {
         setIsRefreshing(false);
+        setIsPulling(false);
+        setPullDistance(0);
       }
+    } else {
+      setPullDistance(0);
+      setIsPulling(false);
     }
-    setPullDistance(0);
-    setIsPulling(false);
     pullStartY.current = null;
   };
 
@@ -404,7 +420,9 @@ function LetsPrepContent() {
       await addDoc(collection(firestore, "exam_results"), resultsData);
       const updateData: any = { dailyQuestionsAnswered: increment(currentQuestions.length), dailyTestsFinished: increment(!isQuickFire ? 1 : 0), xp: increment(xpEarned), lastActiveDate: serverTimestamp() };
       if (isQuickFire) updateData.lastQuickFireTimestamp = Date.now();
-      await updateDoc(doc(firestore, 'users', user.uid), updateData);
+await updateDoc(doc(firestore, 'users', user.uid), updateData);
+      // Refresh user data to ensure UI updates properly
+      await refreshUser();
     }
 
     setLoadingStep(100);

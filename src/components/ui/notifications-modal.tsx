@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useUser } from '@/firebase/auth/use-user';
 import {
   Dialog,
@@ -54,20 +54,37 @@ export function NotificationsModal({
   const [qfTimeLeft, setQfTimeLeft] = useState(0);
   const [showRewardDialog, setShowRewardDialog] = useState(false);
   const [rewardAmount, setRewardAmount] = useState(0);
+  
+  // Use ref to always have latest user data in interval callback
+  const userRef = useRef(user);
+  userRef.current = user;
+
+  // Refresh user data when modal opens to get latest timestamps
+  useEffect(() => {
+    if (isOpen && user) {
+      refreshUser();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
-    if (!user || !isOpen) return;
+    if (!userRef.current || !isOpen) return;
 
     const calculateTime = () => {
+      const currentUser = userRef.current;
+      if (!currentUser) return;
+      
       const now = Date.now();
-      setAdTimeLeft(Math.max(0, (user.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP - now));
-      setQfTimeLeft(Math.max(0, (user.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE - now));
+      const lastAd = typeof currentUser.lastAdXpTimestamp === 'number' ? currentUser.lastAdXpTimestamp : 0;
+      const lastQf = typeof currentUser.lastQuickFireTimestamp === 'number' ? currentUser.lastQuickFireTimestamp : 0;
+      
+      setAdTimeLeft(Math.max(0, lastAd + COOLDOWNS.AD_XP - now));
+      setQfTimeLeft(Math.max(0, lastQf + COOLDOWNS.QUICK_FIRE - now));
     };
 
     calculateTime();
     const interval = setInterval(calculateTime, 1000);
     return () => clearInterval(interval);
-  }, [user, isOpen]);
+  }, [isOpen]);
 
   const formatTime = (ms: number) => {
     const mins = Math.ceil(ms / (1000 * 60));
