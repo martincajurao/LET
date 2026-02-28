@@ -37,7 +37,8 @@ import {
   Lock,
   Play,
   ShieldAlert,
-  Target
+  Target,
+  Timer
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";

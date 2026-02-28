@@ -1,42 +1,31 @@
 'use client';
 
-import React, { useState, useEffect, Suspense, useMemo } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import React, { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { 
   GraduationCap, 
-  ChevronRight, 
   Zap,
   Trophy,
   Flame,
   Star,
   BookOpen,
-  Users,
   Moon,
   Sun,
   Crown,
-  Shield,
   Sparkles,
   Lock,
-  Timer,
   Award,
-  Target,
   MapPin,
   CheckCircle2,
   ListTodo
 } from "lucide-react";
 import { AchievementSystem } from '@/components/ui/achievement-system';
 import { ReferralSystem } from '@/components/ui/referral-system';
-import { DailyLoginRewards } from '@/components/ui/daily-login-rewards';
-import { QuestionOfTheDay } from '@/components/ui/question-of-the-day';
-import { StudyTimer } from '@/components/ui/study-timer';
-import { useUser, useFirestore } from "@/firebase";
-import { doc, updateDoc, increment } from "firebase/firestore";
-import { INITIAL_QUESTIONS } from "@/app/lib/mock-data";
-import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/firebase";
 import { Toaster } from "@/components/ui/toaster";
 import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
@@ -44,9 +33,8 @@ import { motion } from "framer-motion";
 import { getRankData, CAREER_TIERS } from '@/lib/xp-system';
 
 export default function DashboardPage() {
-  const { user, refreshUser } = useUser();
-  const firestore = useFirestore();
-  const { toast } = useToast();
+  const { user } = useUser();
+  const router = useRouter();
   const { isDark, toggleDarkMode } = useTheme();
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
@@ -58,7 +46,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between px-2">
           <div>
             <h1 className="text-3xl font-black tracking-tight">Command Center</h1>
-            <p className="text-sm text-muted-foreground font-medium uppercase tracking-widest opacity-60">Career Progression & Engagement</p>
+            <p className="text-sm text-muted-foreground font-medium uppercase tracking-widest opacity-60">Career Progression & Elite Status</p>
           </div>
           <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="rounded-2xl h-12 w-12 bg-card shadow-sm border">
             {isDark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-primary" />}
@@ -91,10 +79,10 @@ export default function DashboardPage() {
             </Card>
             <Card className="android-surface border-none shadow-md rounded-[2rem] bg-card p-5 text-center transition-all hover:shadow-xl group">
               <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner group-hover:rotate-12 transition-transform">
-                <Target className="w-6 h-6 text-emerald-600" />
+                <CheckCircle2 className="w-6 h-6 text-emerald-600" />
               </div>
               <p className="text-3xl font-black tracking-tight">{user.dailyQuestionsAnswered || 0}</p>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mt-1">Total Items</p>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mt-1">Items Answered</p>
             </Card>
           </div>
         )}
@@ -102,7 +90,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Main Progression Column */}
           <div className="lg:col-span-8 space-y-8">
-            {/* Career Roadmap (Moved here as requested) */}
+            {/* Career Roadmap */}
             <Card className="border-none shadow-xl rounded-[3rem] bg-card overflow-hidden">
               <CardHeader className="p-8 pb-4">
                 <div className="flex items-center justify-between">
@@ -157,16 +145,6 @@ export default function DashboardPage() {
                           </div>
                           <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Rank {tier.minRank} — {tier.maxRank}</p>
                           
-                          {milestones.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-4">
-                              {milestones.map((m, mIdx) => (
-                                <Badge key={mIdx} variant="secondary" className="bg-card text-[9px] font-black uppercase py-1 px-3 border-border gap-2 shadow-sm">
-                                  {m.icon} {m.text}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                          
                           {isActive && (
                             <div className="mt-5 space-y-2">
                               <div className="flex justify-between text-[9px] font-black uppercase text-primary tracking-widest">
@@ -199,48 +177,23 @@ export default function DashboardPage() {
 
           {/* Engagement Sidebar */}
           <div className="lg:col-span-4 space-y-8">
-            <DailyLoginRewards 
-              currentDay={Math.min(((user?.streakCount || 0) % 7) + 1, 7)}
-              onClaim={async (day, xp, credits) => {
-                if (user && firestore) {
-                  await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(xp), credits: increment(credits) });
-                  toast({ variant: "reward", title: "Reward Claimed!", description: `+${xp} XP & +${credits} Credits added to vault.` });
-                  refreshUser();
-                }
-              }} 
-            />
-
-            <QuestionOfTheDay 
-              question={INITIAL_QUESTIONS[Math.floor(Date.now() / 86400000) % INITIAL_QUESTIONS.length]}
-              onComplete={async (isCorrect, xpEarned) => {
-                if (user && firestore && isCorrect) {
-                  await updateDoc(doc(firestore, 'users', user.uid), { 
-                    xp: increment(xpEarned),
-                    dailyQuestionsAnswered: increment(1)
-                  });
-                  toast({ variant: "reward", title: "Exceptional Trace!", description: `+${xpEarned} XP added to character.` });
-                  refreshUser();
-                }
-              }}
-            />
-
-            <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden">
-              <CardHeader className="p-6 pb-2 flex flex-row items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shadow-inner"><Timer className="w-5 h-5 text-primary" /></div>
-                  <CardTitle className="text-lg font-black">Focus Timer</CardTitle>
+            <Card className="border-none shadow-xl rounded-[2.5rem] bg-foreground text-background p-8 relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-700" />
+              <div className="relative z-10 space-y-6">
+                <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
+                  <ListTodo className="w-6 h-6 text-primary" />
                 </div>
-                <Badge variant="outline" className="font-black text-[8px] uppercase border-primary/30 text-primary">POMODORO</Badge>
-              </CardHeader>
-              <CardContent className="p-6 pt-0">
-                <StudyTimer onComplete={async (sessions, xpEarned) => {
-                  if (user && firestore) {
-                    await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(xpEarned) });
-                    toast({ variant: "reward", title: "Focus Reward!", description: `+${xpEarned} XP for academic focus.` });
-                    refreshUser();
-                  }
-                }} />
-              </CardContent>
+                <div>
+                  <h3 className="text-xl font-black tracking-tight">Daily Missions</h3>
+                  <p className="text-sm text-muted-foreground font-medium opacity-80 mt-1">Complete tasks to earn AI credits.</p>
+                </div>
+                <Button 
+                  onClick={() => router.push('/tasks')}
+                  className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
+                >
+                  Enter Mission Center
+                </Button>
+              </div>
             </Card>
 
             <ReferralSystem />
