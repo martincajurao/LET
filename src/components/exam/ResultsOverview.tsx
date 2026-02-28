@@ -40,7 +40,7 @@ import { Question } from "@/app/lib/mock-data";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
 import { useUser, useFirestore } from '@/firebase';
-import { doc, updateDoc, increment } from 'firebase/firestore';
+import { doc, updateDoc, increment, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRankData, DAILY_AD_LIMIT } from '@/lib/xp-system';
@@ -50,6 +50,7 @@ interface ResultsOverviewProps {
   answers: Record<string, string>;
   timeSpent: number;
   onRestart: () => void;
+  resultId?: string; // ID of the exam_results document in Firestore
 }
 
 function TypewriterText({ text, speed = 15 }: { text: string; speed?: number }) {
@@ -68,7 +69,7 @@ function TypewriterText({ text, speed = 15 }: { text: string; speed?: number }) 
   return <span>{displayedText}</span>;
 }
 
-export function ResultsOverview({ questions, answers, timeSpent, onRestart }: ResultsOverviewProps) {
+export function ResultsOverview({ questions, answers, timeSpent, onRestart, resultId }: ResultsOverviewProps) {
   const { user, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -80,7 +81,16 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart }: Re
   
   const [aiSummary, setAiSummary] = useState<PersonalizedPerformanceSummaryOutput | null>(null);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
-  const [localExplanations, setLocalExplanations] = useState<Record<string, string>>({});
+  const [localExplanations, setLocalExplanations] = useState<Record<string, string>>(() => {
+    // Initialize with any explanations already present in the question objects (from vault snapshots)
+    const initial: Record<string, string> = {};
+    questions.forEach(q => {
+      if ((q as any).aiExplanation) {
+        initial[q.id] = (q as any).aiExplanation;
+      }
+    });
+    return initial;
+  });
   const [generatingIds, setGeneratingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -234,10 +244,29 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart }: Re
       });
       
       if (result.explanations?.[0]) {
-        setLocalExplanations(prev => ({ ...prev, [q.id]: result.explanations[0].aiExplanation }));
+        const explanation = result.explanations[0].aiExplanation;
+        setLocalExplanations(prev => ({ ...prev, [q.id]: explanation }));
+        
+        // Save to Firestore permanently if resultId is present
+        if (resultId && !user.uid.startsWith('bypass')) {
+          const examDocRef = doc(firestore, 'exam_results', resultId);
+          const docSnap = await getDoc(examDocRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const updatedResults = (data.results || []).map((r: any) => {
+              if (r.questionId === q.id || r.id === q.id) {
+                return { ...r, aiExplanation: explanation };
+              }
+              return r;
+            });
+            await updateDoc(examDocRef, { results: updatedResults });
+          }
+        }
+        
         await refreshUser();
       }
     } catch (e) {
+      console.error("Explanation Sync Error:", e);
       setLocalExplanations(prev => ({ ...prev, [q.id]: "Pedagogical insight temporarily unavailable." }));
     } finally {
       setGeneratingIds(prev => { const next = new Set(prev); next.delete(q.id); return next; });

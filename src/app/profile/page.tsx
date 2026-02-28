@@ -347,12 +347,14 @@ function ProfilePageContent() {
             {selectedRecord && (
               <ResultsOverview 
                 questions={(selectedRecord.results || []).map(r => ({
+                  ...r,
                   id: r.questionId || r.id,
                   text: r.text || "Question content unavailable in legacy record.",
                   options: r.options || ["A", "B", "C", "D"],
                   correctAnswer: r.correctAnswer || "",
                   subject: r.subject || "General",
-                  difficulty: r.difficulty || "medium"
+                  difficulty: r.difficulty || "medium",
+                  aiExplanation: r.aiExplanation // Preserve the saved explanation
                 } as Question))}
                 answers={(selectedRecord.results || []).reduce((acc, curr) => {
                   acc[curr.questionId || curr.id] = curr.userAnswer || (curr.isCorrect ? curr.correctAnswer : "");
@@ -360,6 +362,7 @@ function ProfilePageContent() {
                 }, {} as Record<string, string>)}
                 timeSpent={selectedRecord.timeSpent || 0}
                 onRestart={() => setIsDetailViewOpen(false)}
+                resultId={selectedRecord.id}
               />
             )}
           </div>

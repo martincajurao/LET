@@ -157,6 +157,8 @@ function LetsPrepContent() {
   const [isPulling, setIsPulling] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const pullStartY = React.useRef<number | null>(null);
+  
+  const [newResultId, setNewResultId] = useState<string | undefined>(undefined);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (window.scrollY <= 10) {
@@ -341,7 +343,8 @@ function LetsPrepContent() {
     const resultsData = sanitizeData({ userId: user.uid, displayName: user.displayName || 'Guest Educator', timestamp: Date.now(), overallScore, timeSpent, xpEarned, results, lastActiveDate: serverTimestamp() });
 
     if (!user.uid.startsWith('bypass')) {
-      await addDoc(collection(firestore, "exam_results"), resultsData);
+      const docRef = await addDoc(collection(firestore, "exam_results"), resultsData);
+      setNewResultId(docRef.id);
       const updateData: any = { dailyQuestionsAnswered: increment(currentQuestions.length), dailyTestsFinished: increment(!isQuickFire ? 1 : 0), xp: increment(xpEarned), lastActiveDate: serverTimestamp() };
       if (isQuickFire) updateData.lastQuickFireTimestamp = Date.now();
       await updateDoc(doc(firestore, 'users', user.uid), updateData);
@@ -436,7 +439,7 @@ function LetsPrepContent() {
         {state === 'exam' ? (
           <motion.div key="exam" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full"><ExamInterface questions={currentQuestions} timePerQuestion={timePerQuestion} onComplete={handleExamComplete} /></motion.div>
         ) : state === 'results' ? (
-          <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4"><ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} onRestart={() => setState('dashboard')} /></motion.div>
+          <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4"><ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} resultId={newResultId} onRestart={() => setState('dashboard')} /></motion.div>
         ) : state === 'onboarding' ? (
           <motion.div key="onboarding" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-[85vh] flex items-center justify-center p-4">
             <Card className="w-full max-w-md rounded-[3rem] bg-card border-none shadow-2xl overflow-hidden">
