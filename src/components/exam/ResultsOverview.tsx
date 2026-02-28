@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
@@ -83,7 +84,6 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
   const [localExplanations, setLocalExplanations] = useState<Record<string, string>>({});
   const [generatingIds, setGeneratingIds] = useState<Set<string>>(new Set());
 
-  // PRE-LOAD: Ensure previously saved explanations are used from the start
   useEffect(() => {
     const initial: Record<string, string> = {};
     questions.forEach(q => {
@@ -320,7 +320,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
                 <div className="w-20 h-20 bg-primary/10 rounded-[1.75rem] flex items-center justify-center border-4 border-primary/20 shadow-xl animate-levitate"><BrainCircuit className="w-10 h-10 text-primary" /></div>
                 <div className="space-y-2">
                   <h2 className="text-3xl font-black tracking-tight leading-tight text-foreground">Unlock Your <br /><span className="text-primary italic">Pedagogical Roadmap</span></h2>
-                  <p className="text-muted-foreground font-medium text-sm max-w-sm mx-auto">Access accuracy charts and personalized AI analysis.</p>
+                  <p className="text-muted-foreground font-medium text-sm max-w-sm mx-auto">Access accuracy charts, AI analysis, and full item review.</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
                   <Button onClick={handleUnlockWithAd} disabled={unlocking || (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT} className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-3 shadow-lg relative overflow-hidden bg-primary text-primary-foreground">
@@ -329,16 +329,12 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
                     <Badge className="absolute top-1.5 right-1.5 bg-background/20 text-background text-[7px] font-black uppercase border-none">FREE</Badge>
                   </Button>
                   <Button variant="outline" onClick={handleUnlockWithCredits} disabled={unlocking || (user?.credits || 0) < 10} className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-2 border-2 border-primary/30 bg-primary/5 text-primary">
-                    <span className="flex-1 text-left px-1">Unlock Report</span>
+                    <span className="flex-1 text-left px-1">Unlock Vault</span>
                     <div className="bg-background/90 px-2 py-1 rounded-lg border border-primary/30 flex items-center gap-1.5">
                       <span className="font-black text-xs">10</span>
                       <Sparkles className="w-3.5 h-3.5 fill-current" />
                     </div>
                   </Button>
-                </div>
-                <div className="flex flex-col items-center gap-1 pt-2">
-                  <p className="text-muted-foreground font-black text-[8px] uppercase tracking-[0.2em] animate-pulse">Scroll to review mistakes</p>
-                  <ArrowDown className="w-3 h-3 text-muted-foreground opacity-30" />
                 </div>
               </div>
             </Card>
@@ -387,141 +383,141 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
                 <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 rounded-xl h-12 font-black uppercase tracking-[0.1em] text-[10px]">Access Detailed Guide</Button>
               </Card>
             </div>
+
+            {/* Itemized Review - Android Native MD3 Refined - VISIBLE ONLY WHEN UNLOCKED */}
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center justify-between px-4">
+                <h2 className="text-2xl font-black tracking-tight flex items-center gap-3 text-foreground"><div className="w-10 h-10 bg-rose-500/10 rounded-xl flex items-center justify-center shadow-inner"><BrainCircuit className="w-6 h-6 text-rose-600" /></div>Itemized Review</h2>
+                <Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest py-1 px-3 rounded-full border-muted-foreground/30">{totalMistakes} Review Items</Badge>
+              </div>
+              
+              {totalMistakes > 0 ? (
+                <Accordion type="single" collapsible className="w-full space-y-2">
+                  {Object.entries(categorizedMistakes).map(([subject, mistakes]) => (
+                    <div key={subject} className="space-y-2">
+                      <div className="flex items-center gap-2 px-4 py-1"><div className="w-1 h-1 bg-primary rounded-full" /><p className="text-[10px] font-black uppercase text-primary tracking-widest">{subject}</p></div>
+                      {mistakes.map((q) => {
+                        const userAnswer = answers[q.id];
+                        const hasStoredExplanation = !!localExplanations[q.id];
+                        
+                        return (
+                          <AccordionItem key={q.id} value={q.id} className="border-none bg-card rounded-2xl px-1 overflow-hidden shadow-md border border-border/10">
+                            <AccordionTrigger className="hover:no-underline py-4 px-4 text-left">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-600 font-black text-[10px] shadow-inner shrink-0">
+                                  #{q.originalIndex + 1}
+                                </div>
+                                <span className="text-xs font-black line-clamp-1 pr-2 uppercase tracking-tight text-foreground opacity-80">
+                                  {q.text}
+                                </span>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-4 pb-4 pt-0 space-y-4">
+                              <div className="bg-muted/20 p-4 rounded-xl border-2 border-dashed border-border/50">
+                                <p className="font-black text-base md:text-lg mb-4 leading-tight text-foreground">
+                                  {q.text}
+                                </p>
+                                <div className="grid grid-cols-1 gap-2">
+                                  {q.options.map((opt, i) => {
+                                    const isCorrect = opt === q.correctAnswer;
+                                    const isUserWrongChoice = opt === userAnswer;
+                                    
+                                    return (
+                                      <div 
+                                        key={i} 
+                                        className={cn(
+                                          "p-3 rounded-xl border-2 text-xs md:text-sm flex items-center gap-3 transition-all",
+                                          isCorrect ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 font-black" : 
+                                          isUserWrongChoice ? "bg-rose-500/10 border-rose-500/30 text-rose-700 font-black" : 
+                                          "bg-card border-border/40 text-muted-foreground opacity-70"
+                                        )}
+                                      >
+                                        <span className={cn(
+                                          "w-7 h-7 rounded-lg border-2 flex items-center justify-center text-[10px] font-black shrink-0",
+                                          isCorrect ? "border-emerald-500/40 bg-emerald-500/10" : 
+                                          isUserWrongChoice ? "border-rose-500/40 bg-rose-500/10" : 
+                                          "border-border bg-muted/20"
+                                        )}>
+                                          {String.fromCharCode(65 + i)}
+                                        </span>
+                                        <span className="flex-1 leading-tight">{opt}</span>
+                                        {isCorrect && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                                        {isUserWrongChoice && <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              <AnimatePresence mode="wait">
+                                {!hasStoredExplanation ? (
+                                  <Button 
+                                    onClick={() => handleGenerateExplanation(q)} 
+                                    disabled={generatingIds.has(q.id)} 
+                                    className={cn(
+                                      "w-full h-12 rounded-xl font-black uppercase tracking-widest text-[9px] gap-2 transition-all relative overflow-hidden border-2 group shadow-sm", 
+                                      generatingIds.has(q.id) ? "bg-primary/10 border-primary/20 text-primary" : "bg-foreground text-background"
+                                    )}
+                                  >
+                                    {generatingIds.has(q.id) ? (
+                                      <div className="flex items-center gap-2">
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        <span>Calibrating Insight...</span>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center justify-between w-full px-2">
+                                        <div className="flex items-center gap-2">
+                                          <Sparkles className="w-3.5 h-3.5 text-primary fill-current group-hover:animate-pulse" />
+                                          <span>AI Tutor Deep Dive</span>
+                                        </div>
+                                        <div className="bg-background/90 px-3 py-1 rounded-lg border border-primary/20 flex items-center gap-1.5 shadow-inner">
+                                          <span className="font-black text-xs text-primary">5</span>
+                                          <Sparkles className="w-3.5 h-3.5 text-primary fill-current" />
+                                        </div>
+                                      </div>
+                                    )}
+                                  </Button>
+                                ) : (
+                                  <motion.div 
+                                    initial={{ scale: 0.98, opacity: 0 }} 
+                                    animate={{ opacity: 1, scale: 1 }} 
+                                    className="bg-primary/5 p-5 rounded-xl border-2 border-primary/10 relative overflow-hidden group shadow-inner"
+                                  >
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-md">
+                                        <Star className="w-4 h-4 fill-current" />
+                                      </div>
+                                      <div>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-primary leading-none">Pedagogical Insight</p>
+                                        <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-0.5">Analytical Reasoning Trace</p>
+                                      </div>
+                                    </div>
+                                    <div className="text-sm leading-relaxed font-medium text-foreground p-4 bg-card rounded-lg border border-border/30 shadow-sm">
+                                      <TypewriterText text={localExplanations[q.id]} />
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </AccordionContent>
+                          </AccordionItem>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </Accordion>
+              ) : (
+                <div className="text-center py-16 bg-emerald-500/5 rounded-[2.5rem] border-2 border-dashed border-emerald-500/20 shadow-inner">
+                  <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 3, repeat: Infinity }}>
+                    <Trophy className="w-16 h-16 text-emerald-500 mx-auto mb-4 opacity-40" />
+                  </motion.div>
+                  <h3 className="text-xl font-black text-foreground mb-1">Exceptional Calibration</h3>
+                  <p className="text-muted-foreground font-black uppercase tracking-widest text-[8px]">Professional reasoning at 100% efficiency</p>
+                </div>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Itemized Review - Android Native MD3 Refined */}
-      <div className="space-y-4 pt-2">
-        <div className="flex items-center justify-between px-4">
-          <h2 className="text-2xl font-black tracking-tight flex items-center gap-3 text-foreground"><div className="w-10 h-10 bg-rose-500/10 rounded-xl flex items-center justify-center shadow-inner"><BrainCircuit className="w-6 h-6 text-rose-600" /></div>Itemized Review</h2>
-          <Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest py-1 px-3 rounded-full border-muted-foreground/30">{totalMistakes} Review Items</Badge>
-        </div>
-        
-        {totalMistakes > 0 ? (
-          <Accordion type="single" collapsible className="w-full space-y-2">
-            {Object.entries(categorizedMistakes).map(([subject, mistakes]) => (
-              <div key={subject} className="space-y-2">
-                <div className="flex items-center gap-2 px-4 py-1"><div className="w-1 h-1 bg-primary rounded-full" /><p className="text-[10px] font-black uppercase text-primary tracking-widest">{subject}</p></div>
-                {mistakes.map((q) => {
-                  const userAnswer = answers[q.id];
-                  const hasStoredExplanation = !!localExplanations[q.id];
-                  
-                  return (
-                    <AccordionItem key={q.id} value={q.id} className="border-none bg-card rounded-2xl px-1 overflow-hidden shadow-md border border-border/10">
-                      <AccordionTrigger className="hover:no-underline py-4 px-4 text-left">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-600 font-black text-[10px] shadow-inner shrink-0">
-                            #{q.originalIndex + 1}
-                          </div>
-                          <span className="text-xs font-black line-clamp-1 pr-2 uppercase tracking-tight text-foreground opacity-80">
-                            {q.text}
-                          </span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="px-4 pb-4 pt-0 space-y-4">
-                        <div className="bg-muted/20 p-4 rounded-xl border-2 border-dashed border-border/50">
-                          <p className="font-black text-base md:text-lg mb-4 leading-tight text-foreground">
-                            {q.text}
-                          </p>
-                          <div className="grid grid-cols-1 gap-2">
-                            {q.options.map((opt, i) => {
-                              const isCorrect = opt === q.correctAnswer;
-                              const isUserWrongChoice = opt === userAnswer;
-                              
-                              return (
-                                <div 
-                                  key={i} 
-                                  className={cn(
-                                    "p-3 rounded-xl border-2 text-xs md:text-sm flex items-center gap-3 transition-all",
-                                    isCorrect ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 font-black" : 
-                                    isUserWrongChoice ? "bg-rose-500/10 border-rose-500/30 text-rose-700 font-black" : 
-                                    "bg-card border-border/40 text-muted-foreground opacity-70"
-                                  )}
-                                >
-                                  <span className={cn(
-                                    "w-7 h-7 rounded-lg border-2 flex items-center justify-center text-[10px] font-black shrink-0",
-                                    isCorrect ? "border-emerald-500/40 bg-emerald-500/10" : 
-                                    isUserWrongChoice ? "border-rose-500/40 bg-rose-500/10" : 
-                                    "border-border bg-muted/20"
-                                  )}>
-                                    {String.fromCharCode(65 + i)}
-                                  </span>
-                                  <span className="flex-1 leading-tight">{opt}</span>
-                                  {isCorrect && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
-                                  {isUserWrongChoice && <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        <AnimatePresence mode="wait">
-                          {!hasStoredExplanation ? (
-                            <Button 
-                              onClick={() => handleGenerateExplanation(q)} 
-                              disabled={generatingIds.has(q.id)} 
-                              className={cn(
-                                "w-full h-12 rounded-xl font-black uppercase tracking-widest text-[9px] gap-2 transition-all relative overflow-hidden border-2 group shadow-sm", 
-                                generatingIds.has(q.id) ? "bg-primary/10 border-primary/20 text-primary" : "bg-foreground text-background"
-                              )}
-                            >
-                              {generatingIds.has(q.id) ? (
-                                <div className="flex items-center gap-2">
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  <span>Calibrating Insight...</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-between w-full px-2">
-                                  <div className="flex items-center gap-2">
-                                    <Sparkles className="w-3.5 h-3.5 text-primary fill-current group-hover:animate-pulse" />
-                                    <span>AI Tutor Deep Dive</span>
-                                  </div>
-                                  <div className="bg-background/90 px-3 py-1 rounded-lg border border-primary/20 flex items-center gap-1.5 shadow-inner">
-                                    <span className="font-black text-xs text-primary">5</span>
-                                    <Sparkles className="w-3.5 h-3.5 text-primary fill-current" />
-                                  </div>
-                                </div>
-                              )}
-                            </Button>
-                          ) : (
-                            <motion.div 
-                              initial={{ scale: 0.98, opacity: 0 }} 
-                              animate={{ opacity: 1, scale: 1 }} 
-                              className="bg-primary/5 p-5 rounded-xl border-2 border-primary/10 relative overflow-hidden group shadow-inner"
-                            >
-                              <div className="flex items-center gap-2 mb-3">
-                                <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-md">
-                                  <Star className="w-4 h-4 fill-current" />
-                                </div>
-                                <div>
-                                  <p className="text-[9px] font-black uppercase tracking-widest text-primary leading-none">Pedagogical Insight</p>
-                                  <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-0.5">Analytical Reasoning Trace</p>
-                                </div>
-                              </div>
-                              <div className="text-sm leading-relaxed font-medium text-foreground p-4 bg-card rounded-lg border border-border/30 shadow-sm">
-                                <TypewriterText text={localExplanations[q.id]} />
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </AccordionContent>
-                    </AccordionItem>
-                  );
-                })}
-              </div>
-            ))}
-          </Accordion>
-        ) : (
-          <div className="text-center py-16 bg-emerald-500/5 rounded-[2.5rem] border-2 border-dashed border-emerald-500/20 shadow-inner">
-            <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 3, repeat: Infinity }}>
-              <Trophy className="w-16 h-16 text-emerald-500 mx-auto mb-4 opacity-40" />
-            </motion.div>
-            <h3 className="text-xl font-black text-foreground mb-1">Exceptional Calibration</h3>
-            <p className="text-muted-foreground font-black uppercase tracking-widest text-[8px]">Professional reasoning at 100% efficiency</p>
-          </div>
-        )}
-      </div>
 
       <Dialog open={showPurchaseSuccess} onOpenChange={setShowPurchaseSuccess}>
         <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-0 max-w-[320px] overflow-hidden outline-none z-[1100]">
