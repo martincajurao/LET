@@ -38,7 +38,8 @@ import {
   Play,
   ShieldAlert,
   Target,
-  Timer
+  Timer,
+  LayoutDashboard
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
@@ -256,7 +257,7 @@ function LetsPrepContent() {
       if (finalQuestions.length === 0) throw new Error(`Insufficient items.`);
       setCurrentQuestions(finalQuestions);
       setLoadingStep(100);
-      setTimeout(() => { setState(category === 'quickfire' ? 'exam' : 'exam'); setLoading(false); }, 300);
+      setTimeout(() => { setState('exam'); setLoading(false); }, 300);
     } catch (e: any) { toast({ variant: "destructive", title: "Simulation Failed", description: e.message }); setLoading(false); }
   };
 
@@ -412,137 +413,114 @@ function LetsPrepContent() {
             </Card>
           </motion.div>
         ) : (
-          <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-7xl mx-auto px-4 pt-6 pb-24 space-y-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {displayStats.map((stat, i) => (
-                <motion.div key={i} whileTap={{ scale: 0.95 }} className="android-surface rounded-[2rem] p-5 flex items-center gap-4 bg-card border-none shadow-md hover:shadow-xl transition-all group">
-                  <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform", stat.color)}>{stat.icon}</div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] leading-none mb-1 opacity-60 truncate">{stat.label}</p>
-                    <p className="text-xl font-black text-foreground leading-none tracking-tight">{stat.value}</p>
+                <div key={i} className="android-surface rounded-2xl p-3 flex items-center gap-3">
+                  <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0", stat.color)}>{stat.icon}</div>
+                  <div>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">{stat.label}</p>
+                    <p className="text-lg font-black text-foreground leading-none">{stat.value}</p>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              <div className="lg:col-span-8 space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-8 space-y-6">
                 {user && (
-                  <Card className="border-none shadow-xl rounded-[3rem] bg-card overflow-hidden group">
-                    <div className="h-2 bg-primary w-full opacity-20" />
-                    <CardHeader className="p-8 pb-4">
+                  <Card className="border-none shadow-sm rounded-[2rem] bg-card overflow-hidden">
+                    <CardHeader className="p-6 pb-2">
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Character Progression</p>
-                          <CardTitle className="text-3xl font-black flex items-center gap-3 tracking-tight">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Career Status</p>
+                          <CardTitle className="text-xl font-black flex items-center gap-2">
                             {rankData?.title} 
-                            <Badge className="bg-primary/10 text-primary border-none font-black text-xs px-3">RANK {rankData?.rank}</Badge>
+                            <span className="text-xs font-bold text-muted-foreground ml-1">Rank {rankData?.rank}</span>
                           </CardTitle>
                         </div>
-                        <div className="w-14 h-14 bg-primary/10 rounded-[1.5rem] flex items-center justify-center shadow-inner group-hover:rotate-12 transition-transform"><Trophy className="w-7 h-7 text-primary" /></div>
+                        <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center"><Trophy className="w-5 h-5 text-primary" /></div>
                       </div>
                     </CardHeader>
-                    <CardContent className="p-8 pt-0 space-y-6">
-                      <div className="space-y-3">
-                        <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] px-1">
-                          <span className="text-muted-foreground">{rankData?.xpInRank || 0} XP Journey</span>
-                          <span className="text-primary">{rankData?.nextRankXp} XP Milestone</span>
+                    <CardContent className="p-6 pt-0 space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+                          <span className="text-muted-foreground">{rankData?.xpInRank || 0} XP</span>
+                          <span className="text-muted-foreground">{rankData?.nextRankXp} XP</span>
                         </div>
-                        <div className="h-3 w-full bg-muted rounded-full overflow-hidden shadow-inner p-0.5">
-                          <motion.div initial={{ width: 0 }} animate={{ width: `${rankData?.progress}%` }} transition={{ duration: 1.5, ease: "easeOut" }} className="h-full bg-primary rounded-full shadow-lg" />
-                        </div>
+                        <Progress value={rankData?.progress} className="h-2 rounded-full" />
                       </div>
-                      <div className="grid grid-cols-2 gap-4 pt-2">
-                        <Button onClick={handleWatchXpAd} disabled={claimingXp || adCooldown > 0} variant="outline" className="h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 border-2 border-primary/20 hover:bg-primary/5 active:scale-95 transition-all">
-                          {claimingXp ? <Loader2 className="w-5 h-5 animate-spin" /> : adCooldown > 0 ? <Timer className="w-5 h-5" /> : <Play className="w-5 h-5 fill-current" />}
+                      <div className="grid grid-cols-2 gap-3 pt-2">
+                        <Button onClick={handleWatchXpAd} disabled={claimingXp || adCooldown > 0} variant="outline" className="h-12 rounded-xl font-bold text-xs gap-2 border-primary/20 hover:bg-primary/5 active:scale-95 transition-all">
+                          {claimingXp ? <Loader2 className="w-4 h-4 animate-spin" /> : adCooldown > 0 ? <Timer className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
                           {adCooldown > 0 ? formatCooldown(adCooldown) : "XP Boost Clip"}
                         </Button>
-                        <Button onClick={() => router.push('/dashboard')} variant="default" className="h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 shadow-2xl shadow-primary/30 active:scale-95 transition-all">
-                          <Trophy className="w-5 h-5 fill-current" />
-                          View Roadmap
+                        <Button onClick={() => startExam('quickfire')} disabled={quickFireCooldown > 0} variant="default" className="h-12 rounded-xl font-bold text-xs gap-2 shadow-lg shadow-primary/20">
+                          {quickFireCooldown > 0 ? <Timer className="w-4 h-4" /> : <LayoutDashboard className="w-4 h-4" />}
+                          {quickFireCooldown > 0 ? formatCooldown(quickFireCooldown) : "Quick Fire"}
                         </Button>
                       </div>
                     </CardContent>
                   </Card>
                 )}
 
-                <Card className="overflow-hidden border-none shadow-2xl rounded-[3.5rem] bg-gradient-to-br from-primary/30 via-card to-background relative p-10 md:p-16 group">
-                  <div className="relative z-10 space-y-8">
-                    <Badge className="font-black text-[10px] uppercase px-5 py-1.5 bg-foreground text-background border-none shadow-lg tracking-[0.3em]">Official Simulation Engine</Badge>
+                <Card className="overflow-hidden border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-primary/20 via-card to-background relative p-8 md:p-12 group active:scale-[0.98] transition-all">
+                  <div className="relative z-10 space-y-6">
+                    <Badge variant="secondary" className="font-bold text-[10px] uppercase px-4 py-1 bg-primary/20 text-primary border-none">Free Forever Practice</Badge>
                     <div className="space-y-4">
-                      <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95] text-foreground">Prepare for the <br /><span className="text-primary italic animate-victory inline-block">Board Exam.</span></h1>
-                      <p className="text-muted-foreground font-bold text-lg md:text-2xl max-w-xl leading-snug">High-fidelity simulations with AI analytical reasoning tailored for Filipino educators.</p>
+                      <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-foreground">Prepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
+                      <p className="text-muted-foreground font-medium md:text-xl max-w-lg">High-fidelity simulations with AI pedagogical analysis tailored for Filipino educators.</p>
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                      <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-16 md:h-20 px-10 md:px-16 rounded-[2rem] font-black text-lg md:text-xl gap-4 shadow-[0_20px_50px_rgba(var(--primary),0.4)] hover:scale-[1.05] transition-all group active:scale-95">
-                        <Play className="w-7 h-7 fill-current" /> 
-                        <span>Launch Full Battle</span> 
-                        <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
-                      </Button>
-                    </div>
+                    <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all group"><Zap className="w-6 h-6 fill-current" /> <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" /></Button>
                   </div>
-                  <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/3" />
                 </Card>
 
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between px-4">
-                    <h3 className="text-2xl font-black tracking-tight flex items-center gap-3"><Target className="w-7 h-7 text-primary" /> Training Zones</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between px-2">
+                    <h3 className="text-xl font-black tracking-tight flex items-center gap-2"><Target className="w-5 h-5 text-primary" /> Training Zones</h3>
                     <Badge variant="ghost" className="text-[10px] font-black uppercase tracking-widest opacity-40">Verified Tracks</Badge>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
-                      { id: 'General Education', name: 'Gen Ed', icon: <Languages className="w-7 h-7" />, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Core academic disciplines', rnk: UNLOCK_RANKS.GENERAL_ED },
-                      { id: 'Professional Education', name: 'Prof Ed', icon: <GraduationCap className="w-7 h-7" />, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Teaching methodology & theory', rnk: UNLOCK_RANKS.PROFESSIONAL_ED },
-                      { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star className="w-7 h-7" />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Subject track mastery', rnk: UNLOCK_RANKS.SPECIALIZATION }
+                      { id: 'General Education', name: 'Gen Ed', icon: <Languages />, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Core Knowledge', rnk: UNLOCK_RANKS.GENERAL_ED },
+                      { id: 'Professional Education', name: 'Prof Ed', icon: <GraduationCap />, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Teaching Strategy', rnk: UNLOCK_RANKS.PROFESSIONAL_ED },
+                      { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Subject Mastery', rnk: UNLOCK_RANKS.SPECIALIZATION }
                     ].map((track, i) => {
                       const isLocked = user && !isTrackUnlocked(rankData?.rank || 1, track.id, user.unlockedTracks);
                       return (
-                        <motion.div key={i} whileHover={{ y: -8 }} whileTap={{ scale: 0.95 }}>
-                          <Card onClick={() => !isLocked && startExam(track.id as any)} className={cn("group cursor-pointer border-2 transition-all duration-300 rounded-[2.5rem] bg-card overflow-hidden relative shadow-lg h-full", isLocked ? "border-muted grayscale opacity-60" : "border-border/50 hover:border-primary")}>
-                            {isLocked && (
-                              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/60 backdrop-blur-[2px] p-6 text-center">
-                                <div className="bg-card p-4 rounded-[1.5rem] border-2 shadow-2xl flex flex-col items-center gap-2">
-                                  <Lock className="w-6 h-6 text-primary" />
-                                  <span className="text-[10px] font-black uppercase text-foreground leading-tight tracking-widest">Locked: Rank {track.rnk}</span>
-                                </div>
+                        <Card key={i} onClick={() => !isLocked && startExam(track.id as any)} className={cn("group cursor-pointer border-2 transition-all rounded-[2rem] bg-card overflow-hidden active:scale-95 relative", isLocked ? "border-muted opacity-60" : "border-border/50 hover:border-primary shadow-sm hover:shadow-md")}>
+                          {isLocked && (
+                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/40 backdrop-blur-[1px] p-4 text-center">
+                              <div className="bg-card/90 p-2 rounded-xl border shadow-sm flex flex-col items-center">
+                                <Lock className="w-4 h-4 text-muted-foreground mb-1" />
+                                <span className="text-[8px] font-black uppercase text-muted-foreground leading-tight">Locked: Rank {track.rnk}</span>
                               </div>
-                            )}
-                            <CardContent className="p-8 space-y-6">
-                              <div className={cn("w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-lg transition-transform group-hover:scale-110", track.bg, track.color)}>{track.icon}</div>
-                              <div>
-                                <h4 className="font-black text-2xl text-foreground group-hover:text-primary transition-colors">{track.name}</h4>
-                                <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest mt-1 opacity-60">{track.desc}</p>
-                              </div>
-                              <div className="pt-2 flex justify-end">
-                                <div className="w-10 h-10 rounded-full border-2 border-border flex items-center justify-center group-hover:bg-primary group-hover:border-primary transition-all">
-                                  <ChevronRight className={cn("w-5 h-5", isLocked ? "text-muted" : "text-primary group-hover:text-primary-foreground")} />
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
+                            </div>
+                          )}
+                          <CardContent className="p-6 space-y-4">
+                            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm", track.bg, track.color)}>{track.icon}</div>
+                            <div>
+                              <h4 className="font-black text-lg text-foreground">{track.name}</h4>
+                              <p className="text-xs text-muted-foreground font-medium">{track.desc}</p>
+                            </div>
+                          </CardContent>
+                        </Card>
                       );
                     })}
                   </div>
                 </div>
               </div>
 
-              <div className="lg:col-span-4 space-y-8">
-                <Card className="border-none shadow-2xl rounded-[3rem] bg-foreground text-background p-10 relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-700" />
-                  <div className="relative z-10 space-y-10">
-                    <div className="space-y-2">
-                      <ShieldCheck className="w-10 h-10 text-primary mb-2" />
-                      <h3 className="text-2xl font-black tracking-tight">Analytical Vault</h3>
-                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Cloud Authenticated Hub</p>
-                    </div>
-                    <div className="space-y-6">
-                      <div className="space-y-1"><p className="text-5xl font-black text-primary tracking-tighter">3.5K+</p><p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Curated Board Items</p></div>
-                      <div className="space-y-1"><p className="text-5xl font-black text-emerald-400 tracking-tighter">82%</p><p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Average Readiness</p></div>
-                      <div className="space-y-1"><p className="text-5xl font-black text-blue-400 tracking-tighter">100%</p><p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Static Free Access</p></div>
-                    </div>
-                    <Button variant="outline" className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-[0.2em] border-primary/30 text-primary hover:bg-primary/10 transition-all" onClick={() => router.push('/events')}>View Leaderboard</Button>
-                  </div>
+              <div className="lg:col-span-4 space-y-6">
+                <Card className="border-none shadow-xl rounded-[2.25rem] bg-foreground text-background p-8 relative overflow-hidden group active:scale-[0.98] transition-all">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
+                  <CardHeader className="p-0 mb-6"><CardTitle className="text-xl font-black tracking-tight flex items-center gap-3"><ShieldCheck className="w-6 h-6 text-primary" /> Verified Hub</CardTitle></CardHeader>
+                  <CardContent className="p-0 space-y-8">
+                    <div className="space-y-1"><p className="text-4xl font-black text-primary">3.5K+</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Curated Items</p></div>
+                    <div className="space-y-1"><p className="text-4xl font-black text-secondary">82%</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Board Readiness</p></div>
+                    <div className="space-y-1"><p className="text-4xl font-black text-blue-400">100%</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Free Access</p></div>
+                  </CardContent>
                 </Card>
               </div>
             </div>

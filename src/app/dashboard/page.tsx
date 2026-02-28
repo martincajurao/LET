@@ -21,7 +21,8 @@ import {
   Award,
   MapPin,
   CheckCircle2,
-  ListTodo
+  ListTodo,
+  ChevronRight
 } from "lucide-react";
 import { AchievementSystem } from '@/components/ui/achievement-system';
 import { ReferralSystem } from '@/components/ui/referral-system';
@@ -48,7 +49,7 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-black tracking-tight">Command Center</h1>
             <p className="text-sm text-muted-foreground font-medium uppercase tracking-widest opacity-60">Career Progression & Elite Status</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="rounded-2xl h-12 w-12 bg-card shadow-sm border">
+          <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="rounded-2xl h-12 w-12 bg-card shadow-sm border active:scale-90 transition-all">
             {isDark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-primary" />}
           </Button>
         </div>
@@ -56,28 +57,28 @@ export default function DashboardPage() {
         {/* Quick Stats Grid */}
         {user && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Card className="android-surface border-none shadow-md rounded-[2rem] bg-card p-5 text-center transition-all hover:shadow-xl group">
+            <Card className="android-surface border-none shadow-md rounded-[2rem] bg-card p-5 text-center transition-all hover:shadow-xl group active:scale-[0.98]">
               <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner group-hover:rotate-12 transition-transform">
                 <Flame className="w-6 h-6 text-orange-500 fill-current" />
               </div>
               <p className="text-3xl font-black tracking-tight">{user.streakCount || 0}</p>
               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mt-1">Study Streak</p>
             </Card>
-            <Card className="android-surface border-none shadow-md rounded-[2rem] bg-card p-5 text-center transition-all hover:shadow-xl group">
+            <Card className="android-surface border-none shadow-md rounded-[2rem] bg-card p-5 text-center transition-all hover:shadow-xl group active:scale-[0.98]">
               <div className="w-12 h-12 bg-yellow-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner group-hover:rotate-12 transition-transform">
                 <Sparkles className="w-6 h-6 text-yellow-600 fill-current animate-sparkle" />
               </div>
               <p className="text-3xl font-black tracking-tight">{user.credits || 0}</p>
               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mt-1">AI Credits</p>
             </Card>
-            <Card className="android-surface border-none shadow-md rounded-[2rem] bg-card p-5 text-center transition-all hover:shadow-xl group">
+            <Card className="android-surface border-none shadow-md rounded-[2rem] bg-card p-5 text-center transition-all hover:shadow-xl group active:scale-[0.98]">
               <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner group-hover:rotate-12 transition-transform">
                 <Trophy className="w-6 h-6 text-primary" />
               </div>
               <p className="text-2xl font-black tracking-tight truncate px-1">{rankData?.title || 'Candidate'}</p>
               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mt-1">Rank {rankData?.rank}</p>
             </Card>
-            <Card className="android-surface border-none shadow-md rounded-[2rem] bg-card p-5 text-center transition-all hover:shadow-xl group">
+            <Card className="android-surface border-none shadow-md rounded-[2rem] bg-card p-5 text-center transition-all hover:shadow-xl group active:scale-[0.98]">
               <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner group-hover:rotate-12 transition-transform">
                 <CheckCircle2 className="w-6 h-6 text-emerald-600" />
               </div>
@@ -111,11 +112,6 @@ export default function DashboardPage() {
                     const isCompleted = currentRank > tier.maxRank;
                     const isActive = currentRank >= tier.minRank && currentRank <= tier.maxRank;
                     
-                    const milestones = [];
-                    if (tier.minRank === 1) milestones.push({ icon: <BookOpen className="w-3 h-3" />, text: "Gen Ed Trace Active" });
-                    if (tier.minRank === 4) milestones.push({ icon: <GraduationCap className="w-3 h-3" />, text: "Prof Ed Trace Unlocked" });
-                    if (tier.minRank === 7) milestones.push({ icon: <Star className="w-3 h-3" />, text: "Majorship Calibrated" });
-
                     return (
                       <motion.div 
                         key={idx} 
@@ -133,7 +129,7 @@ export default function DashboardPage() {
                           {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : isActive ? <Award className="w-6 h-6" /> : <Lock className="w-5 h-5" />}
                         </div>
                         <div className={cn(
-                          "p-6 rounded-[2.25rem] border-2 transition-all shadow-sm",
+                          "p-6 rounded-[2.25rem] border-2 transition-all shadow-sm active:scale-[0.99]",
                           isActive ? "bg-primary/5 border-primary ring-8 ring-primary/5" : "bg-muted/10 border-transparent"
                         )}>
                           <div className="flex justify-between items-start mb-2">
@@ -177,7 +173,7 @@ export default function DashboardPage() {
 
           {/* Engagement Sidebar */}
           <div className="lg:col-span-4 space-y-8">
-            <Card className="border-none shadow-xl rounded-[2.5rem] bg-foreground text-background p-8 relative overflow-hidden group">
+            <Card className="border-none shadow-xl rounded-[2.5rem] bg-foreground text-background p-8 relative overflow-hidden group active:scale-[0.98] transition-all">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-700" />
               <div className="relative z-10 space-y-6">
                 <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
