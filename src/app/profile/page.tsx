@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useUser, useFirestore } from "@/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -8,13 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { MAJORSHIPS } from "@/app/lib/mock-data";
-import { 
-  ArrowLeft, 
-  GraduationCap, 
-  Mail, 
-  History, 
-  Target, 
+import {
+  ArrowLeft,
+  GraduationCap,
+  Mail,
+  History,
+  Target,
   TrendingUp,
   Clock,
   ClipboardList,
@@ -25,9 +26,20 @@ import {
   Trophy,
   Coins,
   Zap,
-  CalendarDays
+  CalendarDays,
+  Smartphone,
+  Users,
+  Moon,
+  Sun,
+  Bell,
+  RefreshCw,
+  Check,
+  Info,
+  Sparkles
 } from "lucide-react";
+
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,6 +49,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { getRankData } from '@/lib/xp-system';
+import { SelfUpdate } from '@/components/self-update';
+import { motion, AnimatePresence } from 'framer-motion';
+
 
 interface ExamRecord {
   id: string;
@@ -47,13 +62,19 @@ interface ExamRecord {
   subjectBreakdown?: any[];
 }
 
-export default function ProfilePage() {
-  const { user, loading: userLoading, updateProfile, logout } = useUser();
+function ProfilePageContent() {
+  const { user, loading: userLoading, updateProfile, logout, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
   const [majorship, setMajorship] = useState(user?.majorship || "");
   const [records, setRecords] = useState<ExamRecord[]>([]);
   const [loadingRecords, setLoadingRecords] = useState(true);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Get tab from URL query params
+  const activeTab = searchParams.get('tab') || 'history';
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
@@ -70,6 +91,33 @@ export default function ProfilePage() {
     };
     fetchHistory();
   }, [user, firestore]);
+
+  // Handler for refreshing user data
+  const handleRefreshData = async () => {
+    setRefreshing(true);
+    try {
+      await refreshUser();
+      toast({ title: "Data Refreshed", description: "Latest data loaded successfully." });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Refresh Failed", description: "Could not fetch latest data." });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Handler for saving profile with reactivity
+  const handleSaveProfile = async () => {
+    setSavingProfile(true);
+    try {
+      await updateProfile({ majorship });
+      await refreshUser();
+      toast({ title: "Profile Calibrated", description: "Your preferences have been saved." });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Save Failed", description: "Could not save preferences." });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   const stats = useMemo(() => ({
     total: records.length,
@@ -148,9 +196,10 @@ export default function ProfilePage() {
           </Card>
         </div>
 
-        <Tabs defaultValue="history" className="space-y-6">
-          <TabsList className="bg-muted/30 p-1 rounded-2xl w-full grid grid-cols-2 h-14">
+        <Tabs defaultValue={activeTab} className="space-y-6">
+          <TabsList className="bg-muted/30 p-1 rounded-2xl w-full grid grid-cols-3 h-14">
             <TabsTrigger value="history" className="font-bold rounded-xl gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"><History className="w-4 h-4" /> Vault</TabsTrigger>
+            <TabsTrigger value="collaboration" className="font-bold rounded-xl gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"><Users className="w-4 h-4" /> Collab</TabsTrigger>
             <TabsTrigger value="settings" className="font-bold rounded-xl gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all"><Settings className="w-4 h-4" /> Calibration</TabsTrigger>
           </TabsList>
 
@@ -193,28 +242,137 @@ export default function ProfilePage() {
             )}
           </TabsContent>
 
-          <TabsContent value="settings" className="animate-in slide-in-from-bottom-4">
+          <TabsContent value="settings" className="space-y-6 animate-in slide-in-from-bottom-4">
+            {/* Data Refresh Section */}
             <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card">
-              <CardContent className="p-10 space-y-10">
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4"><div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center"><GraduationCap className="w-7 h-7 text-primary" /></div><div><h3 className="text-2xl font-black tracking-tight">Academic Focus</h3><p className="text-xs text-muted-foreground font-medium">Calibrate your primary simulation specialization</p></div></div>
-                  <div className="space-y-4 bg-muted/20 p-8 rounded-[2rem] border-2 border-dashed border-border/50">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Selected Specialization</Label>
-                    <Select value={majorship} onValueChange={setMajorship}>
-                      <SelectTrigger className="h-16 rounded-xl font-bold border-border shadow-sm text-lg px-8 bg-card"><SelectValue placeholder="Select track" /></SelectTrigger>
-                      <SelectContent className="rounded-2xl p-2">{MAJORSHIPS.map(m => (<SelectItem key={m} value={m} className="font-medium py-4 text-base px-6">{m}</SelectItem>))}</SelectContent>
-                    </Select>
+              <CardContent className="p-8">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
+                      <RefreshCw className={cn("w-7 h-7 text-primary", refreshing && "animate-spin")} />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black tracking-tight">Sync Data</h3>
+                      <p className="text-xs text-muted-foreground font-medium">Refresh your latest progress</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-col gap-4">
-                  <Button onClick={() => updateProfile({ majorship }).then(() => toast({ title: "Profile Calibrated" }))} className="w-full h-16 rounded-3xl font-black text-xl shadow-xl shadow-primary/30">Save Academic Preferences</Button>
-                  <Button variant="ghost" onClick={logout} className="w-full h-14 text-destructive font-bold gap-3 hover:bg-destructive/5 rounded-2xl">Log Out of learning vault</Button>
+                  <Button 
+                    onClick={handleRefreshData} 
+                    disabled={refreshing}
+                    variant="outline" 
+                    className="h-12 rounded-2xl font-bold gap-2"
+                  >
+                    {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                    {refreshing ? "Syncing..." : "Sync Now"}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
+
+            {/* Academic Focus Section */}
+            <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card">
+              <CardContent className="p-8 space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
+                    <GraduationCap className="w-7 h-7 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black tracking-tight">Academic Focus</h3>
+                    <p className="text-xs text-muted-foreground font-medium">Calibrate your primary simulation specialization</p>
+                  </div>
+                </div>
+                <div className="space-y-4 bg-muted/20 p-6 rounded-[2rem] border-2 border-dashed border-border/50">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Selected Specialization</Label>
+                  <Select value={majorship} onValueChange={setMajorship}>
+                    <SelectTrigger className="h-14 rounded-xl font-bold border-border shadow-sm text-lg px-6 bg-card">
+                      <SelectValue placeholder="Select track" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl p-2">
+                      {MAJORSHIPS.map(m => (
+                        <SelectItem key={m} value={m} className="font-medium py-4 text-base px-6">
+                          {m}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  onClick={handleSaveProfile} 
+                  disabled={savingProfile || majorship === user?.majorship}
+                  className="w-full h-14 rounded-3xl font-black text-lg shadow-xl shadow-primary/30"
+                >
+                  {savingProfile ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-5 h-5 mr-2" />
+                      Save Preferences
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* App Updates Section */}
+            <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card">
+              <CardContent className="p-8 space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
+                    <Smartphone className="w-7 h-7 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black tracking-tight">App Updates</h3>
+                    <p className="text-xs text-muted-foreground font-medium">Manage native Android client updates</p>
+                  </div>
+                </div>
+                <SelfUpdate />
+              </CardContent>
+            </Card>
+
+            {/* Account Section */}
+            <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card">
+              <CardContent className="p-8 space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-destructive/10 rounded-2xl flex items-center justify-center">
+                    <LogOut className="w-7 h-7 text-destructive" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black tracking-tight">Account</h3>
+                    <p className="text-xs text-muted-foreground font-medium">Sign out of your account</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  onClick={logout} 
+                  className="w-full h-14 text-destructive font-bold gap-3 hover:bg-destructive/5 rounded-2xl border-2 border-destructive/20"
+                >
+                  <LogOut className="w-5 h-5" />
+                  Log Out of learning vault
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Info Section */}
+            <div className="flex items-center justify-center gap-2 text-muted-foreground/60">
+              <Info className="w-4 h-4" />
+              <span className="text-xs font-medium">LET's Prep v2.0.0 • Firestore Spark Plan</span>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
     </div>
   );
 }
+
+function ProfilePageWithParams() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+      <ProfilePageContent />
+    </Suspense>
+  );
+}
+
+export default ProfilePageWithParams;

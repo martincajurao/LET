@@ -196,7 +196,7 @@ function NavContent() {
     <>
       <div 
         className={cn(
-          "md:hidden fixed bottom-0 left-0 right-0 z-[60] px-4 pb-6 transition-all duration-500 ease-in-out transform",
+          "md:hidden fixed bottom-0 left-0 right-0 z-[60] px-4 pb-6 pt-2 transition-all duration-500 ease-in-out transform safe-pb",
           isVisible ? "translate-y-0 opacity-100" : "translate-y-32 opacity-0"
         )}
       >

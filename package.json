@@ -16,9 +16,10 @@
     "android:serve": "npm run dev && npm run android:run"
   },
   "dependencies": {
-    "@capacitor/android": "^8.1.0",
-    "@capacitor/cli": "^8.1.0",
-    "@capacitor/core": "^8.1.0",
+    "@capacitor-firebase/authentication": "^6.3.1",
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^6.2.1",
     "@genkit-ai/flow": "^0.5.17",
     "@genkit-ai/google-genai": "1.29.0",
     "@google/generative-ai": "^0.21.0",

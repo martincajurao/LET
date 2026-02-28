@@ -1,7 +1,10 @@
-'use server';
 /**
  * @fileOverview Standardized daily task processing.
  * Restored to original rates by removing speed-based penalties and trust multipliers.
+ * 
+ * NOTE: This file has been modified to work with static export.
+ * The 'use server' directive was removed as it doesn't work with Next.js static output.
+ * For server-side processing, use Firebase Cloud Functions instead.
  */
 
 import { ai } from '@/ai/genkit';
@@ -30,6 +33,8 @@ const DailyTaskInputSchema = z.object({
 });
 export type DailyTaskInput = z.infer<typeof DailyTaskInputSchema>;
 
+type StreakAction = 'none' | 'recovered' | 'lost' | 'maintained';
+
 const DailyTaskOutputSchema = z.object({
   reward: z.number().describe('The amount of credits earned.'),
   tasksCompleted: z.array(z.string()).describe('List of completed tasks'),
@@ -47,6 +52,11 @@ const DailyTaskOutputSchema = z.object({
 });
 export type DailyTaskOutput = z.infer<typeof DailyTaskOutputSchema>;
 
+/**
+ * Process daily tasks for a user.
+ * NOTE: This function now runs client-side. For production use with static export,
+ * use Firebase Cloud Functions (dailyTask) for server-side processing.
+ */
 export async function processDailyTasks(input: DailyTaskInput): Promise<DailyTaskOutput> {
   return dailyTaskFlow(input);
 }
@@ -78,11 +88,9 @@ const dailyTaskFlow = ai.defineFlow(
       } = input;
 
       const now = new Date();
-      const abuseFlags: string[] = [];
       const warnings: string[] = [];
       const recommendedActions: string[] = [];
-      let trustMultiplier = 1.0; // RESTORED: Fixed at baseline
-      let streakAction: 'none' | 'recovered' | 'lost' | 'maintained' = 'maintained';
+      let streakAction: StreakAction = 'maintained';
       
       // 0. DAILY RESET CHECK
       let shouldResetDaily = false;
@@ -171,14 +179,15 @@ const dailyTaskFlow = ai.defineFlow(
         recoveryCost: streakAction === 'lost' ? recoveryCost : undefined
       };
     } catch (e: any) {
+      const errorMessage = e.message || "Failed to process rewards.";
       return { 
         reward: 0, 
         tasksCompleted: [], 
         streakBonus: 0, 
         qualityBonus: 0,
         trustMultiplier: 1.0,
-        error: e.message || "Failed to process rewards.",
-        streakAction: 'none'
+        error: errorMessage,
+        streakAction: 'none' as StreakAction
       };
     }
   }

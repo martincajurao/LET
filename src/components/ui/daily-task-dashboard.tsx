@@ -36,6 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getDailyTaskUrl } from '@/lib/config';
 
 interface Task {
   id: string;
@@ -51,7 +52,7 @@ interface Task {
 }
 
 export function DailyTaskDashboard() {
-  const { user } = useUser();
+  const { user, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   
@@ -88,92 +89,46 @@ export function DailyTaskDashboard() {
   const handleClaimReward = async (isRecovery = false) => {
     if (!user || !firestore || (claiming && !isRecovery)) return;
     if (isRecovery) setRecovering(true); else setClaiming(true);
-    setServerWarning(null);
-    
+
     try {
-      const functionsUrl = process.env.NODE_ENV === 'development' 
-        ? process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_DEV_URL || 'http://localhost:5001/your-project-id/us-central1'
-        : process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL || 'https://us-central1-your-project-id.cloudfunctions.net';
-      
-      const response = await fetch(`${functionsUrl}/dailyTask`, { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ 
-          userId: user.uid, 
-          dailyQuestionsAnswered: user.dailyQuestionsAnswered || 0, 
-          dailyTestsFinished: user.dailyTestsFinished || 0, 
-          mistakesReviewed: user.mistakesReviewed || 0, 
-          streakCount: user.streakCount || 0, 
-          dailyCreditEarned: user.dailyCreditEarned || 0, 
-          taskLoginClaimed: !!user.taskLoginClaimed, 
-          taskQuestionsClaimed: !!user.taskQuestionsClaimed, 
-          taskMockClaimed: !!user.taskMockClaimed, 
-          taskMistakesClaimed: !!user.taskMistakesClaimed, 
-          lastActiveDate: user.lastActiveDate, 
-          lastTaskReset: user.lastTaskReset,
-          totalSessionTime: (Date.now() - sessionStartTime) / 1000, 
-          isPro: !!user.isPro, 
-          userTier: user.userTier || 'Bronze', 
-          deviceFingerprint, 
-          isStreakRecoveryRequested: isRecovery 
-        }) 
-      }).catch(err => {
-        console.error('Failed to fetch daily task:', err);
-        throw err;
-      });
-      const result = await response.json();
-      
-      const userRef = doc(firestore, 'users', user.uid);
+      const readyTasks = tasks.filter(t => t.current >= t.goal && !t.isClaimed);
+      const reward = readyTasks.reduce((acc, task) => acc + task.reward, 0);
 
-      if (result.shouldResetDaily) {
-        await updateDoc(userRef, {
-          dailyQuestionsAnswered: 0,
-          dailyTestsFinished: 0,
-          dailyAiUsage: 0,
-          dailyCreditEarned: 0,
-          dailyAdCount: 0,
-          taskLoginClaimed: false,
-          taskQuestionsClaimed: false,
-          taskMockClaimed: false,
-          taskMistakesClaimed: false,
-          lastTaskReset: serverTimestamp()
-        });
-        toast({ title: "New Academic Day!", description: "Daily tasks have been reset." });
-        return;
-      }
-
-      if (result.reward > 0 || result.streakAction === 'recovered') {
-        const updateData: any = { 
-          credits: increment(result.reward - (isRecovery ? 50 : 0)), 
-          dailyCreditEarned: increment(result.reward), 
-          taskLoginClaimed: result.tasksCompleted.includes('login') || !!user.taskLoginClaimed, 
-          taskQuestionsClaimed: result.tasksCompleted.includes('questions') || !!user.taskQuestionsClaimed, 
-          taskMockClaimed: result.tasksCompleted.includes('mock') || !!user.taskMockClaimed, 
-          taskMistakesClaimed: result.tasksCompleted.includes('mistakes') || !!user.taskMistakesClaimed, 
-          lastActiveDate: serverTimestamp() 
+      if (reward > 0 || isRecovery) {
+        const userRef = doc(firestore, 'users', user.uid);
+        const updateData: any = {
+          credits: increment(reward - (isRecovery ? 50 : 0)),
+          dailyCreditEarned: increment(reward),
+          taskLoginClaimed: readyTasks.some(t => t.id === 'login') || !!user.taskLoginClaimed,
+          taskQuestionsClaimed: readyTasks.some(t => t.id === 'questions') || !!user.taskQuestionsClaimed,
+          taskMockClaimed: readyTasks.some(t => t.id === 'mock') || !!user.taskMockClaimed,
+          taskMistakesClaimed: readyTasks.some(t => t.id === 'mistakes') || !!user.taskMistakesClaimed,
+          lastActiveDate: serverTimestamp(),
+          lastClaimTime: serverTimestamp()
         };
-        if (result.streakAction === 'recovered') updateData.streakCount = (user.streakCount || 0) + 1;
+        if (isRecovery) updateData.streakCount = (user.streakCount || 0) + 1;
         await updateDoc(userRef, updateData);
-        
-        if (result.reward > 0) {
-          setLastClaimedReward(result.reward);
-          if (result.warning) setServerWarning(result.warning);
+
+        if (reward > 0) {
+          setLastClaimedReward(reward - (isRecovery ? 50 : 0));
           setShowSuccess(true);
         } else {
-          toast({ 
+          toast({
             variant: "reward",
-            title: isRecovery ? "Streak Recovered!" : "Mission Refilled!", 
-            description: isRecovery ? "Your progress has been preserved." : "Keep up the analytical pace."
+            title: "Streak Recovered!",
+            description: "Your progress has been preserved."
           });
         }
-      } else if (result.error) {
-        toast({ variant: "destructive", title: "Sync Failed", description: result.error });
+      } else {
+        toast({ variant: "default", title: "No Rewards Available", description: "Complete more tasks to earn credits." });
       }
-    } catch (e: any) { 
-      toast({ variant: "destructive", title: "Error", description: "Cloud sync failed." }); 
-    } finally { 
-      setClaiming(false); 
-      setRecovering(false); 
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to claim rewards." });
+    } finally {
+      setClaiming(false);
+      setRecovering(false);
+      // Refresh user data to update UI in Android WebView
+      refreshUser();
     }
   };
 
@@ -242,7 +197,7 @@ export function DailyTaskDashboard() {
               {claiming ? <Loader2 className="w-5 h-5 animate-spin" /> : canClaimAny ? <Gift className="w-5 h-5" /> : <Star className="w-5 h-5" />}
               {claiming ? 'Syncing...' : canClaimAny ? `Claim ${estimatedReward} Credits` : 'Build Readiness'}
             </Button>
-            <Button variant="outline" onClick={() => handleClaimReward(true)} disabled={recovering || (typeof user?.credits === 'number' ? user.credits : 0) < 50 || !!user?.taskLoginClaimed} className="h-14 rounded-2xl font-bold text-sm gap-2 border-2 border-orange-500/20 text-orange-600 hover:bg-orange-50">
+            <Button variant="outline" onClick={() => handleClaimReward(true)} disabled={recovering || (typeof user?.credits === 'number' ? user.credits : 0) < 50} className="h-14 rounded-2xl font-bold text-sm gap-2 border-2 border-orange-500/20 text-orange-600 hover:bg-orange-50">
               {recovering ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />} Streak Saver (50c)
             </Button>
           </div>

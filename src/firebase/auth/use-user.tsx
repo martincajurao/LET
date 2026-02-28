@@ -4,6 +4,8 @@ import { useState, useEffect, createContext, useContext, ReactNode, useRef } fro
 import {
   onAuthStateChanged,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   FacebookAuthProvider,
   signOut,
@@ -13,6 +15,8 @@ import { doc, onSnapshot, setDoc, getDoc, serverTimestamp, updateDoc, increment 
 import { auth, firestore } from '../index';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { nativeAuth, NativeUser } from '@/lib/native-auth';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
 export interface UserProfile {
   uid: string;
@@ -68,6 +72,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   addXp: (amount: number) => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -80,6 +85,7 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
   updateProfile: async () => {},
   addXp: async () => {},
+  refreshUser: async () => {},
 });
 
 /**
@@ -156,7 +162,7 @@ function cleanFirestoreData(data: any): any {
   
   // IMPORTANT: If this is a sentinel, return it AS IS.
   // Do NOT recurse or try to turn it into a plain object.
-  if (isFirestoreSentinel(data)) {
+  if (isFirestoreData(data)) {
     return data;
   }
 
@@ -173,6 +179,14 @@ function cleanFirestoreData(data: any): any {
   return cleaned;
 }
 
+function isFirestoreData(val: any): boolean {
+  return val && typeof val === 'object' && (
+    val.constructor?.name === 'FieldValue' ||
+    typeof val._methodName === 'string' ||
+    (val.type && typeof val.type === 'string')
+  );
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -185,6 +199,107 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     userRef.current = user;
   }, [user]);
+
+  // Handle redirect result on page load (for mobile/Capacitor)
+  useEffect(() => {
+    if (!auth) return;
+    
+    const checkRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          console.log("Redirect sign-in successful:", result.user);
+        }
+      } catch (error: any) {
+        console.error("Redirect result error:", error);
+      }
+    };
+    
+    checkRedirectResult();
+  }, [auth]);
+
+  // Listen for native Firebase Auth state changes (important for session persistence)
+  useEffect(() => {
+    if (!auth) return;
+
+    let unsubscribe: (() => void) | null = null;
+
+    const setupAuthListener = async () => {
+      try {
+        // Add listener for native auth state changes
+        const handler = await FirebaseAuthentication.addListener('authStateChange', async (event) => {
+          console.log('[Auth] Native auth state changed:', event);
+          
+          if (event.user) {
+            // User is signed in via native auth
+            console.log('[Auth] Native user signed in:', event.user.uid);
+            
+            // Fetch user profile from Firestore
+            const userProfile = await fetchUserProfileFromFirestore(event.user.uid);
+            if (userProfile) {
+              setUser(userProfile);
+            } else {
+              // Create new profile if doesn't exist
+              const newProfile = await createUserProfileInFirestore({
+                uid: event.user.uid,
+                displayName: event.user.displayName,
+                email: event.user.email,
+                photoURL: event.user.photoUrl
+              });
+              setUser(newProfile);
+            }
+          } else {
+            // User signed out from native auth
+            console.log('[Auth] Native user signed out');
+          }
+        });
+        
+        unsubscribe = () => {
+          handler.remove();
+        };
+      } catch (error) {
+        console.error('[Auth] Failed to setup native auth listener:', error);
+      }
+    };
+
+    setupAuthListener();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [auth, firestore]);
+
+  // Check for existing native user on mount (for session persistence)
+  useEffect(() => {
+    const checkExistingNativeUser = async () => {
+      if (!auth || !firestore) return;
+      
+      try {
+        const nativeUser = await nativeAuth.getCurrentUser();
+        if (nativeUser.user) {
+          console.log('[Auth] Found existing native user on mount:', nativeUser.user.uid);
+          const userProfile = await fetchUserProfileFromFirestore(nativeUser.user.uid);
+          if (userProfile) {
+            setUser(userProfile);
+          } else {
+            const newProfile = await createUserProfileInFirestore({
+              uid: nativeUser.user.uid,
+              displayName: nativeUser.user.displayName,
+              email: nativeUser.user.email,
+              photoURL: nativeUser.user.photoURL
+            });
+            setUser(newProfile);
+          }
+        }
+      } catch (error) {
+        console.error('[Auth] Error checking existing native user:', error);
+      }
+    };
+
+    checkExistingNativeUser();
+  }, [auth, firestore]);
 
   useEffect(() => {
     if (!auth || !firestore) {
@@ -316,19 +431,185 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const loginWithGoogle = async () => {
-    if (!auth) return;
-    setLoading(true);
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
+  // Helper to check if we're on native mobile (Capacitor - Android/iOS)
+  // This is used when the bottom navbar is visible (mobile view)
+  const isNativeMobile = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    
+    // Check for Capacitor first (more reliable)
+    // @ts-ignore
+    const capacitor = window.Capacitor;
+    if (capacitor) {
+      // @ts-ignore
+      const platform = capacitor.platform;
+      if (platform === 'android' || platform === 'ios') {
+        return true;
+      }
+      // Check isNativePlatform method
+      // @ts-ignore
+      const isNative = capacitor.isNativePlatform?.();
+      if (isNative === true) {
+        return true;
+      }
+    }
+    
+    // Fallback to window.android or webkit (older detection)
+    // @ts-ignore
+    const hasAndroid = window.android !== undefined;
+    // @ts-ignore
+    const hasWebkit = window.webkit !== undefined;
+    
+    if (hasAndroid || hasWebkit) {
+      return true;
+    }
+    
+    return false;
+  };
+
+  // Function to fetch user profile from Firestore directly
+  const fetchUserProfileFromFirestore = async (uid: string): Promise<UserProfile | null> => {
+    if (!firestore) return null;
     try {
-      await signInWithPopup(auth, provider);
-    } catch (error: any) {
-      if (error.code !== 'auth/popup-closed-by-user') {
+      const userDocRef = doc(firestore, 'users', uid);
+      const snap = await getDoc(userDocRef);
+      if (snap.exists()) {
+        return snap.data() as UserProfile;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      return null;
+    }
+  };
+
+  // Function to create a new user profile in Firestore
+  const createUserProfileInFirestore = async (firebaseUser: any): Promise<UserProfile> => {
+    if (!firestore) throw new Error("Firestore not initialized");
+    
+    const newUserProfile: UserProfile = {
+      uid: firebaseUser.uid,
+      displayName: firebaseUser.displayName || 'Educator',
+      email: firebaseUser.email,
+      photoURL: firebaseUser.photoURL,
+      onboardingComplete: false,
+      credits: 20, 
+      xp: 0,
+      lastRewardedRank: 1,
+      isPro: false,
+      dailyAdCount: 0,
+      dailyAiUsage: 0,
+      dailyQuestionsAnswered: 0,
+      dailyTestsFinished: 0,
+      dailyCreditEarned: 0,
+      streakCount: 0,
+      lastActiveDate: Date.now(),
+      lastTaskReset: Date.now(),
+      referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+      taskLoginClaimed: false,
+      taskQuestionsClaimed: false,
+      taskMockClaimed: false,
+      taskMistakesClaimed: false,
+      mistakesReviewed: 0,
+      referralCount: 0,
+      referralCreditsEarned: 0,
+      referralTier: 'Bronze',
+      dailyEventEntries: 1,
+      unlockedTracks: []
+    };
+    
+    const userDocRef = doc(firestore, 'users', firebaseUser.uid);
+    await setDoc(userDocRef, newUserProfile);
+    return newUserProfile;
+  };
+
+  const loginWithGoogle = async () => {
+    setLoading(true);
+    
+    try {
+      // Check if we're on native mobile (Capacitor) - use native Firebase Auth
+      // This applies when the bottom navbar is visible (mobile view)
+      if (isNativeMobile()) {
+        try {
+          // Use native Firebase Auth on Android
+          const result = await nativeAuth.signInWithGoogle();
+          
+          if (result.error) {
+            console.error('Native auth error:', result.error);
+            toast({ 
+              variant: "destructive", 
+              title: "Native Sign-In Failed", 
+              description: result.error.message || "Could not complete native sign-in. Please try again." 
+            });
+            setLoading(false);
+            return;
+          }
+          
+          if (result.user) {
+            // Fetch user profile directly from Firestore using native user's UID
+            let userProfile = await fetchUserProfileFromFirestore(result.user.uid);
+            
+            if (!userProfile) {
+              // Create new user profile
+              userProfile = await createUserProfileInFirestore({
+                uid: result.user.uid,
+                displayName: result.user.displayName,
+                email: result.user.email,
+                photoURL: result.user.photoURL
+              });
+            }
+            
+            // Set user directly in state (bypass Firebase Web Auth)
+            setUser(userProfile);
+            setLoading(false);
+            return;
+          }
+        } catch (nativeError: any) {
+          console.error('Native auth failed:', nativeError);
+          // Show error message instead of falling through to web auth
+          toast({ 
+            variant: "destructive", 
+            title: "Native Sign-In Failed", 
+            description: nativeError.message || "Could not complete native sign-in. Please try again." 
+          });
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // Fallback to Firebase Auth (web popup or redirect)
+      if (!auth) {
         toast({ 
           variant: "destructive", 
           title: "Sign In Failed", 
-          description: error.message || "Could not complete popup sign-in." 
+          description: "Authentication not initialized" 
+        });
+        return;
+      }
+      
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      
+      // Check if we're in a Capacitor environment (mobile)
+      const isCapacitor = typeof window !== 'undefined' && (
+        // @ts-ignore
+        window.Capacitor?.isNativePlatform?.() || 
+        // @ts-ignore  
+        window.webkit !== undefined
+      );
+      
+      if (isCapacitor) {
+        // Use redirect for mobile/Capacitor - more reliable
+        await signInWithRedirect(auth, provider);
+      } else {
+        // Use popup for web
+        await signInWithPopup(auth, provider);
+      }
+    } catch (error: any) {
+      if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/redirect-cancelled-by-user') {
+        toast({ 
+          variant: "destructive", 
+          title: "Sign In Failed", 
+          description: error.message || "Could not complete sign-in." 
         });
       }
     } finally {
@@ -341,9 +622,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     const provider = new FacebookAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      // Check if we're in a Capacitor environment (mobile)
+      const isCapacitor = typeof window !== 'undefined' && (
+        // @ts-ignore
+        window.Capacitor?.isNativePlatform?.() || 
+        // @ts-ignore  
+        window.android !== undefined ||
+        // @ts-ignore
+        window.webkit !== undefined
+      );
+      
+      if (isCapacitor) {
+        // Use redirect for mobile/Capacitor
+        await signInWithRedirect(auth, provider);
+      } else {
+        // Use popup for web
+        await signInWithPopup(auth, provider);
+      }
     } catch (error: any) {
-      if (error.code !== 'auth/popup-closed-by-user') {
+      if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/redirect-cancelled-by-user') {
         toast({ 
           variant: "destructive", 
           title: "Sign In Failed", 
@@ -393,8 +690,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    if (!auth) return;
-    await signOut(auth);
+    // Check if we're on native mobile
+    if (isNativeMobile()) {
+      try {
+        await nativeAuth.signOut();
+      } catch (error) {
+        console.error('Native logout error:', error);
+      }
+    }
+    
+    if (auth) {
+      await signOut(auth);
+    }
     setUser(null);
     router.push('/');
   };
@@ -413,6 +720,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Manual refresh function to force re-fetch user data from Firestore
+  // This is needed for Android WebView where onSnapshot may not work reliably
+  const refreshUser = async () => {
+    if (!firestore || !user?.uid) return;
+    
+    try {
+      console.log('[Auth] Refreshing user data manually...');
+      const userDocRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(userDocRef);
+      
+      if (snap.exists()) {
+        const data = snap.data();
+        const scrubbed = scrubUserData(data, user);
+        setUser({
+          ...scrubbed,
+          uid: user.uid,
+        });
+        console.log('[Auth] User data refreshed successfully');
+      }
+    } catch (error) {
+      console.error('[Auth] Error refreshing user data:', error);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -423,7 +754,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       bypassLogin, 
       logout, 
       updateProfile,
-      addXp
+      addXp,
+      refreshUser
     }}>
       {children}
     </AuthContext.Provider>

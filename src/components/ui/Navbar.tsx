@@ -28,7 +28,8 @@ import {
   Crown,
   Shield,
   Star,
-  ShieldAlert
+  ShieldAlert,
+  Smartphone
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -52,9 +53,12 @@ import { Progress } from "@/components/ui/progress";
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/hooks/use-theme';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { nativeAuth } from '@/lib/native-auth';
 import { cn } from '@/lib/utils';
 import { getRankData, XP_REWARDS, COOLDOWNS, DAILY_AD_LIMIT } from '@/lib/xp-system';
 import { NotificationsModal } from './notifications-modal';
+import { SelfUpdate } from '@/components/self-update';
 import { useRouter } from 'next/navigation';
 
 const GoogleIcon = () => (
@@ -67,14 +71,16 @@ const GoogleIcon = () => (
 );
 
 export function Navbar() {
-  const { user, loading, logout, loginWithGoogle, loginWithFacebook } = useUser();
+  const { user, loading, logout, loginWithGoogle, loginWithFacebook, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
   const { isDark, toggleDarkMode } = useTheme();
+  const isMobile = useIsMobile();
   const [showAdModal, setShowAdModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAlertsModal, setShowAlertsModal] = useState(false);
+  const [showRewardModal, setShowRewardModal] = useState(false);
   const [watchingAd, setWatchingAd] = useState(false);
   const [verifyingAd, setVerifyingAd] = useState(false);
   const [availableTasksCount, setAvailableTasksCount] = useState(0);
@@ -135,6 +141,8 @@ export function Navbar() {
             lastAdXpTimestamp: Date.now(),
             dailyAdCount: increment(1)
           });
+          // Refresh user data to ensure UI updates properly
+          await refreshUser();
           toast({ 
             variant: "reward",
             title: "Growth Boost Received!", 
@@ -329,6 +337,11 @@ export function Navbar() {
                         <History className="w-4 h-4 text-emerald-500" /> Analysis Vault
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile?tab=settings" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
+                        <Settings className="w-4 h-4 text-blue-500" /> App Settings
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator className="my-2 bg-border/50" />
                     <DropdownMenuItem onClick={logout} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl text-destructive hover:bg-destructive/10 transition-colors">
                       <LogOut className="w-4 h-4" /> Sign Out
@@ -364,6 +377,15 @@ export function Navbar() {
                 <GoogleIcon />
                 <span>Continue with Google</span>
               </Button>
+              {isMobile && (
+                <Button 
+                  onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} 
+                  className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-[#3DDC84] text-black border border-border hover:bg-[#3DDC84]/90 transition-all active:scale-95"
+                >
+                  <Smartphone className="w-5 h-5" />
+                  <span>Android sign in</span>
+                </Button>
+              )}
               <Button 
                 onClick={async () => { await loginWithFacebook(); setShowAuthModal(false); }} 
                 className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none transition-all active:scale-95"

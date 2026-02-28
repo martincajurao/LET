@@ -66,6 +66,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, getCareerRankTitle } from '@/lib/xp-system';
+import { getApkInfoUrl, getDownloadUrl } from '@/lib/config';
 
 type AppState = 'dashboard' | 'exam' | 'results' | 'onboarding' | 'quickfire' | 'quickfire_results';
 
@@ -161,7 +162,7 @@ const EducationalLoader = ({ message }: { message?: string }) => (
 );
 
 function LetsPrepContent() {
-  const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook, bypassLogin } = useUser();
+  const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook, bypassLogin, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const { isDark, toggleDarkMode } = useTheme();
@@ -190,9 +191,64 @@ function LetsPrepContent() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [isQrLoading, setIsQrLoading] = useState(true);
   
+  // Pull to refresh state
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isPulling, setIsPulling] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const pullStartY = React.useRef<number | null>(null);
+  
   // Result unlock dialog state
   const [showResultUnlock, setShowResultUnlock] = useState(false);
   const [resultsUnlocked, setResultsUnlocked] = useState(false);
+
+  // Pull to refresh handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (window.scrollY === 0) {
+      pullStartY.current = e.touches[0].clientY;
+      setIsPulling(true);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isPulling || pullStartY.current === null) return;
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - pullStartY.current;
+    if (diff > 0) {
+      setPullDistance(Math.min(diff * 0.5, 100));
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (pullDistance > 60) {
+      setIsRefreshing(true);
+      setPullDistance(0);
+      // Trigger refresh - refetch user data and APK info
+      try {
+        // Refresh user data from Firestore
+        await refreshUser();
+        
+        // Also refresh APK info
+        const functionsUrl = getApkInfoUrl();
+        const res = await fetch(functionsUrl).catch(err => { throw err; });
+        const data = await res.json();
+        setApkInfo(data);
+        const downloadUrl = getDownloadUrl();
+        const qrDataUrl = await QRCode.toDataURL(downloadUrl, {
+          width: 256, margin: 2,
+          color: { dark: '#10b981', light: '#ffffff' }
+        });
+        setQrCodeUrl(qrDataUrl);
+        toast({ title: "Refreshed", description: "Latest data loaded." });
+      } catch (e) {
+        toast({ variant: "destructive", title: "Refresh Failed", description: "Could not fetch latest data." });
+      } finally {
+        setIsRefreshing(false);
+      }
+    }
+    setPullDistance(0);
+    setIsPulling(false);
+    pullStartY.current = null;
+  };
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
@@ -200,24 +256,17 @@ function LetsPrepContent() {
     const fetchApkAndGenerateQR = async () => {
       try {
         setIsQrLoading(true);
-        // Use Firebase Functions URL with fallback
-        const getFunctionsUrl = () => {
-          if (process.env.NODE_ENV === 'development') {
-            return process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_DEV_URL || 'http://localhost:5001/your-project-id/us-central1';
-          }
-          return process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL || 'https://us-central1-your-project-id.cloudfunctions.net';
-        };
+        // Use centralized config for Firebase Functions URL
+        const functionsUrl = getApkInfoUrl();
         
-        const functionsUrl = getFunctionsUrl();
-        
-        const res = await fetch(`${functionsUrl}/apk`).catch(err => {
+        const res = await fetch(functionsUrl).catch(err => {
           console.error('Failed to fetch APK info:', err);
           throw err;
         });
         const data = await res.json();
         setApkInfo(data);
 
-        const downloadUrl = `${functionsUrl}/download`;
+        const downloadUrl = getDownloadUrl();
         
         const qrDataUrl = await QRCode.toDataURL(downloadUrl, {
           width: 256,
@@ -376,10 +425,7 @@ function LetsPrepContent() {
   };
 
   const handleDownloadApk = () => {
-    const functionsUrl = process.env.NODE_ENV === 'development' 
-      ? 'http://localhost:5001/your-project-id/us-central1'
-      : 'https://us-central1-your-project-id.cloudfunctions.net';
-    const downloadUrl = `${functionsUrl}/download`;
+    const downloadUrl = getDownloadUrl();
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = 'letpractice-app.apk';
@@ -451,7 +497,20 @@ function LetsPrepContent() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8, delay: 0.2 }}
       className="min-h-screen bg-background text-foreground font-body transition-all duration-300"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{ transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined }}
     >
+      {/* Pull to refresh indicator */}
+      {isPulling && (
+        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center py-2 bg-primary/10 backdrop-blur-sm">
+          <Loader2 className={cn("w-5 h-5 text-primary animate-spin", isRefreshing ? "block" : "block")} />
+          <span className="ml-2 text-xs font-bold text-primary">
+            {isRefreshing ? "Refreshing..." : pullDistance > 60 ? "Release to refresh" : "Pull down to refresh"}
+          </span>
+        </div>
+      )}
       <Toaster />
       
       <RankUpDialog 
@@ -625,7 +684,7 @@ function LetsPrepContent() {
                   <div className="relative z-10 space-y-6">
                     <Badge variant="secondary" className="font-bold text-[10px] uppercase px-4 py-1 bg-primary/20 text-primary border-none">Free Forever Practice</Badge>
                     <div className="space-y-4">
-                      <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-foreground">Prepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
+                      <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-foreground">xPrepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
                       <p className="text-muted-foreground font-medium md:text-xl max-w-lg">High-fidelity simulations with AI pedagogical analysis tailored for Filipino educators.</p>
                     </div>
                     <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all group"><Zap className="w-6 h-6 fill-current" /> <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" /></Button>
