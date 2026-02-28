@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Flame, Zap, Clock, Users, Loader2, Crown, Star, Lock, Play, ExternalLink, Coins } from "lucide-react";
+import { Trophy, Flame, Zap, Clock, Users, Loader2, Crown, Star, Lock, Play, ExternalLink, Sparkles } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore } from '@/firebase';
@@ -81,7 +80,7 @@ export function EventCompetition({ onJoinEvent }: EventCompetitionProps) {
       toast({
         variant: "destructive",
         title: "Insufficient Credits",
-        description: `Arena entry requires ${ARENA_ENTRY_FEE} credits. Watch an ad to refill!`,
+        description: `Arena entry requires ${ARENA_ENTRY_FEE} AI Credits. Watch an ad to refill!`,
       });
       return;
     }
@@ -107,7 +106,7 @@ export function EventCompetition({ onJoinEvent }: EventCompetitionProps) {
           });
           toast({
             title: "Credits Deducted",
-            description: `Spent ${ARENA_ENTRY_FEE} credits for Arena entry.`,
+            description: `Spent ${ARENA_ENTRY_FEE} AI Credits for Arena entry.`,
           });
         } else {
           toast({
@@ -203,8 +202,8 @@ export function EventCompetition({ onJoinEvent }: EventCompetitionProps) {
             </div>
           </div>
           <div className="flex items-center gap-2 bg-yellow-500/5 px-3 py-1.5 rounded-xl border border-yellow-500/10 w-fit">
-             <Coins className="w-3.5 h-3.5 text-yellow-600 fill-current" />
-             <span className="text-xs font-black text-yellow-700">{user?.credits || 0} Credits</span>
+             <Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current" />
+             <span className="text-xs font-black text-yellow-700">{user?.credits || 0} AI Credits</span>
           </div>
         </div>
       </CardHeader>
@@ -263,7 +262,7 @@ export function EventCompetition({ onJoinEvent }: EventCompetitionProps) {
                     </>
                   ) : (
                     <>
-                      <Coins className="w-3.5 h-3.5 text-yellow-600" />
+                      <Sparkles className="w-3.5 h-3.5 text-yellow-600" />
                       Enter (20c)
                     </>
                   )}

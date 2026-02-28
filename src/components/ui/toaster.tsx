@@ -9,7 +9,7 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast"
-import { Copy, Check, Star, Zap, Coins } from "lucide-react"
+import { Copy, Check, Star, Zap, Sparkles } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 
@@ -30,7 +30,7 @@ export function Toaster() {
               {isReward && (
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0 shadow-inner">
                   {isXp ? <Zap className="w-5 h-5 fill-current" /> : 
-                   isCredit ? <Coins className="w-5 h-5 fill-current text-yellow-300" /> : 
+                   isCredit ? <Sparkles className="w-5 h-5 fill-current text-yellow-300" /> : 
                    <Star className="w-5 h-5 fill-current" />}
                 </div>
               )}

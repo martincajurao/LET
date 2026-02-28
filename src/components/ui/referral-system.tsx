@@ -5,7 +5,7 @@ import { useUser } from '@/firebase/auth/use-user';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Share2, Users, Coins, Copy, CheckCircle2, Gift, Star, Loader2, Sparkles } from "lucide-react";
+import { Share2, Users, Copy, CheckCircle2, Gift, Star, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 
@@ -36,9 +36,9 @@ export function ReferralSystem() {
   };
 
   const milestones = [
-    { count: 5, reward: '+20 Credits', icon: <Gift className="w-4 h-4" /> },
+    { count: 5, reward: '+20 AI Credits', icon: <Gift className="w-4 h-4" /> },
     { count: 10, reward: '3-Day Pro', icon: <Star className="w-4 h-4" /> },
-    { count: 25, reward: '+100 Credits', icon: <Coins className="w-4 h-4" /> }
+    { count: 25, reward: '+100 AI Credits', icon: <Sparkles className="w-4 h-4" /> }
   ];
 
   if (!user) return null;
@@ -70,7 +70,7 @@ export function ReferralSystem() {
             </div>
             <div className="p-3 bg-yellow-500/5 rounded-xl border border-yellow-500/10 flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5 text-yellow-600" />
-              <p className="text-[9px] font-black uppercase text-yellow-700 tracking-wider">Referrer gets +15 Credits • New User gets +5 Credits</p>
+              <p className="text-[9px] font-black uppercase text-yellow-700 tracking-wider">Referrer gets +15 AI Credits • New User gets +5 AI Credits</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">

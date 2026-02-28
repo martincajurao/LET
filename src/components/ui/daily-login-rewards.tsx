@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { 
   Gift, 
-  Coins, 
   Star, 
   Lock,
   CheckCircle2,
@@ -15,7 +14,8 @@ import {
   Trophy,
   Gem,
   Crown,
-  ChevronRight
+  ChevronRight,
+  Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -135,8 +135,8 @@ export function DailyLoginRewards({
             <div className={cn("p-4 rounded-xl border", getRewardTypeColor(DAILY_REWARDS[currentDay - 1]?.type || 'normal'), getRewardBgColor(DAILY_REWARDS[currentDay - 1]?.type || 'normal'))}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Coins className="w-6 h-6 text-emerald-500" />
-                  <div><p className="font-bold">Today's Reward</p><p className="text-xs text-muted-foreground">{DAILY_REWARDS[currentDay - 1]?.xp} XP + {DAILY_REWARDS[currentDay - 1]?.credits} Credits</p></div>
+                  <Sparkles className="w-6 h-6 text-emerald-500" />
+                  <div><p className="font-bold">Today's Reward</p><p className="text-xs text-muted-foreground">{DAILY_REWARDS[currentDay - 1]?.xp} XP + {DAILY_REWARDS[currentDay - 1]?.credits} AI Credits</p></div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </div>
@@ -155,7 +155,7 @@ export function DailyLoginRewards({
                 <div><h3 className="text-2xl font-black">Reward Claimed!</h3><p className="text-muted-foreground">Day {currentDay} Complete</p></div>
                 <div className="flex items-center justify-center gap-4">
                   <div className="px-4 py-2 rounded-xl bg-primary/10"><p className="text-2xl font-black text-primary">+{selectedReward.xp}</p><p className="text-xs text-muted-foreground font-bold">XP</p></div>
-                  <div className="px-4 py-2 rounded-xl bg-yellow-500/10"><p className="text-2xl font-black text-yellow-500">+{selectedReward.credits}</p><p className="text-xs text-muted-foreground font-bold">Credits</p></div>
+                  <div className="px-4 py-2 rounded-xl bg-yellow-500/10"><p className="text-2xl font-black text-yellow-500">+{selectedReward.credits}</p><p className="text-xs text-muted-foreground font-bold">AI Credits</p></div>
                 </div>
                 <Button onClick={() => setShowReward(false)} className="w-full h-12 rounded-xl font-black">Awesome!</Button>
               </div>

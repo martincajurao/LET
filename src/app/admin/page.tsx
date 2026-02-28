@@ -16,7 +16,7 @@ import {
   Brain,
   Users,
   RotateCcw,
-  Coins,
+  Sparkles,
   ShieldCheck,
   Minus,
   ChevronRight,
@@ -383,7 +383,7 @@ export default function AdminDashboard() {
                       <TableHead className="font-bold uppercase text-[10px]">Educator</TableHead>
                       <TableHead className="font-bold uppercase text-[10px]">Track</TableHead>
                       <TableHead className="font-bold uppercase text-[10px] text-center">Progression</TableHead>
-                      <TableHead className="font-bold uppercase text-[10px] text-center">Credits</TableHead>
+                      <TableHead className="font-bold uppercase text-[10px] text-center">AI Credits</TableHead>
                       <TableHead className="font-bold uppercase text-[10px] text-right">Last Seen</TableHead>
                       <TableHead className="text-right font-bold uppercase text-[10px] w-12"></TableHead>
                     </TableRow>
@@ -421,7 +421,7 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell className="text-center">
                             <Badge variant="secondary" className="font-black gap-1 h-6 bg-yellow-500/10 text-yellow-700 border-none">
-                              <Coins className="w-3 h-3" /> {Number(user.credits) || 0}
+                              <Sparkles className="w-3 h-3" /> {Number(user.credits) || 0}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
@@ -676,7 +676,7 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2 p-4 bg-muted/20 rounded-2xl border border-border/50">
                 <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-2">
-                  <Coins className="w-3 h-3 text-yellow-600" /> Current Credits
+                  <Sparkles className="w-3.5 h-3.5 text-yellow-600" /> Current Credits
                 </label>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl border-2 shrink-0" onClick={() => setEditUserForm({...editUserForm, credits: Math.max(0, editUserForm.credits - 10)})}><Minus className="w-3.5 h-3.5" /></Button>

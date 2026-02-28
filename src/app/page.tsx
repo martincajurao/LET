@@ -49,7 +49,6 @@ import {
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
-import { QuickFireResults } from "@/components/exam/QuickFireResults";
 import { Question, MAJORSHIPS, INITIAL_QUESTIONS } from "@/app/lib/mock-data";
 import { useUser, useFirestore } from "@/firebase";
 import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp, query, where, getCountFromServer } from "firebase/firestore";
@@ -393,7 +392,7 @@ function LetsPrepContent() {
   );
 
   const displayStats = user ? [
-    { icon: <Zap className="w-4 h-4 text-yellow-500 fill-current" />, label: 'Credits', value: typeof user.credits === 'number' ? user.credits : 0, color: 'text-yellow-500 bg-yellow-500/10' },
+    { icon: <Sparkles className="w-4 h-4 text-yellow-500 fill-current" />, label: 'Credits', value: typeof user.credits === 'number' ? user.credits : 0, color: 'text-yellow-500 bg-yellow-500/10' },
     { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Arena', value: userRank, color: 'text-primary bg-primary/10' },
     { icon: user?.isPro ? <Crown className="w-4 h-4 text-yellow-600 fill-current" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user?.isPro ? 'Platinum' : 'FREE', color: user?.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
     { icon: <Flame className="w-4 h-4 text-orange-500 fill-current" />, label: 'Streak', value: typeof user.streakCount === 'number' ? user.streakCount : 0, color: 'text-orange-500 bg-orange-500/10' }

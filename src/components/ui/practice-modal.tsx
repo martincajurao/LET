@@ -14,7 +14,6 @@ import {
   Clock,
   Lock,
   Unlock,
-  Coins,
   Loader2,
   CheckCircle2,
   AlertCircle,
@@ -146,7 +145,7 @@ export function PracticeModal({
       toast({ 
         variant: "destructive", 
         title: "Insufficient Credits", 
-        description: `You need ${cost} Credits to unlock this early.` 
+        description: `You need ${cost} AI Credits to unlock this early.` 
       });
       return;
     }
@@ -182,7 +181,7 @@ export function PracticeModal({
                   <p className="text-sm text-muted-foreground font-medium">Select your professional track</p>
                   <div className="w-1 h-1 bg-muted-foreground/30 rounded-full" />
                   <div className="flex items-center gap-1 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">
-                    <Coins className="w-3.5 h-3.5 text-yellow-600 fill-current" />
+                    <Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current" />
                     <span className="text-[10px] font-black text-yellow-700">{user?.credits || 0}</span>
                   </div>
                 </div>
@@ -273,8 +272,8 @@ export function PracticeModal({
                                 </div>
                                 <div className="animate-breathing-primary px-3 py-1.5 rounded-xl border-2 border-primary/20 flex items-center gap-2">
                                   <span className="font-black text-sm text-primary">{mode.unlockCost}</span>
-                                  <Coins className="w-4 h-4 text-primary fill-current" />
-                                  <span className="text-[8px] font-black text-primary opacity-80">CREDIT</span>
+                                  <Sparkles className="w-4 h-4 text-primary fill-current" />
+                                  <span className="text-[8px] font-black text-primary opacity-80">AI CREDIT</span>
                                 </div>
                               </>
                             )}

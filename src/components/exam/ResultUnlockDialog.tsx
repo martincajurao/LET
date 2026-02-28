@@ -12,7 +12,6 @@ import {
 import { 
   Lock, 
   Play, 
-  Coins, 
   Crown, 
   Sparkles, 
   ShieldCheck, 
@@ -117,7 +116,7 @@ export function ResultUnlockDialog({
       toast({ 
         variant: "destructive", 
         title: "Insufficient Credits", 
-        description: "You need 10 Credits to unlock results. Complete daily tasks or watch ads to earn more!" 
+        description: "You need 10 AI Credits to unlock results. Complete daily tasks or watch ads to earn more!" 
       });
       return;
     }
@@ -301,15 +300,15 @@ export function ResultUnlockDialog({
                     {unlocking && unlockMethod === 'credits' ? (
                       <Loader2 className="w-6 h-6 animate-spin" />
                     ) : (
-                      <Coins className="w-6 h-6 fill-current" />
+                      <Sparkles className="w-6 h-6 fill-current" />
                     )}
                     <div className="text-left">
                       <p className="font-black">
-                        {unlocking && unlockMethod === 'credits' ? "Processing..." : "Use Credits"}
+                        {unlocking && unlockMethod === 'credits' ? "Processing..." : "Use AI Credits"}
                       </p>
                       <p className="text-[10px] opacity-80 font-medium">
                         {credits >= 10 
-                          ? `${credits} credits available`
+                          ? `${credits} AI Credits available`
                           : `Need ${10 - credits} more credits`
                         }
                       </p>
@@ -321,7 +320,7 @@ export function ResultUnlockDialog({
                       ? "bg-primary/20 border-primary/30 text-primary" 
                       : "bg-muted/20 border-muted/30 text-muted-foreground"
                   )}>
-                    <Coins className="w-3 h-3 mr-1" />
+                    <Sparkles className="w-3 h-3 mr-1" />
                     10
                   </Badge>
                 </div>

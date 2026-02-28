@@ -5,7 +5,6 @@ import { useUser, useFirestore } from '@/firebase/index';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Link from 'next/link';
 import { 
-  Coins, 
   GraduationCap, 
   ChevronDown, 
   User, 
@@ -29,7 +28,8 @@ import {
   Shield,
   Star,
   ShieldAlert,
-  Smartphone
+  Smartphone,
+  Sparkles
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -148,7 +148,7 @@ export function Navbar() {
           toast({ 
             variant: "reward",
             title: "Growth Boost Received!", 
-            description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added to vault.` 
+            description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 AI Credits added to vault.` 
           });
           setShowAdModal(false);
           setShowAlertsModal(false);
@@ -278,7 +278,7 @@ export function Navbar() {
                   onClick={() => setShowAdModal(true)}
                 >
                   <div className="w-5 h-5 rounded-full bg-yellow-500/10 flex items-center justify-center">
-                    <Coins className="w-3.5 h-3.5 text-yellow-600 fill-current" />
+                    <Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current" />
                   </div>
                   <span className="text-sm font-black text-foreground">{typeof user.credits === 'number' ? user.credits : 0}</span>
                   <Zap className="w-3 h-3 text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
@@ -411,7 +411,7 @@ export function Navbar() {
             </div>
             <DialogTitle className="text-2xl font-black text-center">{verifyingAd ? "Verifying Access..." : "Refill AI Credits"}</DialogTitle>
             <DialogDescription className="text-center text-muted-foreground font-medium">
-              {verifyingAd ? "Our system is validating your professional viewing." : "Watch a professional tutorial to earn "}<span className="text-primary font-black">+5 Credits</span>.
+              {verifyingAd ? "Our system is validating your professional viewing." : "Watch a professional tutorial to earn "}<span className="text-primary font-black">+5 AI Credits</span>.
             </DialogDescription>
           </DialogHeader>
           

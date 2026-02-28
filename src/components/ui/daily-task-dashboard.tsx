@@ -14,7 +14,6 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { 
-  Coins, 
   Trophy, 
   Flame, 
   Loader2, 
@@ -120,7 +119,7 @@ export function DailyTaskDashboard() {
           });
         }
       } else {
-        toast({ variant: "default", title: "No Rewards Available", description: "Complete more tasks to earn credits." });
+        toast({ variant: "default", title: "No Rewards Available", description: "Complete more tasks to earn AI credits." });
       }
     } catch (e: any) {
       toast({ variant: "destructive", title: "Error", description: "Failed to claim rewards." });
@@ -182,7 +181,7 @@ export function DailyTaskDashboard() {
                       "flex items-center gap-1 px-2.5 py-1 rounded-xl transition-all border-2",
                       isComplete && !task.isClaimed ? "animate-breathing-gold border-yellow-500/20 bg-yellow-500/10" : "bg-yellow-500/5 border-yellow-500/10"
                     )}>
-                      <Coins className="w-3.5 h-3.5 text-yellow-600 fill-current" />
+                      <Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current" />
                       <span className="text-xs font-black text-yellow-700">+{task.reward}</span>
                     </div>
                     {task.isClaimed ? <Badge variant="outline" className="text-[8px] font-bold uppercase text-emerald-600">Claimed</Badge> : isComplete ? <Star className="w-4 h-4 text-amber-500 fill-current animate-bounce" /> : <span className="text-[10px] font-bold text-muted-foreground">{task.current}/{task.goal}</span>}
@@ -195,7 +194,7 @@ export function DailyTaskDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Button onClick={() => handleClaimReward()} disabled={!user || claiming || !canClaimAny} className="h-14 rounded-2xl font-black text-base gap-3 shadow-xl shadow-primary/20 group relative overflow-hidden">
               {claiming ? <Loader2 className="w-5 h-5 animate-spin" /> : canClaimAny ? <Gift className="w-5 h-5" /> : <Star className="w-5 h-5" />}
-              {claiming ? 'Syncing...' : canClaimAny ? `Claim ${estimatedReward} Credits` : 'Build Readiness'}
+              {claiming ? 'Syncing...' : canClaimAny ? `Claim ${estimatedReward} AI Credits` : 'Build Readiness'}
             </Button>
             <Button variant="outline" onClick={() => handleClaimReward(true)} disabled={recovering || (typeof user?.credits === 'number' ? user.credits : 0) < 50} className="h-14 rounded-2xl font-bold text-sm gap-2 border-2 border-orange-500/20 text-orange-600 hover:bg-orange-50">
               {recovering ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />} Streak Saver (50c)
@@ -275,7 +274,7 @@ export function DailyTaskDashboard() {
               <span className="text-[9px] font-black uppercase text-muted-foreground">Reward Total</span>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 px-4 py-2 rounded-2xl animate-breathing-gold border-2 border-yellow-500/20">
-                  <Coins className="w-7 h-7 text-yellow-600 fill-current" />
+                  <Sparkles className="w-7 h-7 text-yellow-600 fill-current" />
                   <span className="text-4xl font-black text-yellow-700">+{claimedReward}</span>
                 </div>
               </div>

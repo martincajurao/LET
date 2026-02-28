@@ -18,7 +18,6 @@ import {
   Lock, 
   Play, 
   MessageSquare, 
-  Coins, 
   ShieldCheck, 
   ShieldAlert,
   Zap,
@@ -196,7 +195,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
     if (!user || !firestore) return;
     const credits = typeof user.credits === 'number' ? user.credits : 0;
     if (credits < 10) {
-      toast({ variant: "destructive", title: "Insufficient Credits", description: "You need 10 Credits to unlock analysis." });
+      toast({ variant: "destructive", title: "Insufficient Credits", description: "You need 10 AI Credits to unlock analysis." });
       return;
     }
     
@@ -222,7 +221,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
     const credits = typeof user.credits === 'number' ? user.credits : 0;
 
     if (!isPro && credits < 5) {
-      toast({ variant: "destructive", title: "Insufficient Credits", description: "AI Deep Dive requires 5 Credits." });
+      toast({ variant: "destructive", title: "Insufficient Credits", description: "AI Deep Dive requires 5 AI Credits." });
       return;
     }
     
@@ -333,7 +332,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
                     <span className="flex-1 text-left px-1">Unlock Report</span>
                     <div className="bg-background/90 px-2 py-1 rounded-lg border border-primary/30 flex items-center gap-1.5">
                       <span className="font-black text-xs">10</span>
-                      <Coins className="w-3.5 h-3.5 fill-current" />
+                      <Sparkles className="w-3.5 h-3.5 fill-current" />
                     </div>
                   </Button>
                 </div>
@@ -480,7 +479,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
                                   </div>
                                   <div className="bg-background/90 px-3 py-1 rounded-lg border border-primary/20 flex items-center gap-1.5 shadow-inner">
                                     <span className="font-black text-xs text-primary">5</span>
-                                    <Coins className="w-3.5 h-3.5 text-primary fill-current" />
+                                    <Sparkles className="w-3.5 h-3.5 text-primary fill-current" />
                                   </div>
                                 </div>
                               )}
