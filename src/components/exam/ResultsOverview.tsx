@@ -24,7 +24,8 @@ import {
   Zap,
   Star,
   TrendingUp,
-  History
+  History,
+  ArrowDown
 } from "lucide-react";
 import { 
   Dialog, 
@@ -265,7 +266,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart }: Re
       {/* Session Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-card p-8 rounded-[2.5rem] shadow-sm border border-border/50">
         <div className="space-y-1">
-          <Badge className="bg-primary/10 text-primary border-primary/20 px-3 py-0.5 text-[10px] font-black uppercase tracking-[0.25em] mb-2 shadow-sm">Session Calibration</Badge>
+          <Badge className="bg-primary/10 text-primary border-primary/20 px-3 py-0.5 text-[10px] font-black uppercase tracking-[0.25em] mb-2 shadow-sm">Simulation Calibration</Badge>
           <h1 className="text-3xl font-black tracking-tight text-foreground">Simulation Result</h1>
           <p className="text-muted-foreground text-sm font-medium">Verified Analytical Session • {questions.length} Items</p>
         </div>
@@ -305,7 +306,10 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart }: Re
                     </div>
                   </Button>
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground/40 text-[9px] font-black uppercase tracking-[0.25em] pt-4"><ShieldCheck className="w-3.5 h-3.5" /><span>Analytical Integrity Guaranteed</span></div>
+                <div className="flex flex-col items-center gap-2 pt-4">
+                  <p className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest animate-bounce">Scroll down to review mistakes</p>
+                  <ArrowDown className="w-4 h-4 text-muted-foreground opacity-40" />
+                </div>
               </div>
             </Card>
           </motion.div>
