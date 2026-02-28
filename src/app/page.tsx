@@ -49,7 +49,8 @@ import {
   ShieldAlert,
   Gift,
   Lightbulb,
-  Award
+  Award,
+  Target
 } from "lucide-react";
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
@@ -73,7 +74,7 @@ import { getApkInfoUrl, getDownloadUrl } from '@/lib/config';
 import { DailyLoginRewards } from '@/components/ui/daily-login-rewards';
 import { QuestionOfTheDay } from '@/components/ui/question-of-the-day';
 import { StudyTimer } from '@/components/ui/study-timer';
-import { AchievementSystem, ACHIEVEMENTS } from '@/components/ui/achievement-system';
+import { AchievementSystem } from '@/components/ui/achievement-system';
 import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
 import { Leaderboard } from '@/components/ui/leaderboard';
 import { ReferralSystem } from '@/components/ui/referral-system';
@@ -102,19 +103,12 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 function sanitizeData(data: any): any {
   if (data === undefined) return null;
   if (data === null || typeof data !== 'object') return data;
-  
-  if (data.constructor?.name === 'FieldValue' || (data._methodName && data._methodName.startsWith('FieldValue.'))) {
-    return data;
-  }
-
+  if (data.constructor?.name === 'FieldValue' || (data._methodName && data._methodName.startsWith('FieldValue.'))) return data;
   if (Array.isArray(data)) return data.map(sanitizeData);
-  
   const sanitized: any = {};
   for (const key in data) {
     const val = sanitizeData(data[key]);
-    if (val !== undefined) {
-      sanitized[key] = val;
-    }
+    if (val !== undefined) sanitized[key] = val;
   }
   return sanitized;
 }
@@ -122,46 +116,16 @@ function sanitizeData(data: any): any {
 const EducationalLoader = ({ message }: { message?: string }) => (
   <div className="flex flex-col items-center justify-center gap-8 animate-in fade-in duration-1000">
     <div className="relative">
-      <motion.div 
-        animate={{ rotate: 360 }}
-        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-        className="w-32 h-32 border-2 border-dashed border-primary/20 rounded-full absolute -inset-4"
-      />
-      <motion.div 
-        animate={{ rotate: -360 }}
-        transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-        className="w-32 h-32 border-2 border-dashed border-primary/10 rounded-full absolute -inset-4 scale-110"
-      />
-      
+      <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} className="w-32 h-32 border-2 border-dashed border-primary/20 rounded-full absolute -inset-4" />
+      <motion.div animate={{ rotate: -360 }} transition={{ duration: 15, repeat: Infinity, ease: "linear" }} className="w-32 h-32 border-2 border-dashed border-primary/10 rounded-full absolute -inset-4 scale-110" />
       <div className="w-24 h-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center relative z-10 shadow-2xl shadow-primary/10 overflow-hidden">
-        <motion.div
-          animate={{ 
-            y: [0, -6, 0],
-            rotate: [0, 3, -3, 0]
-          }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <GraduationCap className="w-12 h-12 text-primary" />
-        </motion.div>
-        
-        <motion.div
-          animate={{ 
-            opacity: [0, 1, 0],
-            scale: [0.5, 1.2, 0.5],
-            x: [0, 15, -5, 0],
-            y: [0, -10, 15, 0]
-          }}
-          transition={{ duration: 4, repeat: Infinity }}
-          className="absolute top-4 right-4"
-        >
-          <Sparkles className="w-5 h-5 text-yellow-500 fill-current" />
-        </motion.div>
+        <motion.div animate={{ y: [0, -6, 0], rotate: [0, 3, -3, 0] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}><GraduationCap className="w-12 h-12 text-primary" /></motion.div>
+        <motion.div animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5], x: [0, 15, -5, 0], y: [0, -10, 15, 0] }} transition={{ duration: 4, repeat: Infinity }} className="absolute top-4 right-4"><Sparkles className="w-5 h-5 text-yellow-500 fill-current" /></motion.div>
       </div>
     </div>
-    
     {message && (
       <div className="space-y-3 text-center">
-        <p className="font-black text-xl tracking-tight text-foreground">{message}</p>
+        <p className="font-black text-xl tracking-tight text-foreground uppercase tracking-widest">{message}</p>
         <div className="flex items-center justify-center gap-2">
           <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
           <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
@@ -173,7 +137,7 @@ const EducationalLoader = ({ message }: { message?: string }) => (
 );
 
 function LetsPrepContent() {
-  const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook, bypassLogin, refreshUser } = useUser();
+  const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const { isDark, toggleDarkMode } = useTheme();
@@ -202,24 +166,18 @@ function LetsPrepContent() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [isQrLoading, setIsQrLoading] = useState(true);
   
-  // Pull to refresh state
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const pullStartY = React.useRef<number | null>(null);
   
-// Result unlock dialog state
   const [showResultUnlock, setShowResultUnlock] = useState(false);
   const [resultsUnlocked, setResultsUnlocked] = useState(false);
-
-  // Notifications modal state
   const [showNotifications, setShowNotifications] = useState(false);
   const [isWatchingAd, setIsWatchingAd] = useState(false);
   const [isVerifyingAd, setIsVerifyingAd] = useState(false);
 
-  // Pull to refresh handlers - Fixed for mobile
   const handleTouchStart = (e: React.TouchEvent) => {
-    // Only allow pull down when at top of page (with small tolerance for mobile)
     if (window.scrollY <= 10) {
       pullStartY.current = e.touches[0].clientY;
       setIsPulling(true);
@@ -230,42 +188,25 @@ function LetsPrepContent() {
     if (!isPulling || pullStartY.current === null) return;
     const currentY = e.touches[0].clientY;
     const diff = currentY - pullStartY.current;
-    // Only allow pulling down, not up
     if (diff > 0) {
       setPullDistance(Math.min(diff * 0.5, 100));
-      // Prevent default to stop page scrolling while pulling
-      if (diff > 10) {
-        e.preventDefault();
-      }
+      if (diff > 10) e.preventDefault();
     }
   };
 
   const handleTouchEnd = async () => {
-    // Only trigger refresh if pulled enough distance
     if (pullDistance > 50 && !isRefreshing) {
       setIsRefreshing(true);
-      // Trigger refresh - refetch user data and APK info
       try {
-        // Refresh user data from Firestore
         await refreshUser();
-        
-        // Also refresh APK info
         const functionsUrl = getApkInfoUrl();
         const res = await fetch(functionsUrl).catch(err => { throw err; });
         const data = await res.json();
         setApkInfo(data);
         const downloadUrl = getDownloadUrl();
-        const qrDataUrl = await QRCode.toDataURL(downloadUrl, {
-          width: 256, margin: 2,
-          color: { dark: '#10b981', light: '#ffffff' }
-        });
+        const qrDataUrl = await QRCode.toDataURL(downloadUrl, { width: 256, margin: 2, color: { dark: '#10b981', light: '#ffffff' } });
         setQrCodeUrl(qrDataUrl);
-        
-        // Force page reload for Android WebView to ensure full state refresh
-        if (typeof window !== 'undefined') {
-          window.location.reload();
-        }
-        
+        if (typeof window !== 'undefined') window.location.reload();
         toast({ title: "Refreshed", description: "Latest data loaded." });
       } catch (e) {
         console.error('Pull to refresh error:', e);
@@ -288,42 +229,21 @@ function LetsPrepContent() {
     const fetchApkAndGenerateQR = async () => {
       try {
         setIsQrLoading(true);
-        // Use centralized config for Firebase Functions URL
         const functionsUrl = getApkInfoUrl();
-        
-        const res = await fetch(functionsUrl).catch(err => {
-          console.error('Failed to fetch APK info:', err);
-          throw err;
-        });
+        const res = await fetch(functionsUrl).catch(err => { console.error('Failed to fetch APK info:', err); throw err; });
         const data = await res.json();
         setApkInfo(data);
-
         const downloadUrl = getDownloadUrl();
-        
-        const qrDataUrl = await QRCode.toDataURL(downloadUrl, {
-          width: 256,
-          margin: 2,
-          color: {
-            dark: '#10b981',
-            light: '#ffffff'
-          }
-        });
+        const qrDataUrl = await QRCode.toDataURL(downloadUrl, { width: 256, margin: 2, color: { dark: '#10b981', light: '#ffffff' } });
         setQrCodeUrl(qrDataUrl);
-      } catch (e) {
-        console.error('Error fetching APK info or generating QR code:', e);
-      } finally {
-        setIsQrLoading(false);
-      }
+      } catch (e) { console.error('Error fetching APK info or generating QR code:', e); } finally { setIsQrLoading(false); }
     };
     fetchApkAndGenerateQR();
   }, []);
 
   useEffect(() => {
-    if (searchParams.get('start') === 'quickfire') {
-      startExam('quickfire');
-    } else if (searchParams.get('start')) {
-      startExam(searchParams.get('start') as any);
-    }
+    if (searchParams.get('start') === 'quickfire') startExam('quickfire');
+    else if (searchParams.get('start')) startExam(searchParams.get('start') as any);
   }, [searchParams]);
 
   useEffect(() => {
@@ -352,7 +272,6 @@ function LetsPrepContent() {
   useEffect(() => {
     if (!user) return;
     if (user.uid !== 'bypass-user' && !user.onboardingComplete) { setState('onboarding'); return; }
-    
     const interval = setInterval(() => {
       const now = Date.now();
       const lastAd = typeof user.lastAdXpTimestamp === 'number' ? user.lastAdXpTimestamp : 0;
@@ -360,7 +279,6 @@ function LetsPrepContent() {
       setAdCooldown(Math.max(0, lastAd + COOLDOWNS.AD_XP - now));
       setQuickFireCooldown(Math.max(0, lastQf + COOLDOWNS.QUICK_FIRE - now));
     }, 1000);
-
     return () => clearInterval(interval);
   }, [user]);
 
@@ -369,12 +287,10 @@ function LetsPrepContent() {
     setLoading(true);
     setLoadingStep(0);
     setLoadingMessage("Calibrating Learning Path...");
-
     try {
       setLoadingStep(20);
       const questionPool = await fetchQuestionsFromFirestore(firestore!);
       setLoadingStep(60);
-      
       let finalQuestions: Question[] = [];
       if (category === 'all') {
         const genEd = shuffleArray(questionPool.filter(q => q.subject === 'General Education')).slice(0, limits.limitGenEd);
@@ -399,7 +315,6 @@ function LetsPrepContent() {
         let limitCount = (category === 'Professional Education' || category === 'Prof Ed') ? limits.limitProfEd : (category === 'Specialization' || category === 'Major') ? limits.limitSpec : limits.limitGenEd;
         finalQuestions = shuffleArray(pool).slice(0, limitCount);
       }
-
       if (finalQuestions.length === 0) throw new Error(`Insufficient items.`);
       setCurrentQuestions(finalQuestions);
       setLoadingStep(100);
@@ -407,24 +322,38 @@ function LetsPrepContent() {
     } catch (e: any) { toast({ variant: "destructive", title: "Simulation Failed", description: e.message }); setLoading(false); }
   };
 
-  const handleExamComplete = async (answers: Record<string, string>, timeSpent: number) => {
+  const handleExamComplete = async (answers: Record<string, string>, timeSpent: number, confidentAnswers: Record<string, boolean>) => {
     if (!user || !firestore) return;
     setExamAnswers(answers);
     setExamTime(timeSpent);
     setLoading(true);
-    setLoadingMessage("Calibrating...");
+    setLoadingMessage("Commiting Traces...");
 
-    const results = currentQuestions.map(q => ({
-      questionId: q.id,
-      subject: q.subject,
-      subCategory: q.subCategory || null,
-      difficulty: q.difficulty,
-      isCorrect: answers[q.id] === q.correctAnswer
-    }));
+    const results = currentQuestions.map(q => {
+      const isCorrect = answers[q.id] === q.correctAnswer;
+      const isConfident = confidentAnswers[q.id] || false;
+      return {
+        questionId: q.id,
+        subject: q.subject,
+        subCategory: q.subCategory || null,
+        difficulty: q.difficulty,
+        isCorrect,
+        isConfident
+      };
+    });
     
     const correctCount = results.filter(h => h.isCorrect).length;
     const overallScore = Math.round((correctCount / (currentQuestions.length || 1)) * 100);
+    
     let xpEarned = correctCount * XP_REWARDS.CORRECT_ANSWER;
+    // Apply confidence bonuses/penalties
+    results.forEach(r => {
+      if (r.isConfident) {
+        if (r.isCorrect) xpEarned += XP_REWARDS.CONFIDENT_CORRECT_BONUS;
+        else xpEarned += XP_REWARDS.CONFIDENT_WRONG_PENALTY;
+      }
+    });
+
     const isQuickFire = currentQuestions.length <= 5;
     if (!isQuickFire) xpEarned += (currentQuestions.length >= 50 ? XP_REWARDS.FINISH_FULL_SIM : XP_REWARDS.FINISH_TRACK);
     else xpEarned += Math.round((correctCount / 5) * XP_REWARDS.QUICK_FIRE_COMPLETE);
@@ -436,27 +365,18 @@ function LetsPrepContent() {
       await addDoc(collection(firestore, "exam_results"), resultsData);
       const updateData: any = { dailyQuestionsAnswered: increment(currentQuestions.length), dailyTestsFinished: increment(!isQuickFire ? 1 : 0), xp: increment(xpEarned), lastActiveDate: serverTimestamp() };
       if (isQuickFire) updateData.lastQuickFireTimestamp = Date.now();
-await updateDoc(doc(firestore, 'users', user.uid), updateData);
-      // Refresh user data to ensure UI updates properly
+      await updateDoc(doc(firestore, 'users', user.uid), updateData);
       await refreshUser();
     }
 
     setLoadingStep(100);
     setLoading(false);
     
-    // Show unlock dialog for non-pro users on full exams
-    if (!user.isPro && !isQuickFire) {
-      setShowResultUnlock(true);
-    } else {
-      setResultsUnlocked(true);
-      setTimeout(() => { setState(isQuickFire ? 'quickfire_results' : 'results'); }, 300);
-    }
+    if (!user.isPro && !isQuickFire) setShowResultUnlock(true);
+    else { setResultsUnlocked(true); setTimeout(() => { setState(isQuickFire ? 'quickfire_results' : 'results'); }, 300); }
   };
 
-  const handleResultUnlock = () => {
-    setResultsUnlocked(true);
-    setTimeout(() => { setState('results'); }, 300);
-  };
+  const handleResultUnlock = () => { setResultsUnlocked(true); setTimeout(() => { setState('results'); }, 300); };
 
   const handleDownloadApk = () => {
     const downloadUrl = getDownloadUrl();
@@ -484,10 +404,6 @@ await updateDoc(doc(firestore, 'users', user.uid), updateData);
   const [selectedMajorship, setSelectedMajorship] = useState("");
   const [savingOnboarding, setSavingOnboarding] = useState(false);
 
-  const [showRankUp, setShowRankUp] = useState(false);
-  const [celebratedRank, setCelebratedRank] = useState(1);
-  const [celebratedReward, setCelebratedReward] = useState(0);
-
   const finishOnboarding = async () => {
     if (!selectedMajorship || !nickname) { toast({ title: "Missing Info", description: "Complete the setup." }); return; }
     setSavingOnboarding(true);
@@ -503,158 +419,47 @@ await updateDoc(doc(firestore, 'users', user.uid), updateData);
   };
 
   if (authLoading) return (
-    <motion.div 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
-      transition={{ duration: 1.2, ease: "easeOut" }}
-      className="fixed inset-0 z-[2000] flex items-center justify-center bg-background bg-gradient-to-b from-background via-background to-primary/5"
-    >
-      <EducationalLoader message="Synchronizing Educator Session" />
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.2, ease: "easeOut" }} className="fixed inset-0 z-[2000] flex items-center justify-center bg-background bg-gradient-to-b from-background via-background to-primary/5">
+      <EducationalLoader message="Calibrating Educator Session" />
     </motion.div>
   );
 
   const displayStats = user ? [
-    { icon: <Zap className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: typeof user.credits === 'number' ? user.credits : 0, color: 'text-yellow-500 bg-yellow-500/10' },
+    { icon: <Zap className="w-4 h-4 text-yellow-500 fill-current" />, label: 'Credits', value: typeof user.credits === 'number' ? user.credits : 0, color: 'text-yellow-500 bg-yellow-500/10' },
     { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Arena', value: userRank, color: 'text-primary bg-primary/10' },
-    { icon: user?.isPro ? <Crown className="w-4 h-4 text-yellow-600" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user?.isPro ? 'Platinum' : 'FREE', color: user?.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
-    { icon: <Flame className="w-4 h-4 text-orange-500" />, label: 'Streak', value: typeof user.streakCount === 'number' ? user.streakCount : 0, color: 'text-orange-500 bg-orange-500/10' }
+    { icon: user?.isPro ? <Crown className="w-4 h-4 text-yellow-600 fill-current" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user?.isPro ? 'Platinum' : 'FREE', color: user?.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
+    { icon: <Flame className="w-4 h-4 text-orange-500 fill-current" />, label: 'Streak', value: typeof user.streakCount === 'number' ? user.streakCount : 0, color: 'text-orange-500 bg-orange-500/10' }
   ] : [
     { icon: <Users className="w-4 h-4 text-blue-500" />, label: 'Community', value: '1.7K+', color: 'text-blue-500 bg-blue-500/5' },
     { icon: <Sparkles className="w-4 h-4 text-purple-500" />, label: 'AI Solved', value: '8.2K+', color: 'text-purple-500 bg-purple-500/5' },
-    { icon: <LayoutGrid className="w-4 h-4 text-pink-500" />, label: 'Curated Items', value: '3.5K+', color: 'text-pink-500 bg-pink-500/5' },
-    { icon: <Trophy className="w-4 h-4 text-yellow-500" />, label: 'Board Ready', value: '82%', color: 'text-yellow-500 bg-yellow-500/5' }
+    { icon: <LayoutGrid className="w-4 h-4 text-pink-500" />, label: 'Items', value: '3.5K+', color: 'text-pink-500 bg-pink-500/5' },
+    { icon: <Trophy className="w-4 h-4 text-yellow-500" />, label: 'Readiness', value: '82%', color: 'text-yellow-500 bg-yellow-500/5' }
   ];
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.8, delay: 0.2 }}
-      className="min-h-screen bg-background text-foreground font-body transition-all duration-300"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      style={{ transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined }}
-    >
-      {/* Pull to refresh indicator */}
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.2 }} className="min-h-screen bg-background text-foreground font-body transition-all duration-300" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined }}>
       {isPulling && (
         <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center py-2 bg-primary/10 backdrop-blur-sm">
           <Loader2 className={cn("w-5 h-5 text-primary animate-spin", isRefreshing ? "block" : "block")} />
-          <span className="ml-2 text-xs font-bold text-primary">
-            {isRefreshing ? "Refreshing..." : pullDistance > 60 ? "Release to refresh" : "Pull down to refresh"}
+          <span className="ml-2 text-[10px] font-black uppercase tracking-widest text-primary">
+            {isRefreshing ? "Synchronizing..." : pullDistance > 60 ? "Release to sync" : "Pull down to refresh"}
           </span>
         </div>
       )}
-<Toaster />
+      <Toaster />
       
-      {/* Notifications Modal */}
-      <NotificationsModal 
-        isOpen={showNotifications}
-        onClose={() => setShowNotifications(false)}
-        onStartQuickFire={() => startExam('quickfire')}
-        onWatchAd={() => {
-          setIsWatchingAd(true);
-          // Simulate ad watching
-          setTimeout(() => {
-            setIsWatchingAd(false);
-            setIsVerifyingAd(true);
-            setTimeout(async () => {
-              if (user && firestore) {
-                await updateDoc(doc(firestore, 'users', user.uid), {
-                  xp: increment(XP_REWARDS.AD_WATCH_XP),
-                  credits: increment(5),
-                  dailyAdCount: increment(1),
-                  lastAdXpTimestamp: Date.now()
-                });
-                toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP & +5 Credits!` });
-                refreshUser();
-              }
-              setIsVerifyingAd(false);
-            }, 1500);
-          }, 3000);
-        }}
-        isWatchingAd={isWatchingAd}
-        isVerifyingAd={isVerifyingAd}
-      />
-
-      <RankUpDialog
-        isOpen={showRankUp} 
-        onClose={() => setShowRankUp(false)} 
-        rank={celebratedRank} 
-        reward={celebratedReward} 
-      />
-
-      <ResultUnlockDialog
-        open={showResultUnlock}
-        onClose={() => setShowResultUnlock(false)}
-        onUnlock={handleResultUnlock}
-        questionsCount={currentQuestions.length}
-        correctAnswers={Object.values(examAnswers).filter((answer, index) => {
-          const question = currentQuestions[index];
-          return question && answer === question.correctAnswer;
-        }).length}
-        timeSpent={examTime}
-      />
-
-      <Dialog open={authIssue} onOpenChange={setAuthIssue}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-[0_20px_50px_rgba(0,0,0,0.2)] p-0 max-w-sm z-[1001] outline-none overflow-hidden">
-          <div className="bg-emerald-500/10 p-10 flex flex-col items-center text-center relative">
-            <div className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-xl mb-4 relative z-10">
-              <ShieldCheck className="w-10 h-10 text-emerald-500" />
-            </div>
-            <div className="space-y-1 relative z-10">
-              <DialogTitle className="text-2xl font-black tracking-tight">Verified Access</DialogTitle>
-              <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest">
-                Professional Credentials Required
-              </DialogDescription>
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent z-0" />
-          </div>
-          <div className="p-8 space-y-6 bg-card">
-            <div className="space-y-4">
-              <p className="text-center text-sm font-medium text-muted-foreground leading-relaxed">
-                Sign in to track your board readiness, maintain streaks, and sync across devices.
-              </p>
-              <div className="grid gap-3 pt-2">
-                <Button 
-                  onClick={async () => { await loginWithGoogle(); setAuthIssue(false); }} 
-                  className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-white text-black border border-border hover:bg-muted transition-all active:scale-95"
-                >
-                  <GoogleIcon />
-                  <span>Continue with Google</span>
-                </Button>
-                <Button 
-                  onClick={async () => { await loginWithFacebook(); setAuthIssue(false); }} 
-                  className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none transition-all active:scale-95"
-                >
-                  <Facebook className="w-5 h-5 fill-current text-white" />
-                  <span>Continue with Facebook</span>
-                </Button>
-              </div>
-            </div>
-            <div className="pt-4 border-t border-border/50 text-center">
-              <Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest border-emerald-500/20 text-emerald-600 bg-emerald-500/5 py-1 px-4">
-                Free Forever Practice Access
-              </Badge>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ResultUnlockDialog open={showResultUnlock} onClose={() => setShowResultUnlock(false)} onUnlock={handleResultUnlock} questionsCount={currentQuestions.length} correctAnswers={Object.values(examAnswers).filter((answer, index) => currentQuestions[index]?.correctAnswer === answer).length} timeSpent={examTime} />
 
       <Dialog open={loading}>
-        <DialogContent className="max-w-[320px] border-none shadow-2xl bg-card rounded-[2.5rem] p-10 z-[1001] outline-none">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Loading Session</DialogTitle>
-            <DialogDescription>Please wait while we calibrate your professional simulation.</DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-[320px] border-none shadow-2xl bg-card rounded-[3rem] p-10 z-[1001] outline-none">
           <div className="space-y-8">
             <EducationalLoader message={loadingMessage} />
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                <span>Calibrating Simulation</span>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground opacity-60">
+                <span>Simulation Path</span>
                 <span>{loadingStep}%</span>
               </div>
-              <Progress value={loadingStep} className="h-2 w-full rounded-full" />
+              <Progress value={loadingStep} className="h-2 w-full rounded-full bg-muted shadow-inner" />
             </div>
           </div>
         </DialogContent>
@@ -663,315 +468,199 @@ await updateDoc(doc(firestore, 'users', user.uid), updateData);
       <AnimatePresence mode="wait">
         {state === 'exam' ? (
           <motion.div key="exam" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full"><ExamInterface questions={currentQuestions} timePerQuestion={timePerQuestion} onComplete={handleExamComplete} /></motion.div>
-        ) : state === 'quickfire' ? (
-          <motion.div key="quickfire" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full"><QuickFireInterface questions={currentQuestions} onComplete={handleExamComplete} onExit={() => setState('dashboard')} /></motion.div>
         ) : state === 'results' ? (
-          <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4"><ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} onRestart={() => setState('dashboard')} /></motion.div>
-        ) : state === 'quickfire_results' ? (
-          <motion.div key="quickfire_results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4"><QuickFireResults questions={currentQuestions} answers={examAnswers} timeSpent={examTime} xpEarned={lastXpEarned} onRestart={() => setState('dashboard')} /></motion.div>
+          <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4"><ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} aiSummary={aiSummary} onRestart={() => setState('dashboard')} /></motion.div>
         ) : state === 'onboarding' ? (
           <motion.div key="onboarding" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-[85vh] flex items-center justify-center p-4">
-            <Card className="w-full max-w-md rounded-[2.5rem] bg-card border-none shadow-2xl overflow-hidden">
-              <div className="bg-primary/10 p-8 flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center shadow-lg mb-4"><ShieldCheck className="w-8 h-8 text-primary" /></div>
-                <h2 className="text-2xl font-black tracking-tight">Finalizing Profile</h2>
-                <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest mt-1">Professional Verification</p>
+            <Card className="w-full max-w-md rounded-[3rem] bg-card border-none shadow-2xl overflow-hidden">
+              <div className="bg-primary/10 p-10 flex flex-col items-center text-center">
+                <div className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-xl mb-4 border border-primary/20"><ShieldCheck className="w-10 h-10 text-primary" /></div>
+                <h2 className="text-3xl font-black tracking-tight">Final Calibration</h2>
+                <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.3em] mt-2">Professional Credentials Required</p>
               </div>
-              <CardContent className="p-8 space-y-6">
-                <div className="space-y-4">
+              <CardContent className="p-10 space-y-8">
+                <div className="space-y-6">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Leaderboard Nickname</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Academic Nickname</Label>
                     <div className="relative">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input placeholder="e.g. Master Teacher" className="pl-11 h-12 rounded-xl border-2 font-medium" value={nickname} onChange={(e) => setNickname(e.target.value)} />
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
+                      <Input placeholder="e.g. Master Teacher" className="pl-11 h-14 rounded-2xl border-2 font-black text-lg focus:border-primary transition-all" value={nickname} onChange={(e) => setNickname(e.target.value)} />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Majorship Track</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Specialization Track</Label>
                     <Select value={selectedMajorship} onValueChange={setSelectedMajorship}>
-                      <SelectTrigger className="h-12 rounded-xl border-2 px-4 font-bold"><div className="flex items-center gap-2"><GraduationCap className="w-4 h-4 text-muted-foreground" /><SelectValue placeholder="Select track..." /></div></SelectTrigger>
-                      <SelectContent className="rounded-xl">{MAJORSHIPS.map(m => (<SelectItem key={m} value={m} className="font-medium py-3">{m}</SelectItem>))}</SelectContent>
+                      <SelectTrigger className="h-14 rounded-2xl border-2 px-4 font-black text-lg"><div className="flex items-center gap-3"><GraduationCap className="w-5 h-5 text-primary" /><SelectValue placeholder="Select specialized path..." /></div></SelectTrigger>
+                      <SelectContent className="rounded-2xl">{MAJORSHIPS.map(m => (<SelectItem key={m} value={m} className="font-bold py-4 px-6">{m}</SelectItem>))}</SelectContent>
                     </Select>
                   </div>
                 </div>
-                <Button onClick={finishOnboarding} disabled={savingOnboarding || !nickname || !selectedMajorship} className="w-full h-14 rounded-2xl font-black text-lg shadow-xl shadow-primary/30">{savingOnboarding ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5 fill-current" />} Enter Learning Vault</Button>
+                <Button onClick={finishOnboarding} disabled={savingOnboarding || !nickname || !selectedMajorship} className="w-full h-16 rounded-[1.75rem] font-black text-lg shadow-2xl shadow-primary/30 active:scale-95 transition-all gap-3"><Zap className="w-6 h-6 fill-current" /> Enter Learning Vault</Button>
               </CardContent>
             </Card>
           </motion.div>
         ) : (
-          <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-7xl mx-auto px-4 pt-6 pb-24 space-y-8">
+            {/* CHARACTER STATS GRID */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {displayStats.map((stat, i) => (
-                <div key={i} className="android-surface rounded-2xl p-3 flex items-center gap-3">
-                  <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0", stat.color)}>{stat.icon}</div>
-                  <div>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">{stat.label}</p>
-                    <p className="text-lg font-black text-foreground leading-none">{stat.value}</p>
+                <motion.div key={i} whileTap={{ scale: 0.95 }} className="android-surface rounded-[2rem] p-5 flex items-center gap-4 bg-card border-none shadow-md hover:shadow-xl transition-all group">
+                  <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform", stat.color)}>{stat.icon}</div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] leading-none mb-1 opacity-60 truncate">{stat.label}</p>
+                    <p className="text-xl font-black text-foreground leading-none tracking-tight">{stat.value}</p>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-8 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="lg:col-span-8 space-y-8">
+                {/* CAREER ASCENSION CARD */}
                 {user && (
-                  <Card className="border-none shadow-sm rounded-[2rem] bg-card overflow-hidden">
-                    <CardHeader className="p-6 pb-2">
+                  <Card className="border-none shadow-xl rounded-[3rem] bg-card overflow-hidden group">
+                    <div className="h-2 bg-primary w-full opacity-20" />
+                    <CardHeader className="p-8 pb-4">
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Career Status</p>
-                          <CardTitle className="text-xl font-black flex items-center gap-2">
+                          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Character Progression</p>
+                          <CardTitle className="text-3xl font-black flex items-center gap-3 tracking-tight">
                             {rankData?.title} 
-                            <span className="text-xs font-bold text-muted-foreground ml-1">Rank {rankData?.rank}</span>
+                            <Badge className="bg-primary/10 text-primary border-none font-black text-xs px-3">RANK {rankData?.rank}</Badge>
                           </CardTitle>
                         </div>
-                        <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center"><Trophy className="w-5 h-5 text-primary" /></div>
+                        <div className="w-14 h-14 bg-primary/10 rounded-[1.5rem] flex items-center justify-center shadow-inner group-hover:rotate-12 transition-transform"><Trophy className="w-7 h-7 text-primary" /></div>
                       </div>
                     </CardHeader>
-                    <CardContent className="p-6 pt-0 space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
-                          <span className="text-muted-foreground">{rankData?.xpInRank || 0} XP</span>
-                          <span className="text-muted-foreground">{rankData?.nextRankXp} XP</span>
+                    <CardContent className="p-8 pt-0 space-y-6">
+                      <div className="space-y-3">
+                        <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] px-1">
+                          <span className="text-muted-foreground">{rankData?.xpInRank || 0} XP Journey</span>
+                          <span className="text-primary">{rankData?.nextRankXp} XP Milestone</span>
                         </div>
-                        <Progress value={rankData?.progress} className="h-2 rounded-full" />
+                        <div className="h-3 w-full bg-muted rounded-full overflow-hidden shadow-inner p-0.5">
+                          <motion.div initial={{ width: 0 }} animate={{ width: `${rankData?.progress}%` }} transition={{ duration: 1.5, ease: "easeOut" }} className="h-full bg-primary rounded-full shadow-lg" />
+                        </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-3 pt-2">
-                        <Button onClick={handleWatchXpAd} disabled={claimingXp || adCooldown > 0} variant="outline" className="h-12 rounded-xl font-bold text-xs gap-2 border-primary/20 hover:bg-primary/5">{claimingXp ? <Loader2 className="w-4 h-4 animate-spin" /> : adCooldown > 0 ? <Timer className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}{adCooldown > 0 ? formatCooldown(adCooldown) : "XP Boost Clip"}</Button>
-                        <Button onClick={() => startExam('quickfire')} disabled={quickFireCooldown > 0} variant="default" className="h-12 rounded-xl font-bold text-xs gap-2 shadow-lg shadow-primary/20">{quickFireCooldown > 0 ? <Timer className="w-4 h-4" /> : <BellRing className="w-4 h-4" />}{quickFireCooldown > 0 ? formatCooldown(quickFireCooldown) : "Brain Teaser"}</Button>
+                      <div className="grid grid-cols-2 gap-4 pt-2">
+                        <Button onClick={handleWatchXpAd} disabled={claimingXp || adCooldown > 0} variant="outline" className="h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 border-2 border-primary/20 hover:bg-primary/5 active:scale-95 transition-all">
+                          {claimingXp ? <Loader2 className="w-5 h-5 animate-spin" /> : adCooldown > 0 ? <Timer className="w-5 h-5" /> : <Play className="w-5 h-5 fill-current" />}
+                          {adCooldown > 0 ? formatCooldown(adCooldown) : "XP Boost Clip"}
+                        </Button>
+                        <Button onClick={() => startExam('quickfire')} disabled={quickFireCooldown > 0} variant="default" className="h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 shadow-2xl shadow-primary/30 active:scale-95 transition-all">
+                          {quickFireCooldown > 0 ? <Timer className="w-5 h-5" /> : <Zap className="w-5 h-5 fill-current" />}
+                          {quickFireCooldown > 0 ? formatCooldown(quickFireCooldown) : "Brain Teaser"}
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
                 )}
 
-                <Card className="overflow-hidden border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-primary/20 via-card to-background relative p-8 md:p-12">
-                  <div className="relative z-10 space-y-6">
-                    <Badge variant="secondary" className="font-bold text-[10px] uppercase px-4 py-1 bg-primary/20 text-primary border-none">Free Forever Practice</Badge>
+                {/* MAIN HERO ACTION */}
+                <Card className="overflow-hidden border-none shadow-2xl rounded-[3.5rem] bg-gradient-to-br from-primary/30 via-card to-background relative p-10 md:p-16 group">
+                  <div className="relative z-10 space-y-8">
+                    <Badge className="font-black text-[10px] uppercase px-5 py-1.5 bg-foreground text-background border-none shadow-lg tracking-[0.3em]">Official Simulation Engine</Badge>
                     <div className="space-y-4">
-                      <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-foreground">xPrepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
-                      <p className="text-muted-foreground font-medium md:text-xl max-w-lg">High-fidelity simulations with AI pedagogical analysis tailored for Filipino educators.</p>
+                      <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95] text-foreground">Prepare for the <br /><span className="text-primary italic animate-victory inline-block">Board Exam.</span></h1>
+                      <p className="text-muted-foreground font-bold text-lg md:text-2xl max-w-xl leading-snug">High-fidelity simulations with AI analytical reasoning tailored for Filipino educators.</p>
                     </div>
-                    <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all group"><Zap className="w-6 h-6 fill-current" /> <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" /></Button>
+                    <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                      <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-16 md:h-20 px-10 md:px-16 rounded-[2rem] font-black text-lg md:text-xl gap-4 shadow-[0_20px_50px_rgba(var(--primary),0.4)] hover:scale-[1.05] transition-all group active:scale-95">
+                        <Play className="w-7 h-7 fill-current" /> 
+                        <span>Launch Full Battle</span> 
+                        <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/3" />
+                  <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
+                  <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full translate-y-1/2 -translate-x-1/3 blur-2xl" />
                 </Card>
 
-                <div className="space-y-4">
-                  <h3 className="text-xl font-black tracking-tight px-2 flex items-center gap-2"><BookOpen className="w-5 h-5 text-primary" /> Training Grounds</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* MISSION ZONES */}
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between px-4">
+                    <h3 className="text-2xl font-black tracking-tight flex items-center gap-3"><Target className="w-7 h-7 text-primary" /> Training Zones</h3>
+                    <Badge variant="ghost" className="text-[10px] font-black uppercase tracking-widest opacity-40">Verified Tracks</Badge>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {[
-                      { id: 'General Education', name: 'Gen Ed', icon: <Languages />, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Core Knowledge', rnk: UNLOCK_RANKS.GENERAL_ED, title: getCareerRankTitle(UNLOCK_RANKS.GENERAL_ED) },
-                      { id: 'Professional Education', name: 'Prof Ed', icon: <GraduationCap />, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Teaching Strategy', rnk: UNLOCK_RANKS.PROFESSIONAL_ED, title: getCareerRankTitle(UNLOCK_RANKS.PROFESSIONAL_ED) },
-                      { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Subject Mastery', rnk: UNLOCK_RANKS.SPECIALIZATION, title: getCareerRankTitle(UNLOCK_RANKS.SPECIALIZATION) }
+                      { id: 'General Education', name: 'Gen Ed', icon: <Languages className="w-7 h-7" />, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Core academic disciplines', rnk: UNLOCK_RANKS.GENERAL_ED },
+                      { id: 'Professional Education', name: 'Prof Ed', icon: <GraduationCap className="w-7 h-7" />, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Teaching methodology & theory', rnk: UNLOCK_RANKS.PROFESSIONAL_ED },
+                      { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star className="w-7 h-7" />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Subject track mastery', rnk: UNLOCK_RANKS.SPECIALIZATION }
                     ].map((track, i) => {
                       const isLocked = user && !isTrackUnlocked(rankData?.rank || 1, track.id, user.unlockedTracks);
                       return (
-                        <Card key={i} onClick={() => !isLocked && startExam(track.id as any)} className={cn("group cursor-pointer border-2 transition-all rounded-[2rem] bg-card overflow-hidden active:scale-95 relative", isLocked ? "border-muted opacity-60" : "border-border/50 hover:border-primary")}>
-                          {isLocked && (
-                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/40 backdrop-blur-[1px] p-4 text-center">
-                              <div className="bg-card/90 p-2 rounded-xl border shadow-sm flex flex-col items-center">
-                                <Lock className="w-4 h-4 text-muted-foreground mb-1" />
-                                <span className="text-[8px] font-black uppercase text-muted-foreground leading-tight">Rank {track.rnk} <br />({track.title})</span>
+                        <motion.div key={i} whileHover={{ y: -8 }} whileTap={{ scale: 0.95 }}>
+                          <Card onClick={() => !isLocked && startExam(track.id as any)} className={cn("group cursor-pointer border-2 transition-all duration-300 rounded-[2.5rem] bg-card overflow-hidden relative shadow-lg h-full", isLocked ? "border-muted grayscale opacity-60" : "border-border/50 hover:border-primary")}>
+                            {isLocked && (
+                              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/60 backdrop-blur-[2px] p-6 text-center">
+                                <div className="bg-card p-4 rounded-[1.5rem] border-2 shadow-2xl flex flex-col items-center gap-2">
+                                  <Lock className="w-6 h-6 text-primary" />
+                                  <span className="text-[10px] font-black uppercase text-foreground leading-tight tracking-widest">Locked: Rank {track.rnk}</span>
+                                </div>
                               </div>
-                            </div>
-                          )}
-                          <CardContent className="p-6 space-y-4">
-                            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm", track.bg, track.color)}>{track.icon}</div>
-                            <div>
-                              <h4 className="font-black text-lg text-foreground">{track.name}</h4>
-                              <p className="text-xs text-muted-foreground font-medium">{track.desc}</p>
-                            </div>
-                          </CardContent>
-                        </Card>
+                            )}
+                            <CardContent className="p-8 space-y-6">
+                              <div className={cn("w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-lg transition-transform group-hover:scale-110", track.bg, track.color)}>{track.icon}</div>
+                              <div>
+                                <h4 className="font-black text-2xl text-foreground group-hover:text-primary transition-colors">{track.name}</h4>
+                                <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest mt-1 opacity-60">{track.desc}</p>
+                              </div>
+                              <div className="pt-2 flex justify-end">
+                                <div className="w-10 h-10 rounded-full border-2 border-border flex items-center justify-center group-hover:bg-primary group-hover:border-primary transition-all">
+                                  <ChevronRight className={cn("w-5 h-5", isLocked ? "text-muted" : "text-primary group-hover:text-primary-foreground")} />
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
                       );
                     })}
                   </div>
                 </div>
               </div>
 
-              <div className="lg:col-span-4 space-y-6">
-                <Card className="border-none shadow-xl rounded-[2.25rem] bg-gradient-to-br from-emerald-500/20 via-card to-background p-6 overflow-hidden">
-                  <div className="space-y-5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center">
-                          <Smartphone className="w-6 h-6 text-emerald-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-black text-lg text-foreground">Get Mobile App</h3>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Study anywhere</p>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="font-black text-[9px] border-emerald-500/30 text-emerald-600 bg-emerald-500/5 uppercase">
-                        {apkInfo?.version ? `v${apkInfo.version}` : 'Official APK'}
-                      </Badge>
-                    </div>
+              <div className="lg:col-span-4 space-y-8">
+                {/* DAILY QUESTS SIDEBAR */}
+                {user && (
+                  <div className="space-y-8">
+                    <DailyLoginRewards currentDay={Math.min(((user?.streakCount || 0) % 7) + 1, 7)} onClaim={async (day, xp, credits) => { if (user && firestore) { await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(xp), credits: increment(credits) }); toast({ title: "Reward Claimed!", description: `+${xp} XP & +${credits} Credits added.` }); } }} />
                     
-                    <div className="flex flex-col items-center justify-center p-5 bg-white rounded-3xl border-2 border-dashed border-emerald-500/20 relative group overflow-hidden">
-                      <AnimatePresence mode="wait">
-                        {isQrLoading ? (
-                          <motion.div 
-                            key="loader"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="w-32 h-32 flex items-center justify-center"
-                          >
-                            <div className="w-full h-full bg-emerald-50/50 animate-pulse rounded-xl flex items-center justify-center">
-                              <Loader2 className="w-6 h-6 text-emerald-300 animate-spin" />
-                            </div>
-                          </motion.div>
-                        ) : qrCodeUrl ? (
-                          <motion.div 
-                            key="qr"
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ type: "spring", damping: 15, stiffness: 200 }}
-                            className="flex flex-col items-center"
-                          >
-                            <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
-                            <div className="w-32 h-32 relative z-10 bg-white p-1 rounded-xl shadow-sm border border-emerald-100">
-                              <img src={qrCodeUrl} alt="Download QR Code" className="w-full h-full object-contain" />
-                            </div>
-                            <div className="flex items-center gap-2 mt-3 text-emerald-600 relative z-10">
-                              <QrCode className="w-3.5 h-3.5" />
-                              <p className="text-[10px] font-black uppercase tracking-[0.2em]">Scan to Download</p>
-                            </div>
-                          </motion.div>
-                        ) : null}
-                      </AnimatePresence>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Button 
-                        onClick={handleDownloadApk}
-                        className="w-full h-14 rounded-2xl font-black gap-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl shadow-emerald-500/30 transition-all hover:scale-[1.02] active:scale-95"
-                      >
-                        <Download className="w-5 h-5" />
-                        Direct Download
-                      </Button>
-                      <div className="flex items-center justify-center gap-2 text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
-                        <ShieldCheck className="w-3 h-3" />
-                        <span>Verified Professional Installer</span>
-                      </div>
-                    </div>
+                    <QuestionOfTheDay question={INITIAL_QUESTIONS[Math.floor(Date.now() / 86400000) % INITIAL_QUESTIONS.length]} onComplete={async (isCorrect, xpEarned) => { if (user && firestore && isCorrect) { await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(xpEarned), dailyQuestionsAnswered: increment(1) }); toast({ title: "Exceptional Trace!", description: `+${xpEarned} XP added to character.` }); } }} />
+                    
+                    <DailyTaskDashboard />
+                    
+                    <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden">
+                      <CardHeader className="p-6 pb-2 flex flex-row items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center"><Timer className="w-5 h-5 text-primary" /></div>
+                          <CardTitle className="text-lg font-black">Focus Timer</CardTitle>
+                        </div>
+                        <Badge variant="outline" className="font-black text-[8px] uppercase border-primary/30">POMODORO</Badge>
+                      </CardHeader>
+                      <CardContent className="p-6 pt-0">
+                        <StudyTimer onComplete={async (sessions, xpEarned) => { if (user && firestore) { await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(xpEarned) }); toast({ title: "Focus Reward!", description: `+${xpEarned} XP for academic focus.` }); } }} />
+                      </CardContent>
+                    </Card>
                   </div>
-                </Card>
-
-                {/* Daily Login Rewards */}
-                {user && (
-                  <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
-                    <CardHeader className="p-4 pb-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Gift className="w-5 h-5 text-pink-500" />
-                          <CardTitle className="text-base font-black">Daily Rewards</CardTitle>
-                        </div>
-                        <Badge variant="outline" className="text-[10px] font-bold">
-                          Day {Math.min(((user?.streakCount || 0) % 7) + 1, 7)}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <DailyLoginRewards 
-                        currentDay={Math.min(((user?.streakCount || 0) % 7) + 1, 7)}
-                        lastClaimDate={undefined}
-                        onClaim={async (day, xp, credits) => {
-                          if (user && firestore) {
-                            await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(xp) });
-                            toast({ title: "Reward Claimed!", description: `+${xp} XP earned!` });
-                          }
-                        }}
-                      />
-                    </CardContent>
-                  </Card>
                 )}
 
-                {/* Question of the Day */}
-                {user && INITIAL_QUESTIONS.length > 0 && (
-                  <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
-                    <CardHeader className="p-4 pb-2">
-                      <div className="flex items-center gap-2">
-                        <Lightbulb className="w-5 h-5 text-amber-500" />
-                        <CardTitle className="text-base font-black">Question of the Day</CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <QuestionOfTheDay 
-                        question={INITIAL_QUESTIONS[Math.floor(Date.now() / 86400000) % INITIAL_QUESTIONS.length]}
-                        onComplete={async (isCorrect, xpEarned) => {
-                          if (user && firestore && isCorrect) {
-                            await updateDoc(doc(firestore, 'users', user.uid), { 
-                              xp: increment(xpEarned),
-                              dailyQuestionsAnswered: increment(1)
-                            });
-                            toast({ title: "Correct!", description: `+${xpEarned} XP earned!` });
-                          }
-                        }}
-                      />
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Study Timer */}
-                <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
-                  <CardHeader className="p-4 pb-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Timer className="w-5 h-5 text-primary" />
-                        <CardTitle className="text-base font-black">Focus Timer</CardTitle>
-                      </div>
-                      <Badge variant="outline" className="text-[10px] font-bold">
-                        Pomodoro
-                      </Badge>
+                {/* APP VAULT CARD */}
+                <Card className="border-none shadow-2xl rounded-[3rem] bg-foreground text-background p-10 relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-700" />
+                  <div className="relative z-10 space-y-10">
+                    <div className="space-y-2">
+                      <ShieldCheck className="w-10 h-10 text-primary mb-2" />
+                      <h3 className="text-2xl font-black tracking-tight">Analytical Vault</h3>
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Cloud Authenticated Hub</p>
                     </div>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <StudyTimer 
-                      onComplete={async (sessions, xpEarned) => {
-                        if (user && firestore) {
-                          await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(xpEarned) });
-                          toast({ title: "Focus session complete!", description: `+${xpEarned} XP earned!` });
-                        }
-                      }}
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* Achievements Preview */}
-                {user && (
-                  <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
-                    <CardHeader className="p-4 pb-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Award className="w-5 h-5 text-yellow-500" />
-                          <CardTitle className="text-base font-black">Achievements</CardTitle>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <AchievementSystem 
-                        userStats={{
-                          streakCount: user?.streakCount || 0,
-                          totalQuestionsAnswered: user?.dailyQuestionsAnswered || 0,
-                          highestScore: 0,
-                          rank: rankData?.rank || 1,
-                          dailyQuestionsCompleted: 0
-                        }}
-                        unlockedAchievements={[]}
-                      />
-                    </CardContent>
-                  </Card>
-                )}
-
-                <Card className="border-none shadow-xl rounded-[2.25rem] bg-foreground text-background p-8 relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
-                  <CardHeader className="p-0 mb-6"><CardTitle className="text-xl font-black tracking-tight flex items-center gap-3"><ShieldCheck className="w-6 h-6 text-primary" /> Verified Hub</CardTitle></CardHeader>
-                  <CardContent className="p-0 space-y-8">
-                    <div className="space-y-1"><p className="text-4xl font-black text-primary">3.5K+</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Curated Items</p></div>
-                    <div className="space-y-1"><p className="text-4xl font-black text-secondary">82%</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Board Readiness</p></div>
-                    <div className="space-y-1"><p className="text-4xl font-black text-blue-400">100%</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Free Access</p></div>
-                  </CardContent>
+                    <div className="space-y-6">
+                      <div className="space-y-1"><p className="text-5xl font-black text-primary tracking-tighter">3.5K+</p><p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Curated Board Items</p></div>
+                      <div className="space-y-1"><p className="text-5xl font-black text-emerald-400 tracking-tighter">82%</p><p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Average Readiness</p></div>
+                      <div className="space-y-1"><p className="text-5xl font-black text-blue-400 tracking-tighter">100%</p><p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Static Free Access</p></div>
+                    </div>
+                    <Button variant="outline" className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-[0.2em] border-primary/30 text-primary hover:bg-primary/10 transition-all">View Leaderboard</Button>
+                  </div>
                 </Card>
               </div>
             </div>

@@ -18,13 +18,13 @@ export const XP_REWARDS = {
   AD_WATCH_XP: 75,
   QUICK_FIRE_COMPLETE: 125,
   DAILY_STREAK_BONUS: 100,
-  // New rewards for gamification
   QUESTION_OF_THE_DAY: 25,
   DAILY_LOGIN_BONUS: 50,
   POMODORO_COMPLETE: 30,
   ACHIEVEMENT_UNLOCK: 200,
   PERSONAL_BEST: 150,
-  CONFIDENT_CORRECT: 20,
+  // NEW: Confidence-based mechanics for Skill Expression
+  CONFIDENT_CORRECT_BONUS: 10,
   CONFIDENT_WRONG_PENALTY: -5,
 };
 
@@ -89,17 +89,11 @@ export function getCareerRankTitle(rank: number): string {
 }
 
 export function isTrackUnlocked(rank: number, track: string, unlockedTracks: string[] = []): boolean {
-  // Safety check for array existence
   const unlocked = Array.isArray(unlockedTracks) ? unlockedTracks : [];
-  
-  // Purchases always override rank requirements
   if (unlocked.includes(track)) return true;
-  
-  // Track-specific rank requirements
   if (track === 'General Education' || track === 'Gen Ed') return rank >= UNLOCK_RANKS.GENERAL_ED;
   if (track === 'Professional Education' || track === 'Prof Ed') return rank >= UNLOCK_RANKS.PROFESSIONAL_ED;
   if (track === 'Specialization' || track === 'Major') return rank >= UNLOCK_RANKS.SPECIALIZATION;
   if (track === 'all') return rank >= UNLOCK_RANKS.FULL_SIMULATION;
-  
   return true;
 }
