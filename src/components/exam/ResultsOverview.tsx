@@ -1,17 +1,15 @@
+
 "use client"
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LabelList } from 'recharts';
 import { 
   CheckCircle2, 
-  XCircle, 
   Trophy, 
   Target, 
-  BookOpen, 
-  ArrowLeft, 
   BrainCircuit, 
   Sparkles, 
   Loader2, 
@@ -22,12 +20,10 @@ import {
   Play, 
   MessageSquare, 
   Coins, 
-  Crown, 
   ShieldCheck, 
   ShieldAlert,
   Zap,
   Star,
-  FileText,
   TrendingUp,
   History
 } from "lucide-react";
@@ -47,7 +43,7 @@ import { useUser, useFirestore } from '@/firebase';
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getRankData, XP_REWARDS, DAILY_AD_LIMIT } from '@/lib/xp-system';
+import { getRankData, DAILY_AD_LIMIT } from '@/lib/xp-system';
 
 interface ResultsOverviewProps {
   questions: Question[];
@@ -125,7 +121,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
     { name: 'Incorrect', value: stats.total - stats.correct }
   ];
 
-  const COLORS = ['hsl(120, 73%, 75%)', 'hsl(0, 84%, 60%)'];
+  const COLORS = ['hsl(var(--secondary))', 'hsl(var(--destructive))'];
 
   const categorizedMistakes = useMemo(() => {
     const categories: Record<string, (Question & { originalIndex: number })[]> = {};
@@ -299,10 +295,10 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
             exit={{ y: -20, opacity: 0 }}
             className="w-full max-w-2xl mx-auto"
           >
-            <Card className="border-none shadow-2xl rounded-[3rem] bg-foreground text-background overflow-hidden relative group">
-              <div className="absolute top-0 right-0 p-12 opacity-5"><Lock className="w-48 h-48" /></div>
+            <Card className="border-none shadow-2xl rounded-[3rem] bg-card overflow-hidden relative group border-primary/20">
+              <div className="absolute top-0 right-0 p-12 opacity-5 text-primary"><Lock className="w-48 h-48" /></div>
               <div className="p-10 flex flex-col items-center text-center space-y-8 relative z-10">
-                <div className="w-24 h-24 bg-primary/20 rounded-[2.5rem] flex items-center justify-center border-4 border-primary/30 shadow-2xl animate-levitate">
+                <div className="w-24 h-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center border-4 border-primary/20 shadow-2xl animate-levitate">
                   <BrainCircuit className="w-12 h-12 text-primary" />
                 </div>
                 
@@ -310,7 +306,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                   <Badge variant="outline" className="border-primary/30 text-primary font-black text-[10px] uppercase tracking-[0.3em] px-4 py-1 mb-2">
                     Analysis Locked
                   </Badge>
-                  <h2 className="text-4xl font-black tracking-tight leading-tight">Unlock Your <br /><span className="text-primary italic">Pedagogical Roadmap</span></h2>
+                  <h2 className="text-4xl font-black tracking-tight leading-tight text-foreground">Unlock Your <br /><span className="text-primary italic">Pedagogical Roadmap</span></h2>
                   <p className="text-muted-foreground font-medium text-base max-w-sm mx-auto leading-relaxed">
                     Get instant access to accuracy charts, subject mastery breakdown, and personalized AI recommendations.
                   </p>
@@ -320,7 +316,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                   <Button 
                     onClick={handleUnlockAnalysisWithAd}
                     disabled={unlocking || (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT}
-                    className="h-16 rounded-[1.75rem] font-black text-xs uppercase tracking-widest gap-3 shadow-2xl transition-all relative overflow-hidden group border-2 border-transparent"
+                    className="h-16 rounded-[1.75rem] font-black text-xs uppercase tracking-widest gap-3 shadow-2xl transition-all relative overflow-hidden group border-2 border-transparent bg-primary text-primary-foreground"
                   >
                     {unlocking && !verifying ? <Loader2 className="w-5 h-5 animate-spin" /> : verifying ? <ShieldAlert className="w-5 h-5 animate-pulse" /> : <Play className="w-5 h-5 fill-current" />}
                     {unlocking ? (verifying ? "Verifying..." : "Playing...") : "Watch Professional Clip"}
@@ -338,7 +334,7 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
                         <span className="font-black">Unlock Now</span>
                       </div>
                     </div>
-                    <div className="animate-breathing-primary bg-background/90 px-3 py-1.5 rounded-xl border-2 border-primary/30 flex items-center gap-2 ml-auto">
+                    <div className="animate-breathing-primary bg-background/95 px-3 py-1.5 rounded-xl border-2 border-primary/30 flex items-center gap-2 ml-auto">
                       <span className="font-black text-sm text-primary">10</span>
                       <Coins className="w-4 h-4 text-primary fill-current" />
                     </div>
@@ -431,41 +427,50 @@ export function ResultsOverview({ questions, answers, timeSpent, aiSummary, onRe
               </Card>
             </div>
 
-            {aiSummary && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-8">
-                <Card className="lg:col-span-2 border-none shadow-xl bg-card overflow-hidden rounded-[3rem]">
-                  <div className="h-2 bg-primary w-full" />
-                  <CardHeader className="flex flex-row items-center gap-5 p-10 pb-4">
-                    <div className="p-4 bg-primary/10 rounded-3xl shadow-inner"><Trophy className="w-8 h-8 text-primary" /></div>
-                    <div>
-                      <CardTitle className="text-2xl font-black tracking-tight text-foreground">Pedagogical Review</CardTitle>
-                      <p className="text-[10px] font-black uppercase text-primary tracking-[0.2em] mt-1">AI Generated Analysis</p>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-10 pt-4 space-y-8">
-                    <div className="p-8 bg-primary/5 rounded-[2.5rem] italic text-xl leading-relaxed border-l-8 border-primary font-medium text-foreground shadow-inner">
-                      <TypewriterText text={aiSummary.summary} />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                      <div className="space-y-4">
-                        <h3 className="flex items-center gap-3 font-black text-emerald-600 uppercase tracking-[0.25em] text-[11px]"><CheckCircle2 className="w-5 h-5" /> Conceptual Peaks</h3>
-                        <div className="flex flex-wrap gap-2.5">{aiSummary.strengths.map((s, idx) => (<Badge key={idx} variant="secondary" className="px-4 py-1.5 text-xs font-black rounded-xl bg-emerald-500/10 text-emerald-700 border-none shadow-sm">{s}</Badge>))}</div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-8">
+              <Card className="lg:col-span-2 border-none shadow-xl bg-card overflow-hidden rounded-[3rem]">
+                <div className="h-2 bg-primary w-full" />
+                <CardHeader className="flex flex-row items-center gap-5 p-10 pb-4">
+                  <div className="p-4 bg-primary/10 rounded-3xl shadow-inner"><Trophy className="w-8 h-8 text-primary" /></div>
+                  <div>
+                    <CardTitle className="text-2xl font-black tracking-tight text-foreground">AI Result Insight</CardTitle>
+                    <p className="text-[10px] font-black uppercase text-primary tracking-[0.2em] mt-1">Pedagogical Analysis Roadmap</p>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-10 pt-4 space-y-8">
+                  {aiSummary ? (
+                    <>
+                      <div className="p-8 bg-primary/5 rounded-[2.5rem] italic text-xl leading-relaxed border-l-8 border-primary font-medium text-foreground shadow-inner">
+                        <TypewriterText text={aiSummary.summary} />
                       </div>
-                      <div className="space-y-4">
-                        <h3 className="flex items-center gap-3 font-black text-rose-600 uppercase tracking-[0.25em] text-[11px]"><AlertCircle className="w-5 h-5" /> Academic Gaps</h3>
-                        <div className="flex flex-wrap gap-2.5">{aiSummary.weaknesses.map((w, idx) => (<Badge key={idx} variant="outline" className="px-4 py-1.5 border-rose-200 bg-rose-500/5 text-rose-700 text-xs font-black rounded-xl shadow-sm">{w}</Badge>))}</div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div className="space-y-4">
+                          <h3 className="flex items-center gap-3 font-black text-emerald-600 uppercase tracking-[0.25em] text-[11px]"><CheckCircle2 className="w-5 h-5" /> Conceptual Peaks</h3>
+                          <div className="flex flex-wrap gap-2.5">{aiSummary.strengths.map((s, idx) => (<Badge key={idx} variant="secondary" className="px-4 py-1.5 text-xs font-black rounded-xl bg-emerald-500/10 text-emerald-700 border-none shadow-sm">{s}</Badge>))}</div>
+                        </div>
+                        <div className="space-y-4">
+                          <h3 className="flex items-center gap-3 font-black text-rose-600 uppercase tracking-[0.25em] text-[11px]"><AlertCircle className="w-5 h-5" /> Academic Gaps</h3>
+                          <div className="flex flex-wrap gap-2.5">{aiSummary.weaknesses.map((w, idx) => (<Badge key={idx} variant="outline" className="px-4 py-1.5 border-rose-200 bg-rose-500/5 text-rose-700 text-xs font-black rounded-xl shadow-sm">{w}</Badge>))}</div>
+                        </div>
                       </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 space-y-4 opacity-40">
+                      <BrainCircuit className="w-12 h-12 text-muted-foreground animate-pulse" />
+                      <p className="text-xs font-black uppercase tracking-widest">Generating Insight Trace...</p>
                     </div>
-                  </CardContent>
-                </Card>
-                <Card className="lg:col-span-1 border-none shadow-xl bg-foreground rounded-[3rem] p-10 text-background relative overflow-hidden flex flex-col justify-center text-center space-y-6">
-                  <div className="absolute top-0 right-0 p-8 opacity-10"><Zap className="w-32 h-32 fill-current" /></div>
-                  <CardHeader className="p-0"><CardTitle className="text-xs font-black uppercase tracking-[0.4em] text-primary">Strategic Action</CardTitle></CardHeader>
-                  <CardContent className="p-0 text-xl font-bold leading-relaxed px-4"><TypewriterText text={aiSummary.recommendations} /></CardContent>
-                  <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 rounded-2xl h-14 font-black uppercase tracking-[0.2em] text-xs">Access Detailed Guide</Button>
-                </Card>
-              </div>
-            )}
+                  )}
+                </CardContent>
+              </Card>
+              <Card className="lg:col-span-1 border-none shadow-xl bg-foreground rounded-[3rem] p-10 text-background relative overflow-hidden flex flex-col justify-center text-center space-y-6">
+                <div className="absolute top-0 right-0 p-8 opacity-10"><Zap className="w-32 h-32 fill-current" /></div>
+                <CardHeader className="p-0"><CardTitle className="text-xs font-black uppercase tracking-[0.4em] text-primary">Strategic Action</CardTitle></CardHeader>
+                <CardContent className="p-0 text-xl font-bold leading-relaxed px-4">
+                  {aiSummary ? <TypewriterText text={aiSummary.recommendations} /> : "Analyzing session metadata for career optimization..."}
+                </CardContent>
+                <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 rounded-2xl h-14 font-black uppercase tracking-[0.2em] text-xs">Access Detailed Guide</Button>
+              </Card>
+            </div>
 
             <div className="space-y-8 pt-4">
               <div className="flex items-center justify-between px-2">
