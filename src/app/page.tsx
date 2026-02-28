@@ -24,7 +24,6 @@ import {
   Star,
   Loader2,
   BookOpen,
-  Smartphone,
   Facebook,
   ShieldCheck,
   Languages,
@@ -34,26 +33,14 @@ import {
   Sun,
   Crown,
   Shield,
-  LayoutGrid,
   Sparkles,
   Lock,
-  Timer,
   Play,
-  BellRing,
-  Download,
-  QrCode,
-  Gift,
-  Lightbulb,
-  Target,
-  CheckCircle2,
-  Award,
-  Medal,
-  MapPin
+  ShieldAlert
 } from "lucide-react";
-import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
-import { Question, MAJORSHIPS, INITIAL_QUESTIONS } from "@/app/lib/mock-data";
+import { Question, MAJORSHIPS } from "@/app/lib/mock-data";
 import { useUser, useFirestore } from "@/firebase";
 import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp, query, where, getCountFromServer } from "firebase/firestore";
 import { fetchQuestionsFromFirestore } from "@/lib/db-seed";
@@ -63,14 +50,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, getCareerRankTitle, CAREER_TIERS } from '@/lib/xp-system';
-import { getApkInfoUrl, getDownloadUrl } from '@/lib/config';
-import { DailyLoginRewards } from '@/components/ui/daily-login-rewards';
-import { QuestionOfTheDay } from '@/components/ui/question-of-the-day';
-import { StudyTimer } from '@/components/ui/study-timer';
-import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
+import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, getCareerRankTitle } from '@/lib/xp-system';
 
-type AppState = 'dashboard' | 'exam' | 'results' | 'onboarding' | 'quickfire' | 'quickfire_results';
+type AppState = 'dashboard' | 'exam' | 'results' | 'onboarding';
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
@@ -152,10 +134,6 @@ function LetsPrepContent() {
   const [quickFireCooldown, setQuickFireCooldown] = useState(0);
   const [claimingXp, setClaimingXp] = useState(false);
   
-  const [apkInfo, setApkInfo] = useState<any>(null);
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
-  const [isQrLoading, setIsQrLoading] = useState(true);
-  
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -185,13 +163,6 @@ function LetsPrepContent() {
       setIsRefreshing(true);
       try {
         await refreshUser();
-        const functionsUrl = getApkInfoUrl();
-        const res = await fetch(functionsUrl).catch(err => { throw err; });
-        const data = await res.json();
-        setApkInfo(data);
-        const downloadUrl = getDownloadUrl();
-        const qrDataUrl = await QRCode.toDataURL(downloadUrl, { width: 256, margin: 2, color: { dark: '#10b981', light: '#ffffff' } });
-        setQrCodeUrl(qrDataUrl);
         if (typeof window !== 'undefined') window.location.reload();
         toast({ title: "Refreshed", description: "Latest data loaded." });
       } catch (e) {
@@ -210,27 +181,6 @@ function LetsPrepContent() {
   };
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
-
-  useEffect(() => {
-    const fetchApkAndGenerateQR = async () => {
-      try {
-        setIsQrLoading(true);
-        const functionsUrl = getApkInfoUrl();
-        const res = await fetch(functionsUrl).catch(err => { console.error('Failed to fetch APK info:', err); throw err; });
-        const data = await res.json();
-        setApkInfo(data);
-        const downloadUrl = getDownloadUrl();
-        const qrDataUrl = await QRCode.toDataURL(downloadUrl, { width: 256, margin: 2, color: { dark: '#10b981', light: '#ffffff' } });
-        setQrCodeUrl(qrDataUrl);
-      } catch (e) { console.error('Error fetching APK info or generating QR code:', e); } finally { setIsQrLoading(false); }
-    };
-    fetchApkAndGenerateQR();
-  }, []);
-
-  useEffect(() => {
-    if (searchParams.get('start') === 'quickfire') startExam('quickfire');
-    else if (searchParams.get('start')) startExam(searchParams.get('start') as any);
-  }, [searchParams]);
 
   useEffect(() => {
     if (!firestore) return;
@@ -304,7 +254,7 @@ function LetsPrepContent() {
       if (finalQuestions.length === 0) throw new Error(`Insufficient items.`);
       setCurrentQuestions(finalQuestions);
       setLoadingStep(100);
-      setTimeout(() => { setState(category === 'quickfire' ? 'quickfire' : 'exam'); setLoading(false); }, 300);
+      setTimeout(() => { setState(category === 'quickfire' ? 'exam' : 'exam'); setLoading(false); }, 300);
     } catch (e: any) { toast({ variant: "destructive", title: "Simulation Failed", description: e.message }); setLoading(false); }
   };
 
@@ -319,7 +269,7 @@ function LetsPrepContent() {
       const isCorrect = answers[q.id] === q.correctAnswer;
       const isConfident = confidentAnswers[q.id] || false;
       return {
-        ...q, // Snapshot full question for Vault Detailed View
+        ...q,
         questionId: q.id,
         userAnswer: answers[q.id],
         isCorrect,
@@ -356,21 +306,7 @@ function LetsPrepContent() {
 
     setLoadingStep(100);
     setLoading(false);
-    
-    setTimeout(() => { setState(isQuickFire ? 'quickfire_results' : 'results'); }, 300);
-  };
-
-  const [nickname, setNickname] = useState("");
-  const [selectedMajorship, setSelectedMajorship] = useState("");
-  const [savingOnboarding, setSavingOnboarding] = useState(false);
-
-  const finishOnboarding = async () => {
-    if (!selectedMajorship || !nickname) { toast({ title: "Missing Info", description: "Complete the setup." }); return; }
-    setSavingOnboarding(true);
-    try {
-      await updateProfile({ displayName: nickname, majorship: selectedMajorship, onboardingComplete: true });
-      setState('dashboard');
-    } catch (e: any) { toast({ variant: "destructive", title: "Setup Error", description: e.message }); } finally { setSavingOnboarding(false); }
+    setTimeout(() => { setState('results'); }, 300);
   };
 
   const handleWatchXpAd = async () => {
@@ -379,7 +315,8 @@ function LetsPrepContent() {
     setTimeout(async () => {
       try {
         await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(XP_REWARDS.AD_WATCH_XP), credits: increment(5), lastAdXpTimestamp: Date.now() });
-        toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP earned.` });
+        toast({ variant: "reward", title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP earned.` });
+        refreshUser();
       } catch (e) { toast({ variant: "destructive", title: "Claim Failed", description: "Sync error." }); } finally { setClaimingXp(false); }
     }, 2500);
   };
@@ -403,7 +340,7 @@ function LetsPrepContent() {
   ] : [
     { icon: <Users className="w-4 h-4 text-blue-500" />, label: 'Community', value: '1.7K+', color: 'text-blue-500 bg-blue-500/5' },
     { icon: <Sparkles className="w-4 h-4 text-purple-500 animate-sparkle" />, label: 'AI Solved', value: '8.2K+', color: 'text-purple-500 bg-purple-500/5' },
-    { icon: <LayoutGrid className="w-4 h-4 text-pink-500" />, label: 'Items', value: '3.5K+', color: 'text-pink-500 bg-pink-500/5' },
+    { icon: <Star className="w-4 h-4 text-pink-500" />, label: 'Items', value: '3.5K+', color: 'text-pink-500 bg-pink-500/5' },
     { icon: <Trophy className="w-4 h-4 text-yellow-500" />, label: 'Readiness', value: '82%', color: 'text-yellow-500 bg-yellow-500/5' }
   ];
 
@@ -457,18 +394,18 @@ function LetsPrepContent() {
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Academic Nickname</Label>
                     <div className="relative">
                       <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
-                      <Input placeholder="e.g. Master Teacher" className="pl-11 h-14 rounded-2xl border-2 font-black text-lg focus:border-primary transition-all" value={nickname} onChange={(e) => setNickname(e.target.value)} />
+                      <Input placeholder="e.g. Master Teacher" className="pl-11 h-14 rounded-2xl border-2 font-black text-lg focus:border-primary transition-all" value={user?.displayName || ""} onChange={(e) => {}} />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Specialization Track</Label>
-                    <Select value={selectedMajorship} onValueChange={setSelectedMajorship}>
+                    <Select value={user?.majorship || ""} onValueChange={(val) => updateProfile({ majorship: val })}>
                       <SelectTrigger className="h-14 rounded-2xl border-2 px-4 font-black text-lg"><div className="flex items-center gap-3"><GraduationCap className="w-5 h-5 text-primary" /><SelectValue placeholder="Select specialized path..." /></div></SelectTrigger>
                       <SelectContent className="rounded-2xl">{MAJORSHIPS.map(m => (<SelectItem key={m} value={m} className="font-bold py-4 px-6">{m}</SelectItem>))}</SelectContent>
                     </Select>
                   </div>
                 </div>
-                <Button onClick={finishOnboarding} disabled={savingOnboarding || !nickname || !selectedMajorship} className="w-full h-16 rounded-[1.75rem] font-black text-lg shadow-2xl shadow-primary/30 active:scale-95 transition-all gap-3"><Zap className="w-6 h-6 fill-current" /> Enter Learning Vault</Button>
+                <Button onClick={() => setState('dashboard')} className="w-full h-16 rounded-[1.75rem] font-black text-lg shadow-2xl shadow-primary/30 active:scale-95 transition-all gap-3"><Zap className="w-6 h-6 fill-current" /> Enter Learning Vault</Button>
               </CardContent>
             </Card>
           </motion.div>
@@ -518,9 +455,9 @@ function LetsPrepContent() {
                           {claimingXp ? <Loader2 className="w-5 h-5 animate-spin" /> : adCooldown > 0 ? <Timer className="w-5 h-5" /> : <Play className="w-5 h-5 fill-current" />}
                           {adCooldown > 0 ? formatCooldown(adCooldown) : "XP Boost Clip"}
                         </Button>
-                        <Button onClick={() => startExam('quickfire')} disabled={quickFireCooldown > 0} variant="default" className="h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 shadow-2xl shadow-primary/30 active:scale-95 transition-all">
-                          {quickFireCooldown > 0 ? <Timer className="w-5 h-5" /> : <Zap className="w-5 h-5 fill-current" />}
-                          {quickFireCooldown > 0 ? formatCooldown(quickFireCooldown) : "Brain Teaser"}
+                        <Button onClick={() => router.push('/dashboard')} variant="default" className="h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 shadow-2xl shadow-primary/30 active:scale-95 transition-all">
+                          <Trophy className="w-5 h-5 fill-current" />
+                          View Roadmap
                         </Button>
                       </div>
                     </CardContent>
@@ -543,7 +480,6 @@ function LetsPrepContent() {
                     </div>
                   </div>
                   <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
-                  <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full translate-y-1/2 -translate-x-1/3 blur-2xl" />
                 </Card>
 
                 <div className="space-y-6">
@@ -590,118 +526,6 @@ function LetsPrepContent() {
               </div>
 
               <div className="lg:col-span-4 space-y-8">
-                {user && (
-                  <div className="space-y-8">
-                    {/* CAREER ROADMAP SECTION */}
-                    <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden">
-                      <CardHeader className="p-6 pb-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center"><MapPin className="w-5 h-5 text-primary" /></div>
-                            <CardTitle className="text-lg font-black">Career Roadmap</CardTitle>
-                          </div>
-                          <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest border-primary/20 text-primary">MILSTONES</Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="p-6 pt-2">
-                        <div className="relative space-y-6 before:absolute before:left-5 before:top-2 before:bottom-2 before:w-[2px] before:bg-muted before:content-['']">
-                          {CAREER_TIERS.slice(0, 6).map((tier, idx) => {
-                            const currentRank = rankData?.rank || 1;
-                            const isCompleted = currentRank > tier.maxRank;
-                            const isActive = currentRank >= tier.minRank && currentRank <= tier.maxRank;
-                            const isFuture = currentRank < tier.minRank;
-                            
-                            // Milestone rewards/unlocks to show
-                            const milestones = [];
-                            if (tier.minRank === 1) milestones.push({ icon: <Languages className="w-3 h-3" />, text: "Gen Ed Unlocked" });
-                            if (tier.minRank === 2) milestones.push({ icon: <BookOpen className="w-3 h-3" />, text: "Prof Ed Unlocked" });
-                            if (tier.minRank === 3) milestones.push({ icon: <Star className="w-3 h-3" />, text: "Major Unlocked" });
-                            if (tier.minRank === 5) milestones.push({ icon: <Zap className="w-3 h-3" />, text: "Full Simulation Unlocked" });
-
-                            return (
-                              <motion.div 
-                                key={idx} 
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: idx * 0.1 }}
-                                className={cn(
-                                  "relative pl-12 transition-all",
-                                  isCompleted ? "opacity-50 grayscale-[0.5]" : "opacity-100"
-                                )}
-                              >
-                                <div className={cn(
-                                  "absolute left-0 w-10 h-10 rounded-xl border-2 flex items-center justify-center z-10 transition-all shadow-sm",
-                                  isActive ? "bg-primary border-primary text-primary-foreground scale-110 shadow-lg animate-breathing-primary" : 
-                                  isCompleted ? "bg-emerald-500 border-emerald-500 text-white" : 
-                                  "bg-card border-muted text-muted-foreground"
-                                )}>
-                                  {isCompleted ? <CheckCircle2 className="w-5 h-5" /> : isActive ? <Award className="w-5 h-5" /> : <Lock className="w-4 h-4" />}
-                                </div>
-                                <div className={cn(
-                                  "p-4 rounded-2xl border-2 transition-all",
-                                  isActive ? "bg-primary/5 border-primary shadow-md" : "bg-muted/10 border-transparent"
-                                )}>
-                                  <div className="flex justify-between items-start mb-1">
-                                    <p className={cn("text-xs font-black uppercase tracking-tight", isActive ? "text-primary" : "text-foreground")}>{tier.title}</p>
-                                    <div className="flex items-center gap-1">
-                                      <Sparkles className="w-3 h-3 text-yellow-600 fill-current animate-sparkle" />
-                                      <span className="text-[10px] font-black">+{tier.reward}</span>
-                                    </div>
-                                  </div>
-                                  <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Rank {tier.minRank} - {tier.maxRank}</p>
-                                  
-                                  {milestones.length > 0 && (
-                                    <div className="flex flex-wrap gap-2 mt-3">
-                                      {milestones.map((m, mIdx) => (
-                                        <Badge key={mIdx} variant="secondary" className="bg-card text-[8px] font-black uppercase py-0.5 px-2 border-border gap-1.5 shadow-sm">
-                                          {m.icon}
-                                          {m.text}
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                  )}
-                                  
-                                  {isActive && (
-                                    <div className="mt-3">
-                                      <div className="flex justify-between text-[8px] font-black uppercase text-primary mb-1">
-                                        <span>Current Progress</span>
-                                        <span>{Math.round(rankData?.progress || 0)}%</span>
-                                      </div>
-                                      <Progress value={rankData?.progress} className="h-1" />
-                                    </div>
-                                  )}
-                                </div>
-                              </motion.div>
-                            );
-                          })}
-                        </div>
-                        <Button variant="ghost" className="w-full mt-4 h-10 rounded-xl font-black text-[9px] uppercase tracking-widest text-muted-foreground hover:text-primary">
-                          View Full Career Path <ChevronRight className="w-3 h-3 ml-1" />
-                        </Button>
-                      </CardContent>
-                    </Card>
-
-                    <DailyLoginRewards currentDay={Math.min(((user?.streakCount || 0) % 7) + 1, 7)} onClaim={async (day, xp, credits) => { if (user && firestore) { await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(xp), credits: increment(credits) }); toast({ title: "Reward Claimed!", description: `+${xp} XP & +${credits} Credits added.` }); } }} />
-                    
-                    <QuestionOfTheDay question={INITIAL_QUESTIONS[Math.floor(Date.now() / 86400000) % INITIAL_QUESTIONS.length]} onComplete={async (isCorrect, xpEarned) => { if (user && firestore && isCorrect) { await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(xpEarned), dailyQuestionsAnswered: increment(1) }); toast({ title: "Exceptional Trace!", description: `+${xpEarned} XP added to character.` }); } }} />
-                    
-                    <DailyTaskDashboard />
-                    
-                    <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden">
-                      <CardHeader className="p-6 pb-2 flex flex-row items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center"><Timer className="w-5 h-5 text-primary" /></div>
-                          <CardTitle className="text-lg font-black">Focus Timer</CardTitle>
-                        </div>
-                        <Badge variant="outline" className="font-black text-[8px] uppercase border-primary/30">POMODORO</Badge>
-                      </CardHeader>
-                      <CardContent className="p-6 pt-0">
-                        <StudyTimer onComplete={async (sessions, xpEarned) => { if (user && firestore) { await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(xpEarned) }); toast({ title: "Focus Reward!", description: `+${xpEarned} XP for academic focus.` }); } }} />
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-
                 <Card className="border-none shadow-2xl rounded-[3rem] bg-foreground text-background p-10 relative overflow-hidden group">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-700" />
                   <div className="relative z-10 space-y-10">
@@ -715,7 +539,7 @@ function LetsPrepContent() {
                       <div className="space-y-1"><p className="text-5xl font-black text-emerald-400 tracking-tighter">82%</p><p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Average Readiness</p></div>
                       <div className="space-y-1"><p className="text-5xl font-black text-blue-400 tracking-tighter">100%</p><p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Static Free Access</p></div>
                     </div>
-                    <Button variant="outline" className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-[0.2em] border-primary/30 text-primary hover:bg-primary/10 transition-all">View Leaderboard</Button>
+                    <Button variant="outline" className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-[0.2em] border-primary/30 text-primary hover:bg-primary/10 transition-all" onClick={() => router.push('/events')}>View Leaderboard</Button>
                   </div>
                 </Card>
               </div>
