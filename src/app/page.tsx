@@ -36,7 +36,8 @@ import {
   Sparkles,
   Lock,
   Play,
-  ShieldAlert
+  ShieldAlert,
+  Target
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
