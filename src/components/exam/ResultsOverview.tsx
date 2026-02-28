@@ -50,7 +50,7 @@ interface ResultsOverviewProps {
   answers: Record<string, string>;
   timeSpent: number;
   onRestart: () => void;
-  resultId?: string; // ID of the exam_results document in Firestore
+  resultId?: string;
 }
 
 function TypewriterText({ text, speed = 15 }: { text: string; speed?: number }) {
@@ -81,19 +81,10 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
   
   const [aiSummary, setAiSummary] = useState<PersonalizedPerformanceSummaryOutput | null>(null);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
-  const [localExplanations, setLocalExplanations] = useState<Record<string, string>>(() => {
-    // PRE-LOAD: Initialize with any explanations already present in the question objects (from vault snapshots)
-    const initial: Record<string, string> = {};
-    questions.forEach(q => {
-      if ((q as any).aiExplanation) {
-        initial[q.id] = (q as any).aiExplanation;
-      }
-    });
-    return initial;
-  });
+  const [localExplanations, setLocalExplanations] = useState<Record<string, string>>({});
   const [generatingIds, setGeneratingIds] = useState<Set<string>>(new Set());
 
-  // Ensure state stays synced with incoming question data (for vault navigation)
+  // PRE-LOAD: Ensure previously saved explanations are used from the start
   useEffect(() => {
     const initial: Record<string, string> = {};
     questions.forEach(q => {
@@ -101,7 +92,9 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
         initial[q.id] = (q as any).aiExplanation;
       }
     });
-    setLocalExplanations(prev => ({ ...initial, ...prev }));
+    if (Object.keys(initial).length > 0) {
+      setLocalExplanations(prev => ({ ...initial, ...prev }));
+    }
   }, [questions]);
 
   useEffect(() => {
@@ -115,6 +108,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
     const subjectStats: Record<string, { total: number; correct: number }> = {};
 
     questions.forEach(q => {
+      const qId = q.id;
       const key = q.subject === 'Specialization' && q.subCategory 
         ? `${q.subject}: ${q.subCategory}`
         : q.subject;
@@ -122,7 +116,9 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
       if (!subjectStats[key]) subjectStats[key] = { total: 0, correct: 0 };
       subjectStats[key].total++;
       
-      if (answers[q.id] === q.correctAnswer) {
+      // Handle both direct ID access and potential questionId from snapshots
+      const userAnswer = answers[qId];
+      if (userAnswer === q.correctAnswer) {
         correct++;
         subjectStats[key].correct++;
       }
@@ -141,7 +137,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
   }, [questions, answers]);
 
   const generateReportAnalysis = useCallback(async () => {
-    if (isGeneratingAi || aiSummary) return;
+    if (isGeneratingAi || aiSummary || !isUnlocked) return;
     setIsGeneratingAi(true);
     try {
       const summaryInput = {
@@ -162,13 +158,11 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
     } finally {
       setIsGeneratingAi(false);
     }
-  }, [stats, timeSpent, isGeneratingAi, aiSummary]);
+  }, [stats, timeSpent, isGeneratingAi, aiSummary, isUnlocked]);
 
   useEffect(() => {
-    if (isUnlocked) {
-      generateReportAnalysis();
-    }
-  }, [isUnlocked, generateReportAnalysis]);
+    generateReportAnalysis();
+  }, [generateReportAnalysis]);
 
   const handleUnlockWithAd = async () => {
     if (!user || !firestore) return;
@@ -223,7 +217,6 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
 
   const handleGenerateExplanation = async (q: Question) => {
     if (!user || !firestore) return;
-    // CRITICAL: Block duplicate generation if data already exists in source
     if (generatingIds.has(q.id) || localExplanations[q.id]) return;
 
     const isPro = !!user.isPro;
@@ -259,7 +252,6 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
         const explanation = result.explanations[0].aiExplanation;
         setLocalExplanations(prev => ({ ...prev, [q.id]: explanation }));
         
-        // Save to Firestore permanently if resultId is present (Vault Persistence)
         if (resultId && !user.uid.startsWith('bypass')) {
           const examDocRef = doc(firestore, 'exam_results', resultId);
           const docSnap = await getDoc(examDocRef);
@@ -291,7 +283,8 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
   const categorizedMistakes = useMemo(() => {
     const categories: Record<string, (Question & { originalIndex: number })[]> = {};
     questions.forEach((q, index) => {
-      if (answers[q.id] !== q.correctAnswer) {
+      const userAnswer = answers[q.id];
+      if (userAnswer !== q.correctAnswer) {
         const key = q.subject === 'Specialization' && q.subCategory ? `${q.subject}: ${q.subCategory}` : q.subject;
         if (!categories[key]) categories[key] = [];
         categories[key].push({ ...q, originalIndex: index });
@@ -403,7 +396,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
         )}
       </AnimatePresence>
 
-      {/* Itemized Review - Always Visible */}
+      {/* Itemized Review - Re-engineered for Trace Accuracy */}
       <div className="space-y-8 pt-4">
         <div className="flex items-center justify-between px-2">
           <h2 className="text-3xl font-black tracking-tight flex items-center gap-4 text-foreground"><div className="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center shadow-inner"><BrainCircuit className="w-7 h-7 text-rose-600" /></div>Itemized Review</h2>
@@ -415,46 +408,125 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
             {Object.entries(categorizedMistakes).map(([subject, mistakes]) => (
               <div key={subject} className="space-y-3">
                 <div className="flex items-center gap-3 px-4 py-2"><div className="w-1.5 h-1.5 bg-primary rounded-full" /><p className="text-[11px] font-black uppercase text-primary tracking-[0.3em]">{subject}</p></div>
-                {mistakes.map((q) => (
-                  <AccordionItem key={q.id} value={q.id} className="border-none bg-card rounded-[2rem] px-2 overflow-hidden shadow-xl border border-border/20 transition-all hover:shadow-2xl">
-                    <AccordionTrigger className="hover:no-underline py-6 px-6 text-left"><div className="flex items-center gap-4"><div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-600 font-black text-xs shadow-inner">#{q.originalIndex + 1}</div><span className="text-sm font-black line-clamp-1 pr-4 uppercase tracking-tight">{q.text}</span></div></AccordionTrigger>
-                    <AccordionContent className="p-8 pt-0 space-y-6">
-                      <div className="bg-muted/30 p-6 rounded-[2rem] border-2 border-dashed border-border/50">
-                        <p className="font-black text-base md:text-lg mb-6 leading-snug">{q.text}</p>
-                        <div className="grid gap-3">{q.options.map((opt, i) => (
-                          <div key={i} className={cn("p-4 rounded-2xl border-2 text-sm flex items-center gap-4 transition-all shadow-sm", opt === q.correctAnswer ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 font-black" : opt === answers[q.id] ? "bg-rose-500/10 border-rose-500/30 text-rose-700 font-black" : "bg-card text-muted-foreground opacity-60 grayscale-[0.5]")}>
-                            <span className="w-7 h-7 rounded-xl border-2 flex items-center justify-center text-[10px] font-black shrink-0 border-current/20">{String.fromCharCode(65 + i)}</span><span className="flex-1">{opt}</span>
+                {mistakes.map((q) => {
+                  const userAnswer = answers[q.id];
+                  const hasStoredExplanation = !!localExplanations[q.id];
+                  
+                  return (
+                    <AccordionItem key={q.id} value={q.id} className="border-none bg-card rounded-[2rem] px-2 overflow-hidden shadow-xl border border-border/20 transition-all hover:shadow-2xl">
+                      <AccordionTrigger className="hover:no-underline py-6 px-6 text-left">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-600 font-black text-xs shadow-inner">
+                            #{q.originalIndex + 1}
                           </div>
-                        ))}</div>
-                      </div>
-                      <AnimatePresence mode="wait">
-                        {!localExplanations[q.id] ? (
-                          <Button onClick={() => handleGenerateExplanation(q)} disabled={generatingIds.has(q.id)} className={cn("w-full h-16 rounded-[1.75rem] font-black uppercase tracking-[0.2em] text-xs gap-4 transition-all relative overflow-hidden border-2 group shadow-xl", generatingIds.has(q.id) ? "bg-primary/10 border-primary/20 text-primary" : "bg-foreground text-background")}>
-                            {generatingIds.has(q.id) ? <div className="flex items-center gap-3"><Loader2 className="w-5 h-5 animate-spin" /><span>Calibrating Insight...</span></div> : (
-                              <div className="flex items-center justify-between w-full px-4">
-                                <div className="flex items-center gap-3"><Sparkles className="w-5 h-5 text-primary fill-current group-hover:animate-pulse" /><span>AI Tutor Deep Dive</span></div>
-                                <div className="animate-breathing-primary bg-background/90 px-4 py-2 rounded-xl border-2 border-primary/30 flex items-center gap-2">
-                                  <span className="font-black text-sm text-primary">5</span><Coins className="w-4 h-4 text-primary fill-current" /><span className="text-[8px] font-black text-primary opacity-60">CREDIT</span>
+                          <span className="text-sm font-black line-clamp-1 pr-4 uppercase tracking-tight text-foreground">
+                            {q.text}
+                          </span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="p-8 pt-0 space-y-6">
+                        <div className="bg-muted/20 p-6 md:p-8 rounded-[2.5rem] border-2 border-dashed border-border/50">
+                          <p className="font-black text-lg md:text-xl mb-8 leading-snug text-foreground">
+                            {q.text}
+                          </p>
+                          <div className="grid grid-cols-1 gap-3">
+                            {q.options.map((opt, i) => {
+                              const isCorrect = opt === q.correctAnswer;
+                              const isUserWrongChoice = opt === userAnswer;
+                              
+                              return (
+                                <div 
+                                  key={i} 
+                                  className={cn(
+                                    "p-5 rounded-2xl border-2 text-sm md:text-base flex items-center gap-4 transition-all shadow-sm",
+                                    isCorrect ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 font-black" : 
+                                    isUserWrongChoice ? "bg-rose-500/10 border-rose-500/30 text-rose-700 font-black" : 
+                                    "bg-card border-border/50 text-muted-foreground opacity-60"
+                                  )}
+                                >
+                                  <span className={cn(
+                                    "w-8 h-8 rounded-xl border-2 flex items-center justify-center text-xs font-black shrink-0",
+                                    isCorrect ? "border-emerald-500/40 bg-emerald-500/10" : 
+                                    isUserWrongChoice ? "border-rose-500/40 bg-rose-500/10" : 
+                                    "border-border bg-muted/20"
+                                  )}>
+                                    {String.fromCharCode(65 + i)}
+                                  </span>
+                                  <span className="flex-1 leading-tight">{opt}</span>
+                                  {isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
+                                  {isUserWrongChoice && <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <AnimatePresence mode="wait">
+                          {!hasStoredExplanation ? (
+                            <Button 
+                              onClick={() => handleGenerateExplanation(q)} 
+                              disabled={generatingIds.has(q.id)} 
+                              className={cn(
+                                "w-full h-16 rounded-[1.75rem] font-black uppercase tracking-[0.2em] text-xs gap-4 transition-all relative overflow-hidden border-2 group shadow-xl", 
+                                generatingIds.has(q.id) ? "bg-primary/10 border-primary/20 text-primary" : "bg-foreground text-background"
+                              )}
+                            >
+                              {generatingIds.has(q.id) ? (
+                                <div className="flex items-center gap-3">
+                                  <Loader2 className="w-5 h-5 animate-spin" />
+                                  <span>Calibrating Insight...</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-between w-full px-4">
+                                  <div className="flex items-center gap-3">
+                                    <Sparkles className="w-5 h-5 text-primary fill-current group-hover:animate-pulse" />
+                                    <span>AI Tutor Deep Dive</span>
+                                  </div>
+                                  <div className="animate-breathing-primary bg-background/90 px-4 py-2 rounded-xl border-2 border-primary/30 flex items-center gap-2">
+                                    <span className="font-black text-sm text-primary">5</span>
+                                    <Coins className="w-4 h-4 text-primary fill-current" />
+                                    <span className="text-[8px] font-black text-primary opacity-60">CREDIT</span>
+                                  </div>
+                                </div>
+                              )}
+                            </Button>
+                          ) : (
+                            <motion.div 
+                              initial={{ scale: 0.95, opacity: 0 }} 
+                              animate={{ scale: 1, opacity: 1 }} 
+                              className="bg-primary/5 p-8 rounded-[2.5rem] border-2 border-primary/20 relative overflow-hidden group shadow-inner"
+                            >
+                              <div className="absolute top-0 right-0 p-8 opacity-5"><MessageSquare className="w-24 h-24" /></div>
+                              <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
+                                  <Star className="w-5 h-5 fill-current" />
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary leading-none">Pedagogical Insight</p>
+                                  <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Analytical Reasoning Trace</p>
                                 </div>
                               </div>
-                            )}
-                          </Button>
-                        ) : (
-                          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-primary/5 p-8 rounded-[2.5rem] border-2 border-primary/20 relative overflow-hidden group shadow-inner">
-                            <div className="absolute top-0 right-0 p-8 opacity-5"><MessageSquare className="w-24 h-24" /></div>
-                            <div className="flex items-center gap-3 mb-6"><div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg"><Star className="w-5 h-5 fill-current" /></div><div><p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary leading-none">Pedagogical Insight</p><p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Analytical Reasoning Trace</p></div></div>
-                            <div className="text-base leading-relaxed font-medium text-foreground p-6 bg-card rounded-2xl border shadow-sm"><TypewriterText text={localExplanations[q.id]} /></div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
+                              <div className="text-base leading-relaxed font-medium text-foreground p-6 bg-card rounded-2xl border shadow-sm">
+                                <TypewriterText text={localExplanations[q.id]} />
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
               </div>
             ))}
           </Accordion>
         ) : (
-          <div className="text-center py-24 bg-emerald-500/5 rounded-[4rem] border-4 border-dashed border-emerald-500/20 shadow-inner group"><motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }}><Trophy className="w-24 h-24 text-emerald-500 mx-auto mb-6 group-hover:rotate-12 transition-transform" /></motion.div><h3 className="text-3xl font-black text-foreground mb-2">Exceptional Calibration</h3><p className="text-muted-foreground font-black uppercase tracking-widest text-[10px]">Your professional reasoning is at 100% efficiency</p></div>
+          <div className="text-center py-24 bg-emerald-500/5 rounded-[4rem] border-4 border-dashed border-emerald-500/20 shadow-inner group">
+            <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }}>
+              <Trophy className="w-24 h-24 text-emerald-500 mx-auto mb-6 group-hover:rotate-12 transition-transform" />
+            </motion.div>
+            <h3 className="text-3xl font-black text-foreground mb-2">Exceptional Calibration</h3>
+            <p className="text-muted-foreground font-black uppercase tracking-widest text-[10px]">Your professional reasoning is at 100% efficiency</p>
+          </div>
         )}
       </div>
 
