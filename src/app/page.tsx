@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
@@ -49,7 +48,6 @@ import {
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
-import { QuickFireInterface } from "@/components/exam/QuickFireInterface";
 import { QuickFireResults } from "@/components/exam/QuickFireResults";
 import { RankUpDialog } from "@/components/ui/rank-up-dialog";
 import { Question, MAJORSHIPS, INITIAL_QUESTIONS } from "@/app/lib/mock-data";
@@ -68,7 +66,6 @@ import { DailyLoginRewards } from '@/components/ui/daily-login-rewards';
 import { QuestionOfTheDay } from '@/components/ui/question-of-the-day';
 import { StudyTimer } from '@/components/ui/study-timer';
 import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
-import { generatePersonalizedPerformanceSummary, PersonalizedPerformanceSummaryOutput } from '@/ai/flows/personalized-performance-summary-flow';
 
 type AppState = 'dashboard' | 'exam' | 'results' | 'onboarding' | 'quickfire' | 'quickfire_results';
 
@@ -143,8 +140,6 @@ function LetsPrepContent() {
   const [loadingStep, setLoadingStep] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState("");
   const [authIssue, setAuthIssue] = useState(false);
-  
-  const [aiSummary, setAiSummary] = useState<PersonalizedPerformanceSummaryOutput | undefined>(undefined);
   
   const [timePerQuestion, setTimePerQuestion] = useState(60);
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
@@ -354,33 +349,6 @@ function LetsPrepContent() {
       await refreshUser();
     }
 
-    // Generate AI Summary Insight Trace
-    try {
-      const subjectStats: Record<string, { t: number; c: number }> = {};
-      currentQuestions.forEach(q => {
-        if (!subjectStats[q.subject]) subjectStats[q.subject] = { t: 0, c: 0 };
-        subjectStats[q.subject].t++;
-        if (answers[q.id] === q.correctAnswer) subjectStats[q.subject].c++;
-      });
-
-      const summaryInput = {
-        testResults: Object.entries(subjectStats).map(([name, data]) => ({
-          subjectName: name,
-          totalQuestions: data.t,
-          correctAnswers: data.c,
-          incorrectAnswers: data.t - data.c,
-          scorePercentage: Math.round((data.c / data.t) * 100)
-        })),
-        overallScorePercentage: overallScore,
-        overallTimeSpentSeconds: timeSpent
-      };
-
-      const summary = await generatePersonalizedPerformanceSummary(summaryInput);
-      setAiSummary(summary);
-    } catch (e) {
-      console.error("AI Insight Sync Failed:", e);
-    }
-
     setLoadingStep(100);
     setLoading(false);
     
@@ -480,7 +448,7 @@ function LetsPrepContent() {
         {state === 'exam' ? (
           <motion.div key="exam" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full"><ExamInterface questions={currentQuestions} timePerQuestion={timePerQuestion} onComplete={handleExamComplete} /></motion.div>
         ) : state === 'results' ? (
-          <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4"><ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} aiSummary={aiSummary} onRestart={() => setState('dashboard')} /></motion.div>
+          <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4"><ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} onRestart={() => setState('dashboard')} /></motion.div>
         ) : state === 'onboarding' ? (
           <motion.div key="onboarding" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-[85vh] flex items-center justify-center p-4">
             <Card className="w-full max-w-md rounded-[3rem] bg-card border-none shadow-2xl overflow-hidden">
