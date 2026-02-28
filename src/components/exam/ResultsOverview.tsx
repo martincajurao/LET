@@ -142,7 +142,6 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart }: Re
     }
   }, [stats, timeSpent, isGeneratingAi, aiSummary]);
 
-  // Trigger AI generation only after unlock
   useEffect(() => {
     if (isUnlocked) {
       generateReportAnalysis();
@@ -263,6 +262,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart }: Re
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-32">
+      {/* Session Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-card p-8 rounded-[2.5rem] shadow-sm border border-border/50">
         <div className="space-y-1">
           <Badge className="bg-primary/10 text-primary border-primary/20 px-3 py-0.5 text-[10px] font-black uppercase tracking-[0.25em] mb-2 shadow-sm">Session Calibration</Badge>
@@ -298,7 +298,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart }: Re
                     <Badge className="absolute top-2 right-2 bg-background/20 text-background text-[8px] font-black uppercase border-none">FREE</Badge>
                   </Button>
                   <Button variant="outline" onClick={handleUnlockWithCredits} disabled={unlocking || (user?.credits || 0) < 10} className="h-16 rounded-[1.75rem] font-black text-xs uppercase tracking-widest gap-3 border-2 border-primary/30 bg-primary/5 text-primary shadow-xl transition-all hover:bg-primary/10 active:scale-95 group">
-                    <div className="flex-1 text-left px-2"><span className="font-black">Unlock Now</span></div>
+                    <div className="flex-1 text-left px-2"><span className="font-black">Unlock Full Analysis</span></div>
                     <div className="animate-breathing-primary bg-background/90 px-3 py-1.5 rounded-xl border-2 border-primary/30 flex items-center gap-2">
                       <span className="font-black text-sm text-primary">10</span>
                       <Coins className="w-4 h-4 text-primary fill-current" />
@@ -354,62 +354,64 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart }: Re
                 <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 rounded-2xl h-14 font-black uppercase tracking-[0.2em] text-xs">Access Detailed Guide</Button>
               </Card>
             </div>
-
-            <div className="space-y-8 pt-4">
-              <div className="flex items-center justify-between px-2">
-                <h2 className="text-3xl font-black tracking-tight flex items-center gap-4 text-foreground"><div className="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center shadow-inner"><BrainCircuit className="w-7 h-7 text-rose-600" /></div>Itemized Review</h2>
-                <Badge variant="outline" className="font-black text-[10px] uppercase tracking-[0.2em] py-1 px-4 rounded-full border-muted-foreground/30">{totalMistakes} Points of Review</Badge>
-              </div>
-              {totalMistakes > 0 ? (
-                <Accordion type="single" collapsible className="w-full space-y-4">
-                  {Object.entries(categorizedMistakes).map(([subject, mistakes]) => (
-                    <div key={subject} className="space-y-3">
-                      <div className="flex items-center gap-3 px-4 py-2"><div className="w-1.5 h-1.5 bg-primary rounded-full" /><p className="text-[11px] font-black uppercase text-primary tracking-[0.3em]">{subject}</p></div>
-                      {mistakes.map((q) => (
-                        <AccordionItem key={q.id} value={q.id} className="border-none bg-card rounded-[2rem] px-2 overflow-hidden shadow-xl border border-border/20 transition-all hover:shadow-2xl">
-                          <AccordionTrigger className="hover:no-underline py-6 px-6 text-left"><div className="flex items-center gap-4"><div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-600 font-black text-xs shadow-inner">#{q.originalIndex + 1}</div><span className="text-sm font-black line-clamp-1 pr-4 uppercase tracking-tight">{q.text}</span></div></AccordionTrigger>
-                          <AccordionContent className="p-8 pt-0 space-y-6">
-                            <div className="bg-muted/30 p-6 rounded-[2rem] border-2 border-dashed border-border/50">
-                              <p className="font-black text-base md:text-lg mb-6 leading-snug">{q.text}</p>
-                              <div className="grid gap-3">{q.options.map((opt, i) => (
-                                <div key={i} className={cn("p-4 rounded-2xl border-2 text-sm flex items-center gap-4 transition-all shadow-sm", opt === q.correctAnswer ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 font-black" : opt === answers[q.id] ? "bg-rose-500/10 border-rose-500/30 text-rose-700 font-black" : "bg-card text-muted-foreground opacity-60 grayscale-[0.5]")}>
-                                  <span className="w-7 h-7 rounded-xl border-2 flex items-center justify-center text-[10px] font-black shrink-0 border-current/20">{String.fromCharCode(65 + i)}</span><span className="flex-1">{opt}</span>
-                                </div>
-                              ))}</div>
-                            </div>
-                            <AnimatePresence mode="wait">
-                              {!localExplanations[q.id] ? (
-                                <Button onClick={() => handleGenerateExplanation(q)} disabled={generatingIds.has(q.id)} className={cn("w-full h-16 rounded-[1.75rem] font-black uppercase tracking-[0.2em] text-xs gap-4 transition-all relative overflow-hidden border-2 group shadow-xl", generatingIds.has(q.id) ? "bg-primary/10 border-primary/20 text-primary" : "bg-foreground text-background")}>
-                                  {generatingIds.has(q.id) ? <div className="flex items-center gap-3"><Loader2 className="w-5 h-5 animate-spin" /><span>Calibrating Insight...</span></div> : (
-                                    <div className="flex items-center justify-between w-full px-4">
-                                      <div className="flex items-center gap-3"><Sparkles className="w-5 h-5 text-primary fill-current group-hover:animate-pulse" /><span>AI Tutor Deep Dive</span></div>
-                                      <div className="animate-breathing-primary bg-background/90 px-4 py-2 rounded-xl border-2 border-primary/30 flex items-center gap-2">
-                                        <span className="font-black text-sm text-primary">5</span><Coins className="w-4 h-4 text-primary fill-current" /><span className="text-[8px] font-black text-primary opacity-60">CREDIT</span>
-                                      </div>
-                                    </div>
-                                  )}
-                                </Button>
-                              ) : (
-                                <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-primary/5 p-8 rounded-[2.5rem] border-2 border-primary/20 relative overflow-hidden group shadow-inner">
-                                  <div className="absolute top-0 right-0 p-8 opacity-5"><MessageSquare className="w-24 h-24" /></div>
-                                  <div className="flex items-center gap-3 mb-6"><div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg"><Star className="w-5 h-5 fill-current" /></div><div><p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary leading-none">Pedagogical Insight</p><p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Analytical Reasoning Trace</p></div></div>
-                                  <div className="text-base leading-relaxed font-medium text-foreground p-6 bg-card rounded-2xl border shadow-sm"><TypewriterText text={localExplanations[q.id]} /></div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                    </div>
-                  ))}
-                </Accordion>
-              ) : (
-                <div className="text-center py-24 bg-emerald-500/5 rounded-[4rem] border-4 border-dashed border-emerald-500/20 shadow-inner group"><motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }}><Trophy className="w-24 h-24 text-emerald-500 mx-auto mb-6 group-hover:rotate-12 transition-transform" /></motion.div><h3 className="text-3xl font-black text-foreground mb-2">Exceptional Calibration</h3><p className="text-muted-foreground font-black uppercase tracking-widest text-[10px]">Your professional reasoning is at 100% efficiency</p></div>
-              )}
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Itemized Review - Always Visible to Burn Credits */}
+      <div className="space-y-8 pt-4">
+        <div className="flex items-center justify-between px-2">
+          <h2 className="text-3xl font-black tracking-tight flex items-center gap-4 text-foreground"><div className="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center shadow-inner"><BrainCircuit className="w-7 h-7 text-rose-600" /></div>Itemized Review</h2>
+          <Badge variant="outline" className="font-black text-[10px] uppercase tracking-[0.2em] py-1 px-4 rounded-full border-muted-foreground/30">{totalMistakes} Review Items</Badge>
+        </div>
+        
+        {totalMistakes > 0 ? (
+          <Accordion type="single" collapsible className="w-full space-y-4">
+            {Object.entries(categorizedMistakes).map(([subject, mistakes]) => (
+              <div key={subject} className="space-y-3">
+                <div className="flex items-center gap-3 px-4 py-2"><div className="w-1.5 h-1.5 bg-primary rounded-full" /><p className="text-[11px] font-black uppercase text-primary tracking-[0.3em]">{subject}</p></div>
+                {mistakes.map((q) => (
+                  <AccordionItem key={q.id} value={q.id} className="border-none bg-card rounded-[2rem] px-2 overflow-hidden shadow-xl border border-border/20 transition-all hover:shadow-2xl">
+                    <AccordionTrigger className="hover:no-underline py-6 px-6 text-left"><div className="flex items-center gap-4"><div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-600 font-black text-xs shadow-inner">#{q.originalIndex + 1}</div><span className="text-sm font-black line-clamp-1 pr-4 uppercase tracking-tight">{q.text}</span></div></AccordionTrigger>
+                    <AccordionContent className="p-8 pt-0 space-y-6">
+                      <div className="bg-muted/30 p-6 rounded-[2rem] border-2 border-dashed border-border/50">
+                        <p className="font-black text-base md:text-lg mb-6 leading-snug">{q.text}</p>
+                        <div className="grid gap-3">{q.options.map((opt, i) => (
+                          <div key={i} className={cn("p-4 rounded-2xl border-2 text-sm flex items-center gap-4 transition-all shadow-sm", opt === q.correctAnswer ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 font-black" : opt === answers[q.id] ? "bg-rose-500/10 border-rose-500/30 text-rose-700 font-black" : "bg-card text-muted-foreground opacity-60 grayscale-[0.5]")}>
+                            <span className="w-7 h-7 rounded-xl border-2 flex items-center justify-center text-[10px] font-black shrink-0 border-current/20">{String.fromCharCode(65 + i)}</span><span className="flex-1">{opt}</span>
+                          </div>
+                        ))}</div>
+                      </div>
+                      <AnimatePresence mode="wait">
+                        {!localExplanations[q.id] ? (
+                          <Button onClick={() => handleGenerateExplanation(q)} disabled={generatingIds.has(q.id)} className={cn("w-full h-16 rounded-[1.75rem] font-black uppercase tracking-[0.2em] text-xs gap-4 transition-all relative overflow-hidden border-2 group shadow-xl", generatingIds.has(q.id) ? "bg-primary/10 border-primary/20 text-primary" : "bg-foreground text-background")}>
+                            {generatingIds.has(q.id) ? <div className="flex items-center gap-3"><Loader2 className="w-5 h-5 animate-spin" /><span>Calibrating Insight...</span></div> : (
+                              <div className="flex items-center justify-between w-full px-4">
+                                <div className="flex items-center gap-3"><Sparkles className="w-5 h-5 text-primary fill-current group-hover:animate-pulse" /><span>AI Tutor Deep Dive</span></div>
+                                <div className="animate-breathing-primary bg-background/90 px-4 py-2 rounded-xl border-2 border-primary/30 flex items-center gap-2">
+                                  <span className="font-black text-sm text-primary">5</span><Coins className="w-4 h-4 text-primary fill-current" /><span className="text-[8px] font-black text-primary opacity-60">CREDIT</span>
+                                </div>
+                              </div>
+                            )}
+                          </Button>
+                        ) : (
+                          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-primary/5 p-8 rounded-[2.5rem] border-2 border-primary/20 relative overflow-hidden group shadow-inner">
+                            <div className="absolute top-0 right-0 p-8 opacity-5"><MessageSquare className="w-24 h-24" /></div>
+                            <div className="flex items-center gap-3 mb-6"><div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg"><Star className="w-5 h-5 fill-current" /></div><div><p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary leading-none">Pedagogical Insight</p><p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Analytical Reasoning Trace</p></div></div>
+                            <div className="text-base leading-relaxed font-medium text-foreground p-6 bg-card rounded-2xl border shadow-sm"><TypewriterText text={localExplanations[q.id]} /></div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </div>
+            ))}
+          </Accordion>
+        ) : (
+          <div className="text-center py-24 bg-emerald-500/5 rounded-[4rem] border-4 border-dashed border-emerald-500/20 shadow-inner group"><motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }}><Trophy className="w-24 h-24 text-emerald-500 mx-auto mb-6 group-hover:rotate-12 transition-transform" /></motion.div><h3 className="text-3xl font-black text-foreground mb-2">Exceptional Calibration</h3><p className="text-muted-foreground font-black uppercase tracking-widest text-[10px]">Your professional reasoning is at 100% efficiency</p></div>
+        )}
+      </div>
 
       <Dialog open={showPurchaseSuccess} onOpenChange={setShowPurchaseSuccess}>
         <DialogContent className="rounded-[3rem] border-none shadow-2xl p-0 max-w-[360px] overflow-hidden outline-none z-[1100]">
@@ -419,7 +421,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart }: Re
           </div>
           <div className="p-10 pt-4 text-center space-y-8">
             <DialogHeader><div className="space-y-2"><span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-600">Access Granted</span><DialogTitle className="text-3xl font-black tracking-tight">Report Sync Complete</DialogTitle><DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest">Pedagogical analysis is now active</DialogDescription></div></DialogHeader>
-            <Button onClick={() => setShowPurchaseSuccess(false)} className="w-full h-16 rounded-[1.75rem] font-black text-sm gap-3 shadow-2xl shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 transition-all">Launch Dashboard <ChevronRight className="w-5 h-5" /></Button>
+            <Button onClick={() => setShowPurchaseSuccess(false)} className="w-full h-16 rounded-[1.75rem] font-black text-sm gap-3 shadow-2xl shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 transition-all">Launch Analysis <ChevronRight className="w-5 h-5" /></Button>
           </div>
         </DialogContent>
       </Dialog>
