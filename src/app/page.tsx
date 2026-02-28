@@ -314,10 +314,9 @@ function LetsPrepContent() {
       const isCorrect = answers[q.id] === q.correctAnswer;
       const isConfident = confidentAnswers[q.id] || false;
       return {
+        ...q, // Snapshot full question for Vault Detailed View
         questionId: q.id,
-        subject: q.subject,
-        subCategory: q.subCategory || null,
-        difficulty: q.difficulty,
+        userAnswer: answers[q.id],
         isCorrect,
         isConfident
       };

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { MAJORSHIPS } from "@/app/lib/mock-data";
+import { MAJORSHIPS, Question } from "@/app/lib/mock-data";
 import {
   ArrowLeft,
   GraduationCap,
@@ -23,7 +23,10 @@ import {
   ClipboardList,
   RefreshCw,
   Check,
-  ChevronRight
+  ChevronRight,
+  Sparkles,
+  Search,
+  X
 } from "lucide-react";
 
 import Link from 'next/link';
@@ -31,11 +34,20 @@ import { useSearchParams } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { collection, query, where, getDocs, limit, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, limit, orderBy, doc, getDoc } from "firebase/firestore";
 import { format } from 'date-fns';
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts';
 import { getRankData } from '@/lib/xp-system';
+import { ResultsOverview } from '@/components/exam/ResultsOverview';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogClose
+} from "@/components/ui/dialog";
 
 interface ExamRecord {
   id: string;
@@ -43,6 +55,7 @@ interface ExamRecord {
   overallScore: number;
   timeSpent: number;
   subjectBreakdown?: any[];
+  results?: any[];
 }
 
 function ProfilePageContent() {
@@ -55,6 +68,10 @@ function ProfilePageContent() {
   const [loadingRecords, setLoadingRecords] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Detailed Result View State
+  const [selectedRecord, setSelectedRecord] = useState<ExamRecord | null>(null);
+  const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
 
   const activeTab = searchParams.get('tab') || 'history';
 
@@ -114,6 +131,11 @@ function ProfilePageContent() {
     }));
     return Object.entries(m).map(([name, data]) => ({ name, score: Math.round((data.c / (data.t || 1)) * 100) }));
   }, [records]);
+
+  const handleViewDetails = (record: ExamRecord) => {
+    setSelectedRecord(record);
+    setIsDetailViewOpen(true);
+  };
 
   if (userLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   if (!user) return <div className="min-h-screen flex flex-col items-center justify-center p-4"><Card className="p-10 text-center max-w-sm rounded-[2.5rem] android-surface border-none shadow-2xl"><ShieldCheck className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" /><h3 className="font-black text-xl mb-6">Authentication Required</h3><Link href="/"><Button className="w-full rounded-2xl h-14 font-black">Return Home</Button></Link></Card></div>;
@@ -199,7 +221,17 @@ function ProfilePageContent() {
                         </div>
                         <div><p className="font-black text-lg">Simulation Track #{(records.length - i).toString().padStart(3, '0')}</p><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{format(record.timestamp, 'MMMM d, yyyy')} • {Math.floor(record.timeSpent / 60)}m {record.timeSpent % 60}s</p></div>
                       </div>
-                      <Badge variant="outline" className={cn("rounded-lg font-bold text-[9px] uppercase tracking-widest", record.overallScore >= 75 ? 'border-emerald-500/30 text-emerald-600 bg-emerald-500/5' : 'border-orange-500/30 text-orange-600 bg-orange-500/5')}>{record.overallScore >= 75 ? 'Qualified' : 'Retake Required'}</Badge>
+                      <div className="flex items-center gap-3">
+                        <Badge variant="outline" className={cn("rounded-lg font-bold text-[9px] uppercase tracking-widest hidden sm:flex", record.overallScore >= 75 ? 'border-emerald-500/30 text-emerald-600 bg-emerald-500/5' : 'border-orange-500/30 text-orange-600 bg-orange-500/5')}>{record.overallScore >= 75 ? 'Qualified' : 'Retake Required'}</Badge>
+                        <Button 
+                          onClick={() => handleViewDetails(record)}
+                          variant="secondary" 
+                          size="sm" 
+                          className="h-10 rounded-xl font-black text-[9px] uppercase tracking-widest gap-2 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                        >
+                          Analyze Details <Sparkles className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -290,6 +322,49 @@ function ProfilePageContent() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Detailed Result Modal */}
+      <Dialog open={isDetailViewOpen} onOpenChange={setIsDetailViewOpen}>
+        <DialogContent className="max-w-5xl w-[95vw] h-[90vh] rounded-[3rem] p-0 border-none shadow-[0_30px_100px_rgba(0,0,0,0.4)] overflow-hidden outline-none z-[1100] flex flex-col bg-background">
+          <DialogHeader className="p-6 border-b bg-card shrink-0 flex flex-row items-center justify-between space-y-0">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center">
+                <History className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <DialogTitle className="text-2xl font-black tracking-tight">Session Analysis</DialogTitle>
+                <DialogDescription className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Historical Trace #{selectedRecord?.timestamp ? format(selectedRecord.timestamp, 'yyMMdd-HHmm') : '0000'}
+                </DialogDescription>
+              </div>
+            </div>
+            <DialogClose className="rounded-full h-10 w-10 bg-muted hover:bg-muted/80 transition-colors flex items-center justify-center">
+              <X className="w-5 h-5 text-muted-foreground" />
+            </DialogClose>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto no-scrollbar">
+            {selectedRecord && (
+              <ResultsOverview 
+                questions={(selectedRecord.results || []).map(r => ({
+                  id: r.questionId || r.id,
+                  text: r.text || "Question content unavailable in legacy record.",
+                  options: r.options || ["A", "B", "C", "D"],
+                  correctAnswer: r.correctAnswer || "",
+                  subject: r.subject || "General",
+                  difficulty: r.difficulty || "medium"
+                } as Question))}
+                answers={(selectedRecord.results || []).reduce((acc, curr) => {
+                  acc[curr.questionId || curr.id] = curr.userAnswer || (curr.isCorrect ? curr.correctAnswer : "");
+                  return acc;
+                }, {} as Record<string, string>)}
+                timeSpent={selectedRecord.timeSpent || 0}
+                onRestart={() => setIsDetailViewOpen(false)}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
