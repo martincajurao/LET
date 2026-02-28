@@ -106,7 +106,7 @@ const EducationalLoader = ({ message }: { message?: string }) => (
       <motion.div animate={{ rotate: -360 }} transition={{ duration: 15, repeat: Infinity, ease: "linear" }} className="w-32 h-32 border-2 border-dashed border-primary/10 rounded-full absolute -inset-4 scale-110" />
       <div className="w-24 h-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center relative z-10 shadow-2xl shadow-primary/10 overflow-hidden">
         <motion.div animate={{ y: [0, -6, 0], rotate: [0, 3, -3, 0] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}><GraduationCap className="w-12 h-12 text-primary" /></motion.div>
-        <motion.div animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5], x: [0, 15, -5, 0], y: [0, -10, 15, 0] }} transition={{ duration: 4, repeat: Infinity }} className="absolute top-4 right-4"><Sparkles className="w-5 h-5 text-yellow-500 fill-current" /></motion.div>
+        <motion.div animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5], x: [0, 15, -5, 0], y: [0, -10, 15, 0] }} transition={{ duration: 4, repeat: Infinity }} className="absolute top-4 right-4"><Sparkles className="w-5 h-5 text-yellow-500 fill-current animate-sparkle" /></motion.div>
       </div>
     </div>
     {message && (
@@ -392,13 +392,13 @@ function LetsPrepContent() {
   );
 
   const displayStats = user ? [
-    { icon: <Sparkles className="w-4 h-4 text-yellow-500 fill-current" />, label: 'Credits', value: typeof user.credits === 'number' ? user.credits : 0, color: 'text-yellow-500 bg-yellow-500/10' },
+    { icon: <Sparkles className="w-4 h-4 text-yellow-500 fill-current animate-sparkle" />, label: 'Credits', value: typeof user.credits === 'number' ? user.credits : 0, color: 'text-yellow-500 bg-yellow-500/10' },
     { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Arena', value: userRank, color: 'text-primary bg-primary/10' },
     { icon: user?.isPro ? <Crown className="w-4 h-4 text-yellow-600 fill-current" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user?.isPro ? 'Platinum' : 'FREE', color: user?.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
     { icon: <Flame className="w-4 h-4 text-orange-500 fill-current" />, label: 'Streak', value: typeof user.streakCount === 'number' ? user.streakCount : 0, color: 'text-orange-500 bg-orange-500/10' }
   ] : [
     { icon: <Users className="w-4 h-4 text-blue-500" />, label: 'Community', value: '1.7K+', color: 'text-blue-500 bg-blue-500/5' },
-    { icon: <Sparkles className="w-4 h-4 text-purple-500" />, label: 'AI Solved', value: '8.2K+', color: 'text-purple-500 bg-purple-500/5' },
+    { icon: <Sparkles className="w-4 h-4 text-purple-500 animate-sparkle" />, label: 'AI Solved', value: '8.2K+', color: 'text-purple-500 bg-purple-500/5' },
     { icon: <LayoutGrid className="w-4 h-4 text-pink-500" />, label: 'Items', value: '3.5K+', color: 'text-pink-500 bg-pink-500/5' },
     { icon: <Trophy className="w-4 h-4 text-yellow-500" />, label: 'Readiness', value: '82%', color: 'text-yellow-500 bg-yellow-500/5' }
   ];

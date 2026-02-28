@@ -278,7 +278,7 @@ export function Navbar() {
                   onClick={() => setShowAdModal(true)}
                 >
                   <div className="w-5 h-5 rounded-full bg-yellow-500/10 flex items-center justify-center">
-                    <Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current" />
+                    <Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current animate-sparkle" />
                   </div>
                   <span className="text-sm font-black text-foreground">{typeof user.credits === 'number' ? user.credits : 0}</span>
                   <Zap className="w-3 h-3 text-primary opacity-40 group-hover:opacity-100 transition-opacity" />

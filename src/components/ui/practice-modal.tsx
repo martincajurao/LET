@@ -181,7 +181,7 @@ export function PracticeModal({
                   <p className="text-sm text-muted-foreground font-medium">Select your professional track</p>
                   <div className="w-1 h-1 bg-muted-foreground/30 rounded-full" />
                   <div className="flex items-center gap-1 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">
-                    <Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current" />
+                    <Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current animate-sparkle" />
                     <span className="text-[10px] font-black text-yellow-700">{user?.credits || 0}</span>
                   </div>
                 </div>
@@ -272,7 +272,7 @@ export function PracticeModal({
                                 </div>
                                 <div className="animate-breathing-primary px-3 py-1.5 rounded-xl border-2 border-primary/20 flex items-center gap-2">
                                   <span className="font-black text-sm text-primary">{mode.unlockCost}</span>
-                                  <Sparkles className="w-4 h-4 text-primary fill-current" />
+                                  <Sparkles className="w-4 h-4 text-primary fill-current animate-sparkle" />
                                   <span className="text-[8px] font-black text-primary opacity-80">AI CREDIT</span>
                                 </div>
                               </>
@@ -365,7 +365,7 @@ export function PracticeModal({
                   transition={{ duration: 2, repeat: Infinity, delay: i * 0.4 }}
                   className="absolute bottom-0 left-1/2"
                 >
-                  <Sparkles className="w-3 h-3 text-emerald-500 fill-current" />
+                  <Sparkles className="w-3 h-3 text-emerald-500 fill-current animate-sparkle" />
                 </motion.div>
               ))}
             </div>

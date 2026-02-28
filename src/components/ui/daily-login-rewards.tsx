@@ -135,7 +135,7 @@ export function DailyLoginRewards({
             <div className={cn("p-4 rounded-xl border", getRewardTypeColor(DAILY_REWARDS[currentDay - 1]?.type || 'normal'), getRewardBgColor(DAILY_REWARDS[currentDay - 1]?.type || 'normal'))}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Sparkles className="w-6 h-6 text-emerald-500" />
+                  <Sparkles className="w-6 h-6 text-emerald-500 animate-sparkle" />
                   <div><p className="font-bold">Today's Reward</p><p className="text-xs text-muted-foreground">{DAILY_REWARDS[currentDay - 1]?.xp} XP + {DAILY_REWARDS[currentDay - 1]?.credits} AI Credits</p></div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />

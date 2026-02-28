@@ -181,7 +181,7 @@ export function DailyTaskDashboard() {
                       "flex items-center gap-1 px-2.5 py-1 rounded-xl transition-all border-2",
                       isComplete && !task.isClaimed ? "animate-breathing-gold border-yellow-500/20 bg-yellow-500/10" : "bg-yellow-500/5 border-yellow-500/10"
                     )}>
-                      <Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current" />
+                      <Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current animate-sparkle" />
                       <span className="text-xs font-black text-yellow-700">+{task.reward}</span>
                     </div>
                     {task.isClaimed ? <Badge variant="outline" className="text-[8px] font-bold uppercase text-emerald-600">Claimed</Badge> : isComplete ? <Star className="w-4 h-4 text-amber-500 fill-current animate-bounce" /> : <span className="text-[10px] font-bold text-muted-foreground">{task.current}/{task.goal}</span>}
@@ -244,7 +244,7 @@ export function DailyTaskDashboard() {
                   transition={{ duration: 2, repeat: Infinity, delay: i * 0.4 }}
                   className="absolute bottom-0 left-1/2"
                 >
-                  <Sparkles className="w-3 h-3 text-primary fill-current" />
+                  <Sparkles className="w-3 h-3 text-primary fill-current animate-sparkle" />
                 </motion.div>
               ))}
             </div>
@@ -274,7 +274,7 @@ export function DailyTaskDashboard() {
               <span className="text-[9px] font-black uppercase text-muted-foreground">Reward Total</span>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 px-4 py-2 rounded-2xl animate-breathing-gold border-2 border-yellow-500/20">
-                  <Sparkles className="w-7 h-7 text-yellow-600 fill-current" />
+                  <Sparkles className="w-7 h-7 text-yellow-600 fill-current animate-sparkle" />
                   <span className="text-4xl font-black text-yellow-700">+{claimedReward}</span>
                 </div>
               </div>

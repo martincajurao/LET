@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
@@ -333,7 +332,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
                     <span className="flex-1 text-left px-1">Unlock Vault</span>
                     <div className="bg-background/90 px-2 py-1 rounded-lg border border-primary/30 flex items-center gap-1.5">
                       <span className="font-black text-xs">10</span>
-                      <Sparkles className="w-3.5 h-3.5 fill-current" />
+                      <Sparkles className="w-3.5 h-3.5 fill-current animate-sparkle" />
                     </div>
                   </Button>
                 </div>
@@ -468,12 +467,12 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
                                     ) : (
                                       <div className="flex items-center justify-between w-full px-2">
                                         <div className="flex items-center gap-2">
-                                          <Sparkles className="w-3.5 h-3.5 text-primary fill-current group-hover:animate-pulse" />
+                                          <Sparkles className="w-3.5 h-3.5 text-primary fill-current group-hover:animate-pulse animate-sparkle" />
                                           <span>AI Tutor Deep Dive</span>
                                         </div>
                                         <div className="bg-background/90 px-3 py-1 rounded-lg border border-primary/20 flex items-center gap-1.5 shadow-inner">
                                           <span className="font-black text-xs text-primary">5</span>
-                                          <Sparkles className="w-3.5 h-3.5 text-primary fill-current" />
+                                          <Sparkles className="w-3.5 h-3.5 text-primary fill-current animate-sparkle" />
                                         </div>
                                       </div>
                                     )}
