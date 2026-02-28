@@ -39,7 +39,7 @@ export const DAILY_AD_LIMIT = 20;
  * TIERED ECONOMY CONFIGURATION
  * Requirements and rewards scale based on academic title groups.
  */
-const CAREER_TIERS = [
+export const CAREER_TIERS = [
   { minRank: 1,  maxRank: 3,  title: "Novice Candidate",     req: 400,   reward: 10 },
   { minRank: 4,  maxRank: 6,  title: "Junior Intern",        req: 600,   reward: 15 },
   { minRank: 7,  maxRank: 9,  title: "Aspiring Professional", req: 1000,  reward: 25 },

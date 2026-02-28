@@ -44,7 +44,11 @@ import {
   QrCode,
   Gift,
   Lightbulb,
-  Target
+  Target,
+  CheckCircle2,
+  Award,
+  Medal,
+  MapPin
 } from "lucide-react";
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
@@ -59,7 +63,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, getCareerRankTitle } from '@/lib/xp-system';
+import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, getCareerRankTitle, CAREER_TIERS } from '@/lib/xp-system';
 import { getApkInfoUrl, getDownloadUrl } from '@/lib/config';
 import { DailyLoginRewards } from '@/components/ui/daily-login-rewards';
 import { QuestionOfTheDay } from '@/components/ui/question-of-the-day';
@@ -588,6 +592,95 @@ function LetsPrepContent() {
               <div className="lg:col-span-4 space-y-8">
                 {user && (
                   <div className="space-y-8">
+                    {/* CAREER ROADMAP SECTION */}
+                    <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden">
+                      <CardHeader className="p-6 pb-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center"><MapPin className="w-5 h-5 text-primary" /></div>
+                            <CardTitle className="text-lg font-black">Career Roadmap</CardTitle>
+                          </div>
+                          <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest border-primary/20 text-primary">MILSTONES</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-6 pt-2">
+                        <div className="relative space-y-6 before:absolute before:left-5 before:top-2 before:bottom-2 before:w-[2px] before:bg-muted before:content-['']">
+                          {CAREER_TIERS.slice(0, 6).map((tier, idx) => {
+                            const currentRank = rankData?.rank || 1;
+                            const isCompleted = currentRank > tier.maxRank;
+                            const isActive = currentRank >= tier.minRank && currentRank <= tier.maxRank;
+                            const isFuture = currentRank < tier.minRank;
+                            
+                            // Milestone rewards/unlocks to show
+                            const milestones = [];
+                            if (tier.minRank === 1) milestones.push({ icon: <Languages className="w-3 h-3" />, text: "Gen Ed Unlocked" });
+                            if (tier.minRank === 2) milestones.push({ icon: <BookOpen className="w-3 h-3" />, text: "Prof Ed Unlocked" });
+                            if (tier.minRank === 3) milestones.push({ icon: <Star className="w-3 h-3" />, text: "Major Unlocked" });
+                            if (tier.minRank === 5) milestones.push({ icon: <Zap className="w-3 h-3" />, text: "Full Simulation Unlocked" });
+
+                            return (
+                              <motion.div 
+                                key={idx} 
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.1 }}
+                                className={cn(
+                                  "relative pl-12 transition-all",
+                                  isCompleted ? "opacity-50 grayscale-[0.5]" : "opacity-100"
+                                )}
+                              >
+                                <div className={cn(
+                                  "absolute left-0 w-10 h-10 rounded-xl border-2 flex items-center justify-center z-10 transition-all shadow-sm",
+                                  isActive ? "bg-primary border-primary text-primary-foreground scale-110 shadow-lg animate-breathing-primary" : 
+                                  isCompleted ? "bg-emerald-500 border-emerald-500 text-white" : 
+                                  "bg-card border-muted text-muted-foreground"
+                                )}>
+                                  {isCompleted ? <CheckCircle2 className="w-5 h-5" /> : isActive ? <Award className="w-5 h-5" /> : <Lock className="w-4 h-4" />}
+                                </div>
+                                <div className={cn(
+                                  "p-4 rounded-2xl border-2 transition-all",
+                                  isActive ? "bg-primary/5 border-primary shadow-md" : "bg-muted/10 border-transparent"
+                                )}>
+                                  <div className="flex justify-between items-start mb-1">
+                                    <p className={cn("text-xs font-black uppercase tracking-tight", isActive ? "text-primary" : "text-foreground")}>{tier.title}</p>
+                                    <div className="flex items-center gap-1">
+                                      <Sparkles className="w-3 h-3 text-yellow-600 fill-current animate-sparkle" />
+                                      <span className="text-[10px] font-black">+{tier.reward}</span>
+                                    </div>
+                                  </div>
+                                  <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Rank {tier.minRank} - {tier.maxRank}</p>
+                                  
+                                  {milestones.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mt-3">
+                                      {milestones.map((m, mIdx) => (
+                                        <Badge key={mIdx} variant="secondary" className="bg-card text-[8px] font-black uppercase py-0.5 px-2 border-border gap-1.5 shadow-sm">
+                                          {m.icon}
+                                          {m.text}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  )}
+                                  
+                                  {isActive && (
+                                    <div className="mt-3">
+                                      <div className="flex justify-between text-[8px] font-black uppercase text-primary mb-1">
+                                        <span>Current Progress</span>
+                                        <span>{Math.round(rankData?.progress || 0)}%</span>
+                                      </div>
+                                      <Progress value={rankData?.progress} className="h-1" />
+                                    </div>
+                                  )}
+                                </div>
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                        <Button variant="ghost" className="w-full mt-4 h-10 rounded-xl font-black text-[9px] uppercase tracking-widest text-muted-foreground hover:text-primary">
+                          View Full Career Path <ChevronRight className="w-3 h-3 ml-1" />
+                        </Button>
+                      </CardContent>
+                    </Card>
+
                     <DailyLoginRewards currentDay={Math.min(((user?.streakCount || 0) % 7) + 1, 7)} onClaim={async (day, xp, credits) => { if (user && firestore) { await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(xp), credits: increment(credits) }); toast({ title: "Reward Claimed!", description: `+${xp} XP & +${credits} Credits added.` }); } }} />
                     
                     <QuestionOfTheDay question={INITIAL_QUESTIONS[Math.floor(Date.now() / 86400000) % INITIAL_QUESTIONS.length]} onComplete={async (isCorrect, xpEarned) => { if (user && firestore && isCorrect) { await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(xpEarned), dailyQuestionsAnswered: increment(1) }); toast({ title: "Exceptional Trace!", description: `+${xpEarned} XP added to character.` }); } }} />
