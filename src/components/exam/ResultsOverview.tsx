@@ -116,7 +116,6 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
       if (!subjectStats[key]) subjectStats[key] = { total: 0, correct: 0 };
       subjectStats[key].total++;
       
-      // Handle both direct ID access and potential questionId from snapshots
       const userAnswer = answers[qId];
       if (userAnswer === q.correctAnswer) {
         correct++;
@@ -296,140 +295,137 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
   const totalMistakes = Object.values(categorizedMistakes).reduce((acc, curr) => acc + curr.length, 0);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-32">
+    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500 pb-32">
       {/* Session Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-card p-8 rounded-[2.5rem] shadow-sm border border-border/50">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-6 rounded-[2rem] shadow-sm border border-border/50">
         <div className="space-y-1">
-          <Badge className="bg-primary/10 text-primary border-primary/20 px-3 py-0.5 text-[10px] font-black uppercase tracking-[0.25em] mb-2 shadow-sm">Simulation Calibration</Badge>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">Simulation Result</h1>
-          <p className="text-muted-foreground text-sm font-medium">Verified Analytical Session • {questions.length} Items</p>
+          <Badge className="bg-primary/10 text-primary border-primary/20 px-3 py-0.5 text-[9px] font-black uppercase tracking-[0.2em] mb-1">Calibration Trace</Badge>
+          <h1 className="text-2xl font-black tracking-tight text-foreground">Simulation Result</h1>
+          <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">{questions.length} Items Calibrated</p>
         </div>
-        <div className="flex gap-3 w-full md:w-auto">
-          <Button variant="outline" disabled={unlocking} onClick={onRestart} className="flex-1 md:flex-none h-12 px-6 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-2 bg-background border-2 transition-all">
-            <LayoutDashboard className="w-4 h-4 text-muted-foreground" /> Exit
+        <div className="flex gap-2 w-full md:w-auto">
+          <Button variant="outline" disabled={unlocking} onClick={onRestart} className="flex-1 md:flex-none h-11 px-5 rounded-xl font-black text-[9px] uppercase tracking-widest gap-2 border-2">
+            <LayoutDashboard className="w-3.5 h-3.5" /> Exit
           </Button>
-          <Button onClick={onRestart} disabled={unlocking} className="flex-1 md:flex-none h-12 px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 gap-2 transition-all">
-            <History className="w-4 h-4" /> Retake
+          <Button onClick={onRestart} disabled={unlocking} className="flex-1 md:flex-none h-11 px-6 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg shadow-primary/20 gap-2">
+            <History className="w-3.5 h-3.5" /> Retake
           </Button>
         </div>
       </div>
 
       <AnimatePresence mode="wait">
         {!isUnlocked ? (
-          <motion.div key="locked-vault" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -20, opacity: 0 }} className="w-full max-w-2xl mx-auto">
-            <Card className="border-none shadow-2xl rounded-[3rem] bg-card overflow-hidden relative border-primary/20">
-              <div className="absolute top-0 right-0 p-12 opacity-5 text-primary"><Lock className="w-48 h-48" /></div>
-              <div className="p-10 flex flex-col items-center text-center space-y-8 relative z-10">
-                <div className="w-24 h-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center border-4 border-primary/20 shadow-2xl animate-levitate"><BrainCircuit className="w-12 h-12 text-primary" /></div>
-                <div className="space-y-3">
-                  <Badge variant="outline" className="border-primary/30 text-primary font-black text-[10px] uppercase tracking-[0.3em] px-4 py-1 mb-2">Analysis Locked</Badge>
-                  <h2 className="text-4xl font-black tracking-tight leading-tight text-foreground">Unlock Your <br /><span className="text-primary italic">Pedagogical Roadmap</span></h2>
-                  <p className="text-muted-foreground font-medium text-base max-w-sm mx-auto leading-relaxed">Access accuracy charts, subject mastery breakdown, and personalized AI recommendations.</p>
+          <motion.div key="locked-vault" initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -15, opacity: 0 }} className="w-full max-w-2xl mx-auto">
+            <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden relative border-primary/20">
+              <div className="p-8 flex flex-col items-center text-center space-y-6 relative z-10">
+                <div className="w-20 h-20 bg-primary/10 rounded-[1.75rem] flex items-center justify-center border-4 border-primary/20 shadow-xl animate-levitate"><BrainCircuit className="w-10 h-10 text-primary" /></div>
+                <div className="space-y-2">
+                  <h2 className="text-3xl font-black tracking-tight leading-tight text-foreground">Unlock Your <br /><span className="text-primary italic">Pedagogical Roadmap</span></h2>
+                  <p className="text-muted-foreground font-medium text-sm max-w-sm mx-auto">Access accuracy charts and personalized AI analysis.</p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                  <Button onClick={handleUnlockWithAd} disabled={unlocking || (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT} className="h-16 rounded-[1.75rem] font-black text-xs uppercase tracking-widest gap-3 shadow-2xl transition-all relative overflow-hidden bg-primary text-primary-foreground">
-                    {unlocking && !verifying ? <Loader2 className="w-5 h-5 animate-spin" /> : verifying ? <ShieldAlert className="w-5 h-5 animate-pulse" /> : <Play className="w-5 h-5 fill-current" />}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                  <Button onClick={handleUnlockWithAd} disabled={unlocking || (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT} className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-3 shadow-lg relative overflow-hidden bg-primary text-primary-foreground">
+                    {unlocking && !verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : verifying ? <ShieldAlert className="w-4 h-4 animate-pulse" /> : <Play className="w-4 h-4 fill-current" />}
                     {unlocking ? (verifying ? "Verifying..." : "Playing...") : "Watch Clip"}
-                    <Badge className="absolute top-2 right-2 bg-background/20 text-background text-[8px] font-black uppercase border-none">FREE</Badge>
+                    <Badge className="absolute top-1.5 right-1.5 bg-background/20 text-background text-[7px] font-black uppercase border-none">FREE</Badge>
                   </Button>
-                  <Button variant="outline" onClick={handleUnlockWithCredits} disabled={unlocking || (user?.credits || 0) < 10} className="h-16 rounded-[1.75rem] font-black text-xs uppercase tracking-widest gap-3 border-2 border-primary/30 bg-primary/5 text-primary shadow-xl transition-all hover:bg-primary/10 active:scale-95 group">
-                    <div className="flex-1 text-left px-2"><span className="font-black">Unlock Full Analysis</span></div>
-                    <div className="animate-breathing-primary bg-background/90 px-3 py-1.5 rounded-xl border-2 border-primary/30 flex items-center gap-2">
-                      <span className="font-black text-sm text-primary">10</span>
-                      <Coins className="w-4 h-4 text-primary fill-current" />
+                  <Button variant="outline" onClick={handleUnlockWithCredits} disabled={unlocking || (user?.credits || 0) < 10} className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-2 border-2 border-primary/30 bg-primary/5 text-primary">
+                    <span className="flex-1 text-left px-1">Unlock Report</span>
+                    <div className="bg-background/90 px-2 py-1 rounded-lg border border-primary/30 flex items-center gap-1.5">
+                      <span className="font-black text-xs">10</span>
+                      <Coins className="w-3.5 h-3.5 fill-current" />
                     </div>
                   </Button>
                 </div>
-                <div className="flex flex-col items-center gap-2 pt-4">
-                  <p className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest animate-bounce">Scroll down to review mistakes</p>
-                  <ArrowDown className="w-4 h-4 text-muted-foreground opacity-40" />
+                <div className="flex flex-col items-center gap-1 pt-2">
+                  <p className="text-muted-foreground font-black text-[8px] uppercase tracking-[0.2em] animate-pulse">Scroll to review mistakes</p>
+                  <ArrowDown className="w-3 h-3 text-muted-foreground opacity-30" />
                 </div>
               </div>
             </Card>
           </motion.div>
         ) : (
-          <motion.div key="unlocked-dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+          <motion.div key="unlocked-dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className={cn("lg:col-span-1 border-none shadow-xl flex flex-col items-center justify-center p-8 rounded-[3rem] relative overflow-hidden", stats.isPassed ? "bg-emerald-500/10 border border-emerald-500/20" : "bg-orange-500/10 border border-orange-500/20")}>
-                <div className="relative w-48 h-48 flex items-center justify-center mb-6">
-                  <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={10} dataKey="value" stroke="none">{pieData.map((e, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} />))}</Pie></PieChart></ResponsiveContainer>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center"><span className="text-4xl font-black text-foreground">{stats.overallScore}%</span><span className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-1">Accuracy</span></div>
+              <Card className={cn("lg:col-span-1 border-none shadow-xl flex flex-col items-center justify-center p-6 rounded-[2.5rem] relative overflow-hidden", stats.isPassed ? "bg-emerald-500/10 border border-emerald-500/20" : "bg-orange-500/10 border border-orange-500/20")}>
+                <div className="relative w-40 h-40 flex items-center justify-center mb-4">
+                  <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={8} dataKey="value" stroke="none">{pieData.map((e, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} />))}</Pie></PieChart></ResponsiveContainer>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center"><span className="text-3xl font-black text-foreground">{stats.overallScore}%</span><span className="text-[8px] text-muted-foreground font-black uppercase tracking-widest mt-0.5">Accuracy</span></div>
                 </div>
-                <Badge variant={stats.isPassed ? "secondary" : "destructive"} className="px-8 py-2 text-xs font-black uppercase tracking-[0.3em] shadow-lg mb-8 rounded-full border-none">{stats.isPassed ? "Simulation Passed" : "Retake Suggested"}</Badge>
-                <div className="w-full grid grid-cols-2 gap-4">
-                  <div className="p-5 bg-card rounded-[2rem] border shadow-md text-center space-y-1"><p className="text-[9px] font-black uppercase tracking-widest text-emerald-600">Correct</p><p className="text-2xl font-black text-foreground">{stats.correct}</p></div>
-                  <div className="p-5 bg-card rounded-[2rem] border shadow-md text-center space-y-1"><p className="text-[9px] font-black uppercase tracking-widest text-destructive">Missed</p><p className="text-2xl font-black text-foreground">{stats.total - stats.correct}</p></div>
+                <Badge variant={stats.isPassed ? "secondary" : "destructive"} className="px-6 py-1 text-[10px] font-black uppercase tracking-[0.2em] shadow-md mb-6 rounded-full border-none">{stats.isPassed ? "Simulation Passed" : "Retake Suggested"}</Badge>
+                <div className="w-full grid grid-cols-2 gap-3">
+                  <div className="p-4 bg-card rounded-[1.5rem] border shadow-sm text-center"><p className="text-[8px] font-black uppercase tracking-widest text-emerald-600">Correct</p><p className="text-xl font-black text-foreground">{stats.correct}</p></div>
+                  <div className="p-4 bg-card rounded-[1.5rem] border shadow-sm text-center"><p className="text-[8px] font-black uppercase tracking-widest text-destructive">Missed</p><p className="text-xl font-black text-foreground">{stats.total - stats.correct}</p></div>
                 </div>
               </Card>
-              <Card className="lg:col-span-2 border-none shadow-xl rounded-[3rem] bg-card p-10 flex flex-col">
-                <CardHeader className="p-0 mb-10"><div className="flex items-center gap-4"><div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner"><Target className="w-6 h-6 text-primary" /></div><div><CardTitle className="text-2xl font-black tracking-tight">Track Mastery</CardTitle><CardDescription className="text-xs font-bold uppercase tracking-widest opacity-60">Aggregate Performance Matrix</CardDescription></div></div></CardHeader>
-                <CardContent className="p-0 flex-1 flex items-center"><div className="h-[250px] w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={stats.subjectChartData} layout="vertical" margin={{ left: 60, right: 60 }}><XAxis type="number" domain={[0, 100]} hide /><YAxis dataKey="name" type="category" width={120} style={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', fill: 'hsl(var(--muted-foreground))' }} /><Tooltip cursor={{ fill: 'hsl(var(--muted)/0.1)' }} contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '1.5rem', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} /><Bar dataKey="score" fill="hsl(var(--primary))" radius={[0, 12, 12, 0]} barSize={32}><LabelList dataKey="score" position="right" formatter={(val: number) => `${val}%`} className="fill-foreground font-black text-[11px]" /></Bar></BarChart></ResponsiveContainer></div></CardContent>
+              <Card className="lg:col-span-2 border-none shadow-xl rounded-[2.5rem] bg-card p-8 flex flex-col">
+                <CardHeader className="p-0 mb-6"><div className="flex items-center gap-3"><div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shadow-inner"><Target className="w-5 h-5 text-primary" /></div><div><CardTitle className="text-xl font-black tracking-tight">Track Mastery</CardTitle><CardDescription className="text-[10px] font-bold uppercase tracking-widest opacity-60">Aggregate Performance Matrix</CardDescription></div></div></CardHeader>
+                <CardContent className="p-0 flex-1 flex items-center"><div className="h-[200px] w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={stats.subjectChartData} layout="vertical" margin={{ left: 40, right: 40 }}><XAxis type="number" domain={[0, 100]} hide /><YAxis dataKey="name" type="category" width={100} style={{ fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', fill: 'hsl(var(--muted-foreground))' }} /><Tooltip cursor={{ fill: 'hsl(var(--muted)/0.1)' }} contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '1rem', border: 'none', boxShadow: '0 8px 20px rgba(0,0,0,0.1)' }} /><Bar dataKey="score" fill="hsl(var(--primary))" radius={[0, 8, 8, 0]} barSize={24}><LabelList dataKey="score" position="right" formatter={(val: number) => `${val}%`} className="fill-foreground font-black text-[10px]" /></Bar></BarChart></ResponsiveContainer></div></CardContent>
               </Card>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-2 border-none shadow-xl bg-card overflow-hidden rounded-[3rem]">
-                <div className="h-2 bg-primary w-full" />
-                <CardHeader className="flex flex-row items-center gap-5 p-10 pb-4"><div className="p-4 bg-primary/10 rounded-3xl shadow-inner"><Trophy className="w-8 h-8 text-primary" /></div><div><CardTitle className="text-2xl font-black tracking-tight">AI Result Insight</CardTitle><p className="text-[10px] font-black uppercase text-primary tracking-[0.2em] mt-1">Pedagogical Analysis Roadmap</p></div></CardHeader>
-                <CardContent className="p-10 pt-4 space-y-8">
+              <Card className="lg:col-span-2 border-none shadow-xl bg-card overflow-hidden rounded-[2.5rem]">
+                <CardHeader className="flex flex-row items-center gap-4 p-8 pb-3"><div className="p-3 bg-primary/10 rounded-2xl shadow-inner"><Trophy className="w-6 h-6 text-primary" /></div><div><CardTitle className="text-xl font-black tracking-tight">AI Result Insight</CardTitle><p className="text-[9px] font-black uppercase text-primary tracking-[0.2em] mt-0.5">Pedagogical Analysis Roadmap</p></div></CardHeader>
+                <CardContent className="p-8 pt-2 space-y-6">
                   {aiSummary ? (
                     <>
-                      <div className="p-8 bg-primary/5 rounded-[2.5rem] italic text-xl leading-relaxed border-l-8 border-primary font-medium text-foreground shadow-inner"><TypewriterText text={aiSummary.summary} /></div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                        <div className="space-y-4"><h3 className="flex items-center gap-3 font-black text-emerald-600 uppercase tracking-[0.25em] text-[11px]"><CheckCircle2 className="w-5 h-5" /> Conceptual Peaks</h3><div className="flex flex-wrap gap-2.5">{aiSummary.strengths.map((s, idx) => (<Badge key={idx} variant="secondary" className="px-4 py-1.5 text-xs font-black rounded-xl bg-emerald-500/10 text-emerald-700 border-none shadow-sm">{s}</Badge>))}</div></div>
-                        <div className="space-y-4"><h3 className="flex items-center gap-3 font-black text-rose-600 uppercase tracking-[0.25em] text-[11px]"><AlertCircle className="w-5 h-5" /> Academic Gaps</h3><div className="flex flex-wrap gap-2.5">{aiSummary.weaknesses.map((w, idx) => (<Badge key={idx} variant="outline" className="px-4 py-1.5 border-rose-200 bg-rose-500/5 text-rose-700 text-xs font-black rounded-xl shadow-sm">{w}</Badge>))}</div></div>
+                      <div className="p-6 bg-primary/5 rounded-[1.75rem] italic text-lg leading-relaxed border-l-4 border-primary font-medium text-foreground shadow-inner"><TypewriterText text={aiSummary.summary} /></div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-3"><h3 className="flex items-center gap-2 font-black text-emerald-600 uppercase tracking-widest text-[9px]"><CheckCircle2 className="w-4 h-4" /> Conceptual Peaks</h3><div className="flex flex-wrap gap-2">{aiSummary.strengths.map((s, idx) => (<Badge key={idx} variant="secondary" className="px-3 py-1 text-[10px] font-black rounded-lg bg-emerald-500/10 text-emerald-700 border-none">{s}</Badge>))}</div></div>
+                        <div className="space-y-3"><h3 className="flex items-center gap-2 font-black text-rose-600 uppercase tracking-widest text-[9px]"><AlertCircle className="w-4 h-4" /> Academic Gaps</h3><div className="flex flex-wrap gap-2">{aiSummary.weaknesses.map((w, idx) => (<Badge key={idx} variant="outline" className="px-3 py-1 border-rose-200 bg-rose-500/5 text-rose-700 text-[10px] font-black rounded-lg">{w}</Badge>))}</div></div>
                       </div>
                     </>
                   ) : (
-                    <div className="flex flex-col items-center justify-center py-12 space-y-4 opacity-40"><BrainCircuit className="w-12 h-12 text-muted-foreground animate-pulse" /><p className="text-xs font-black uppercase tracking-widest">Generating Insight Trace...</p></div>
+                    <div className="flex flex-col items-center justify-center py-8 space-y-3 opacity-40"><BrainCircuit className="w-10 h-10 text-muted-foreground animate-pulse" /><p className="text-[10px] font-black uppercase tracking-widest">Generating Insight Trace...</p></div>
                   )}
                 </CardContent>
               </Card>
-              <Card className="lg:col-span-1 border-none shadow-xl bg-foreground rounded-[3rem] p-10 text-background relative overflow-hidden flex flex-col justify-center text-center space-y-6">
-                <div className="absolute top-0 right-0 p-8 opacity-10"><Zap className="w-32 h-32 fill-current" /></div>
-                <CardHeader className="p-0"><CardTitle className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Strategic Action</CardTitle></CardHeader>
-                <CardContent className="p-0 text-xl font-bold leading-relaxed px-4">{aiSummary ? <TypewriterText text={aiSummary.recommendations} /> : "Analyzing session metadata for career optimization..."}</CardContent>
-                <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 rounded-2xl h-14 font-black uppercase tracking-[0.2em] text-xs">Access Detailed Guide</Button>
+              <Card className="lg:col-span-1 border-none shadow-xl bg-foreground rounded-[2.5rem] p-8 text-background relative overflow-hidden flex flex-col justify-center text-center space-y-4">
+                <div className="absolute top-0 right-0 p-6 opacity-10"><Zap className="w-24 h-24 fill-current" /></div>
+                <CardHeader className="p-0"><CardTitle className="text-[9px] font-black uppercase tracking-[0.3em] text-primary">Strategic Action</CardTitle></CardHeader>
+                <CardContent className="p-0 text-lg font-bold leading-snug px-2">{aiSummary ? <TypewriterText text={aiSummary.recommendations} /> : "Analyzing character metadata..."}</CardContent>
+                <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 rounded-xl h-12 font-black uppercase tracking-[0.1em] text-[10px]">Access Detailed Guide</Button>
               </Card>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Itemized Review - Re-engineered for Trace Accuracy */}
-      <div className="space-y-8 pt-4">
-        <div className="flex items-center justify-between px-2">
-          <h2 className="text-3xl font-black tracking-tight flex items-center gap-4 text-foreground"><div className="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center shadow-inner"><BrainCircuit className="w-7 h-7 text-rose-600" /></div>Itemized Review</h2>
-          <Badge variant="outline" className="font-black text-[10px] uppercase tracking-[0.2em] py-1 px-4 rounded-full border-muted-foreground/30">{totalMistakes} Review Items</Badge>
+      {/* Itemized Review - Android Native MD3 Refined */}
+      <div className="space-y-4 pt-2">
+        <div className="flex items-center justify-between px-4">
+          <h2 className="text-2xl font-black tracking-tight flex items-center gap-3 text-foreground"><div className="w-10 h-10 bg-rose-500/10 rounded-xl flex items-center justify-center shadow-inner"><BrainCircuit className="w-6 h-6 text-rose-600" /></div>Itemized Review</h2>
+          <Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest py-1 px-3 rounded-full border-muted-foreground/30">{totalMistakes} Review Items</Badge>
         </div>
         
         {totalMistakes > 0 ? (
-          <Accordion type="single" collapsible className="w-full space-y-4">
+          <Accordion type="single" collapsible className="w-full space-y-2">
             {Object.entries(categorizedMistakes).map(([subject, mistakes]) => (
-              <div key={subject} className="space-y-3">
-                <div className="flex items-center gap-3 px-4 py-2"><div className="w-1.5 h-1.5 bg-primary rounded-full" /><p className="text-[11px] font-black uppercase text-primary tracking-[0.3em]">{subject}</p></div>
+              <div key={subject} className="space-y-2">
+                <div className="flex items-center gap-2 px-4 py-1"><div className="w-1 h-1 bg-primary rounded-full" /><p className="text-[10px] font-black uppercase text-primary tracking-widest">{subject}</p></div>
                 {mistakes.map((q) => {
                   const userAnswer = answers[q.id];
                   const hasStoredExplanation = !!localExplanations[q.id];
                   
                   return (
-                    <AccordionItem key={q.id} value={q.id} className="border-none bg-card rounded-[2rem] px-2 overflow-hidden shadow-xl border border-border/20 transition-all hover:shadow-2xl">
-                      <AccordionTrigger className="hover:no-underline py-6 px-6 text-left">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-600 font-black text-xs shadow-inner">
+                    <AccordionItem key={q.id} value={q.id} className="border-none bg-card rounded-2xl px-1 overflow-hidden shadow-md border border-border/10">
+                      <AccordionTrigger className="hover:no-underline py-4 px-4 text-left">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-600 font-black text-[10px] shadow-inner shrink-0">
                             #{q.originalIndex + 1}
                           </div>
-                          <span className="text-sm font-black line-clamp-1 pr-4 uppercase tracking-tight text-foreground">
+                          <span className="text-xs font-black line-clamp-1 pr-2 uppercase tracking-tight text-foreground opacity-80">
                             {q.text}
                           </span>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="p-8 pt-0 space-y-6">
-                        <div className="bg-muted/20 p-6 md:p-8 rounded-[2.5rem] border-2 border-dashed border-border/50">
-                          <p className="font-black text-lg md:text-xl mb-8 leading-snug text-foreground">
+                      <AccordionContent className="px-4 pb-4 pt-0 space-y-4">
+                        <div className="bg-muted/20 p-4 rounded-xl border-2 border-dashed border-border/50">
+                          <p className="font-black text-base md:text-lg mb-4 leading-tight text-foreground">
                             {q.text}
                           </p>
-                          <div className="grid grid-cols-1 gap-3">
+                          <div className="grid grid-cols-1 gap-2">
                             {q.options.map((opt, i) => {
                               const isCorrect = opt === q.correctAnswer;
                               const isUserWrongChoice = opt === userAnswer;
@@ -438,14 +434,14 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
                                 <div 
                                   key={i} 
                                   className={cn(
-                                    "p-5 rounded-2xl border-2 text-sm md:text-base flex items-center gap-4 transition-all shadow-sm",
+                                    "p-3 rounded-xl border-2 text-xs md:text-sm flex items-center gap-3 transition-all",
                                     isCorrect ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 font-black" : 
                                     isUserWrongChoice ? "bg-rose-500/10 border-rose-500/30 text-rose-700 font-black" : 
-                                    "bg-card border-border/50 text-muted-foreground opacity-60"
+                                    "bg-card border-border/40 text-muted-foreground opacity-70"
                                   )}
                                 >
                                   <span className={cn(
-                                    "w-8 h-8 rounded-xl border-2 flex items-center justify-center text-xs font-black shrink-0",
+                                    "w-7 h-7 rounded-lg border-2 flex items-center justify-center text-[10px] font-black shrink-0",
                                     isCorrect ? "border-emerald-500/40 bg-emerald-500/10" : 
                                     isUserWrongChoice ? "border-rose-500/40 bg-rose-500/10" : 
                                     "border-border bg-muted/20"
@@ -453,8 +449,8 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
                                     {String.fromCharCode(65 + i)}
                                   </span>
                                   <span className="flex-1 leading-tight">{opt}</span>
-                                  {isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
-                                  {isUserWrongChoice && <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />}
+                                  {isCorrect && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                                  {isUserWrongChoice && <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
                                 </div>
                               );
                             })}
@@ -467,46 +463,44 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
                               onClick={() => handleGenerateExplanation(q)} 
                               disabled={generatingIds.has(q.id)} 
                               className={cn(
-                                "w-full h-16 rounded-[1.75rem] font-black uppercase tracking-[0.2em] text-xs gap-4 transition-all relative overflow-hidden border-2 group shadow-xl", 
+                                "w-full h-12 rounded-xl font-black uppercase tracking-widest text-[9px] gap-2 transition-all relative overflow-hidden border-2 group shadow-sm", 
                                 generatingIds.has(q.id) ? "bg-primary/10 border-primary/20 text-primary" : "bg-foreground text-background"
                               )}
                             >
                               {generatingIds.has(q.id) ? (
-                                <div className="flex items-center gap-3">
-                                  <Loader2 className="w-5 h-5 animate-spin" />
+                                <div className="flex items-center gap-2">
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                   <span>Calibrating Insight...</span>
                                 </div>
                               ) : (
-                                <div className="flex items-center justify-between w-full px-4">
-                                  <div className="flex items-center gap-3">
-                                    <Sparkles className="w-5 h-5 text-primary fill-current group-hover:animate-pulse" />
+                                <div className="flex items-center justify-between w-full px-2">
+                                  <div className="flex items-center gap-2">
+                                    <Sparkles className="w-3.5 h-3.5 text-primary fill-current group-hover:animate-pulse" />
                                     <span>AI Tutor Deep Dive</span>
                                   </div>
-                                  <div className="animate-breathing-primary bg-background/90 px-4 py-2 rounded-xl border-2 border-primary/30 flex items-center gap-2">
-                                    <span className="font-black text-sm text-primary">5</span>
-                                    <Coins className="w-4 h-4 text-primary fill-current" />
-                                    <span className="text-[8px] font-black text-primary opacity-60">CREDIT</span>
+                                  <div className="bg-background/90 px-3 py-1 rounded-lg border border-primary/20 flex items-center gap-1.5 shadow-inner">
+                                    <span className="font-black text-xs text-primary">5</span>
+                                    <Coins className="w-3.5 h-3.5 text-primary fill-current" />
                                   </div>
                                 </div>
                               )}
                             </Button>
                           ) : (
                             <motion.div 
-                              initial={{ scale: 0.95, opacity: 0 }} 
-                              animate={{ scale: 1, opacity: 1 }} 
-                              className="bg-primary/5 p-8 rounded-[2.5rem] border-2 border-primary/20 relative overflow-hidden group shadow-inner"
+                              initial={{ scale: 0.98, opacity: 0 }} 
+                              animate={{ opacity: 1, scale: 1 }} 
+                              className="bg-primary/5 p-5 rounded-xl border-2 border-primary/10 relative overflow-hidden group shadow-inner"
                             >
-                              <div className="absolute top-0 right-0 p-8 opacity-5"><MessageSquare className="w-24 h-24" /></div>
-                              <div className="flex items-center gap-3 mb-6">
-                                <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
-                                  <Star className="w-5 h-5 fill-current" />
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-md">
+                                  <Star className="w-4 h-4 fill-current" />
                                 </div>
                                 <div>
-                                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary leading-none">Pedagogical Insight</p>
-                                  <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Analytical Reasoning Trace</p>
+                                  <p className="text-[9px] font-black uppercase tracking-widest text-primary leading-none">Pedagogical Insight</p>
+                                  <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-0.5">Analytical Reasoning Trace</p>
                                 </div>
                               </div>
-                              <div className="text-base leading-relaxed font-medium text-foreground p-6 bg-card rounded-2xl border shadow-sm">
+                              <div className="text-sm leading-relaxed font-medium text-foreground p-4 bg-card rounded-lg border border-border/30 shadow-sm">
                                 <TypewriterText text={localExplanations[q.id]} />
                               </div>
                             </motion.div>
@@ -520,25 +514,25 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
             ))}
           </Accordion>
         ) : (
-          <div className="text-center py-24 bg-emerald-500/5 rounded-[4rem] border-4 border-dashed border-emerald-500/20 shadow-inner group">
-            <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }}>
-              <Trophy className="w-24 h-24 text-emerald-500 mx-auto mb-6 group-hover:rotate-12 transition-transform" />
+          <div className="text-center py-16 bg-emerald-500/5 rounded-[2.5rem] border-2 border-dashed border-emerald-500/20 shadow-inner">
+            <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 3, repeat: Infinity }}>
+              <Trophy className="w-16 h-16 text-emerald-500 mx-auto mb-4 opacity-40" />
             </motion.div>
-            <h3 className="text-3xl font-black text-foreground mb-2">Exceptional Calibration</h3>
-            <p className="text-muted-foreground font-black uppercase tracking-widest text-[10px]">Your professional reasoning is at 100% efficiency</p>
+            <h3 className="text-xl font-black text-foreground mb-1">Exceptional Calibration</h3>
+            <p className="text-muted-foreground font-black uppercase tracking-widest text-[8px]">Professional reasoning at 100% efficiency</p>
           </div>
         )}
       </div>
 
       <Dialog open={showPurchaseSuccess} onOpenChange={setShowPurchaseSuccess}>
-        <DialogContent className="rounded-[3rem] border-none shadow-2xl p-0 max-w-[360px] overflow-hidden outline-none z-[1100]">
-          <div className="bg-emerald-500/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
-            <motion.div initial={{ scale: 0, rotate: -45 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", damping: 12, stiffness: 200 }} className="w-24 h-24 bg-emerald-500 text-white rounded-[2rem] flex items-center justify-center shadow-2xl relative z-10"><CheckCircle2 className="w-12 h-12" /></motion.div>
+        <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-0 max-w-[320px] overflow-hidden outline-none z-[1100]">
+          <div className="bg-emerald-500/10 p-10 flex flex-col items-center justify-center relative overflow-hidden">
+            <motion.div initial={{ scale: 0, rotate: -45 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", damping: 12, stiffness: 200 }} className="w-20 h-20 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-2xl relative z-10"><CheckCircle2 className="w-10 h-10" /></motion.div>
             <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 3, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 to-transparent z-0" />
           </div>
-          <div className="p-10 pt-4 text-center space-y-8">
-            <DialogHeader><div className="space-y-2"><span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-600">Access Granted</span><DialogTitle className="text-3xl font-black tracking-tight">Report Sync Complete</DialogTitle><DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest">Pedagogical analysis is now active</DialogDescription></div></DialogHeader>
-            <Button onClick={() => setShowPurchaseSuccess(false)} className="w-full h-16 rounded-[1.75rem] font-black text-sm gap-3 shadow-2xl shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 transition-all">Launch Analysis <ChevronRight className="w-5 h-5" /></Button>
+          <div className="p-8 pt-2 text-center space-y-6">
+            <DialogHeader><div className="space-y-1"><span className="text-[9px] font-black uppercase tracking-[0.3em] text-emerald-600">Access Granted</span><DialogTitle className="text-2xl font-black tracking-tight">Report Sync Complete</DialogTitle></div></DialogHeader>
+            <Button onClick={() => setShowPurchaseSuccess(false)} className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-lg bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 transition-all">Launch Analysis <ChevronRight className="w-4 h-4" /></Button>
           </div>
         </DialogContent>
       </Dialog>
