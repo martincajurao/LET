@@ -22,15 +22,14 @@ import {
   Facebook,
   ShieldCheck,
   Menu,
-  Home,
+  LayoutDashboard,
   ListTodo,
   Trophy,
   Crown,
   Shield,
   Star,
   ShieldAlert,
-  Smartphone,
-  Sparkles
+  Smartphone
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -170,7 +169,7 @@ export function Navbar() {
   };
 
   const navItems = [
-    { label: 'Home', icon: <Home className="w-4 h-4" />, href: '/' },
+{ label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, href: '/dashboard' },
     { 
       label: 'Daily Tasks', 
       icon: (
@@ -186,7 +185,6 @@ export function Navbar() {
       href: '/tasks' 
     },
     { label: 'Global Arena', icon: <Trophy className="w-4 h-4" />, href: '/events' },
-    { label: 'Features', icon: <Sparkles className="w-4 h-4" />, href: '/features' },
     { 
       label: 'Notifications',
       icon: (

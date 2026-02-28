@@ -947,14 +947,6 @@ await updateDoc(doc(firestore, 'users', user.uid), updateData);
                           <Award className="w-5 h-5 text-yellow-500" />
                           <CardTitle className="text-base font-black">Achievements</CardTitle>
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-xs font-bold h-7"
-                          onClick={() => router.push('/features')}
-                        >
-                          View All
-                        </Button>
                       </div>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">

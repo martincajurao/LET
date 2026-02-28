@@ -4,14 +4,13 @@ import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
-  Home, 
+  LayoutDashboard,
   ListTodo, 
   Trophy, 
   Zap,
   Target,
   Bell,
-  Loader2,
-  Sparkles
+  Loader2
 } from 'lucide-react';
 import { PracticeModal } from './practice-modal';
 import { NotificationsModal } from './notifications-modal';
@@ -32,7 +31,7 @@ function NavContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const firestore = useFirestore();
-const { user, loading: authLoading, refreshUser } = useUser();
+  const { user, loading: authLoading, refreshUser } = useUser();
   const { toast } = useToast();
   
   const [isPracticeOpen, setIsPracticeOpen] = useState(false);
@@ -102,7 +101,7 @@ const { user, loading: authLoading, refreshUser } = useUser();
   }, [lastScrollY]);
 
   const navItems: NavItem[] = useMemo(() => [
-    { id: 'home', label: 'Home', icon: <Home className="w-5 h-5" />, href: '/' },
+    { id: 'home', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, href: '/dashboard' },
     { 
       id: 'tasks', 
       label: 'Tasks', 
@@ -134,8 +133,7 @@ const { user, loading: authLoading, refreshUser } = useUser();
         </div>
       ), 
       href: '#' 
-    },
-    { id: 'features', label: 'Features', icon: <Sparkles className="w-5 h-5" />, href: '/features' }
+    }
   ], [availableTasksCount, claimableTasksCount]);
 
   const handleNavClick = (item: NavItem) => {
@@ -165,13 +163,12 @@ const { user, loading: authLoading, refreshUser } = useUser();
       setTimeout(async () => {
         try {
           const userRef = doc(firestore, 'users', user.uid);
-await updateDoc(userRef, {
+          await updateDoc(userRef, {
             credits: increment(5),
             xp: increment(XP_REWARDS.AD_WATCH_XP),
             lastAdXpTimestamp: Date.now(),
             dailyAdCount: increment(1)
           });
-          // Refresh user data to ensure UI updates properly
           await refreshUser();
           toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added.` });
           setIsAlertsOpen(false);
@@ -186,15 +183,13 @@ await updateDoc(userRef, {
   };
 
   const isActive = (item: NavItem) => {
-    if (item.id === 'home' && pathname === '/') return true;
+    if (item.id === 'home' && pathname === '/dashboard') return true;
     if (item.id === 'tasks' && pathname === '/tasks') return true;
     if (item.id === 'events' && pathname === '/events') return true;
     if (item.id === 'notifications' && isAlertsOpen) return true;
-    if (item.id === 'features' && pathname === '/features') return true;
     return false;
   };
 
-  // Only hide while initial auth is loading
   if (authLoading) return null;
 
   return (
