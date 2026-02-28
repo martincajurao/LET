@@ -117,6 +117,14 @@
   .animate-victory {
     animation: victory 2s ease-in-out infinite;
   }
+
+  @keyframes focus-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 hsla(var(--primary), 0.4); }
+    50% { box-shadow: 0 0 20px 10px hsla(var(--primary), 0); }
+  }
+  .animate-focus-glow {
+    animation: focus-pulse 2s infinite;
+  }
 }
 
 /* Material Design 3 Fluid Transitions */

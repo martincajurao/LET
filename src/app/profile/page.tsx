@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
@@ -30,7 +29,8 @@ import {
   X,
   Calendar,
   Clock,
-  Activity
+  Activity,
+  Brain
 } from "lucide-react";
 
 import Link from 'next/link';
@@ -41,7 +41,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { collection, query, where, getDocs, limit, orderBy, doc, getDoc } from "firebase/firestore";
 import { format } from 'date-fns';
 import { cn } from "@/lib/utils";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from 'recharts';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import { getRankData } from '@/lib/xp-system';
 import { ResultsOverview } from '@/components/exam/ResultsOverview';
 import { 
@@ -128,15 +128,43 @@ function ProfilePageContent() {
     readiness: Math.min(100, (records.length * 3) + (records.length > 0 ? Math.max(...records.map(r => r.overallScore)) : 0) / 1.5)
   }), [records]);
 
-  const subjectMastery = useMemo(() => {
-    const m: Record<string, { t: number, c: number }> = {};
-    records.forEach(r => r.results?.forEach((res: any) => {
-      const name = res.subject === 'Specialization' && res.subCategory ? `${res.subject}: ${res.subCategory}` : res.subject;
-      if (!m[name]) m[name] = { t: 0, c: 0 };
-      m[name].t += 1; 
-      if (res.isCorrect) m[name].c += 1;
+  // GAME DEV ENHANCEMENT: Normalizing Radar Data
+  const radarData = useMemo(() => {
+    const m: Record<string, { t: number, c: number }> = {
+      'Gen Ed': { t: 0, c: 0 },
+      'Prof Ed': { t: 0, c: 0 },
+      'Specialization': { t: 0, c: 0 },
+      'Precision': { t: 0, c: 0 },
+      'Pacing': { t: 0, c: 0 }
+    };
+
+    records.forEach(r => {
+      // Accuracy contribution
+      m['Precision'].t += 100;
+      m['Precision'].c += r.overallScore;
+
+      // Pacing contribution (capped at 60s/question for max score)
+      const paceScore = Math.max(0, 100 - (r.timeSpent / (r.results?.length || 1) / 1.2));
+      m['Pacing'].t += 100;
+      m['Pacing'].c += paceScore;
+
+      r.results?.forEach((res: any) => {
+        let key = 'Gen Ed';
+        if (res.subject === 'Professional Education') key = 'Prof Ed';
+        if (res.subject === 'Specialization') key = 'Specialization';
+        
+        if (m[key]) {
+          m[key].t += 1;
+          if (res.isCorrect) m[key].c += 1;
+        }
+      });
+    });
+
+    return Object.entries(m).map(([subject, data]) => ({
+      subject,
+      A: Math.round((data.c / (data.t || 1)) * 100),
+      fullMark: 100
     }));
-    return Object.entries(m).map(([name, data]) => ({ name, score: Math.round((data.c / (data.t || 1)) * 100) }));
   }, [records]);
 
   const handleViewDetails = (record: ExamRecord) => {
@@ -183,7 +211,7 @@ function ProfilePageContent() {
                   { icon: <History className="w-4 h-4 text-blue-500" />, label: 'Sessions', value: stats.total },
                   { icon: <Target className="w-4 h-4 text-emerald-500" />, label: 'Accuracy', value: `${stats.avg}%` },
                   { icon: <Trophy className="w-4 h-4 text-yellow-500" />, label: 'Best Peak', value: `${stats.best}%` },
-                  { icon: <Zap className="w-4 h-4 text-primary" />, label: 'Ascension', value: `${rankData?.xpInRank || 0} XP` }
+                  { icon: <Sparkles className="w-4 h-4 text-primary animate-sparkle" />, label: 'Credits', value: `${user.credits || 0}` }
                 ].map((stat, i) => (
                   <motion.div key={i} whileHover={{ y: -4 }} className="p-5 bg-muted/20 rounded-[1.75rem] border border-border/50 text-center space-y-2 transition-all shadow-sm hover:shadow-md">
                     <div className="flex justify-center">{stat.icon}</div>
@@ -294,7 +322,7 @@ function ProfilePageContent() {
                           variant="secondary" 
                           className="flex-1 sm:flex-none h-14 px-8 rounded-2xl font-black text-[10px] uppercase tracking-[0.25em] gap-3 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all shadow-md group-hover:shadow-primary/20"
                         >
-                          Analyze Trace <Sparkles className="w-4 h-4 fill-current group-hover:animate-pulse" />
+                          Analyze Trace <Sparkles className="w-4 h-4 fill-current animate-sparkle" />
                         </Button>
                       </div>
                       
@@ -310,32 +338,35 @@ function ProfilePageContent() {
                     <Card className="border-none shadow-2xl rounded-[3rem] bg-card p-10 space-y-8 relative overflow-hidden border-border/50">
                       <div className="absolute inset-0 bg-primary/5 opacity-50" />
                       <div className="text-center space-y-2 relative z-10">
-                        <h3 className="text-xl font-black tracking-tight">Track Mastery</h3>
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] opacity-60 text-primary">Aggregate Proficiency</p>
+                        <h3 className="text-xl font-black tracking-tight">Academic Radar</h3>
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] opacity-60 text-primary">Character Attributes</p>
                       </div>
                       
-                      <div className="h-[300px] w-full relative z-10">
+                      <div className="h-[280px] w-full relative z-10">
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={subjectMastery} layout="vertical" margin={{ left: -30, right: 30 }}>
-                            <XAxis type="number" domain={[0, 100]} hide />
-                            <YAxis 
-                              dataKey="name" 
-                              type="category" 
-                              width={100} 
-                              style={{ fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', fill: 'hsl(var(--muted-foreground))', letterSpacing: '0.1em' }} 
+                          <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                            <PolarGrid stroke="hsl(var(--border))" />
+                            <PolarAngleAxis 
+                              dataKey="subject" 
+                              tick={{ fontSize: 8, fontWeight: 900, fill: 'hsl(var(--muted-foreground))', textAnchor: 'middle' }}
                             />
-                            <Bar dataKey="score" radius={[0, 12, 12, 0]} barSize={20}>
-                              {subjectMastery.map((e, idx) => (
-                                <Cell key={idx} fill={e.score >= 75 ? '#10b981' : '#a7d9ed'} className="transition-all duration-1000" />
-                              ))}
-                            </Bar>
-                          </BarChart>
+                            <Radar
+                              name="Stats"
+                              dataKey="A"
+                              stroke="hsl(var(--primary))"
+                              fill="hsl(var(--primary))"
+                              fillOpacity={0.5}
+                            />
+                          </RadarChart>
                         </ResponsiveContainer>
                       </div>
                       
                       <div className="p-5 bg-background/50 rounded-2xl border-2 border-dashed border-border/50 text-center relative z-10">
-                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Calibration Status</p>
-                        <p className="text-sm font-black text-foreground mt-1">Verified Professional Trace</p>
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                          <Brain className="w-4 h-4 text-primary" />
+                          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Strategic Build</p>
+                        </div>
+                        <p className="text-sm font-black text-foreground">{rankData?.title}</p>
                       </div>
                     </Card>
                   </div>

@@ -30,7 +30,9 @@ import {
   LayoutGrid,
   ShieldCheck,
   ShieldAlert,
-  Zap
+  Zap,
+  Flame,
+  Sparkles
 } from "lucide-react";
 import { Question } from "@/app/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -64,6 +66,10 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   const [timeLeft, setTimeLeft] = useState(questions.length * (timePerQuestion || 60));
   const [startTime] = useState(Date.now());
   
+  // GAME DEV ENHANCEMENT: Focus Streaks
+  const [correctStreak, setCorrectStreak] = useState(0);
+  const [showFocusState, setShowFocusState] = useState(false);
+
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [showBreakScreen, setShowBreakScreen] = useState(false);
   
@@ -108,7 +114,23 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
   const handleAnswer = (val: string) => {
     const currentQ = groupedPhases[currentPhaseIdx].items[currentInPhaseIdx];
+    const wasCorrectBefore = answers[currentQ.id] === currentQ.correctAnswer;
+    const isCorrectNow = val === currentQ.correctAnswer;
+
     setAnswers(prev => ({ ...prev, [currentQ.id]: val }));
+    
+    // GAME DEV ENHANCEMENT: Streak Logic
+    if (isCorrectNow && !wasCorrectBefore) {
+      setCorrectStreak(prev => {
+        const next = prev + 1;
+        if (next >= 5) setShowFocusState(true);
+        return next;
+      });
+    } else if (!isCorrectNow) {
+      setCorrectStreak(0);
+      setShowFocusState(false);
+    }
+
     window.dispatchEvent(new CustomEvent('questionAnswered'));
   };
 
@@ -157,7 +179,10 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   if (!currentQuestion) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] bg-background flex flex-col overflow-hidden animate-in fade-in duration-300">
+    <div className={cn(
+      "fixed inset-0 z-[200] bg-background flex flex-col overflow-hidden animate-in fade-in duration-300 transition-all duration-1000",
+      showFocusState && "ring-[12px] ring-inset ring-primary/10 shadow-[inset_0_0_100px_rgba(var(--primary),0.1)]"
+    )}>
       <header className="pt-[env(safe-area-inset-top)] border-b bg-card/90 backdrop-blur-md shrink-0 z-50">
         <div className="h-14 flex items-center justify-between px-3">
           <div className="flex items-center gap-2">
@@ -168,15 +193,23 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
               <Timer className="w-3.5 h-3.5" />
               <span className="text-xs font-black font-mono tracking-tighter">{formatTime(timeLeft)}</span>
             </div>
-            <div className="hidden sm:flex items-center gap-1.5 text-muted-foreground bg-muted/20 px-3 py-1 rounded-full border">
-              <Layers className="w-3 h-3 text-primary" />
-              <span className="text-[9px] font-black uppercase tracking-widest line-clamp-1">{currentPhase.subject}</span>
-            </div>
+            
+            {/* GAME DEV: Streak Indicator */}
+            {correctStreak >= 3 && (
+              <motion.div 
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="flex items-center gap-1.5 px-3 py-1 bg-orange-500 text-white rounded-full shadow-lg"
+              >
+                <Flame className="w-3 h-3 fill-current animate-bounce" />
+                <span className="text-[10px] font-black uppercase tracking-tighter">{correctStreak} Streak</span>
+              </motion.div>
+            )}
           </div>
 
           <div className="flex-1 max-w-[120px] mx-3 md:max-w-xs">
             <div className="flex justify-between mb-1">
-              <span className="text-[8px] font-black uppercase text-muted-foreground opacity-60 tracking-widest">Simulation Sync</span>
+              <span className="text-[8px] font-black uppercase text-muted-foreground opacity-60 tracking-widest">Calibration Path</span>
               <span className="text-[8px] font-black text-primary">{Math.round(progress)}%</span>
             </div>
             <Progress value={progress} className="h-1.5 rounded-full" />
@@ -295,7 +328,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         <aside className="hidden lg:flex w-72 border-l bg-muted/5 flex-col overflow-hidden">
           <div className="p-6 border-b bg-card/50">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground">Analytical Map</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground">Simulation Map</h3>
               <LayoutGrid className="w-4 h-4 text-primary" />
             </div>
             <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.3em]">{questions.length} Total Items</p>
@@ -360,10 +393,16 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
               <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-orange-500" /> Flagged</div>
               <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-border" /> Open</div>
             </div>
-            <div className="p-2.5 bg-primary/5 rounded-xl border border-primary/10 flex items-center gap-2">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <p className="text-[8px] font-bold text-foreground">Confidence bets active (+10 XP bonus)</p>
-            </div>
+            {showFocusState && (
+              <motion.div 
+                animate={{ scale: [1, 1.05, 1] }} 
+                transition={{ duration: 2, repeat: Infinity }}
+                className="p-2.5 bg-primary/10 rounded-xl border-2 border-primary/20 flex items-center gap-2"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-primary animate-sparkle" />
+                <p className="text-[8px] font-black text-primary uppercase tracking-widest">Focus Mode Active</p>
+              </motion.div>
+            )}
           </div>
         </aside>
       </main>
@@ -381,7 +420,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
           </Button>
 
           <div className="flex flex-col items-center">
-            <p className="text-[8px] font-black uppercase tracking-[0.3em] text-muted-foreground leading-none mb-1 opacity-60">Progress Path</p>
+            <p className="text-[8px] font-black uppercase tracking-[0.3em] text-muted-foreground leading-none mb-1 opacity-60">Progress Trace</p>
             <div className="flex items-center gap-2">
               <span className="text-sm font-black text-foreground">{overallCurrentIdx + 1}</span>
               <div className="w-1 h-1 bg-border rounded-full" />
@@ -475,7 +514,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-3 pt-2">
-              <Button onClick={handleSubmit} className="h-14 rounded-2xl font-black text-xs uppercase tracking-[0.25em] shadow-xl shadow-primary/30 transition-all hover:scale-[1.03]">
+              <Button onClick={handleSubmit} className="h-14 rounded-2xl font-black text-xs uppercase tracking-[0.25em] shadow-xl shadow-primary/30 transition-all hover:scale-105">
                 Commit Results
               </Button>
               <Button variant="ghost" onClick={() => setShowSubmitConfirm(false)} className="h-10 rounded-xl font-black text-[9px] uppercase tracking-widest text-muted-foreground">
