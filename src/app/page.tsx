@@ -45,7 +45,8 @@ import {
   Heart,
   Smartphone,
   Download,
-  QrCode
+  QrCode,
+  AlertCircle
 } from "lucide-react";
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
@@ -205,7 +206,8 @@ function LetsPrepContent() {
         finalQuestions = shuffleArray(questionPool).slice(0, 5);
       } else {
         const target = category === 'Major' ? 'Specialization' : category;
-        finalQuestions = shuffleArray(questionPool.filter(q => q.subject === target)).slice(0, limits.limitGenEd);
+        const targetLimit = target === 'General Education' ? limits.limitGenEd : target === 'Professional Education' ? limits.limitProfEd : limits.limitSpec;
+        finalQuestions = shuffleArray(questionPool.filter(q => q.subject === target)).slice(0, targetLimit);
       }
       
       if (finalQuestions.length === 0) throw new Error(`Insufficient items found.`);

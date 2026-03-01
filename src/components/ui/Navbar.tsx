@@ -143,7 +143,7 @@ export function Navbar() {
   const navItems = [
     { label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, href: '/dashboard' },
     { 
-      label: 'Daily Tasks', 
+      label: 'Daily Missions', 
       icon: (
         <div className="relative">
           <ListTodo className="w-4 h-4" />
@@ -301,7 +301,6 @@ export function Navbar() {
             <div className="w-16 h-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-2">
               {verifyingAd ? <ShieldAlert className="w-8 h-8 text-primary animate-pulse" /> : <Zap className="w-8 h-8 text-primary" />}
             </div>
-            <DialogTitle className="text-2xl font-black text-center">{verifyingAd ? "Verifying..." : "Refill AI Credits"}</DialogTitle>
             <DialogTitle className="text-2xl font-black text-center">{verifyingAd ? "Verifying..." : "Refill AI Credits"}</DialogTitle>
             <DialogDescription className="text-center text-muted-foreground font-medium">Watch a professional tutorial to earn <span className="text-primary font-black">+5 AI Credits</span>.</DialogDescription>
           </DialogHeader>
