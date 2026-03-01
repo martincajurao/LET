@@ -115,90 +115,95 @@ export function DailyLoginRewards({
         </CardHeader>
 
         <CardContent className="p-8 pt-4 space-y-8">
-          <div className="grid grid-cols-3 gap-3">
-            {BASE_REWARDS.map((reward, index) => {
-              const dayNum = index + 1;
-              const isPast = dayNum < currentDay;
-              const isCurrent = dayNum === currentDay;
-              const isVisuallyClaimed = isPast || (isCurrent && claimedToday);
-              const isLegendary = reward.type === 'legendary';
-              const isEpic = reward.type === 'epic';
-              
-              const scaledXp = Math.round(reward.xp * multiplier);
-              const scaledCredits = Math.round(reward.credits * multiplier);
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
+            {/* Split for mobile vs desktop or just single column flex-col if preferred, but user requested horizontal content IN card. 
+                Applying horizontal layout internal to cards while maintaining grid structure. */}
+            <div className="grid grid-cols-1 gap-3">
+              {BASE_REWARDS.map((reward, index) => {
+                const dayNum = index + 1;
+                const isPast = dayNum < currentDay;
+                const isCurrent = dayNum === currentDay;
+                const isVisuallyClaimed = isPast || (isCurrent && claimedToday);
+                const isLegendary = reward.type === 'legendary';
+                const isEpic = reward.type === 'epic';
+                
+                const scaledXp = Math.round(reward.xp * multiplier);
+                const scaledCredits = Math.round(reward.credits * multiplier);
 
-              return (
-                <motion.div 
-                  key={dayNum}
-                  initial={false}
-                  animate={isCurrent && !claimedToday ? { scale: [1, 1.02, 1] } : {}}
-                  transition={{ duration: 3, repeat: Infinity }}
-                  className={cn(
-                    "relative p-4 rounded-[2rem] border-2 transition-all flex flex-col items-center justify-between min-h-[160px]",
-                    isVisuallyClaimed ? "bg-emerald-500/5 border-emerald-500/10 opacity-60" : 
-                    isCurrent ? "bg-card border-primary shadow-2xl ring-8 ring-primary/5 scale-105 z-10" :
-                    "bg-muted/20 border-border/50",
-                    isLegendary && "col-span-3 min-h-[140px] flex-row px-8",
-                    isEpic && !isVisuallyClaimed && "border-purple-200 bg-purple-50/30"
-                  )}
-                >
-                  {/* Day Label */}
-                  <div className={cn(
-                    "w-full flex justify-between items-center mb-2",
-                    isLegendary && "w-auto flex-col mb-0 items-start mr-8"
-                  )}>
-                    <span className={cn(
-                      "text-[10px] font-black uppercase tracking-widest",
-                      isVisuallyClaimed ? "text-emerald-600" : isCurrent ? "text-primary" : "text-muted-foreground"
-                    )}>
-                      {isLegendary ? "Grand Prize" : `Day ${dayNum}`}
-                    </span>
-                    {isVisuallyClaimed && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-                  </div>
-                  
-                  {/* Reward Visuals */}
-                  <div className={cn(
-                    "flex-1 flex flex-col items-center justify-center gap-3 w-full",
-                    isLegendary && "flex-row justify-center gap-8"
-                  )}>
-                    <div className="flex flex-col items-center gap-1">
+                return (
+                  <motion.div 
+                    key={dayNum}
+                    initial={false}
+                    animate={isCurrent && !claimedToday ? { scale: [1, 1.01, 1] } : {}}
+                    transition={{ duration: 3, repeat: Infinity }}
+                    className={cn(
+                      "relative p-5 rounded-[2rem] border-2 transition-all flex flex-row items-center justify-between min-h-[80px]",
+                      isVisuallyClaimed ? "bg-emerald-500/5 border-emerald-500/10 opacity-60" : 
+                      isCurrent ? "bg-card border-primary shadow-2xl ring-8 ring-primary/5 z-10" :
+                      "bg-muted/20 border-border/50",
+                      isLegendary && "border-yellow-400 bg-yellow-50/30",
+                      isEpic && !isVisuallyClaimed && "border-purple-200 bg-purple-50/30"
+                    )}
+                  >
+                    <div className="flex items-center gap-4">
                       <div className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center shadow-inner mb-1",
-                        isVisuallyClaimed ? "bg-emerald-100" : isCurrent ? "bg-primary/10" : "bg-muted"
+                        "w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs border-2 transition-all",
+                        isVisuallyClaimed ? "bg-emerald-100 border-emerald-200 text-emerald-600" :
+                        isCurrent ? "bg-primary text-primary-foreground border-primary" :
+                        "bg-muted border-border text-muted-foreground"
                       )}>
-                        <Zap className={cn("w-5 h-5", isVisuallyClaimed ? "text-emerald-600" : isCurrent ? "text-primary" : "text-muted-foreground")} />
+                        {isVisuallyClaimed ? <CheckCircle2 className="w-5 h-5" /> : dayNum}
                       </div>
-                      <p className={cn("text-lg font-black tracking-tighter", isVisuallyClaimed ? "text-emerald-700" : "text-foreground")}>+{scaledXp}</p>
+                      <div className="flex flex-col">
+                        <span className={cn(
+                          "text-[10px] font-black uppercase tracking-widest",
+                          isVisuallyClaimed ? "text-emerald-600" : isCurrent ? "text-primary" : "text-muted-foreground"
+                        )}>
+                          {isLegendary ? "Grand Prize" : `Day ${dayNum}`}
+                        </span>
+                        {isLegendary && <p className="text-[8px] font-bold text-yellow-600 uppercase">Weekly Milestone</p>}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-2">
+                        <div className={cn(
+                          "w-8 h-8 rounded-lg flex items-center justify-center shadow-inner",
+                          isVisuallyClaimed ? "bg-emerald-100" : isCurrent ? "bg-primary/10" : "bg-muted"
+                        )}>
+                          <Zap className={cn("w-4 h-4", isVisuallyClaimed ? "text-emerald-600" : isCurrent ? "text-primary" : "text-muted-foreground")} />
+                        </div>
+                        <p className={cn("text-lg font-black tracking-tighter", isVisuallyClaimed ? "text-emerald-700" : "text-foreground")}>+{scaledXp}</p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className={cn(
+                          "w-8 h-8 rounded-lg flex items-center justify-center shadow-inner",
+                          isVisuallyClaimed ? "bg-emerald-100" : isCurrent ? "bg-yellow-500/10" : "bg-muted",
+                          isLegendary && "bg-yellow-500/20"
+                        )}>
+                          {isLegendary ? (
+                            <Crown className="w-4 h-4 text-yellow-600 fill-current animate-victory" />
+                          ) : (
+                            <Sparkles className={cn("w-4 h-4", isVisuallyClaimed ? "text-emerald-600" : "text-yellow-600 animate-sparkle")} />
+                          )}
+                        </div>
+                        <p className={cn("text-lg font-black tracking-tighter", isVisuallyClaimed ? "text-emerald-700" : "text-foreground")}>+{scaledCredits}</p>
+                      </div>
                     </div>
 
-                    <div className="flex flex-col items-center gap-1">
-                      <div className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center shadow-inner mb-1",
-                        isVisuallyClaimed ? "bg-emerald-100" : isCurrent ? "bg-yellow-500/10" : "bg-muted",
-                        isLegendary && "bg-yellow-500/20"
-                      )}>
-                        {isLegendary ? (
-                          <Crown className="w-5 h-5 text-yellow-600 fill-current animate-victory" />
-                        ) : (
-                          <Sparkles className={cn("w-5 h-5", isVisuallyClaimed ? "text-emerald-600" : "text-yellow-600 animate-sparkle")} />
-                        )}
-                      </div>
-                      <p className={cn("text-lg font-black tracking-tighter", isVisuallyClaimed ? "text-emerald-700" : "text-foreground")}>+{scaledCredits}</p>
-                    </div>
-                  </div>
-
-                  {/* Status Ring for Current Day */}
-                  {isCurrent && !claimedToday && (
-                    <motion.div 
-                      layoutId="active-ring"
-                      className="absolute inset-0 border-4 border-primary rounded-[2rem] pointer-events-none"
-                      animate={{ opacity: [0.2, 0.5, 0.2] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
-                  )}
-                </motion.div>
-              );
-            })}
+                    {isCurrent && !claimedToday && (
+                      <motion.div 
+                        layoutId="active-ring"
+                        className="absolute inset-0 border-2 border-primary rounded-[2rem] pointer-events-none"
+                        animate={{ opacity: [0.2, 0.5, 0.2] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
           </div>
 
           <div className="space-y-4 pt-4">
