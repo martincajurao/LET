@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -42,19 +41,28 @@ export default function TasksPage() {
   };
 
   const handleQuestionComplete = async (isCorrect: boolean, xpEarned: number) => {
-    if (isCorrect && user && firestore) {
-      try {
-        const userRef = doc(firestore, 'users', user.uid);
-        await updateDoc(userRef, { 
-          xp: increment(xpEarned),
-          dailyQuestionsAnswered: increment(1),
-          lastActiveDate: serverTimestamp()
-        });
-        await refreshUser();
-        toast({ variant: "reward", title: "Great job!", description: `+${xpEarned} XP earned!` });
-      } catch (e) {
-        console.error('Failed to update question completion:', e);
+    if (!user || !firestore) return;
+    
+    try {
+      const userRef = doc(firestore, 'users', user.uid);
+      const updateData: any = { 
+        lastQotdClaimedAt: Date.now(),
+        lastActiveDate: serverTimestamp()
+      };
+
+      if (isCorrect) {
+        updateData.xp = increment(xpEarned);
+        updateData.dailyQuestionsAnswered = increment(1);
+        toast({ variant: "reward", title: "Strategic Accuracy!", description: `+${xpEarned} XP earned!` });
+      } else {
+        toast({ title: "Trace Recorded", description: "Pedagogical insight unlocked. Return tomorrow for calibration." });
       }
+
+      await updateDoc(userRef, updateData);
+      await refreshUser();
+    } catch (e) {
+      console.error('Failed to update question completion:', e);
+      toast({ variant: "destructive", title: "Sync Failed", description: "Could not record professional trace." });
     }
   };
 
@@ -73,7 +81,7 @@ export default function TasksPage() {
         </div>
 
         <div className="space-y-2 px-2">
-          <h1 className="text-3xl font-black tracking-tight text-foreground">Daily Mission</h1>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">Mission Hub</h1>
           <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest opacity-60">Academic Pacing & Engagement</p>
         </div>
 
@@ -94,6 +102,7 @@ export default function TasksPage() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <QuestionOfTheDay 
                 question={INITIAL_QUESTIONS[Math.floor(Date.now() / 86400000) % INITIAL_QUESTIONS.length]}
+                lastClaimDate={user.lastQotdClaimedAt}
                 onComplete={handleQuestionComplete}
               />
             </motion.div>

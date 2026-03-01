@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, createContext, useContext, ReactNode, useRef } from 'react';
@@ -45,6 +44,7 @@ export interface UserProfile {
   lastActiveDate?: any;
   lastTaskReset?: any;
   lastLoginRewardClaimedAt?: number;
+  lastQotdClaimedAt?: number;
   referralCode?: string;
   referredBy?: string;
   referralCount?: number;
@@ -110,7 +110,8 @@ function scrubUserData(data: any, prevUser: UserProfile | null): UserProfile {
     'credits', 'xp', 'streakCount', 'dailyAdCount', 
     'dailyQuestionsAnswered', 'dailyTestsFinished', 
     'dailyCreditEarned', 'referralCount', 'referralCreditsEarned', 
-    'mistakesReviewed', 'dailyAiUsage', 'lastLoginRewardClaimedAt'
+    'mistakesReviewed', 'dailyAiUsage', 'lastLoginRewardClaimedAt',
+    'lastQotdClaimedAt'
   ];
 
   const eventDateFields = ['lastActiveDate', 'lastTaskReset', 'lastQualityUpdate'];
@@ -124,7 +125,7 @@ function scrubUserData(data: any, prevUser: UserProfile | null): UserProfile {
 
   eventDateFields.forEach(key => {
     if (scrubbed[key] === undefined || scrubbed[key] === null || isFirestoreSentinel(scrubbed[key])) {
-      scrubbed[key] = (prevUser as any)?.[key] ?? Date.now();
+      scrubbed[key] = (prevUser as any)?.[key] ?? 0;
     } else if (scrubbed[key] && typeof scrubbed[key] === 'object' && scrubbed[key].toMillis) {
       scrubbed[key] = scrubbed[key].toMillis();
     }
@@ -283,6 +284,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       lastActiveDate: Date.now(),
       lastTaskReset: Date.now(),
       lastLoginRewardClaimedAt: 0,
+      lastQotdClaimedAt: 0,
       referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
       taskLoginClaimed: false,
       taskQuestionsClaimed: false,
