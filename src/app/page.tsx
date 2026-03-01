@@ -659,7 +659,7 @@ function LetsPrepContent() {
                       ) : (
                         <motion.div 
                           className="w-fit"
-                          animate={{ scale: [1, 1.02, 1], boxShadow: ["0 20px 50px rgba(0,0,0,0.1)", "0 25px 60px rgba(var(--primary),0.2)", "0 20px 50px rgba(0,0,0,0.1)"] }}
+                          animate={{ scale: [1, 1.02, 1] }}
                           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                         >
                           <Button 

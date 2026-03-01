@@ -139,7 +139,6 @@ export function Navbar() {
     }, 3500);
   };
 
-  // Final visibility check after all hook calls
   if (loading || !user) return null;
 
   const navItems = [

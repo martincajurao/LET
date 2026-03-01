@@ -133,7 +133,6 @@ function NavContent() {
     }, 3500);
   };
 
-  // Final visibility check after all hook calls
   if (authLoading || !user) return null;
 
   const navItems = [
