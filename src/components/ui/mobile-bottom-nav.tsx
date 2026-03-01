@@ -111,7 +111,7 @@ function NavContent() {
   const handleWatchAd = async () => {
     if (!user || !firestore) return;
     if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
-      toast({ title: "Allowance Reached", description: "Daily professional clip limit reached.", variant: "destructive" });
+      toast({ title: "Allowance Reached", description: "Daily professional limit reached.", variant: "destructive" });
       return;
     }
     setWatchingAd(true);
@@ -131,7 +131,6 @@ function NavContent() {
     }, 3500);
   };
 
-  // Safe early return for Guests AFTER hooks
   if (!user) return null;
 
   const navItems = [

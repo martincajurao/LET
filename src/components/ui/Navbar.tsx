@@ -64,9 +64,7 @@ export function Navbar() {
   const [availableTasksCount, setAvailableTasksCount] = useState(0);
   const [claimableTasksCount, setClaimableTasksCount] = useState(0);
 
-  const rankData = user ? getRankData(user.xp || 0) : null;
   const userRef = useRef(user);
-
   useEffect(() => { userRef.current = user; }, [user]);
 
   const calculateCounts = useCallback(() => {
@@ -137,9 +135,9 @@ export function Navbar() {
     }, 3500);
   };
 
-  // Safe early return for Guests AFTER hooks
   if (!user) return null;
 
+  const rankData = getRankData(user.xp || 0);
   const navItems = [
     { label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, href: '/dashboard' },
     { 

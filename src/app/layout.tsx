@@ -11,7 +11,7 @@ import { PageTransition } from '@/components/page-transition';
 import { SessionPersistence } from '@/components/session-persistence';
 import Script from 'next/script';
 import { Suspense } from 'react';
-
+import { Loader2 } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: "LET's Prep - Professional Teacher Practice",
@@ -72,13 +72,14 @@ export default function RootLayout({
               <Navbar />
               <main className="pb-24 md:pb-8">
                 <PageTransition>
-                  {children}
+                  <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+                    {children}
+                  </Suspense>
                 </PageTransition>
               </main>
               <MobileBottomNav />
             </FirebaseClientProvider>
           </ThemeProvider>
-
         </body>
       </html>
     </WebViewBridge>
