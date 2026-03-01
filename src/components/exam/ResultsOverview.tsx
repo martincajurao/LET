@@ -42,7 +42,7 @@ import { useUser, useFirestore } from '@/firebase';
 import { doc, updateDoc, increment, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getRankData, DAILY_AD_LIMIT } from '@/lib/xp-system';
+import { getRankData, DAILY_AD_LIMIT, AI_UNLOCK_COST, AI_DEEP_DIVE_COST } from '@/lib/xp-system';
 
 interface ResultsOverviewProps {
   questions: Question[];
@@ -194,15 +194,15 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
   const handleUnlockWithCredits = async () => {
     if (!user || !firestore) return;
     const credits = typeof user.credits === 'number' ? user.credits : 0;
-    if (credits < 10) {
-      toast({ variant: "destructive", title: "Insufficient Credits", description: "You need 10 AI Credits to unlock analysis." });
+    if (credits < AI_UNLOCK_COST) {
+      toast({ variant: "destructive", title: "Insufficient Credits", description: `You need ${AI_UNLOCK_COST} AI Credits to unlock analysis.` });
       return;
     }
     
     setUnlocking(true);
     try {
       const userRef = doc(firestore, 'users', user.uid);
-      await updateDoc(userRef, { credits: increment(-10) });
+      await updateDoc(userRef, { credits: increment(-AI_UNLOCK_COST) });
       await refreshUser();
       setIsUnlocked(true);
       setShowPurchaseSuccess(true);
@@ -220,8 +220,8 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
     const isPro = !!user.isPro;
     const credits = typeof user.credits === 'number' ? user.credits : 0;
 
-    if (!isPro && credits < 5) {
-      toast({ variant: "destructive", title: "Insufficient Credits", description: "AI Deep Dive requires 5 AI Credits." });
+    if (!isPro && credits < AI_DEEP_DIVE_COST) {
+      toast({ variant: "destructive", title: "Insufficient Credits", description: `AI Deep Dive requires ${AI_DEEP_DIVE_COST} AI Credits.` });
       return;
     }
     
@@ -230,7 +230,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
     try {
       if (!isPro) {
         await updateDoc(doc(firestore, 'users', user.uid), {
-          credits: increment(-5),
+          credits: increment(-AI_DEEP_DIVE_COST),
           mistakesReviewed: increment(1)
         });
       }
@@ -295,7 +295,6 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500 pb-32">
-      {/* Session Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-6 rounded-[2rem] shadow-sm border border-border/50">
         <div className="space-y-1">
           <Badge className="bg-primary/10 text-primary border-primary/20 px-3 py-0.5 text-[9px] font-black uppercase tracking-[0.2em] mb-1">Calibration Trace</Badge>
@@ -303,10 +302,10 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
           <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">{questions.length} Items Calibrated</p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
-          <Button variant="outline" disabled={unlocking} onClick={onRestart} className="flex-1 md:flex-none h-11 px-5 rounded-xl font-black text-[9px] uppercase tracking-widest gap-2 border-2">
+          <Button variant="outline" disabled={unlocking} onClick={onRestart} className="flex-1 md:flex-none h-11 px-5 rounded-xl font-black text-[9px] uppercase tracking-widest gap-2 border-2 active:scale-95 transition-all">
             <LayoutDashboard className="w-3.5 h-3.5" /> Exit
           </Button>
-          <Button onClick={onRestart} disabled={unlocking} className="flex-1 md:flex-none h-11 px-6 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg shadow-primary/20 gap-2">
+          <Button onClick={onRestart} disabled={unlocking} className="flex-1 md:flex-none h-11 px-6 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg shadow-primary/20 gap-2 active:scale-95 transition-all">
             <History className="w-3.5 h-3.5" /> Retake
           </Button>
         </div>
@@ -323,15 +322,15 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
                   <p className="text-muted-foreground font-medium text-sm max-w-sm mx-auto">Access accuracy charts, AI analysis, and full item review.</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-                  <Button onClick={handleUnlockWithAd} disabled={unlocking || (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT} className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-3 shadow-lg relative overflow-hidden bg-primary text-primary-foreground">
+                  <Button onClick={handleUnlockWithAd} disabled={unlocking || (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT} className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-3 shadow-lg relative overflow-hidden bg-primary text-primary-foreground active:scale-95 transition-all">
                     {unlocking && !verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : verifying ? <ShieldAlert className="w-4 h-4 animate-pulse" /> : <Play className="w-4 h-4 fill-current" />}
                     {unlocking ? (verifying ? "Verifying..." : "Playing...") : "Watch Clip"}
                     <Badge className="absolute top-1.5 right-1.5 bg-background/20 text-background text-[7px] font-black uppercase border-none">FREE</Badge>
                   </Button>
-                  <Button variant="outline" onClick={handleUnlockWithCredits} disabled={unlocking || (user?.credits || 0) < 10} className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-2 border-2 border-primary/30 bg-primary/5 text-primary">
+                  <Button variant="outline" onClick={handleUnlockWithCredits} disabled={unlocking || (user?.credits || 0) < AI_UNLOCK_COST} className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-2 border-2 border-primary/30 bg-primary/5 text-primary active:scale-95 transition-all">
                     <span className="flex-1 text-left px-1">Unlock Vault</span>
                     <div className="bg-background/90 px-2 py-1 rounded-lg border border-primary/30 flex items-center gap-1.5">
-                      <span className="font-black text-xs">10</span>
+                      <span className="font-black text-xs">{AI_UNLOCK_COST}</span>
                       <Sparkles className="w-3.5 h-3.5 fill-current animate-sparkle" />
                     </div>
                   </Button>
@@ -384,7 +383,6 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
               </Card>
             </div>
 
-            {/* Itemized Review - Android Native MD3 Refined */}
             <div className="space-y-4 pt-2">
               <div className="flex items-center justify-between px-4">
                 <h2 className="text-2xl font-black tracking-tight flex items-center gap-3 text-foreground"><div className="w-10 h-10 bg-rose-500/10 rounded-xl flex items-center justify-center shadow-inner"><BrainCircuit className="w-6 h-6 text-rose-600" /></div>Itemized Review</h2>
@@ -455,7 +453,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
                                     onClick={() => handleGenerateExplanation(q)} 
                                     disabled={generatingIds.has(q.id)} 
                                     className={cn(
-                                      "w-full h-12 rounded-xl font-black uppercase tracking-widest text-[9px] gap-2 transition-all relative overflow-hidden border-2 group shadow-sm", 
+                                      "w-full h-12 rounded-xl font-black uppercase tracking-widest text-[9px] gap-2 transition-all relative overflow-hidden border-2 group shadow-sm active:scale-95", 
                                       generatingIds.has(q.id) ? "bg-primary/10 border-primary/20 text-primary" : "bg-foreground text-background"
                                     )}
                                   >
@@ -471,7 +469,7 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
                                           <span>AI Tutor Deep Dive</span>
                                         </div>
                                         <div className="bg-background/90 px-3 py-1 rounded-lg border border-primary/20 flex items-center gap-1.5 shadow-inner">
-                                          <span className="font-black text-xs text-primary">5</span>
+                                          <span className="font-black text-xs text-primary">{AI_DEEP_DIVE_COST}</span>
                                           <Sparkles className="w-3.5 h-3.5 text-primary fill-current animate-sparkle" />
                                         </div>
                                       </div>
