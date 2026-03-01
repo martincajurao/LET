@@ -17,7 +17,8 @@ import {
   Sparkles,
   Crown,
   ShieldCheck,
-  TrendingUp
+  TrendingUp,
+  Coins
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -156,36 +157,50 @@ export function DailyLoginRewards({
                   animate={isCurrent && !claimedToday ? { scale: [1, 1.05, 1] } : {}}
                   transition={{ duration: 2, repeat: Infinity }}
                   className={cn(
-                    "relative p-2 rounded-2xl text-center border-2 transition-all flex flex-col items-center justify-between min-h-[110px]",
+                    "relative p-2 rounded-2xl text-center border-2 transition-all flex flex-col items-center justify-between min-h-[130px] overflow-hidden",
                     isVisuallyClaimed ? "bg-emerald-500/5 border-emerald-500/20" : 
                     isCurrent ? "bg-primary/5 border-primary shadow-lg ring-4 ring-primary/5" :
                     "bg-card border-border/50 opacity-60",
-                    reward.type === 'legendary' && !isVisuallyClaimed && "border-amber-400 bg-amber-500/5"
+                    reward.type === 'legendary' && !isVisuallyClaimed && "border-amber-400 bg-amber-500/5",
+                    reward.type === 'epic' && !isVisuallyClaimed && "border-purple-400 bg-purple-500/5"
                   )}
                 >
                   <div className={cn(
-                    "w-9 h-9 rounded-xl flex items-center justify-center mb-1 shadow-inner transition-colors",
+                    "w-8 h-8 rounded-lg flex items-center justify-center mb-1 shadow-inner transition-colors",
                     isVisuallyClaimed ? "bg-emerald-500/20" :
                     isCurrent ? "bg-primary text-primary-foreground" :
-                    reward.type === 'legendary' ? "bg-amber-500 text-white" : "bg-muted"
+                    reward.type === 'legendary' ? "bg-amber-500 text-white" : 
+                    reward.type === 'epic' ? "bg-purple-500 text-white" : "bg-muted"
                   )}>
                     {isVisuallyClaimed ? (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     ) : reward.type === 'legendary' ? (
-                      <Crown className="w-5 h-5 fill-current" />
+                      <Crown className="w-4 h-4 fill-current" />
                     ) : reward.type === 'epic' ? (
-                      <Trophy className="w-5 h-5" />
+                      <Trophy className="w-4 h-4" />
                     ) : (
-                      <span className="font-black text-sm">{dayNum}</span>
+                      <span className="font-black text-xs">{dayNum}</span>
                     )}
                   </div>
                   
-                  <div className="flex flex-col items-center gap-0.5 mb-1">
-                    <p className="text-[10px] font-black text-foreground">{scaledXp}XP</p>
-                    <p className="text-[8px] font-bold text-muted-foreground">{scaledCredits}c</p>
+                  <div className="flex-1 flex flex-col items-center justify-center gap-1">
+                    <div className="flex flex-col items-center">
+                      <p className={cn(
+                        "text-sm font-black font-mono leading-none tracking-tighter",
+                        isVisuallyClaimed ? "text-emerald-600" : isCurrent ? "text-primary" : "text-foreground"
+                      )}>+{scaledXp}</p>
+                      <p className="text-[7px] font-black uppercase text-muted-foreground tracking-widest">XP</p>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <p className={cn(
+                        "text-[10px] font-black font-mono leading-none tracking-tighter",
+                        isVisuallyClaimed ? "text-emerald-600" : isCurrent ? "text-primary" : "text-foreground"
+                      )}>+{scaledCredits}</p>
+                      <p className="text-[7px] font-black uppercase text-muted-foreground tracking-widest">Credits</p>
+                    </div>
                   </div>
 
-                  <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Day {dayNum}</p>
+                  <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mt-1">Day {dayNum}</p>
                   
                   {isCurrent && !claimedToday && (
                     <motion.div 
@@ -223,24 +238,23 @@ export function DailyLoginRewards({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={cn(
-                  "p-5 rounded-[1.75rem] border-2 border-dashed flex items-center justify-between",
-                  getRewardColor(BASE_REWARDS[currentDay - 1].type)
+                  "p-6 rounded-[2rem] border-2 border-dashed flex items-center justify-between shadow-inner bg-gradient-to-r from-primary to-primary/80 text-primary-foreground border-white/20"
                 )}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-sm">
-                    <Star className="w-5 h-5 fill-current animate-sparkle" />
+                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                    <Star className="w-6 h-6 fill-current text-yellow-300 animate-sparkle" />
                   </div>
                   <div>
-                    <p className="font-black text-sm uppercase tracking-wider">Strategic Yield</p>
-                    <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest">
-                      Tier Multiplier Applied ({multiplier}x)
+                    <p className="font-black text-lg uppercase tracking-tight">Today's Loot</p>
+                    <p className="text-[10px] font-black opacity-80 uppercase tracking-widest flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3" /> Career Bonus Applied ({multiplier}x)
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-black font-mono">+{Math.round(BASE_REWARDS[currentDay - 1].xp * multiplier)} XP</p>
-                  <p className="text-[10px] font-black font-mono opacity-70">+{Math.round(BASE_REWARDS[currentDay - 1].credits * multiplier)}c</p>
+                  <p className="text-2xl font-black font-mono tracking-tighter">+{Math.round(BASE_REWARDS[currentDay - 1].xp * multiplier)} XP</p>
+                  <p className="text-xs font-black font-mono opacity-90">+{Math.round(BASE_REWARDS[currentDay - 1].credits * multiplier)} Credits</p>
                 </div>
               </motion.div>
             )}
