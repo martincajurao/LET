@@ -5,7 +5,7 @@ import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
 import { DailyLoginRewards } from '@/components/ui/daily-login-rewards';
 import { QuestionOfTheDay } from '@/components/ui/question-of-the-day';
 import { StudyTimer } from '@/components/ui/study-timer';
-import { Target, ArrowLeft, Timer, ShieldCheck } from 'lucide-react';
+import { Target, ArrowLeft, Timer, ShieldCheck, Sparkles, Brain } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUser, useFirestore } from '@/firebase';
@@ -25,15 +25,11 @@ export default function TasksPage() {
     
     try {
       const userRef = doc(firestore, 'users', user.uid);
-      
-      // Calculate next streak
-      // If Day 7 was just claimed, we restart the cycle but keep the overall XP/Growth
       const updateData: any = { 
         xp: increment(xp),
         credits: increment(credits),
         lastLoginRewardClaimedAt: Date.now(),
         lastActiveDate: serverTimestamp(),
-        // Increment streakCount to advance the 7-day calendar progress
         streakCount: increment(1)
       };
 
@@ -79,32 +75,37 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8 pb-24">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-4 md:p-8 pb-32">
+      <div className="max-w-5xl mx-auto space-y-8">
         <div className="flex items-center justify-between px-2">
           <Link href="/dashboard">
-            <Button variant="ghost" size="sm" className="gap-2 font-bold text-muted-foreground hover:text-primary active:scale-95 transition-all">
-              <ArrowLeft className="w-4 h-4" /> Back to Hub
+            <Button variant="ghost" size="sm" className="gap-2 font-black text-muted-foreground uppercase tracking-widest text-[10px] hover:text-primary active:scale-95 transition-all">
+              <ArrowLeft className="w-4 h-4" /> Exit to Hub
             </Button>
           </Link>
-          <div className="flex items-center gap-2 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">
+          <div className="flex items-center gap-2 bg-emerald-500/10 px-4 py-2 rounded-full border-2 border-emerald-500/20 shadow-sm">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span className="text-[10px] font-black uppercase text-emerald-700 tracking-widest">Active Session</span>
+            <span className="text-[10px] font-black uppercase text-emerald-700 tracking-[0.2em]">Active Session</span>
           </div>
         </div>
 
         <div className="space-y-2 px-2">
-          <h1 className="text-4xl font-black tracking-tight text-foreground">Mission Hub</h1>
-          <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest opacity-60">Academic Pacing & Professional Engagement</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shadow-inner">
+              <Target className="w-6 h-6 text-primary" />
+            </div>
+            <h1 className="text-4xl font-black tracking-tighter text-foreground">Mission Hub</h1>
+          </div>
+          <p className="text-sm text-muted-foreground font-bold uppercase tracking-[0.2em] opacity-60 ml-1">Academic Pacing & Professional Engagement</p>
         </div>
 
         <div className="grid grid-cols-1 gap-8">
-          {/* Daily Login Rewards - Premium Refactor */}
+          {/* Daily Login Rewards - Premium Horizontal Tiles */}
           {user && (
             <motion.div 
               initial={{ opacity: 0, y: 20 }} 
               animate={{ opacity: 1, y: 0 }} 
-              transition={{ delay: 0.1 }}
+              transition={{ duration: 0.5 }}
             >
               <DailyLoginRewards 
                 currentDay={Math.min(((user?.streakCount || 0) % 7) + 1, 7)}
@@ -114,14 +115,14 @@ export default function TasksPage() {
             </motion.div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="space-y-8">
-              {/* Question of the Day */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-7 space-y-8">
+              {/* Daily Insight / Question of the Day */}
               {user && INITIAL_QUESTIONS.length > 0 && (
                 <motion.div 
                   initial={{ opacity: 0, x: -20 }} 
                   animate={{ opacity: 1, x: 0 }} 
-                  transition={{ delay: 0.2 }}
+                  transition={{ delay: 0.2, duration: 0.5 }}
                 >
                   <QuestionOfTheDay 
                     question={INITIAL_QUESTIONS[Math.floor(Date.now() / 86400000) % INITIAL_QUESTIONS.length]}
@@ -131,37 +132,46 @@ export default function TasksPage() {
                 </motion.div>
               )}
 
-              {/* Focus Timer */}
+              {/* Study Timer - MD3 Refactor */}
               <motion.div 
                 initial={{ opacity: 0, x: -20 }} 
                 animate={{ opacity: 1, x: 0 }} 
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
               >
-                <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden">
-                  <CardHeader className="p-8 pb-4">
-                    <CardTitle className="text-xl font-black flex items-center gap-3">
-                      <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner">
-                        <Timer className="w-6 h-6 text-primary" />
-                      </div>
-                      Focus Session
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-8 pt-0">
-                    <StudyTimer />
-                  </CardContent>
-                </Card>
+                <StudyTimer />
               </motion.div>
             </div>
 
-            <div className="space-y-8">
-              {/* Daily Tasks */}
+            <div className="lg:col-span-5 space-y-8">
+              {/* Daily Mission Tracking Dashboard */}
               <motion.div 
                 initial={{ opacity: 0, x: 20 }} 
                 animate={{ opacity: 1, x: 0 }} 
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
               >
                 <DailyTaskDashboard />
               </motion.div>
+
+              {/* Tips / Academic Context Tile */}
+              <Card className="android-surface border-none shadow-md3-1 rounded-[2rem] bg-foreground text-background p-8 overflow-hidden relative group">
+                <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:rotate-12 transition-transform duration-700">
+                  <Brain className="w-24 h-24" />
+                </div>
+                <div className="relative z-10 space-y-4">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Sparkles className="w-4 h-4 fill-current animate-sparkle" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em]">Strategic Advice</span>
+                  </div>
+                  <h3 className="text-xl font-black leading-tight">Consistency scales professional accuracy.</h3>
+                  <p className="text-xs font-medium opacity-70 leading-relaxed">
+                    Complete your daily missions early to maximize rank multipliers and accelerate your path to Distinguished Scholar status.
+                  </p>
+                  <div className="pt-2">
+                    <div className="h-[1px] w-full bg-background/20 mb-4" />
+                    <p className="text-[9px] font-black uppercase tracking-widest text-primary">Board Readiness: 82%</p>
+                  </div>
+                </div>
+              </Card>
             </div>
           </div>
         </div>

@@ -12,10 +12,13 @@ import {
   Brain,
   Zap,
   CheckCircle2,
-  Timer
+  Timer,
+  ChevronRight,
+  Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { XP_REWARDS } from "@/lib/xp-system";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface StudyTimerProps {
   onComplete?: (sessions: number, xpEarned: number) => void;
@@ -27,23 +30,26 @@ type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 const TIMER_CONFIGS = {
   focus: { 
     duration: 25 * 60,
-    label: 'Focus Time',
+    label: 'Analytical Focus',
     icon: <Brain className="w-6 h-6" />,
     color: 'text-primary bg-primary/10',
+    accentColor: 'hsl(var(--primary))',
     nextLabel: 'Short Break'
   },
   shortBreak: { 
     duration: 5 * 60,
-    label: 'Short Break',
+    label: 'Pedagogical Pause',
     icon: <Coffee className="w-6 h-6" />,
-    color: 'text-green-500 bg-green-500/10',
+    color: 'text-emerald-500 bg-emerald-500/10',
+    accentColor: 'hsl(142, 71%, 45%)',
     nextLabel: 'Focus Time'
   },
   longBreak: { 
     duration: 15 * 60,
-    label: 'Long Break',
+    label: 'Deep Recovery',
     icon: <Zap className="w-6 h-6" />,
     color: 'text-purple-500 bg-purple-500/10',
+    accentColor: 'hsl(263, 70%, 50%)',
     nextLabel: 'Focus Time'
   }
 };
@@ -140,88 +146,104 @@ export function StudyTimer({ onComplete, isActive = true }: StudyTimerProps) {
   };
 
   return (
-    <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
-      <CardHeader className="p-6 pb-2 text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", currentConfig.color)}>
+    <Card className="android-surface border-none shadow-md3-2 rounded-[2.5rem] bg-card overflow-hidden">
+      <CardHeader className="p-6 md:p-8 pb-2 text-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className={cn("w-14 h-14 rounded-[1.5rem] flex items-center justify-center shadow-lg transition-all", currentConfig.color)}>
             {currentConfig.icon}
           </div>
+          <div>
+            <CardTitle className="text-xl md:text-2xl font-black tracking-tight">{currentConfig.label}</CardTitle>
+            <div className="flex items-center justify-center gap-2 mt-1">
+              <Badge variant="secondary" className="h-5 px-3 font-black text-[8px] uppercase tracking-widest bg-muted/40 border-none">
+                {currentConfig.nextLabel} next
+              </Badge>
+            </div>
+          </div>
         </div>
-        <CardTitle className="text-xl font-black">{currentConfig.label}</CardTitle>
-        <Badge variant="outline" className="mx-auto w-fit mt-1 font-bold">
-          {currentConfig.nextLabel} next
-        </Badge>
       </CardHeader>
       
-      <CardContent className="p-6 space-y-6">
+      <CardContent className="p-6 md:p-8 space-y-8">
         <div className="relative flex items-center justify-center">
-          <div className="relative w-48 h-48">
+          <div className="relative w-56 h-56">
             <svg className="w-full h-full transform -rotate-90">
               <circle
-                cx="96"
-                cy="96"
-                r="88"
+                cx="112"
+                cy="112"
+                r="100"
                 stroke="currentColor"
-                strokeWidth="8"
+                strokeWidth="10"
                 fill="none"
-                className="text-muted/20"
+                className="text-muted/10"
               />
-              <circle
-                cx="96"
-                cy="96"
-                r="88"
+              <motion.circle
+                cx="112"
+                cy="112"
+                r="100"
                 stroke="currentColor"
-                strokeWidth="8"
+                strokeWidth="10"
                 fill="none"
-                strokeDasharray={2 * Math.PI * 88}
-                strokeDashoffset={2 * Math.PI * 88 * (1 - getProgress() / 100)}
+                strokeDasharray={2 * Math.PI * 100}
+                animate={{ strokeDashoffset: 2 * Math.PI * 100 * (1 - getProgress() / 100) }}
+                transition={{ duration: 1, ease: "linear" }}
                 className={cn(
-                  "transition-all duration-1000",
+                  "transition-colors duration-1000",
                   mode === 'focus' ? 'text-primary' : 
-                  mode === 'shortBreak' ? 'text-green-500' : 'text-purple-500'
+                  mode === 'shortBreak' ? 'text-emerald-500' : 'text-purple-500'
                 )}
                 strokeLinecap="round"
               />
             </svg>
             
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-5xl font-black tracking-tight">
+              <span className="text-6xl font-black tracking-tighter tabular-nums text-foreground">
                 {formatTime(timeLeft)}
               </span>
-              <span className="text-xs text-muted-foreground font-medium mt-1">
-                {isRunning ? 'In Progress' : 'Ready'}
-              </span>
+              <AnimatePresence mode="wait">
+                <motion.div 
+                  key={isRunning ? 'active' : 'paused'}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  className="flex items-center gap-1.5 mt-1"
+                >
+                  <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", isRunning ? "bg-emerald-500" : "bg-orange-500")} />
+                  <span className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground opacity-60">
+                    {isRunning ? 'Calibrating' : 'Suspended'}
+                  </span>
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex items-center justify-center gap-6">
           <Button
             variant="outline"
             size="icon"
             onClick={handleReset}
-            className="h-12 w-12 rounded-full"
+            className="h-14 w-14 rounded-2xl border-2 hover:bg-muted active:scale-90 transition-all shadow-sm"
             disabled={!isActive}
           >
-            <RotateCcw className="w-5 h-5" />
+            <RotateCcw className="w-6 h-6 text-muted-foreground" />
           </Button>
           
           <Button
             onClick={handleStartPause}
             className={cn(
-              "h-16 w-16 rounded-full font-black text-lg shadow-xl",
+              "h-20 w-20 rounded-[2rem] font-black text-lg shadow-2xl transition-all active:scale-95 group",
               mode === 'focus' 
-                ? "bg-primary hover:bg-primary/90 shadow-primary/30" 
+                ? "bg-primary text-primary-foreground shadow-primary/30" 
                 : mode === 'shortBreak'
-                ? "bg-green-500 hover:bg-green-600 shadow-green-500/30"
-                : "bg-purple-500 hover:bg-purple-600 shadow-purple-500/30"
+                ? "bg-emerald-500 text-white shadow-emerald-500/30"
+                : "bg-purple-500 text-white shadow-purple-500/30"
             )}
             disabled={!isActive}
           >
             {isRunning ? (
-              <Pause className="w-7 h-7" />
+              <Pause className="w-9 h-9 fill-current" />
             ) : (
-              <Play className="w-7 h-7 ml-1" />
+              <Play className="w-9 h-9 fill-current ml-1" />
             )}
           </Button>
           
@@ -229,33 +251,34 @@ export function StudyTimer({ onComplete, isActive = true }: StudyTimerProps) {
             variant="outline"
             size="icon"
             onClick={skipToNext}
-            className="h-12 w-12 rounded-full"
+            className="h-14 w-14 rounded-2xl border-2 hover:bg-muted active:scale-90 transition-all shadow-sm"
             disabled={!isActive}
           >
-            <Timer className="w-5 h-5" />
+            <Timer className="w-6 h-6 text-muted-foreground" />
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <div className="p-3 rounded-xl bg-muted/30 text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <CheckCircle2 className="w-4 h-4 text-green-500" />
-              <span className="text-xs text-muted-foreground font-bold">Sessions</span>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="p-5 rounded-[1.75rem] bg-muted/20 border border-border/50 text-center shadow-inner group">
+            <div className="flex items-center justify-center gap-2 mb-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Traces</span>
             </div>
-            <p className="text-2xl font-black">{sessionsCompleted}</p>
+            <p className="text-3xl font-black text-foreground group-hover:scale-110 transition-transform">{sessionsCompleted}</p>
           </div>
-          <div className="p-3 rounded-xl bg-muted/30 text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Zap className="w-4 h-4 text-yellow-500" />
-              <span className="text-xs text-muted-foreground font-bold">XP Earned</span>
+          <div className="p-5 rounded-[1.75rem] bg-muted/20 border border-border/50 text-center shadow-inner group">
+            <div className="flex items-center justify-center gap-2 mb-1.5">
+              <Zap className="w-4 h-4 text-yellow-500 fill-current" />
+              <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Yield</span>
             </div>
-            <p className="text-2xl font-black">+{totalXpEarned}</p>
+            <p className="text-3xl font-black text-foreground group-hover:scale-110 transition-transform">+{totalXpEarned}</p>
           </div>
         </div>
 
-        <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
-          <p className="text-xs text-muted-foreground text-center font-medium">
-            💡 Tip: Complete 4 focus sessions for a long break!
+        <div className="p-4 bg-primary/5 rounded-2xl border-2 border-dashed border-primary/10 flex items-center justify-center gap-3">
+          <Sparkles className="w-4 h-4 text-primary opacity-60 animate-sparkle" />
+          <p className="text-[10px] font-black text-primary uppercase tracking-widest">
+            Complete 4 traces for deep recovery reward
           </p>
         </div>
       </CardContent>
