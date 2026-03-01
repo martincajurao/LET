@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useUser } from '@/firebase/auth/use-user';
 import {
   Dialog,
@@ -11,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Zap, 
   Bell, 
@@ -22,7 +23,8 @@ import {
   ChevronRight,
   Flame,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  Info
 } from 'lucide-react';
 import { COOLDOWNS, XP_REWARDS, DAILY_AD_LIMIT } from '@/lib/xp-system';
 import { cn } from '@/lib/utils';
@@ -48,36 +50,31 @@ export function NotificationsModal({
   const [adTimeLeft, setAdTimeLeft] = useState(0);
   const [qfTimeLeft, setQfTimeLeft] = useState(0);
   
-  // Use ref to always have latest user data in interval callback
+  // Ref tracking for reactive timer calculation
   const userRef = useRef(user);
-  userRef.current = user;
+  useEffect(() => { userRef.current = user; }, [user]);
 
-  // Refresh user data when modal opens to get latest timestamps
+  const updateTimers = useCallback(() => {
+    const currentUser = userRef.current;
+    if (!currentUser) return;
+    
+    const now = Date.now();
+    const lastAd = Number(currentUser.lastAdXpTimestamp) || 0;
+    const lastQf = Number(currentUser.lastQuickFireTimestamp) || 0;
+    
+    setAdTimeLeft(Math.max(0, lastAd + COOLDOWNS.AD_XP - now));
+    setQfTimeLeft(Math.max(0, lastQf + COOLDOWNS.QUICK_FIRE - now));
+  }, []);
+
+  // Sync data and start timers on open
   useEffect(() => {
-    if (isOpen && user) {
+    if (isOpen) {
       refreshUser();
+      updateTimers();
+      const interval = setInterval(updateTimers, 1000);
+      return () => clearInterval(interval);
     }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const calculateTime = () => {
-      const currentUser = userRef.current;
-      if (!currentUser) return;
-      
-      const now = Date.now();
-      const lastAd = typeof currentUser.lastAdXpTimestamp === 'number' ? currentUser.lastAdXpTimestamp : 0;
-      const lastQf = typeof currentUser.lastQuickFireTimestamp === 'number' ? currentUser.lastQuickFireTimestamp : 0;
-      
-      setAdTimeLeft(Math.max(0, lastAd + COOLDOWNS.AD_XP - now));
-      setQfTimeLeft(Math.max(0, lastQf + COOLDOWNS.QUICK_FIRE - now));
-    };
-
-    calculateTime();
-    const interval = setInterval(calculateTime, 1000);
-    return () => clearInterval(interval);
-  }, [isOpen]);
+  }, [isOpen, refreshUser, updateTimers]);
 
   const formatTime = (ms: number) => {
     const totalSeconds = Math.ceil(ms / 1000);
@@ -97,55 +94,59 @@ export function NotificationsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !isWatchingAd && onClose()}>
-      <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-sm sm:max-w-md overflow-hidden outline-none" hideCloseButton={isWatchingAd}>
-        <DialogHeader className="text-left space-y-2 mb-6">
-          <div className="flex items-center gap-3">
-            <div className={cn(
-              "w-12 h-12 rounded-2xl flex items-center justify-center transition-colors duration-500",
-              isVerifyingAd ? "bg-primary/20" : "bg-primary/10"
-            )}>
-              {isVerifyingAd ? <ShieldAlert className="w-6 h-6 text-primary animate-pulse" /> : <Bell className="w-6 h-6 text-primary" />}
+      <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-sm sm:max-w-md overflow-hidden outline-none" hideCloseButton={isWatchingAd}>
+        {/* Verification Overlay Header */}
+        <AnimatePresence mode="wait">
+          {isVerifyingAd ? (
+            <motion.div 
+              key="verifying"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="bg-primary p-6 flex flex-col items-center justify-center text-primary-foreground text-center"
+            >
+              <ShieldAlert className="w-10 h-10 mb-2 animate-pulse" />
+              <h3 className="text-xl font-black tracking-tight">Verifying Session</h3>
+              <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Synchronizing professional vault...</p>
+            </motion.div>
+          ) : (
+            <div className="p-8 pb-4">
+              <DialogHeader className="text-left space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <Bell className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-2xl font-black tracking-tight text-foreground">Academic Alerts</DialogTitle>
+                    <DialogDescription className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Professional Rewards Hub</DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
             </div>
-            <div>
-              <DialogTitle className="text-2xl font-black tracking-tight">
-                {isVerifyingAd ? "Verifying Access" : "Academic Alerts"}
-              </DialogTitle>
-              <DialogDescription className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
-                {isVerifyingAd ? "Syncing professional record..." : "Professional Rewards Hub"}
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
+          )}
+        </AnimatePresence>
 
-        <div className="space-y-4">
-          {/* Quick Fire Teaser */}
+        <div className="p-8 pt-4 space-y-4">
+          {/* Quick Fire Card */}
           <div className={cn(
-            "p-5 rounded-3xl border-2 transition-all active:scale-[0.98]",
-            qfAvailable && !isWatchingAd ? "bg-primary/5 border-primary/20 shadow-sm" : "bg-muted/30 border-transparent opacity-80"
+            "p-5 rounded-[2rem] border-2 transition-all active:scale-[0.98] group",
+            qfAvailable && !isWatchingAd ? "bg-card border-primary/20 shadow-md" : "bg-muted/30 border-transparent opacity-80"
           )}>
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center shadow-inner",
+                  "w-10 h-10 rounded-xl flex items-center justify-center shadow-inner transition-colors",
                   qfAvailable ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground"
                 )}>
                   <Zap className={cn("w-5 h-5", qfAvailable && "fill-current")} />
                 </div>
                 <div>
-                  <p className="font-black text-sm">Mixed Brain Teaser</p>
-                  <p className="text-[10px] font-medium text-muted-foreground">+{XP_REWARDS.QUICK_FIRE_COMPLETE} XP Potential</p>
+                  <p className="font-black text-sm text-foreground">Mixed Brain Teaser</p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">+{XP_REWARDS.QUICK_FIRE_COMPLETE} XP Potential</p>
                 </div>
               </div>
-              {qfAvailable ? (
-                <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[9px] uppercase">Ready</Badge>
-              ) : (
-                <div className={cn(
-                  "flex items-center gap-1.5 text-[10px] font-black font-mono px-2 py-1 rounded-lg transition-colors",
-                  qfTimeLeft < 60000 ? "text-amber-600 bg-amber-50 animate-pulse" : "text-muted-foreground bg-background"
-                )}>
-                  <Timer className="w-3 h-3" />
-                  {formatTime(qfTimeLeft)}
-                </div>
+              {qfAvailable && !isWatchingAd && (
+                <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[9px] uppercase animate-pulse">Ready</Badge>
               )}
             </div>
             <Button 
@@ -158,40 +159,30 @@ export function NotificationsModal({
               className="w-full h-12 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg active:scale-95 transition-all"
             >
               {qfAvailable ? "Begin Challenge" : `Locked: ${formatTime(qfTimeLeft)}`}
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
 
-          {/* Ad Teaser */}
+          {/* Ad Reward Card */}
           <div className={cn(
-            "p-5 rounded-3xl border-2 transition-all relative overflow-hidden",
-            adAvailable && !isWatchingAd ? "bg-yellow-500/5 border-yellow-500/20 shadow-sm" : "bg-muted/30 border-transparent opacity-80"
+            "p-5 rounded-[2rem] border-2 transition-all relative overflow-hidden group",
+            adAvailable && !isWatchingAd ? "bg-card border-yellow-500/20 shadow-md" : "bg-muted/30 border-transparent opacity-80"
           )}>
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center shadow-inner",
+                  "w-10 h-10 rounded-xl flex items-center justify-center shadow-inner transition-colors",
                   adAvailable ? "bg-yellow-500 text-white" : "bg-background text-muted-foreground"
                 )}>
-                  {isVerifyingAd ? <ShieldAlert className="w-5 h-5 animate-pulse" /> : <Sparkles className="w-5 h-5 fill-current animate-sparkle" />}
+                  <Sparkles className={cn("w-5 h-5", adAvailable && "fill-current animate-sparkle")} />
                 </div>
                 <div>
-                  <p className="font-black text-sm">Professional Insight</p>
-                  <p className="text-[10px] font-medium text-muted-foreground">+{XP_REWARDS.AD_WATCH_XP} XP & +5 Credits</p>
+                  <p className="font-black text-sm text-foreground">Growth Boost</p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">+{XP_REWARDS.AD_WATCH_XP} XP & +5 Credits</p>
                 </div>
               </div>
-              {adReachedLimit ? (
-                <Badge variant="outline" className="text-rose-500 border-rose-500/30 font-black text-[9px] uppercase">Limit Reached</Badge>
-              ) : adAvailable ? (
-                <Badge className="bg-yellow-500/10 text-yellow-600 border-none font-black text-[9px] uppercase">Available</Badge>
-              ) : (
-                <div className={cn(
-                  "flex items-center gap-1.5 text-[10px] font-black font-mono px-2 py-1 rounded-lg transition-colors",
-                  adTimeLeft < 60000 ? "text-amber-600 bg-amber-50 animate-pulse" : "text-muted-foreground bg-background"
-                )}>
-                  <Timer className="w-3 h-3" />
-                  {formatTime(adTimeLeft)}
-                </div>
+              {adAvailable && !isWatchingAd && (
+                <Badge className="bg-yellow-500/10 text-yellow-600 border-none font-black text-[9px] uppercase animate-pulse">Ready</Badge>
               )}
             </div>
             <Button 
@@ -209,32 +200,31 @@ export function NotificationsModal({
               {isWatchingAd ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  {isVerifyingAd ? "Finalizing..." : "Watching Clip..."}
+                  {isVerifyingAd ? "Verifying..." : "Watching Clip..."}
                 </div>
               ) : adReachedLimit ? (
-                <><CheckCircle2 className="w-4 h-4" /> Daily Allowance Met</>
+                <><CheckCircle2 className="w-4 h-4" /> Daily Limit Reached</>
               ) : adAvailable ? (
-                "Refill Growth Boost"
+                "Unlock Rewards"
               ) : (
-                `Available in ${formatTime(adTimeLeft)}`
+                <span className="font-mono">{formatTime(adTimeLeft)} remaining</span>
               )}
             </Button>
-            {isWatchingAd && (
-              <motion.p 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-[9px] font-black text-center text-primary uppercase mt-3 tracking-widest animate-pulse"
-              >
-                Finish the clip to receive your reward
-              </motion.p>
-            )}
+          </div>
+
+          {/* Status Context */}
+          <div className="p-4 bg-primary/5 rounded-2xl border-2 border-dashed border-primary/10 flex items-start gap-3">
+            <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">
+              <span className="text-primary font-black uppercase tracking-widest">Vault Status:</span> {user?.dailyAdCount || 0}/{DAILY_AD_LIMIT} clips viewed. Refresh rewards every 30 minutes to maximize professional growth.
+            </p>
           </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-border/50 text-center">
-          <div className="flex items-center justify-center gap-2 text-muted-foreground opacity-40">
+        <div className="bg-muted/30 p-6 text-center border-t border-border/50">
+          <div className="flex items-center justify-center gap-2 text-muted-foreground/40">
             <Flame className="w-4 h-4" />
-            <span className="text-[9px] font-black uppercase tracking-[0.2em]">Consistency Drives Readiness</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.25em]">Career Persistence Engine</span>
           </div>
         </div>
       </DialogContent>

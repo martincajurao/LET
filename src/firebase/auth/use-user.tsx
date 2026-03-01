@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, createContext, useContext, ReactNode, useRef } from 'react';
@@ -19,6 +20,7 @@ import { nativeAuth, NativeUser } from '@/lib/native-auth';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
+import { Capacitor } from '@capacitor/core';
 
 export interface UserProfile {
   uid: string;
@@ -110,10 +112,9 @@ function scrubUserData(data: any, prevUser: UserProfile | null): UserProfile {
     'mistakesReviewed', 'dailyAiUsage'
   ];
 
-  const dateFields = [
-    'lastAdXpTimestamp', 'lastQuickFireTimestamp', 'lastActiveDate', 
-    'lastTaskReset', 'lastQualityUpdate', 'lastExplanationRequest'
-  ];
+  // Distinguish between event dates (defaults to now) and cooldown dates (defaults to zero)
+  const eventDateFields = ['lastActiveDate', 'lastTaskReset', 'lastQualityUpdate'];
+  const cooldownDateFields = ['lastAdXpTimestamp', 'lastQuickFireTimestamp', 'lastExplanationRequest'];
 
   numFields.forEach(key => {
     if (scrubbed[key] === undefined || scrubbed[key] === null || isFirestoreSentinel(scrubbed[key])) {
@@ -121,7 +122,7 @@ function scrubUserData(data: any, prevUser: UserProfile | null): UserProfile {
     }
   });
 
-  dateFields.forEach(key => {
+  eventDateFields.forEach(key => {
     if (scrubbed[key] === undefined || scrubbed[key] === null || isFirestoreSentinel(scrubbed[key])) {
       scrubbed[key] = (prevUser as any)?.[key] ?? Date.now();
     } else if (scrubbed[key] && typeof scrubbed[key] === 'object' && scrubbed[key].toMillis) {
@@ -129,8 +130,16 @@ function scrubUserData(data: any, prevUser: UserProfile | null): UserProfile {
     }
   });
 
+  cooldownDateFields.forEach(key => {
+    if (scrubbed[key] === undefined || scrubbed[key] === null || isFirestoreSentinel(scrubbed[key])) {
+      scrubbed[key] = (prevUser as any)?.[key] ?? 0; // CRITICAL: Cooldowns default to 0 so they are "ready"
+    } else if (scrubbed[key] && typeof scrubbed[key] === 'object' && scrubbed[key].toMillis) {
+      scrubbed[key] = scrubbed[key].toMillis();
+    }
+  });
+
   for (const key in scrubbed) {
-    if (!numFields.includes(key) && !dateFields.includes(key)) {
+    if (!numFields.includes(key) && !eventDateFields.includes(key) && !cooldownDateFields.includes(key)) {
       if (isFirestoreSentinel(scrubbed[key])) {
         scrubbed[key] = (prevUser as any)?.[key] ?? null;
       }

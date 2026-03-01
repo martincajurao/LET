@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -86,7 +87,7 @@ export function Navbar() {
   const rankData = user ? getRankData(user.xp || 0) : null;
 
   const userRef = useRef(user);
-  userRef.current = user;
+  useEffect(() => { userRef.current = user; }, [user]);
 
   useEffect(() => {
     if (!userRef.current) {
@@ -95,13 +96,13 @@ export function Navbar() {
       return;
     }
 
-    const calculateAvailable = () => {
+    const calculateCounts = () => {
       const currentUser = userRef.current;
       if (!currentUser) return;
 
       const now = Date.now();
-      const lastAd = typeof currentUser.lastAdXpTimestamp === 'number' ? currentUser.lastAdXpTimestamp : 0;
-      const lastQf = typeof currentUser.lastQuickFireTimestamp === 'number' ? currentUser.lastQuickFireTimestamp : 0;
+      const lastAd = Number(currentUser.lastAdXpTimestamp) || 0;
+      const lastQf = Number(currentUser.lastQuickFireTimestamp) || 0;
       
       const adAvailable = lastAd + COOLDOWNS.AD_XP <= now && (currentUser.dailyAdCount || 0) < DAILY_AD_LIMIT;
       const qfAvailable = lastQf + COOLDOWNS.QUICK_FIRE <= now;
@@ -116,29 +117,31 @@ export function Navbar() {
       setClaimableTasksCount(claimableCount);
     };
 
-    calculateAvailable();
-    const interval = setInterval(calculateAvailable, 1000);
+    calculateCounts();
+    const interval = setInterval(calculateCounts, 5000); // Pulse every 5s for counts
     return () => clearInterval(interval);
   }, [user]);
 
-  if (loading) return null;
-
   const handleWatchAd = async () => {
-    if (!user || !firestore) return;
+    if (!user || !firestore || watchingAd) return;
+    
     if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
-      toast({ title: "Daily Limit Reached", description: "You've reached your daily professional allowance.", variant: "destructive" });
+      toast({ title: "Allowance Reached", description: "Daily professional limit met.", variant: "destructive" });
       return;
     }
     
     setWatchingAd(true);
     setVerifyingAd(false);
 
+    // Hard playback delay (3.5s)
     setTimeout(async () => {
       setVerifyingAd(true);
+      
+      // Professional verification (1.5s)
       setTimeout(async () => {
         try {
-          const userRef = doc(firestore, 'users', user.uid);
-          await updateDoc(userRef, {
+          const userDocRef = doc(firestore, 'users', user.uid);
+          await updateDoc(userDocRef, {
             credits: increment(5),
             xp: increment(XP_REWARDS.AD_WATCH_XP),
             lastAdXpTimestamp: Date.now(),
@@ -153,7 +156,7 @@ export function Navbar() {
           setShowAdModal(false);
           setShowAlertsModal(false);
         } catch (e) {
-          toast({ variant: "destructive", title: "Sync Failed", description: "Could not verify reward completion." });
+          toast({ variant: "destructive", title: "Sync Failed", description: "Could not verify reward." });
         } finally {
           setWatchingAd(false);
           setVerifyingAd(false);
@@ -192,9 +195,11 @@ export function Navbar() {
         </div>
       ), 
       href: '#', 
-      onClick: async () => { await refreshUser(); setShowAlertsModal(true); } 
+      onClick: () => setShowAlertsModal(true)
     },
   ];
+
+  if (loading) return null;
 
   return (
     <>
@@ -251,7 +256,7 @@ export function Navbar() {
                           }
                         }}>
                           {item.onClick ? (
-                            <div className="flex items-center gap-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
+                            <div className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
                               <div className="text-primary">{item.icon}</div>
                               {item.label}
                             </div>
