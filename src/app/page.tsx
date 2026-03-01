@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo, useRef } from 'react';
@@ -493,11 +492,36 @@ function LetsPrepContent() {
     { icon: <Trophy className="w-4 h-4 text-yellow-500" />, label: 'Readiness', value: '82%', color: 'text-yellow-500 bg-yellow-500/5' }
   ];
 
+  // Animation variants for staggered entrance
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.3
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.95 },
+    show: { 
+      opacity: 1, 
+      y: 0, 
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15
+      }
+    }
+  };
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-background text-foreground font-body transition-all duration-300" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined }}>
       <Toaster />
       
-      {/* AUTH MODAL FOR GUESTS */}
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-sm outline-none overflow-hidden">
           <div className="bg-emerald-500/10 p-10 flex flex-col items-center text-center relative">
@@ -529,7 +553,6 @@ function LetsPrepContent() {
         </DialogContent>
       </Dialog>
 
-      {/* FEEDBACK MODAL */}
       <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-md outline-none overflow-hidden">
           <div className="bg-primary/10 p-10 flex flex-col items-center text-center relative">
@@ -576,82 +599,101 @@ function LetsPrepContent() {
         ) : state === 'quickfire_results' ? (
           <motion.div key="quickfire_results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4"><QuickFireResults questions={currentQuestions} answers={examAnswers} timeSpent={examTime} xpEarned={lastXpEarned} onRestart={() => setState('dashboard')} /></motion.div>
         ) : (
-          <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
+          <motion.div 
+            key="dashboard" 
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6"
+          >
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <motion.div variants={containerVariants} className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {displayStats.map((stat, i) => (
-                <div key={i} className="android-surface rounded-2xl p-3 flex items-center gap-3">
+                <motion.div 
+                  key={i} 
+                  variants={itemVariants}
+                  className="android-surface rounded-2xl p-3 flex items-center gap-3"
+                >
                   <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0", stat.color)}>{stat.icon}</div>
                   <div>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">{stat.label}</p>
                     <p className="text-lg font-black text-foreground leading-none">{stat.value}</p>
                   </div>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-8 space-y-6">
                 {user && (
-                  <Card className="border-none shadow-sm rounded-[2rem] bg-card overflow-hidden">
-                    <CardHeader className="p-6 pb-2">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Career Status</p>
-                          <CardTitle className="text-xl font-black flex items-center gap-2">
-                            {rankData?.title} 
-                            <span className="text-xs font-bold text-muted-foreground ml-1">Rank {rankData?.rank}</span>
-                          </CardTitle>
+                  <motion.div variants={itemVariants}>
+                    <Card className="border-none shadow-sm rounded-[2rem] bg-card overflow-hidden">
+                      <CardHeader className="p-6 pb-2">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Career Status</p>
+                            <CardTitle className="text-xl font-black flex items-center gap-2">
+                              {rankData?.title} 
+                              <span className="text-xs font-bold text-muted-foreground ml-1">Rank {rankData?.rank}</span>
+                            </CardTitle>
+                          </div>
+                          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center"><Trophy className="w-5 h-5 text-primary" /></div>
                         </div>
-                        <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center"><Trophy className="w-5 h-5 text-primary" /></div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-6 pt-0 space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
-                          <span className="text-muted-foreground">{rankData?.xpInRank || 0} XP</span>
-                          <span className="text-muted-foreground">{rankData?.nextRankXp} XP</span>
+                      </CardHeader>
+                      <CardContent className="p-6 pt-0 space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+                            <span className="text-muted-foreground">{rankData?.xpInRank || 0} XP</span>
+                            <span className="text-muted-foreground">{rankData?.nextRankXp} XP</span>
+                          </div>
+                          <Progress value={rankData?.progress} className="h-2 rounded-full" />
                         </div>
-                        <Progress value={rankData?.progress} className="h-2 rounded-full" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 pt-2">
-                        <Button onClick={handleWatchXpAd} disabled={claimingXp || adCooldown > 0} variant="outline" className="h-12 rounded-xl font-bold text-xs gap-2 border-primary/20 hover:bg-primary/5 active:scale-95 transition-all">
-                          {claimingXp ? <Loader2 className="w-4 h-4 animate-spin" /> : adCooldown > 0 ? <Timer className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
-                          <span className={cn(adCooldown > 0 && "font-mono")}>{adCooldown > 0 ? formatTime(adCooldown) : "XP Boost Clip"}</span>
-                        </Button>
-                        <Button onClick={() => router.push('/dashboard')} variant="default" className="h-12 rounded-xl font-bold text-xs gap-2 shadow-lg shadow-primary/20">
-                          <LayoutDashboard className="w-4 h-4" />
-                          View Roadmap
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                        <div className="grid grid-cols-2 gap-3 pt-2">
+                          <Button onClick={handleWatchXpAd} disabled={claimingXp || adCooldown > 0} variant="outline" className="h-12 rounded-xl font-bold text-xs gap-2 border-primary/20 hover:bg-primary/5 active:scale-95 transition-all">
+                            {claimingXp ? <Loader2 className="w-4 h-4 animate-spin" /> : adCooldown > 0 ? <Timer className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+                            <span className={cn(adCooldown > 0 && "font-mono")}>{adCooldown > 0 ? formatTime(adCooldown) : "XP Boost Clip"}</span>
+                          </Button>
+                          <Button onClick={() => router.push('/dashboard')} variant="default" className="h-12 rounded-xl font-bold text-xs gap-2 shadow-lg shadow-primary/20">
+                            <LayoutDashboard className="w-4 h-4" />
+                            View Roadmap
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 )}
 
-                <Card className="overflow-hidden border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-primary/20 via-card to-background relative p-8 md:p-12 group active:scale-[0.98] transition-all">
-                  <div className="relative z-10 space-y-6">
-                    <Badge variant="secondary" className="font-bold text-[10px] uppercase px-4 py-1 bg-primary/20 text-primary border-none">Free Practice Access</Badge>
-                    <div className="space-y-4">
-                      <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-foreground">Prepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
-                      <p className="text-muted-foreground font-medium md:text-xl max-w-lg">High-fidelity simulations with AI analysis tailored for Filipino educators.</p>
+                <motion.div variants={itemVariants} whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }}>
+                  <Card className="overflow-hidden border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-primary/20 via-card to-background relative p-8 md:p-12 group active:scale-[0.98] transition-all">
+                    <div className="relative z-10 space-y-6">
+                      <Badge variant="secondary" className="font-bold text-[10px] uppercase px-4 py-1 bg-primary/20 text-primary border-none">Free Practice Access</Badge>
+                      <div className="space-y-4">
+                        <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-foreground">Prepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
+                        <p className="text-muted-foreground font-medium md:text-xl max-w-lg">High-fidelity simulations with AI analysis tailored for Filipino educators.</p>
+                      </div>
+                      {user ? (
+                        <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all group">
+                          <Zap className="w-6 h-6 fill-current" /> <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        </Button>
+                      ) : (
+                        <Button size="lg" onClick={() => setShowAuthModal(true)} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all">
+                          <ShieldCheck className="w-6 h-6" /> <span>Sign In to Launch</span>
+                        </Button>
+                      )}
                     </div>
-                    {user ? (
-                      <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all group">
-                        <Zap className="w-6 h-6 fill-current" /> <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                      </Button>
-                    ) : (
-                      <Button size="lg" onClick={() => setShowAuthModal(true)} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all">
-                        <ShieldCheck className="w-6 h-6" /> <span>Sign In to Launch</span>
-                      </Button>
-                    )}
-                  </div>
-                </Card>
+                    <motion.div 
+                      animate={{ scale: [1, 1.1, 1], opacity: [0.05, 0.1, 0.05] }} 
+                      transition={{ duration: 10, repeat: Infinity }}
+                      className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/3" 
+                    />
+                  </Card>
+                </motion.div>
 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between px-2">
                     <h3 className="text-xl font-black tracking-tight flex items-center gap-2"><Target className="w-5 h-5 text-primary" /> Training Zones</h3>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <motion.div variants={containerVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
                       { id: 'General Education', name: 'Gen Ed', icon: <Languages />, color: 'text-blue-500', bg: 'bg-blue-500/10', rnk: UNLOCK_RANKS.GENERAL_ED },
                       { id: 'Professional Education', name: 'Prof Ed', icon: <GraduationCap />, color: 'text-purple-500', bg: 'bg-purple-500/10', rnk: UNLOCK_RANKS.PROFESSIONAL_ED },
@@ -659,121 +701,141 @@ function LetsPrepContent() {
                     ].map((track, i) => {
                       const isLocked = user && !isTrackUnlocked(rankData?.rank || 1, track.id, user.unlockedTracks);
                       return (
-                        <Card key={i} onClick={() => !isLocked && startExam(track.id as any)} className={cn("group cursor-pointer border-2 transition-all rounded-[2rem] bg-card overflow-hidden active:scale-95 relative", isLocked ? "border-muted opacity-60" : "border-border/50 hover:border-primary shadow-sm hover:shadow-md")}>
-                          {isLocked && (
-                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/40 backdrop-blur-[1px] p-4 text-center">
-                              <div className="bg-card/90 p-2 rounded-xl border shadow-sm flex flex-col items-center">
-                                <Lock className="w-4 h-4 text-muted-foreground mb-1" />
-                                <span className="text-[8px] font-black uppercase text-muted-foreground leading-tight">Locked: Rank {track.rnk}</span>
+                        <motion.div key={i} variants={itemVariants} whileTap={{ scale: 0.97 }}>
+                          <Card onClick={() => !isLocked && startExam(track.id as any)} className={cn("group cursor-pointer border-2 transition-all rounded-[2rem] bg-card overflow-hidden active:scale-95 relative h-full", isLocked ? "border-muted opacity-60" : "border-border/50 hover:border-primary shadow-sm hover:shadow-md")}>
+                            {isLocked && (
+                              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/40 backdrop-blur-[1px] p-4 text-center">
+                                <div className="bg-card/90 p-2 rounded-xl border shadow-sm flex flex-col items-center">
+                                  <Lock className="w-4 h-4 text-muted-foreground mb-1" />
+                                  <span className="text-[8px] font-black uppercase text-muted-foreground leading-tight">Locked: Rank {track.rnk}</span>
+                                </div>
                               </div>
-                            </div>
-                          )}
-                          <CardContent className="p-6 space-y-4">
-                            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm", track.bg, track.color)}>{track.icon}</div>
-                            <div>
-                              <h4 className="font-black text-lg text-foreground">{track.name}</h4>
-                            </div>
-                          </CardContent>
-                        </Card>
+                            )}
+                            <CardContent className="p-6 space-y-4">
+                              <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm", track.bg, track.color)}>{track.icon}</div>
+                              <div>
+                                <h4 className="font-black text-lg text-foreground">{track.name}</h4>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
                       );
                     })}
-                  </div>
+                  </motion.div>
                 </div>
 
-                {/* Connect & Help Section */}
                 <div className="space-y-4 pt-4">
                   <div className="flex items-center justify-between px-2">
                     <h3 className="text-xl font-black tracking-tight flex items-center gap-2"><Users className="w-5 h-5 text-primary" /> Support & Community</h3>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card onClick={() => setShowFeedbackModal(true)} className="android-surface cursor-pointer border-none shadow-md3-1 rounded-[2rem] bg-card overflow-hidden group active:scale-95 transition-all">
-                      <CardContent className="p-6 flex items-center gap-5">
-                        <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-primary transition-colors duration-500">
-                          <MessageSquare className="w-7 h-7 text-primary group-hover:text-primary-foreground transition-colors duration-500" />
-                        </div>
-                        <div>
-                          <h4 className="font-black text-lg text-foreground leading-none">Send Feedback</h4>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5 leading-snug">Suggest improvements for the platform</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card onClick={() => window.location.href = 'mailto:support@letprep.app'} className="android-surface cursor-pointer border-none shadow-md3-1 rounded-[2rem] bg-card overflow-hidden group active:scale-95 transition-all">
-                      <CardContent className="p-6 flex items-center gap-5">
-                        <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-emerald-500 transition-colors duration-500">
-                          <Mail className="w-7 h-7 text-emerald-600 group-hover:text-white transition-colors duration-500" />
-                        </div>
-                        <div>
-                          <h4 className="font-black text-lg text-foreground leading-none">Contact Us</h4>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5 leading-snug">Direct technical trace to developers</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card onClick={() => window.open('https://facebook.com/groups/letprep', '_blank')} className="android-surface md:col-span-2 cursor-pointer border-none shadow-md3-1 rounded-[2rem] bg-foreground text-background overflow-hidden group active:scale-[0.98] transition-all relative">
-                      <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:rotate-12 transition-transform duration-700">
-                        <Facebook className="w-20 h-20" />
-                      </div>
-                      <CardContent className="p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-                        <div className="flex items-center gap-5">
-                          <div className="w-16 h-16 bg-[#1877F2] rounded-2xl flex items-center justify-center shadow-xl">
-                            <Facebook className="w-8 h-8 text-white fill-current" />
+                  <motion.div variants={containerVariants} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <motion.div variants={itemVariants} whileTap={{ scale: 0.97 }}>
+                      <Card onClick={() => setShowFeedbackModal(true)} className="android-surface h-full cursor-pointer border-none shadow-md3-1 rounded-[2rem] bg-card overflow-hidden group transition-all">
+                        <CardContent className="p-6 flex items-center gap-5">
+                          <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-primary transition-colors duration-500">
+                            <MessageSquare className="w-7 h-7 text-primary group-hover:text-primary-foreground transition-colors duration-500" />
                           </div>
-                          <div className="space-y-1">
-                            <h4 className="text-2xl font-black tracking-tight">Join Community</h4>
-                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60">Connect with 15K+ fellow educators</p>
+                          <div>
+                            <h4 className="font-black text-lg text-foreground leading-none">Send Feedback</h4>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5 leading-snug">Suggest improvements for the platform</p>
                           </div>
-                        </div>
-                        <Button className="rounded-xl font-black bg-white text-black hover:bg-white/90 h-12 px-8 active:scale-95 transition-all">Visit Lounge <ChevronRight className="w-4 h-4 ml-2" /></Button>
-                      </CardContent>
-                    </Card>
-                  </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+
+                    <motion.div variants={itemVariants} whileTap={{ scale: 0.97 }}>
+                      <Card onClick={() => window.location.href = 'mailto:support@letprep.app'} className="android-surface h-full cursor-pointer border-none shadow-md3-1 rounded-[2rem] bg-card overflow-hidden group transition-all">
+                        <CardContent className="p-6 flex items-center gap-5">
+                          <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-emerald-500 transition-colors duration-500">
+                            <Mail className="w-7 h-7 text-emerald-600 group-hover:text-white transition-colors duration-500" />
+                          </div>
+                          <div>
+                            <h4 className="font-black text-lg text-foreground leading-none">Contact Us</h4>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5 leading-snug">Direct technical trace to developers</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+
+                    <motion.div variants={itemVariants} className="md:col-span-2" whileTap={{ scale: 0.98 }}>
+                      <Card onClick={() => window.open('https://facebook.com/groups/letprep', '_blank')} className="android-surface cursor-pointer border-none shadow-md3-1 rounded-[2rem] bg-foreground text-background overflow-hidden group transition-all relative">
+                        <motion.div 
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                          className="absolute -top-10 -right-10 p-6 opacity-5 group-hover:opacity-10 transition-opacity"
+                        >
+                          <Facebook className="w-40 h-40" />
+                        </motion.div>
+                        <CardContent className="p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
+                          <div className="flex items-center gap-5">
+                            <div className="w-16 h-16 bg-[#1877F2] rounded-2xl flex items-center justify-center shadow-xl">
+                              <Facebook className="w-8 h-8 text-white fill-current" />
+                            </div>
+                            <div className="space-y-1">
+                              <h4 className="text-2xl font-black tracking-tight">Join Community</h4>
+                              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60">Connect with 15K+ fellow educators</p>
+                            </div>
+                          </div>
+                          <Button className="rounded-xl font-black bg-white text-black hover:bg-white/90 h-12 px-8 active:scale-95 transition-all">Visit Lounge <ChevronRight className="w-4 h-4 ml-2" /></Button>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  </motion.div>
                 </div>
 
-                <div className="pt-8 text-center pb-12">
+                <motion.div variants={itemVariants} className="pt-8 text-center pb-12">
                   <div className="flex items-center justify-center gap-3 mb-4">
                     <div className="h-[1px] w-12 bg-border" />
-                    <Heart className="w-4 h-4 text-rose-500 fill-current animate-pulse" />
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Heart className="w-4 h-4 text-rose-500 fill-current" />
+                    </motion.div>
                     <div className="h-[1px] w-12 bg-border" />
                   </div>
                   <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-40">Dedicated to the Filipino Educator</p>
                   <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-2 opacity-30">© 2024 LET's Prep Simulation Engine</p>
-                </div>
+                </motion.div>
               </div>
 
-              <div className="lg:col-span-4 space-y-6">
-                <Card className="border-none shadow-xl rounded-[2.25rem] bg-foreground text-background p-8 relative overflow-hidden group active:scale-[0.98] transition-all">
-                  <CardHeader className="p-0 mb-6"><CardTitle className="text-xl font-black tracking-tight flex items-center gap-3"><ShieldCheck className="w-6 h-6 text-primary" /> Verified Hub</CardTitle></CardHeader>
-                  <CardContent className="p-0 space-y-8">
-                    <div className="space-y-1"><p className="text-4xl font-black text-primary">3.5K+</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Curated Items</p></div>
-                    <div className="space-y-1"><p className="text-4xl font-black text-secondary">82%</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Board Readiness</p></div>
-                    <div className="space-y-1"><p className="text-4xl font-black text-blue-400">100%</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Free Access</p></div>
-                  </CardContent>
-                </Card>
+              <motion.div variants={containerVariants} className="lg:col-span-4 space-y-6">
+                <motion.div variants={itemVariants}>
+                  <Card className="border-none shadow-xl rounded-[2.25rem] bg-foreground text-background p-8 relative overflow-hidden group active:scale-[0.98] transition-all">
+                    <CardHeader className="p-0 mb-6"><CardTitle className="text-xl font-black tracking-tight flex items-center gap-3"><ShieldCheck className="w-6 h-6 text-primary" /> Verified Hub</CardTitle></CardHeader>
+                    <CardContent className="p-0 space-y-8">
+                      <div className="space-y-1"><p className="text-4xl font-black text-primary">3.5K+</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Curated Items</p></div>
+                      <div className="space-y-1"><p className="text-4xl font-black text-secondary">82%</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Board Readiness</p></div>
+                      <div className="space-y-1"><p className="text-4xl font-black text-blue-400">100%</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Free Access</p></div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
 
-                <Card className="border-none shadow-xl rounded-[2.25rem] bg-card p-8 border border-border/50">
-                  <CardHeader className="p-0 mb-4">
-                    <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                      <Info className="w-4 h-4 text-primary" /> System Trace
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0 space-y-4">
-                    <p className="text-xs font-medium text-muted-foreground leading-relaxed">
-                      Our engine is calibrated daily against the latest board exam competencies. Submit your traces consistently to generate high-fidelity pedagogical analytics.
-                    </p>
-                    <div className="flex flex-col gap-2">
-                      <div className="flex justify-between text-[9px] font-black uppercase text-muted-foreground opacity-60">
-                        <span>Engine Version</span>
-                        <span>v2.2.0-Flash</span>
+                <motion.div variants={itemVariants}>
+                  <Card className="border-none shadow-xl rounded-[2.25rem] bg-card p-8 border border-border/50">
+                    <CardHeader className="p-0 mb-4">
+                      <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                        <Info className="w-4 h-4 text-primary" /> System Trace
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0 space-y-4">
+                      <p className="text-xs font-medium text-muted-foreground leading-relaxed">
+                        Our engine is calibrated daily against the latest board exam competencies. Submit your traces consistently to generate high-fidelity pedagogical analytics.
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex justify-between text-[9px] font-black uppercase text-muted-foreground opacity-60">
+                          <span>Engine Version</span>
+                          <span>v2.2.0-Flash</span>
+                        </div>
+                        <div className="flex justify-between text-[9px] font-black uppercase text-muted-foreground opacity-60">
+                          <span>Calibration Status</span>
+                          <span className="text-emerald-600">Verified</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between text-[9px] font-black uppercase text-muted-foreground opacity-60">
-                        <span>Calibration Status</span>
-                        <span className="text-emerald-600">Verified</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </motion.div>
             </div>
           </motion.div>
         )}
