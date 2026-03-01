@@ -218,7 +218,6 @@ function LetsPrepContent() {
     const fetchLatestApk = async () => {
       try {
         setIsApkLoading(true);
-        // Fetch latest release from GitHub dynamically
         const response = await fetch('https://api.github.com/repos/martincajurao/LET/releases/latest');
         let downloadUrl = GITHUB_APK_URL;
         let version = "2.1.0";
@@ -237,7 +236,6 @@ function LetsPrepContent() {
         setQrCodeUrl(qr);
       } catch (e) {
         console.error("Failed to fetch APK info:", e);
-        // Fallback to static link
         setApkInfo({ version: "2.1.0", downloadUrl: GITHUB_APK_URL });
       } finally {
         setIsApkLoading(false);
@@ -369,13 +367,10 @@ function LetsPrepContent() {
         finalQuestions = shuffleArray(pool).slice(0, limitCount);
       }
       
-      if (finalQuestions.length === 0) {
-        throw new Error(`Insufficient items found.`);
-      }
+      if (finalQuestions.length === 0) throw new Error(`Insufficient items found.`);
       
       setCurrentQuestions(finalQuestions);
       setLoadingStep(100);
-      
       router.replace(pathname, { scroll: false });
       
       setTimeout(() => { 
@@ -412,16 +407,11 @@ function LetsPrepContent() {
 
   const handleExamComplete = async (answers: Record<string, string>, timeSpent: number, confidentAnswers: Record<string, boolean>) => {
     if (!user || !firestore) return;
-    
     const isQuickFire = currentQuestions.length <= 5;
     const now = Date.now();
 
     if (isQuickFire && timeSpent < MIN_QUICK_FIRE_TIME) {
-      toast({ 
-        variant: "destructive", 
-        title: "Calibration Divergence", 
-        description: "Trace was too rapid. Engage deeply to earn rewards." 
-      });
+      toast({ variant: "destructive", title: "Calibration Divergence", description: "Trace was too rapid. Engage deeply to earn rewards." });
       setState('dashboard');
       return;
     }
@@ -434,18 +424,11 @@ function LetsPrepContent() {
     const results = currentQuestions.map(q => {
       const isCorrect = answers[q.id] === q.correctAnswer;
       const isConfident = confidentAnswers[q.id] || false;
-      return {
-        ...q,
-        questionId: q.id,
-        userAnswer: answers[q.id],
-        isCorrect,
-        isConfident
-      };
+      return { ...q, questionId: q.id, userAnswer: answers[q.id], isCorrect, isConfident };
     });
     
     const correctCount = results.filter(h => h.isCorrect).length;
     const overallScore = Math.round((correctCount / (currentQuestions.length || 1)) * 100);
-    
     let xpEarned = correctCount * XP_REWARDS.CORRECT_ANSWER;
     results.forEach(r => {
       if (r.isConfident) {
@@ -477,19 +460,14 @@ function LetsPrepContent() {
     setLoadingStep(100);
     setLoading(false);
     
-    if (isQuickFire) {
-      setTimeout(() => { setState('quickfire_results'); }, 300);
-    } else if (!user.isPro && currentQuestions.length > 10) {
-      setShowResultUnlock(true);
-    } else {
-      setTimeout(() => { setState('results'); }, 300);
-    }
+    if (isQuickFire) setTimeout(() => { setState('quickfire_results'); }, 300);
+    else if (!user.isPro && currentQuestions.length > 10) setShowResultUnlock(true);
+    else setTimeout(() => { setState('results'); }, 300);
   };
 
   const handleWatchXpAd = async () => {
     if (!user || !firestore || adCooldown > 0 || claimingXp) return;
     if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) return;
-
     setClaimingXp(true);
     setTimeout(async () => {
       try {
@@ -502,11 +480,8 @@ function LetsPrepContent() {
         });
         toast({ variant: "reward", title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP earned.` });
         await refreshUser();
-      } catch (e) { 
-        toast({ variant: "destructive", title: "Sync Failed", description: "Sync error." }); 
-      } finally { 
-        setClaimingXp(false); 
-      }
+      } catch (e) { toast({ variant: "destructive", title: "Sync Failed", description: "Sync error." }); } 
+      finally { setClaimingXp(false); }
     }, 3500);
   };
 
@@ -543,27 +518,12 @@ function LetsPrepContent() {
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.3
-      }
-    }
+    show: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.3 } }
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20, scale: 0.95 },
-    show: { 
-      opacity: 1, 
-      y: 0, 
-      scale: 1,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 15
-      }
-    }
+    show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 100, damping: 15 } }
   };
 
   return (
@@ -578,25 +538,19 @@ function LetsPrepContent() {
             </div>
             <div className="space-y-1 relative z-10">
               <DialogTitle className="text-2xl font-black tracking-tight">Verified Access</DialogTitle>
-              <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest">
-                Credentials Required
-              </DialogDescription>
+              <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest">Credentials Required</DialogDescription>
             </div>
           </div>
           <div className="p-8 space-y-6 bg-card">
             <div className="grid gap-3">
               <Button onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-white text-black border border-border hover:bg-muted transition-all active:scale-95">
-                <GoogleIcon />
-                <span>Continue with Google</span>
+                <GoogleIcon /> <span>Continue with Google</span>
               </Button>
               <Button onClick={async () => { await loginWithFacebook(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none transition-all active:scale-95">
-                <Facebook className="w-5 h-5 fill-current text-white" />
-                <span>Continue with Facebook</span>
+                <Facebook className="w-5 h-5 fill-current text-white" /> <span>Continue with Facebook</span>
               </Button>
             </div>
-            <p className="text-center text-[10px] font-medium text-muted-foreground leading-relaxed px-4">
-              Sign in to track your board readiness metrics.
-            </p>
+            <p className="text-center text-[10px] font-medium text-muted-foreground leading-relaxed px-4">Sign in to track your board readiness metrics.</p>
           </div>
         </DialogContent>
       </Dialog>
@@ -609,29 +563,17 @@ function LetsPrepContent() {
             </div>
             <div className="space-y-1 relative z-10">
               <DialogTitle className="text-2xl font-black tracking-tight">Feedback Vault</DialogTitle>
-              <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest">
-                Contribute to Academic Growth
-              </DialogDescription>
+              <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest">Contribute to Academic Growth</DialogDescription>
             </div>
           </div>
           <div className="p-8 space-y-6">
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Your Suggestions</Label>
-              <Textarea 
-                value={feedbackText}
-                onChange={(e) => setFeedbackText(e.target.value)}
-                placeholder="How can we improve your board preparation experience?"
-                className="rounded-2xl min-h-[120px] border-2 p-4 text-sm font-medium resize-none focus:border-primary transition-all"
-              />
+              <Textarea value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} placeholder="How can we improve your board preparation experience?" className="rounded-2xl min-h-[120px] border-2 p-4 text-sm font-medium resize-none focus:border-primary transition-all" />
             </div>
             <DialogFooter className="sm:flex-col gap-3">
-              <Button 
-                onClick={handleFeedbackSubmit} 
-                disabled={isSubmittingFeedback || !feedbackText.trim()}
-                className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-primary/30"
-              >
-                {isSubmittingFeedback ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                Transmit Insight
+              <Button onClick={handleFeedbackSubmit} disabled={isSubmittingFeedback || !feedbackText.trim()} className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-primary/30">
+                {isSubmittingFeedback ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Transmit Insight
               </Button>
               <Button variant="ghost" onClick={() => setShowFeedbackModal(false)} className="w-full font-bold text-muted-foreground">Discard</Button>
             </DialogFooter>
@@ -647,21 +589,10 @@ function LetsPrepContent() {
         ) : state === 'quickfire_results' ? (
           <motion.div key="quickfire_results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4"><QuickFireResults questions={currentQuestions} answers={examAnswers} timeSpent={examTime} xpEarned={lastXpEarned} onRestart={() => setState('dashboard')} /></motion.div>
         ) : (
-          <motion.div 
-            key="dashboard" 
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-            className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6"
-          >
-            
+          <motion.div key="dashboard" variants={containerVariants} initial="hidden" animate="show" className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
             <motion.div variants={containerVariants} className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {displayStats.map((stat, i) => (
-                <motion.div 
-                  key={i} 
-                  variants={itemVariants}
-                  className="android-surface rounded-2xl p-3 flex items-center gap-3"
-                >
+                <motion.div key={i} variants={itemVariants} className="android-surface rounded-2xl p-3 flex items-center gap-3">
                   <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0", stat.color)}>{stat.icon}</div>
                   <div>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">{stat.label}</p>
@@ -702,8 +633,7 @@ function LetsPrepContent() {
                             <span className={cn(adCooldown > 0 && "font-mono")}>{adCooldown > 0 ? formatTime(adCooldown) : "XP Boost Clip"}</span>
                           </Button>
                           <Button onClick={() => router.push('/dashboard')} variant="default" className="h-12 rounded-xl font-bold text-xs gap-2 shadow-lg shadow-primary/20">
-                            <LayoutDashboard className="w-4 h-4" />
-                            View Roadmap
+                            <LayoutDashboard className="w-4 h-4" /> View Roadmap
                           </Button>
                         </div>
                       </CardContent>
@@ -729,11 +659,7 @@ function LetsPrepContent() {
                         </Button>
                       )}
                     </div>
-                    <motion.div 
-                      animate={{ scale: [1, 1.1, 1], opacity: [0.05, 0.1, 0.05] }} 
-                      transition={{ duration: 10, repeat: Infinity }}
-                      className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/3" 
-                    />
+                    <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.05, 0.1, 0.05] }} transition={{ duration: 10, repeat: Infinity }} className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/3" />
                   </Card>
                 </motion.div>
 
@@ -761,9 +687,7 @@ function LetsPrepContent() {
                             )}
                             <CardContent className="p-6 space-y-4">
                               <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm", track.bg, track.color)}>{track.icon}</div>
-                              <div>
-                                <h4 className="font-black text-lg text-foreground">{track.name}</h4>
-                              </div>
+                              <div><h4 className="font-black text-lg text-foreground">{track.name}</h4></div>
                             </CardContent>
                           </Card>
                         </motion.div>
@@ -785,12 +709,11 @@ function LetsPrepContent() {
                           </div>
                           <div>
                             <h4 className="font-black text-lg text-foreground leading-none">Send Feedback</h4>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5 leading-snug">Suggest improvements for the platform</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5 leading-snug">Suggest improvements</p>
                           </div>
                         </CardContent>
                       </Card>
                     </motion.div>
-
                     <motion.div variants={itemVariants} whileTap={{ scale: 0.97 }}>
                       <Card onClick={() => window.location.href = 'mailto:support@letprep.app'} className="android-surface h-full cursor-pointer border-none shadow-md3-1 rounded-[2rem] bg-card overflow-hidden group transition-all">
                         <CardContent className="p-6 flex items-center gap-5">
@@ -799,30 +722,18 @@ function LetsPrepContent() {
                           </div>
                           <div>
                             <h4 className="font-black text-lg text-foreground leading-none">Contact Us</h4>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5 leading-snug">Direct technical trace to developers</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5 leading-snug">Technical support</p>
                           </div>
                         </CardContent>
                       </Card>
                     </motion.div>
-
                     <motion.div variants={itemVariants} className="md:col-span-2" whileTap={{ scale: 0.98 }}>
                       <Card onClick={() => window.open('https://facebook.com/groups/letprep', '_blank')} className="android-surface cursor-pointer border-none shadow-md3-1 rounded-[2rem] bg-foreground text-background overflow-hidden group transition-all relative">
-                        <motion.div 
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                          className="absolute -top-10 -right-10 p-6 opacity-5 group-hover:opacity-10 transition-opacity"
-                        >
-                          <Facebook className="w-40 h-40" />
-                        </motion.div>
+                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="absolute -top-10 -right-10 p-6 opacity-5 group-hover:opacity-10 transition-opacity"><Facebook className="w-40 h-40" /></motion.div>
                         <CardContent className="p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
                           <div className="flex items-center gap-5">
-                            <div className="w-16 h-16 bg-[#1877F2] rounded-2xl flex items-center justify-center shadow-xl">
-                              <Facebook className="w-8 h-8 text-white fill-current" />
-                            </div>
-                            <div className="space-y-1">
-                              <h4 className="text-2xl font-black tracking-tight">Join Community</h4>
-                              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60">Connect with 15K+ fellow educators</p>
-                            </div>
+                            <div className="w-16 h-16 bg-[#1877F2] rounded-2xl flex items-center justify-center shadow-xl"><Facebook className="w-8 h-8 text-white fill-current" /></div>
+                            <div className="space-y-1"><h4 className="text-2xl font-black tracking-tight">Join Community</h4><p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60">Connect with 15K+ educators</p></div>
                           </div>
                           <Button className="rounded-xl font-black bg-white text-black hover:bg-white/90 h-12 px-8 active:scale-95 transition-all">Visit Lounge <ChevronRight className="w-4 h-4 ml-2" /></Button>
                         </CardContent>
@@ -832,109 +743,46 @@ function LetsPrepContent() {
                 </div>
 
                 <motion.div variants={itemVariants} className="pt-8 text-center pb-12">
-                  <div className="flex items-center justify-center gap-3 mb-4">
-                    <div className="h-[1px] w-12 bg-border" />
-                    <motion.div
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      <Heart className="w-4 h-4 text-rose-500 fill-current" />
-                    </motion.div>
-                    <div className="h-[1px] w-12 bg-border" />
-                  </div>
+                  <div className="flex items-center justify-center gap-3 mb-4"><div className="h-[1px] w-12 bg-border" /><motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }}><Heart className="w-4 h-4 text-rose-500 fill-current" /></motion.div><div className="h-[1px] w-12 bg-border" /></div>
                   <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-40">Dedicated to the Filipino Educator</p>
-                  <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-2 opacity-30">© 2024 LET's Prep Simulation Engine</p>
                 </motion.div>
               </div>
 
               <motion.div variants={containerVariants} className="lg:col-span-4 space-y-6">
-                {/* Mobile App Section */}
                 <motion.div variants={itemVariants}>
-                  <Card className="android-surface border-none shadow-xl rounded-[2.25rem] bg-gradient-to-br from-emerald-500/20 via-card to-background p-6 overflow-hidden transition-all group active:scale-[0.98]">
+                  <Card className="android-surface border-none shadow-xl rounded-[2.25rem] bg-gradient-to-br from-emerald-500/20 via-card to-background p-6 overflow-hidden group active:scale-[0.98]">
                     <div className="space-y-5">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center shadow-inner">
-                            <Smartphone className="w-6 h-6 text-emerald-600" />
-                          </div>
-                          <div>
-                            <h3 className="font-black text-lg text-foreground leading-tight">Get Mobile App</h3>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">Study Anywhere</p>
-                          </div>
+                          <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center shadow-inner"><Smartphone className="w-6 h-6 text-emerald-600" /></div>
+                          <div><h3 className="font-black text-lg text-foreground leading-tight">Get Mobile App</h3><p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">Study Anywhere</p></div>
                         </div>
-                        <Badge variant="outline" className="font-black text-[9px] border-emerald-500/30 text-emerald-600 bg-emerald-500/5 uppercase">
-                          {isApkLoading ? '---' : `v${apkInfo?.version}`}
-                        </Badge>
+                        <Badge variant="outline" className="font-black text-[9px] border-emerald-500/30 text-emerald-600 bg-emerald-500/5 uppercase">{isApkLoading ? '---' : `v${apkInfo?.version}`}</Badge>
                       </div>
-                      
                       <div className="flex flex-col items-center justify-center p-5 bg-card rounded-[2rem] border-2 border-dashed border-emerald-500/20 relative overflow-hidden shadow-inner">
                         <AnimatePresence mode="wait">
                           {isApkLoading ? (
-                            <motion.div key="loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-32 h-32 flex items-center justify-center">
-                              <Loader2 className="w-8 h-8 text-emerald-300 animate-spin" />
-                            </motion.div>
+                            <motion.div key="loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-32 h-32 flex items-center justify-center"><Loader2 className="w-8 h-8 text-emerald-300 animate-spin" /></motion.div>
                           ) : qrCodeUrl ? (
                             <motion.div key="qr" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center">
-                              <div className="w-32 h-32 relative z-10 bg-white p-1 rounded-xl shadow-md border border-emerald-100">
-                                <img src={qrCodeUrl} alt="Download QR" className="w-full h-full object-contain" />
-                              </div>
-                              <div className="flex items-center gap-2 mt-3 text-emerald-600">
-                                <QrCode className="w-3.5 h-3.5" />
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em]">Scan to Install</p>
-                              </div>
+                              <div className="w-32 h-32 relative z-10 bg-white p-1 rounded-xl shadow-md border border-emerald-100"><img src={qrCodeUrl} alt="Download QR" className="w-full h-full object-contain" /></div>
+                              <div className="flex items-center gap-2 mt-3 text-emerald-600"><QrCode className="w-3.5 h-3.5" /><p className="text-[10px] font-black uppercase tracking-[0.2em]">Scan to Install</p></div>
                             </motion.div>
                           ) : null}
                         </AnimatePresence>
                       </div>
-
-                      <Button 
-                        onClick={handleDownloadApk}
-                        disabled={isApkLoading}
-                        className="w-full h-14 rounded-2xl font-black gap-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl shadow-emerald-500/30 transition-all hover:scale-[1.02]"
-                      >
-                        {isApkLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-                        Direct Download
-                      </Button>
-                      <div className="flex items-center justify-center gap-2 text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-40">
-                        <ShieldCheck className="w-3 h-3" />
-                        <span>Dynamic Release Trace</span>
-                      </div>
+                      <Button onClick={handleDownloadApk} disabled={isApkLoading} className="w-full h-14 rounded-2xl font-black gap-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl shadow-emerald-500/30 transition-all hover:scale-[1.02]">{isApkLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />} Direct Download</Button>
                     </div>
                   </Card>
                 </motion.div>
 
                 <motion.div variants={itemVariants}>
-                  <Card className="border-none shadow-xl rounded-[2.25rem] bg-foreground text-background p-8 relative overflow-hidden group active:scale-[0.98] transition-all">
+                  <Card className="border-none shadow-xl rounded-[2.25rem] bg-foreground text-background p-8 relative overflow-hidden group active:scale-[0.98]">
                     <CardHeader className="p-0 mb-6"><CardTitle className="text-xl font-black tracking-tight flex items-center gap-3"><ShieldCheck className="w-6 h-6 text-primary" /> Verified Hub</CardTitle></CardHeader>
                     <CardContent className="p-0 space-y-8">
                       <div className="space-y-1"><p className="text-4xl font-black text-primary">3.5K+</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Curated Items</p></div>
                       <div className="space-y-1"><p className="text-4xl font-black text-secondary">82%</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Board Readiness</p></div>
                       <div className="space-y-1"><p className="text-4xl font-black text-blue-400">100%</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Free Access</p></div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-                <motion.div variants={itemVariants}>
-                  <Card className="border-none shadow-xl rounded-[2.25rem] bg-card p-8 border border-border/50">
-                    <CardHeader className="p-0 mb-4">
-                      <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                        <Info className="w-4 h-4 text-primary" /> System Trace
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0 space-y-4">
-                      <p className="text-xs font-medium text-muted-foreground leading-relaxed">
-                        Our engine is calibrated daily against the latest board exam competencies. Submit your traces consistently to generate high-fidelity pedagogical analytics.
-                      </p>
-                      <div className="flex flex-col gap-2">
-                        <div className="flex justify-between text-[9px] font-black uppercase text-muted-foreground opacity-60">
-                          <span>Engine Version</span>
-                          <span>v2.2.0-Flash</span>
-                        </div>
-                        <div className="flex justify-between text-[9px] font-black uppercase text-muted-foreground opacity-60">
-                          <span>Calibration Status</span>
-                          <span className="text-emerald-600">Verified</span>
-                        </div>
-                      </div>
                     </CardContent>
                   </Card>
                 </motion.div>
