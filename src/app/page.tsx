@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, Suspense, useMemo } from 'react';
+import React, { useState, useEffect, Suspense, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -125,7 +125,8 @@ function LetsPrepContent() {
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const pullStartY = React.useRef<number | null>(null);
+  const pullStartY = useRef<number | null>(null);
+  const isStartingRef = useRef(false);
   
   const [newResultId, setNewResultId] = useState<string | undefined>(undefined);
 
@@ -228,13 +229,15 @@ function LetsPrepContent() {
   }, [user]);
 
   const startExam = async (category: 'General Education' | 'Professional Education' | 'Specialization' | 'all' | 'quickfire' | 'Major' | 'Prof Ed') => {
-    if (!user) return;
+    if (!user || !firestore || isStartingRef.current) return;
+    isStartingRef.current = true;
 
     if (category === 'quickfire') {
       const now = Date.now();
       const lastQf = typeof user.lastQuickFireTimestamp === 'number' ? user.lastQuickFireTimestamp : 0;
       if (lastQf + COOLDOWNS.QUICK_FIRE > now) {
         toast({ variant: "destructive", title: "Access Denied", description: "Brain Teaser is still calibrating. Please wait for the cooldown." });
+        isStartingRef.current = false;
         return;
       }
     }
@@ -244,7 +247,7 @@ function LetsPrepContent() {
     setLoadingMessage("Calibrating Learning Path...");
     try {
       setLoadingStep(20);
-      const questionPool = await fetchQuestionsFromFirestore(firestore!);
+      const questionPool = await fetchQuestionsFromFirestore(firestore);
       setLoadingStep(60);
       let finalQuestions: Question[] = [];
       if (category === 'all') {
@@ -270,12 +273,32 @@ function LetsPrepContent() {
         let limitCount = (category === 'Professional Education' || category === 'Prof Ed') ? limits.limitProfEd : (category === 'Specialization' || category === 'Major') ? limits.limitSpec : limits.limitGenEd;
         finalQuestions = shuffleArray(pool).slice(0, limitCount);
       }
-      if (finalQuestions.length === 0) throw new Error(`Insufficient items.`);
+      
+      if (finalQuestions.length === 0) {
+        throw new Error(`Insufficient calibration items found in the vault for ${category}.`);
+      }
+      
       setCurrentQuestions(finalQuestions);
       setLoadingStep(100);
-      setTimeout(() => { setState('exam'); setLoading(false); }, 300);
-    } catch (e: any) { toast({ variant: "destructive", title: "Simulation Failed", description: e.message }); setLoading(false); }
+      setTimeout(() => { 
+        setState('exam'); 
+        setLoading(false); 
+        isStartingRef.current = false;
+      }, 300);
+    } catch (e: any) { 
+      toast({ variant: "destructive", title: "Simulation Failed", description: e.message }); 
+      setLoading(false); 
+      isStartingRef.current = false;
+    }
   };
+
+  // Query parameter startup logic
+  useEffect(() => {
+    const startParam = searchParams.get('start');
+    if (startParam && user && firestore && !authLoading && state === 'dashboard' && !loading && !isStartingRef.current) {
+      startExam(startParam as any);
+    }
+  }, [searchParams, user, authLoading, state, firestore]);
 
   const handleExamComplete = async (answers: Record<string, string>, timeSpent: number, confidentAnswers: Record<string, boolean>) => {
     if (!user || !firestore) return;
