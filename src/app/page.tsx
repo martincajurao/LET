@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo, useRef } from 'react';
@@ -39,6 +38,7 @@ import {
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
+import { QuickFireResults } from "@/components/exam/QuickFireResults";
 import { ResultUnlockDialog } from "@/components/exam/ResultUnlockDialog";
 import { RankUpDialog } from "@/components/ui/rank-up-dialog";
 import { Question } from "@/app/lib/mock-data";
@@ -54,7 +54,7 @@ import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, getC
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
-type AppState = 'dashboard' | 'exam' | 'results' | 'onboarding';
+type AppState = 'dashboard' | 'exam' | 'results' | 'quickfire_results' | 'onboarding';
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array];
@@ -179,7 +179,6 @@ function LetsPrepContent() {
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
-  // Rank-up celebration effect
   useEffect(() => {
     if (user && rankData && user.lastRewardedRank && rankData.rank > user.lastRewardedRank) {
       setCelebratedRank(rankData.rank);
@@ -305,7 +304,6 @@ function LetsPrepContent() {
       setCurrentQuestions(finalQuestions);
       setLoadingStep(100);
       
-      // Clear URL query parameters after successful launch to prevent restart loops
       router.replace(pathname, { scroll: false });
       
       setTimeout(() => { 
@@ -403,8 +401,9 @@ function LetsPrepContent() {
     setLoadingStep(100);
     setLoading(false);
     
-    // REDUCED FREQUENCY: Only show Result Unlock for Full Simulations (> 10 items)
-    if (!user.isPro && !isQuickFire && currentQuestions.length > 10) {
+    if (isQuickFire) {
+      setTimeout(() => { setState('quickfire_results'); }, 300);
+    } else if (!user.isPro && currentQuestions.length > 10) {
       setShowResultUnlock(true);
     } else {
       setTimeout(() => { setState('results'); }, 300);
@@ -415,7 +414,7 @@ function LetsPrepContent() {
     if (!user || !firestore || adCooldown > 0 || claimingXp) return;
     
     if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
-      toast({ title: "Allowance Reached", description: "Daily professional clip limit reached.", variant: "destructive" });
+      toast({ title: "Allowance Reached", description: "Daily professional clips limit reached.", variant: "destructive" });
       return;
     }
 
@@ -524,6 +523,8 @@ function LetsPrepContent() {
           <motion.div key="exam" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full"><ExamInterface questions={currentQuestions} timePerQuestion={timePerQuestion} onComplete={handleExamComplete} /></motion.div>
         ) : state === 'results' ? (
           <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4"><ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} resultId={newResultId} onRestart={() => setState('dashboard')} /></motion.div>
+        ) : state === 'quickfire_results' ? (
+          <motion.div key="quickfire_results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4"><QuickFireResults questions={currentQuestions} answers={examAnswers} timeSpent={examTime} xpEarned={lastXpEarned} onRestart={() => setState('dashboard')} /></motion.div>
         ) : (
           <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
