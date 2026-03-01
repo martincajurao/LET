@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense, useMemo } from 'react';
+import React, { useState, useEffect, Suspense, useMemo, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
@@ -38,6 +38,9 @@ function NavContent() {
   const [availableTasksCount, setAvailableTasksCount] = useState(0);
   const [claimableTasksCount, setClaimableTasksCount] = useState(0);
 
+  const userRef = useRef(user);
+  useEffect(() => { userRef.current = user; }, [user]);
+
   const configDocRef = useMemo(() => {
     if (!firestore) return null;
     return doc(firestore, "system_configs", "global");
@@ -61,24 +64,27 @@ function NavContent() {
   }, [configDocRef]);
 
   useEffect(() => {
-    if (!user) {
+    if (!userRef.current) {
       setAvailableTasksCount(0);
       setClaimableTasksCount(0);
       return;
     }
 
     const calculateAvailable = () => {
+      const currentUser = userRef.current;
+      if (!currentUser) return;
+
       const now = Date.now();
-      const adAvailable = (user.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP <= now && (user.dailyAdCount || 0) < DAILY_AD_LIMIT;
-      const qfAvailable = (user.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE <= now;
+      const adAvailable = (currentUser.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP <= now && (currentUser.dailyAdCount || 0) < DAILY_AD_LIMIT;
+      const qfAvailable = (currentUser.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE <= now;
       setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
 
       let claimableCount = 0;
-      const qGoal = user.userTier === 'Platinum' ? 35 : 20;
-      if (!user.taskLoginClaimed) claimableCount++;
-      if ((user.dailyQuestionsAnswered || 0) >= qGoal && !user.taskQuestionsClaimed) claimableCount++;
-      if ((user.dailyTestsFinished || 0) >= 1 && !user.taskMockClaimed) claimableCount++;
-      if ((user.mistakesReviewed || 0) >= 10 && !user.taskMistakesClaimed) claimableCount++;
+      const qGoal = currentUser.userTier === 'Platinum' ? 35 : 20;
+      if (!currentUser.taskLoginClaimed) claimableCount++;
+      if ((currentUser.dailyQuestionsAnswered || 0) >= qGoal && !currentUser.taskQuestionsClaimed) claimableCount++;
+      if ((currentUser.dailyTestsFinished || 0) >= 1 && !currentUser.taskMockClaimed) claimableCount++;
+      if ((currentUser.mistakesReviewed || 0) >= 10 && !currentUser.taskMistakesClaimed) claimableCount++;
       setClaimableTasksCount(claimableCount);
     };
 
@@ -98,7 +104,39 @@ function NavContent() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
-  const navItems = useMemo(() => [
+  const handleNavClick = (item: any) => {
+    if (item.id === 'practice') { setIsPracticeOpen(true); return; }
+    if (item.id === 'notifications') { setIsAlertsOpen(true); return; }
+    router.push(item.href);
+  };
+
+  const handleWatchAd = async () => {
+    if (!user || !firestore) return;
+    if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
+      toast({ title: "Allowance Reached", description: "Daily professional clip limit reached.", variant: "destructive" });
+      return;
+    }
+    setWatchingAd(true);
+    setVerifyingAd(false);
+    setTimeout(async () => {
+      setVerifyingAd(true);
+      setTimeout(async () => {
+        try {
+          const userDocRef = doc(firestore, 'users', user.uid);
+          await updateDoc(userDocRef, { credits: increment(5), xp: increment(XP_REWARDS.AD_WATCH_XP), lastAdXpTimestamp: Date.now(), dailyAdCount: increment(1) });
+          await refreshUser();
+          toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added.` });
+          setIsAlertsOpen(false);
+        } catch (e) { toast({ variant: "destructive", title: "Sync Failed", description: "Could not grant reward." }); } 
+        finally { setWatchingAd(false); setVerifyingAd(false); }
+      }, 1500);
+    }, 3500);
+  };
+
+  // Safe visibility check: Hide completely for guests
+  if (authLoading || !user) return null;
+
+  const navItems = [
     { id: 'home', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, href: '/dashboard' },
     { 
       id: 'tasks', 
@@ -128,55 +166,14 @@ function NavContent() {
       ), 
       href: '#' 
     }
-  ], [availableTasksCount, claimableTasksCount]);
-
-  const handleNavClick = (item: any) => {
-    if (item.id === 'practice') { setIsPracticeOpen(true); return; }
-    if (item.id === 'notifications') { setIsAlertsOpen(true); return; }
-    router.push(item.href);
-  };
-
-  const handleWatchAd = async () => {
-    if (!user || !firestore) return;
-    if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
-      toast({ title: "Allowance Reached", description: "Daily professional clip limit reached.", variant: "destructive" });
-      return;
-    }
-    setWatchingAd(true);
-    setVerifyingAd(false);
-    setTimeout(async () => {
-      setVerifyingAd(true);
-      setTimeout(async () => {
-        try {
-          const userRef = doc(firestore, 'users', user.uid);
-          await updateDoc(userRef, { credits: increment(5), xp: increment(XP_REWARDS.AD_WATCH_XP), lastAdXpTimestamp: Date.now(), dailyAdCount: increment(1) });
-          await refreshUser();
-          toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added.` });
-          setIsAlertsOpen(false);
-        } catch (e) { toast({ variant: "destructive", title: "Sync Failed", description: "Could not grant reward." }); } 
-        finally { setWatchingAd(false); setVerifyingAd(false); }
-      }, 1500);
-    }, 3500);
-  };
-
-  const isActive = (item: any) => {
-    if (item.id === 'home' && pathname === '/dashboard') return true;
-    if (item.id === 'tasks' && pathname === '/tasks') return true;
-    if (item.id === 'events' && pathname === '/events') return true;
-    if (item.id === 'notifications' && isAlertsOpen) return true;
-    return false;
-  };
-
-  // STRICT VISIBILITY: Bottom Nav is hidden completely for guests
-  // Hooks must always be called, so return after hook declarations
-  if (authLoading || !user) return null;
+  ];
 
   return (
     <>
       <div className={cn("md:hidden fixed bottom-0 left-0 right-0 z-[60] px-4 pb-6 pt-2 transition-all duration-500 ease-in-out transform safe-pb", isVisible ? "translate-y-0 opacity-100" : "translate-y-32 opacity-0")}>
         <div className="mx-auto max-w-lg bg-card/95 backdrop-blur-2xl border border-border/40 rounded-[2.25rem] shadow-[0_12px_40px_rgba(0,0,0,0.15)] flex items-center justify-between px-2 h-16 transition-colors ring-1 ring-inset ring-white/10">
           {navItems.map((item) => {
-            const active = isActive(item);
+            const active = pathname === item.href || (item.id === 'notifications' && isAlertsOpen);
             const isCenter = item.id === 'practice';
             if (isCenter) return (
               <button key={item.id} onClick={() => handleNavClick(item)} className="relative -top-7 active:scale-90 transition-transform duration-200">

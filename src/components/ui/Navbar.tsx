@@ -57,6 +57,7 @@ export function Navbar() {
   const { toast } = useToast();
   const router = useRouter();
   const { isDark, toggleDarkMode } = useTheme();
+  
   const [showAdModal, setShowAdModal] = useState(false);
   const [showAlertsModal, setShowAlertsModal] = useState(false);
   const [watchingAd, setWatchingAd] = useState(false);
@@ -139,8 +140,7 @@ export function Navbar() {
     }, 3500);
   };
 
-  // STRICT VISIBILITY: Navbar is hidden completely for guests
-  // Hooks must always be called, so return after hook declarations
+  // Condition check for hiding Navbar entirely for guests
   if (loading || !user) return null;
 
   const navItems = [
