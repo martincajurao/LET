@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -199,7 +198,8 @@ export function Navbar() {
     },
   ];
 
-  if (loading) return null;
+  // HIDE NAVBAR COMPLETELY IF NOT LOGGED IN
+  if (loading || !user) return null;
 
   return (
     <>
@@ -291,122 +291,64 @@ export function Navbar() {
               )}
             </div>
 
-            {!user ? (
-              <Button onClick={() => setShowAuthModal(true)} className="font-bold rounded-2xl h-10 px-6 shadow-md shadow-primary/20">Sign In</Button>
-            ) : (
-              <>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 p-0.5 rounded-full hover:bg-muted transition-all outline-none focus:ring-2 focus:ring-primary/20 relative">
-                      <Avatar className="w-9 h-9 border-2 border-background shadow-md">
-                        {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || "User"} />}
-                        <AvatarFallback className="text-xs font-black bg-primary/10 text-primary uppercase">
-                          {user.displayName?.charAt(0) || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      {user.isPro ? (
-                        <div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-0.5 shadow-sm border border-background">
-                          <Crown className="w-2.5 h-2.5 text-yellow-900" />
-                        </div>
-                      ) : (
-                        <div className="absolute -top-1 -right-1 bg-blue-400 rounded-full p-0.5 shadow-sm border border-background">
-                          <ShieldCheck className="w-2.5 h-2.5 text-white" />
-                        </div>
-                      )}
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-64 mt-2 rounded-2xl border bg-card shadow-2xl p-2" align="end">
-                    <div className="p-3 mb-2 bg-muted/30 rounded-xl">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <p className="text-sm font-black truncate">{user.displayName}</p>
-                        <Badge className="bg-primary/10 text-primary border-primary/20 text-[8px] font-black uppercase px-1.5 py-0">{rankData?.title}</Badge>
-                      </div>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">{user.email}</p>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 p-0.5 rounded-full hover:bg-muted transition-all outline-none focus:ring-2 focus:ring-primary/20 relative">
+                  <Avatar className="w-9 h-9 border-2 border-background shadow-md">
+                    {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || "User"} />}
+                    <AvatarFallback className="text-xs font-black bg-primary/10 text-primary uppercase">
+                      {user.displayName?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  {user.isPro ? (
+                    <div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-0.5 shadow-sm border border-background">
+                      <Crown className="w-2.5 h-2.5 text-yellow-900" />
                     </div>
-                    <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground px-3 py-2">Career Overview</DropdownMenuLabel>
-                    <DropdownMenuItem asChild>
-                      <div className="px-3 py-2 space-y-2">
-                        <div className="flex justify-between items-center text-[10px] font-black uppercase">
-                          <span className="text-muted-foreground">{rankData?.title}</span>
-                          <span className="text-primary">{rankData?.xpInRank || 0} / {rankData?.nextRankXp} XP</span>
-                        </div>
-                        <Progress value={rankData?.progress} className="h-1.5" />
-                      </div>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator className="my-2 bg-border/50" />
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile?tab=settings" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
-                        <Settings className="w-4 h-4 text-primary" /> Profile Settings
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile?tab=history" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
-                        <History className="w-4 h-4 text-emerald-500" /> Analysis Vault
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator className="my-2 bg-border/50" />
-                    <DropdownMenuItem onClick={logout} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl text-destructive hover:bg-destructive/10 transition-colors">
-                      <LogOut className="w-4 h-4" /> Sign Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            )}
+                  ) : (
+                    <div className="absolute -top-1 -right-1 bg-blue-400 rounded-full p-0.5 shadow-sm border border-background">
+                      <ShieldCheck className="w-2.5 h-2.5 text-white" />
+                    </div>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-64 mt-2 rounded-2xl border bg-card shadow-2xl p-2" align="end">
+                <div className="p-3 mb-2 bg-muted/30 rounded-xl">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <p className="text-sm font-black truncate">{user.displayName}</p>
+                    <Badge className="bg-primary/10 text-primary border-primary/20 text-[8px] font-black uppercase px-1.5 py-0">{rankData?.title}</Badge>
+                  </div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">{user.email}</p>
+                </div>
+                <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground px-3 py-2">Career Overview</DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                  <div className="px-3 py-2 space-y-2">
+                    <div className="flex justify-between items-center text-[10px] font-black uppercase">
+                      <span className="text-muted-foreground">{rankData?.title}</span>
+                      <span className="text-primary">{rankData?.xpInRank || 0} / {rankData?.nextRankXp} XP</span>
+                    </div>
+                    <Progress value={rankData?.progress} className="h-1.5" />
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-2 bg-border/50" />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile?tab=settings" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
+                    <Settings className="w-4 h-4 text-primary" /> Profile Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile?tab=history" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
+                    <History className="w-4 h-4 text-emerald-500" /> Analysis Vault
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-2 bg-border/50" />
+                <DropdownMenuItem onClick={logout} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl text-destructive hover:bg-destructive/10 transition-colors">
+                  <LogOut className="w-4 h-4" /> Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </nav>
-
-      <Dialog open={showAuthModal} onOpenChange={(open) => !watchingAd && setShowAuthModal(open)}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-[0_20px_50px_rgba(0,0,0,0.2)] p-0 max-w-sm outline-none overflow-hidden">
-          <div className="bg-emerald-500/10 p-10 flex flex-col items-center text-center relative">
-            <div className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-xl mb-4 relative z-10">
-              <ShieldCheck className="w-10 h-10 text-emerald-500" />
-            </div>
-            <div className="space-y-1 relative z-10">
-              <DialogTitle className="text-2xl font-black tracking-tight">Verified Access</DialogTitle>
-              <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest">
-                Professional Credentials Required
-              </DialogDescription>
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent z-0" />
-          </div>
-          <div className="p-8 space-y-6 bg-card">
-            <div className="grid gap-3">
-              <Button 
-                onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} 
-                className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-white text-black border border-border hover:bg-muted transition-all active:scale-95"
-              >
-                <GoogleIcon />
-                <span>Continue with Google</span>
-              </Button>
-              {isMobile && (
-                <Button 
-                  onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} 
-                  className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-[#3DDC84] text-black border border-border hover:bg-[#3DDC84]/90 transition-all active:scale-95"
-                >
-                  <Smartphone className="w-5 h-5" />
-                  <span>Android sign in</span>
-                </Button>
-              )}
-              <Button 
-                onClick={async () => { await loginWithFacebook(); setShowAuthModal(false); }} 
-                className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none transition-all active:scale-95"
-              >
-                <Facebook className="w-5 h-5 fill-current text-white" />
-                <span>Continue with Facebook</span>
-              </Button>
-            </div>
-            <p className="text-center text-[10px] font-medium text-muted-foreground leading-relaxed px-4">
-              By signing in, you agree to track your professional board readiness and maintain your academic streak.
-            </p>
-            <div className="pt-4 border-t border-border/50 text-center">
-              <Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest border-emerald-500/20 text-emerald-600 bg-emerald-500/5 py-1 px-4">
-                Free Forever Practice Access
-              </Badge>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={showAdModal} onOpenChange={(open) => !watchingAd && setShowAdModal(open)}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl max-w-[380px] outline-none" hideCloseButton={watchingAd}>

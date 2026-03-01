@@ -34,7 +34,8 @@ import {
   Target,
   Timer,
   LayoutDashboard,
-  Users
+  Users,
+  Facebook
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
@@ -53,6 +54,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, getCareerRankTitle, DAILY_AD_LIMIT, MIN_QUICK_FIRE_TIME } from '@/lib/xp-system';
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+
+const GoogleIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
+    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.18 1-.78 1.85-1.63 2.42v2.01h2.64c1.54-1.42 2.43-3.5 2.43-5.44z" fill="#4285F4"/>
+    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.33C3.99 20.15 7.7 23 12 23z" fill="#34A853"/>
+    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.67H2.18C1.43 9.24 1 10.57 1 12s.43 2.76 1.18 4.33l3.66-2.24z" fill="#FBBC05"/>
+    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.85 2.18 7.67l3.66 2.33c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+  </svg>
+);
 
 type AppState = 'dashboard' | 'exam' | 'results' | 'quickfire_results' | 'onboarding';
 
@@ -102,7 +112,7 @@ const EducationalLoader = ({ message }: { message?: string }) => (
 );
 
 function LetsPrepContent() {
-  const { user, loading: authLoading, refreshUser } = useUser();
+  const { user, loading: authLoading, loginWithGoogle, loginWithFacebook, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const { isDark, toggleDarkMode } = useTheme();
@@ -118,6 +128,7 @@ function LetsPrepContent() {
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState("");
+  const [showAuthModal, setShowAuthModal] = useState(false);
   
   const [timePerQuestion, setTimePerQuestion] = useState(60);
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
@@ -252,7 +263,12 @@ function LetsPrepContent() {
   }, [user]);
 
   const startExam = async (category: 'General Education' | 'Professional Education' | 'Specialization' | 'all' | 'quickfire' | 'Major' | 'Prof Ed') => {
-    if (!user || !firestore || isStartingRef.current) return;
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    
+    if (!firestore || isStartingRef.current) return;
     isStartingRef.current = true;
 
     if (category === 'quickfire') {
@@ -518,6 +534,45 @@ function LetsPrepContent() {
         timeSpent={examTime}
       />
 
+      {/* AUTH MODAL FOR GUESTS */}
+      <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-[0_20px_50px_rgba(0,0,0,0.2)] p-0 max-w-sm outline-none overflow-hidden">
+          <div className="bg-emerald-500/10 p-10 flex flex-col items-center text-center relative">
+            <div className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-xl mb-4 relative z-10">
+              <ShieldCheck className="w-10 h-10 text-emerald-500" />
+            </div>
+            <div className="space-y-1 relative z-10">
+              <DialogTitle className="text-2xl font-black tracking-tight">Verified Access</DialogTitle>
+              <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest">
+                Professional Credentials Required
+              </DialogDescription>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent z-0" />
+          </div>
+          <div className="p-8 space-y-6 bg-card">
+            <div className="grid gap-3">
+              <Button 
+                onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} 
+                className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-white text-black border border-border hover:bg-muted transition-all active:scale-95"
+              >
+                <GoogleIcon />
+                <span>Continue with Google</span>
+              </Button>
+              <Button 
+                onClick={async () => { await loginWithFacebook(); setShowAuthModal(false); }} 
+                className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none transition-all active:scale-95"
+              >
+                <Facebook className="w-5 h-5 fill-current text-white" />
+                <span>Continue with Facebook</span>
+              </Button>
+            </div>
+            <p className="text-center text-[10px] font-medium text-muted-foreground leading-relaxed px-4">
+              Sign in to track your professional board readiness and maintain your academic streak.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <AnimatePresence mode="wait">
         {state === 'exam' ? (
           <motion.div key="exam" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full"><ExamInterface questions={currentQuestions} timePerQuestion={timePerQuestion} onComplete={handleExamComplete} /></motion.div>
@@ -527,6 +582,20 @@ function LetsPrepContent() {
           <motion.div key="quickfire_results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4"><QuickFireResults questions={currentQuestions} answers={examAnswers} timeSpent={examTime} xpEarned={lastXpEarned} onRestart={() => setState('dashboard')} /></motion.div>
         ) : (
           <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
+            
+            {/* PUBLIC HEADER FOR GUESTS */}
+            {!user && (
+              <div className="flex items-center justify-between px-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shadow-lg">
+                    <GraduationCap className="text-primary-foreground w-6 h-6" />
+                  </div>
+                  <h1 className="text-xl font-black tracking-tighter">LET's Prep</h1>
+                </div>
+                <Button onClick={() => setShowAuthModal(true)} className="rounded-2xl h-10 px-6 font-black text-xs uppercase tracking-widest shadow-md shadow-primary/20">Sign In</Button>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {displayStats.map((stat, i) => (
                 <div key={i} className="android-surface rounded-2xl p-3 flex items-center gap-3">
