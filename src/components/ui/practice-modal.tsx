@@ -203,6 +203,7 @@ export function PracticeModal({
                 const isUnlocked = isTrackUnlocked(rankData.rank, mode.id, user?.unlockedTracks);
                 const isPermanentlyUnlocked = user?.unlockedTracks?.includes(mode.id);
                 const needsMajorship = mode.requiresMajorship && !user?.majorship;
+                const unlockRequirementText = mode.reqRank > 1 ? `Reach Rank ${mode.reqRank} (${getCareerRankTitle(mode.reqRank)})` : null;
                 
                 return (
                   <Card
@@ -303,9 +304,9 @@ export function PracticeModal({
                           </div>
                         )}
                       </div>
-                      {!isUnlocked && !needsMajorship && (
+                      {!isUnlocked && !needsMajorship && unlockRequirementText && (
                         <p className="text-[8px] font-bold text-muted-foreground uppercase text-center mt-4 tracking-wider">
-                          Or reach Rank {mode.reqRank} ({getCareerRankTitle(mode.reqRank)})
+                          Or {unlockRequirementText}
                         </p>
                       )}
                     </CardContent>
@@ -321,11 +322,11 @@ export function PracticeModal({
                 </div>
                 <div>
                   <h4 className="font-black text-sm text-foreground flex items-center gap-2">
-                    Academic Path
+                    Academic Progression
                     <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                   </h4>
                   <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed font-medium">
-                    Reach Rank 5 to unlock the full 150-item simulation, or use credits to bypass the requirement instantly.
+                    New simulation tracks unlock automatically as you ascend professional ranks. Reach **Rank 5** to unlock the full 150-item simulation, or use credits to bypass the requirement instantly.
                   </p>
                 </div>
               </div>
