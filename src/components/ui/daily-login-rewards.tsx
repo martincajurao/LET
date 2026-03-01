@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { 
   Gift, 
-  Star, 
   CheckCircle2, 
   Zap,
   Trophy,
@@ -17,7 +16,7 @@ import {
   Crown,
   ShieldCheck,
   TrendingUp,
-  Coins
+  Star
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -87,53 +86,43 @@ export function DailyLoginRewards({
 
   return (
     <>
-      <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden transition-all duration-500">
+      <Card className="border-none shadow-2xl rounded-[3rem] bg-card overflow-hidden">
         <CardHeader className="p-8 pb-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl flex items-center justify-center shadow-xl shadow-rose-500/20">
-                <Gift className="w-7 h-7 text-white" />
+            <div className="flex items-center gap-5">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/60 rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-primary/20 relative">
+                <Gift className="w-8 h-8 text-primary-foreground" />
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full animate-pulse shadow-sm" />
               </div>
               <div>
-                <CardTitle className="text-2xl font-black tracking-tight">Daily Entrance</CardTitle>
+                <CardTitle className="text-3xl font-black tracking-tight">Entrance Rewards</CardTitle>
                 <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="outline" className="h-5 px-2 font-black text-[9px] uppercase tracking-widest border-primary/20 text-primary bg-primary/5">
-                    Day {currentDay} of 7
+                  <Badge variant="outline" className="h-5 px-3 font-black text-[10px] uppercase tracking-widest border-primary/30 text-primary bg-primary/5">
+                    Day {currentDay} Streak
                   </Badge>
-                  <div className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground">
-                    <TrendingUp className="w-3 h-3" />
-                    <span>{multiplier}x Rate</span>
-                  </div>
+                  <p className="text-[10px] font-black text-muted-foreground opacity-60 uppercase tracking-[0.2em]">7-Day Cycle</p>
                 </div>
               </div>
             </div>
-            {claimedToday ? (
-              <Badge className="bg-emerald-500 text-white font-black text-[10px] uppercase px-4 py-1 rounded-full shadow-lg shadow-emerald-500/20 border-none">
-                <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Verified
-              </Badge>
-            ) : (
-              <Badge className="bg-primary/20 text-primary font-black text-[10px] uppercase px-4 py-1 rounded-full animate-pulse border-none">
-                <Zap className="w-3.5 h-3.5 mr-1.5 fill-current" /> Ready
-              </Badge>
-            )}
+            <div className="text-right hidden sm:block">
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Rank Multiplier</p>
+              <div className="flex items-center justify-end gap-1.5 text-primary">
+                <TrendingUp className="w-4 h-4" />
+                <span className="text-xl font-black">{multiplier}x</span>
+              </div>
+            </div>
           </div>
         </CardHeader>
 
         <CardContent className="p-8 pt-4 space-y-8">
-          <div className="space-y-3">
-            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground opacity-60">
-              <span>Weekly Persistence</span>
-              <span>{Math.round((currentDay / 7) * 100)}%</span>
-            </div>
-            <Progress value={(currentDay / 7) * 100} className="h-2 rounded-full bg-muted shadow-inner" />
-          </div>
-
-          <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             {BASE_REWARDS.map((reward, index) => {
               const dayNum = index + 1;
               const isPast = dayNum < currentDay;
               const isCurrent = dayNum === currentDay;
               const isVisuallyClaimed = isPast || (isCurrent && claimedToday);
+              const isLegendary = reward.type === 'legendary';
+              const isEpic = reward.type === 'epic';
               
               const scaledXp = Math.round(reward.xp * multiplier);
               const scaledCredits = Math.round(reward.credits * multiplier);
@@ -142,118 +131,123 @@ export function DailyLoginRewards({
                 <motion.div 
                   key={dayNum}
                   initial={false}
-                  animate={isCurrent && !claimedToday ? { scale: [1, 1.05, 1] } : {}}
-                  transition={{ duration: 2, repeat: Infinity }}
+                  animate={isCurrent && !claimedToday ? { scale: [1, 1.02, 1] } : {}}
+                  transition={{ duration: 3, repeat: Infinity }}
                   className={cn(
-                    "relative p-2 rounded-2xl text-center border-2 transition-all flex flex-col items-center justify-between min-h-[135px] overflow-hidden",
-                    isVisuallyClaimed ? "bg-emerald-500/5 border-emerald-500/20" : 
-                    isCurrent ? "bg-primary/5 border-primary shadow-lg ring-4 ring-primary/5" :
-                    "bg-card border-border/50 opacity-60",
-                    reward.type === 'legendary' && !isVisuallyClaimed && "border-amber-400 bg-amber-500/5",
-                    reward.type === 'epic' && !isVisuallyClaimed && "border-purple-400 bg-purple-500/5"
+                    "relative p-4 rounded-[2rem] border-2 transition-all flex flex-col items-center justify-between min-h-[160px]",
+                    isVisuallyClaimed ? "bg-emerald-500/5 border-emerald-500/10 opacity-60" : 
+                    isCurrent ? "bg-card border-primary shadow-2xl ring-8 ring-primary/5 scale-105 z-10" :
+                    "bg-muted/20 border-border/50",
+                    isLegendary && "col-span-3 min-h-[140px] flex-row px-8",
+                    isEpic && !isVisuallyClaimed && "border-purple-200 bg-purple-50/30"
                   )}
                 >
+                  {/* Day Label */}
                   <div className={cn(
-                    "w-8 h-8 rounded-lg flex items-center justify-center mb-1 shadow-inner transition-colors",
-                    isVisuallyClaimed ? "bg-emerald-500/20" :
-                    isCurrent ? "bg-primary text-primary-foreground" :
-                    reward.type === 'legendary' ? "bg-amber-500 text-white" : 
-                    reward.type === 'epic' ? "bg-purple-500 text-white" : "bg-muted"
+                    "w-full flex justify-between items-center mb-2",
+                    isLegendary && "w-auto flex-col mb-0 items-start mr-8"
                   )}>
-                    {isVisuallyClaimed ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    ) : reward.type === 'legendary' ? (
-                      <Crown className="w-4 h-4 fill-current" />
-                    ) : reward.type === 'epic' ? (
-                      <Trophy className="w-4 h-4" />
-                    ) : (
-                      <span className="font-black text-xs">{dayNum}</span>
-                    )}
+                    <span className={cn(
+                      "text-[10px] font-black uppercase tracking-widest",
+                      isVisuallyClaimed ? "text-emerald-600" : isCurrent ? "text-primary" : "text-muted-foreground"
+                    )}>
+                      {isLegendary ? "Grand Prize" : `Day ${dayNum}`}
+                    </span>
+                    {isVisuallyClaimed && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
                   </div>
                   
-                  <div className="flex-1 flex flex-col items-center justify-center gap-1.5">
-                    <div className="flex flex-col items-center">
-                      <div className="flex items-center gap-1">
-                        <p className={cn(
-                          "text-xs font-black font-mono leading-none tracking-tighter",
-                          isVisuallyClaimed ? "text-emerald-600" : isCurrent ? "text-primary" : "text-foreground"
-                        )}>+{scaledXp}</p>
-                        <Zap className={cn("w-2.5 h-2.5", isVisuallyClaimed ? "text-emerald-500" : "text-primary")} />
+                  {/* Reward Visuals */}
+                  <div className={cn(
+                    "flex-1 flex flex-col items-center justify-center gap-3 w-full",
+                    isLegendary && "flex-row justify-center gap-8"
+                  )}>
+                    <div className="flex flex-col items-center gap-1">
+                      <div className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center shadow-inner mb-1",
+                        isVisuallyClaimed ? "bg-emerald-100" : isCurrent ? "bg-primary/10" : "bg-muted"
+                      )}>
+                        <Zap className={cn("w-5 h-5", isVisuallyClaimed ? "text-emerald-600" : isCurrent ? "text-primary" : "text-muted-foreground")} />
                       </div>
+                      <p className={cn("text-lg font-black tracking-tighter", isVisuallyClaimed ? "text-emerald-700" : "text-foreground")}>+{scaledXp}</p>
                     </div>
-                    <div className="flex flex-col items-center">
-                      <div className="flex items-center gap-1">
-                        <p className={cn(
-                          "text-xs font-black font-mono leading-none tracking-tighter",
-                          isVisuallyClaimed ? "text-emerald-600" : isCurrent ? "text-primary" : "text-foreground"
-                        )}>+{scaledCredits}</p>
-                        <Sparkles className={cn("w-2.5 h-2.5", isVisuallyClaimed ? "text-emerald-500" : "text-yellow-600")} />
+
+                    <div className="flex flex-col items-center gap-1">
+                      <div className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center shadow-inner mb-1",
+                        isVisuallyClaimed ? "bg-emerald-100" : isCurrent ? "bg-yellow-500/10" : "bg-muted",
+                        isLegendary && "bg-yellow-500/20"
+                      )}>
+                        {isLegendary ? (
+                          <Crown className="w-5 h-5 text-yellow-600 fill-current animate-victory" />
+                        ) : (
+                          <Sparkles className={cn("w-5 h-5", isVisuallyClaimed ? "text-emerald-600" : "text-yellow-600 animate-sparkle")} />
+                        )}
                       </div>
+                      <p className={cn("text-lg font-black tracking-tighter", isVisuallyClaimed ? "text-emerald-700" : "text-foreground")}>+{scaledCredits}</p>
                     </div>
                   </div>
 
-                  <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mt-1">D{dayNum}</p>
-                  
+                  {/* Status Ring for Current Day */}
                   {isCurrent && !claimedToday && (
                     <motion.div 
-                      layoutId="check-indicator"
-                      className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center shadow-lg"
-                    >
-                      <Sparkles className="w-2.5 h-2.5 text-primary-foreground fill-current animate-sparkle" />
-                    </motion.div>
+                      layoutId="active-ring"
+                      className="absolute inset-0 border-4 border-primary rounded-[2rem] pointer-events-none"
+                      animate={{ opacity: [0.2, 0.5, 0.2] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    />
                   )}
                 </motion.div>
               );
             })}
           </div>
 
-          <div className="space-y-4">
-            <Button 
-              onClick={handleClaim} 
-              disabled={!canClaim} 
-              className={cn(
-                "w-full h-16 rounded-[1.5rem] font-black text-lg gap-3 active:scale-95 transition-all shadow-2xl group",
-                canClaim ? "bg-primary text-primary-foreground shadow-primary/30" : "bg-muted text-muted-foreground"
-              )}
-            >
-              {isClaiming ? (
-                <><Loader2 className="w-6 h-6 animate-spin" /> Synchronizing...</>
-              ) : claimedToday ? (
-                <><ShieldCheck className="w-6 h-6" /> Daily Access Verified</>
-              ) : (
-                <><Sparkles className="w-6 h-6 fill-current group-hover:animate-pulse" /> Claim Day {currentDay} Reward</>
-              )}
-            </Button>
-
-            {canClaim && (
+          <div className="space-y-4 pt-4">
+            {!claimedToday && (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-6 rounded-[2rem] border-2 border-dashed flex items-center justify-between shadow-inner bg-gradient-to-r from-primary to-primary/80 text-primary-foreground border-white/20"
+                className="p-6 rounded-[2.5rem] bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-2 border-dashed border-primary/20 flex items-center justify-between"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                    <Star className="w-6 h-6 fill-current text-yellow-300 animate-sparkle" />
+                  <div className="w-14 h-14 bg-card rounded-[1.25rem] flex items-center justify-center shadow-xl border border-primary/10">
+                    <Star className="w-7 h-7 text-primary fill-current animate-victory" />
                   </div>
                   <div>
-                    <p className="font-black text-lg uppercase tracking-tight">Today's Yield</p>
-                    <p className="text-[10px] font-black opacity-80 uppercase tracking-widest flex items-center gap-1">
-                      <TrendingUp className="w-3 h-3" /> Tier Multiplier Applied
-                    </p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Ready to Claim</p>
+                    <p className="text-xl font-black text-foreground">Day {currentDay} Loot</p>
                   </div>
                 </div>
-                <div className="text-right space-y-0.5">
-                  <div className="flex items-center justify-end gap-1.5">
-                    <p className="text-2xl font-black font-mono tracking-tighter">+{Math.round(BASE_REWARDS[currentDay - 1].xp * multiplier)}</p>
-                    <Zap className="w-5 h-5 fill-current text-primary-foreground" />
-                  </div>
-                  <div className="flex items-center justify-end gap-1.5">
-                    <p className="text-lg font-black font-mono opacity-90 tracking-tighter">+{Math.round(BASE_REWARDS[currentDay - 1].credits * multiplier)}</p>
-                    <Sparkles className="w-4 h-4 fill-current text-yellow-300 animate-sparkle" />
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col items-end">
+                    <div className="flex items-center gap-1 text-primary">
+                      <span className="font-black text-lg">+{Math.round(BASE_REWARDS[currentDay - 1].xp * multiplier)}</span>
+                      <Zap className="w-4 h-4 fill-current" />
+                    </div>
+                    <div className="flex items-center gap-1 text-yellow-600">
+                      <span className="font-black text-lg">+{Math.round(BASE_REWARDS[currentDay - 1].credits * multiplier)}</span>
+                      <Sparkles className="w-4 h-4 fill-current" />
+                    </div>
                   </div>
                 </div>
               </motion.div>
             )}
+
+            <Button 
+              onClick={handleClaim} 
+              disabled={!canClaim} 
+              className={cn(
+                "w-full h-20 rounded-[2rem] font-black text-xl tracking-widest gap-4 active:scale-95 transition-all shadow-2xl group",
+                canClaim ? "bg-primary text-primary-foreground shadow-primary/30 animate-focus-glow" : "bg-muted text-muted-foreground"
+              )}
+            >
+              {isClaiming ? (
+                <><Loader2 className="w-7 h-7 animate-spin" /> SYNCHRONIZING...</>
+              ) : claimedToday ? (
+                <><ShieldCheck className="w-7 h-7" /> VAULT SECURED</>
+              ) : (
+                <><Sparkles className="w-7 h-7 fill-current group-hover:animate-pulse" /> CLAIM REWARDS</>
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -264,34 +258,40 @@ export function DailyLoginRewards({
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
-            className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/80 backdrop-blur-md px-4"
+            className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/90 backdrop-blur-xl px-4"
             onClick={() => setShowReward(false)}
           >
             <motion.div 
               initial={{ scale: 0.5, y: 100, opacity: 0 }} 
               animate={{ scale: 1, y: 0, opacity: 1 }} 
               exit={{ scale: 0.5, y: 100, opacity: 0 }} 
-              className="relative p-10 rounded-[3rem] bg-card border-none w-full max-sm shadow-[0_40px_100px_rgba(0,0,0,0.5)] text-center space-y-8"
+              className="relative p-12 rounded-[4rem] bg-card border-none w-full max-w-sm shadow-[0_40px_120px_rgba(0,0,0,0.6)] text-center space-y-10"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="absolute -top-12 left-1/2 -translate-x-1/2">
-                <div className="w-24 h-24 bg-primary text-primary-foreground rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-primary/40 animate-victory">
-                  <Trophy className="w-12 h-12" />
+              <div className="absolute -top-16 left-1/2 -translate-x-1/2">
+                <div className="w-32 h-32 bg-primary text-primary-foreground rounded-[3rem] flex items-center justify-center shadow-2xl shadow-primary/40 animate-victory ring-[12px] ring-background">
+                  <Trophy className="w-16 h-16" />
                 </div>
               </div>
 
-              <div className="pt-8 space-y-2">
-                <h3 className="text-3xl font-black tracking-tighter">Vault Recharged!</h3>
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground opacity-60">Professional Trace Recorded</p>
+              <div className="pt-12 space-y-2">
+                <h3 className="text-4xl font-black tracking-tighter">Day {currentDay} Secured!</h3>
+                <p className="text-[11px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-60">Professional Trace Recorded</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-6 rounded-[2rem] bg-primary/10 border-2 border-primary/20 space-y-2 flex flex-col items-center">
-                  <Zap className="w-6 h-6 text-primary fill-current" />
+              <div className="grid grid-cols-1 gap-4">
+                <div className="p-6 rounded-[2.5rem] bg-primary/10 border-2 border-primary/20 flex items-center justify-between px-10">
+                  <div className="flex items-center gap-4">
+                    <Zap className="w-8 h-8 text-primary fill-current" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Growth</span>
+                  </div>
                   <p className="text-4xl font-black text-primary font-mono tracking-tighter">+{lastClaimedData.xp}</p>
                 </div>
-                <div className="p-6 rounded-[2rem] bg-yellow-500/10 border-2 border-yellow-500/20 space-y-2 flex flex-col items-center">
-                  <Sparkles className="w-6 h-6 text-yellow-600 fill-current animate-sparkle" />
+                <div className="p-6 rounded-[2.5rem] bg-yellow-500/10 border-2 border-yellow-500/20 flex items-center justify-between px-10">
+                  <div className="flex items-center gap-4">
+                    <Sparkles className="w-8 h-8 text-yellow-600 fill-current animate-sparkle" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-yellow-600">Credits</span>
+                  </div>
                   <p className="text-4xl font-black text-yellow-600 font-mono tracking-tighter">+{lastClaimedData.credits}</p>
                 </div>
               </div>
@@ -299,27 +299,27 @@ export function DailyLoginRewards({
               <div className="space-y-4">
                 <Button 
                   onClick={() => setShowReward(false)} 
-                  className="w-full h-16 rounded-[1.75rem] font-black text-lg uppercase tracking-widest shadow-2xl shadow-primary/30 active:scale-95 transition-all"
+                  className="w-full h-16 rounded-[2rem] font-black text-lg uppercase tracking-widest shadow-2xl shadow-primary/30 active:scale-95 transition-all"
                 >
-                  Continue Mission
+                  Enter learning ground
                 </Button>
                 <div className="flex items-center justify-center gap-2 text-muted-foreground opacity-40">
                   <ShieldCheck className="w-4 h-4" />
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em]">Verified Secure Reward</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em]">Verified Secure Reward</span>
                 </div>
               </div>
 
               {/* Sparkle Particles */}
-              <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[3rem]">
-                {[...Array(8)].map((_, i) => (
+              <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[4rem]">
+                {[...Array(12)].map((_, i) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, y: 0 }}
-                    animate={{ opacity: [0, 1, 0], y: -150, x: (i - 3.5) * 40 }}
-                    transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
+                    animate={{ opacity: [0, 1, 0], y: -250, x: (i - 5.5) * 50 }}
+                    transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.15 }}
                     className="absolute bottom-0 left-1/2"
                   >
-                    <Sparkles className="w-4 h-4 text-primary/40 fill-current" />
+                    <Sparkles className="w-5 h-5 text-primary/30 fill-current" />
                   </motion.div>
                 ))}
               </div>
