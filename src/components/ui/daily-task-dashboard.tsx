@@ -228,7 +228,7 @@ export function DailyTaskDashboard() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-            <Button onClick={() => handleClaimReward()} disabled={!user || claiming || !canClaimAny} className="h-16 rounded-[1.5rem] font-black text-lg gap-3 shadow-2xl shadow-primary/30 group active:scale-95 transition-all">
+            <Button onClick={() => handleClaimReward()} disabled={!user || claiming || !canClaimAny} className={cn("h-16 rounded-[1.5rem] font-black text-lg gap-3 shadow-2xl group active:scale-95 transition-all", canClaimAny ? "bg-primary text-primary-foreground shadow-primary/30 animate-focus-glow" : "bg-muted text-muted-foreground")}>
               {claiming ? <Loader2 className="w-6 h-6 animate-spin" /> : canClaimAny ? <Gift className="w-6 h-6" /> : <Star className="w-6 h-6" />}
               {claiming ? 'Synchronizing...' : canClaimAny ? `Claim ${estimatedReward} Credits` : 'Build Readiness'}
             </Button>

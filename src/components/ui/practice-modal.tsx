@@ -20,7 +20,8 @@ import {
   ChevronRight,
   Sparkles,
   Trophy,
-  Play
+  Play,
+  TrendingUp
 } from 'lucide-react';
 import {
   Dialog,
@@ -78,7 +79,8 @@ export function PracticeModal({
       time: `~${Math.ceil(totalQuestions * 1.5)} minutes`,
       questions: `${totalQuestions} items`,
       reqRank: UNLOCK_RANKS.FULL_SIMULATION,
-      unlockCost: 120
+      unlockCost: 120,
+      potentialXp: XP_REWARDS.FINISH_FULL_SIM + (totalQuestions * XP_REWARDS.CORRECT_ANSWER)
     },
     {
       id: 'General Education',
@@ -90,7 +92,8 @@ export function PracticeModal({
       time: `~${limits.limitGenEd} minutes`,
       questions: `${limits.limitGenEd} items`,
       reqRank: UNLOCK_RANKS.GENERAL_ED,
-      unlockCost: 0
+      unlockCost: 0,
+      potentialXp: XP_REWARDS.FINISH_TRACK + (limits.limitGenEd * XP_REWARDS.CORRECT_ANSWER)
     },
     {
       id: 'Professional Education',
@@ -102,7 +105,8 @@ export function PracticeModal({
       time: `~${limits.limitProfEd} minutes`,
       questions: `${limits.limitProfEd} items`,
       reqRank: UNLOCK_RANKS.PROFESSIONAL_ED,
-      unlockCost: 30
+      unlockCost: 30,
+      potentialXp: XP_REWARDS.FINISH_TRACK + (limits.limitProfEd * XP_REWARDS.CORRECT_ANSWER)
     },
     {
       id: 'Specialization',
@@ -115,7 +119,8 @@ export function PracticeModal({
       questions: `${limits.limitSpec} items`,
       reqRank: UNLOCK_RANKS.SPECIALIZATION,
       unlockCost: 60,
-      requiresMajorship: true
+      requiresMajorship: true,
+      potentialXp: XP_REWARDS.FINISH_TRACK + (limits.limitSpec * XP_REWARDS.CORRECT_ANSWER)
     }
   ];
 
@@ -277,12 +282,10 @@ export function PracticeModal({
                           <Badge variant="secondary" className="text-[10px] font-bold px-3 py-1 bg-muted/50 border-none">
                             {mode.questions}
                           </Badge>
-                          {isPermanentlyUnlocked && (
-                            <div className="flex items-center gap-1 text-[8px] font-black uppercase text-emerald-600">
-                              <CheckCircle2 className="w-2.5 h-2.5" />
-                              <span>Lifetime Access</span>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">
+                            <TrendingUp className="w-3 h-3 text-emerald-600" />
+                            <span className="text-[9px] font-black text-emerald-700">+{mode.potentialXp} XP</span>
+                          </div>
                         </div>
                       </div>
                       <CardTitle className="text-xl font-black mt-4 group-hover:text-primary transition-colors text-foreground">{mode.name}</CardTitle>
