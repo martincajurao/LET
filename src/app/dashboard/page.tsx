@@ -22,7 +22,8 @@ import {
   MapPin,
   CheckCircle2,
   ListTodo,
-  ChevronRight
+  ChevronRight,
+  TrendingUp
 } from "lucide-react";
 import { AchievementSystem } from '@/components/ui/achievement-system';
 import { ReferralSystem } from '@/components/ui/referral-system';
@@ -107,7 +108,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="p-8 pt-4">
                 <div className="relative space-y-8 before:absolute before:left-[23px] before:top-4 before:bottom-4 before:w-[3px] before:bg-muted before:content-['']">
-                  {CAREER_TIERS.slice(0, 6).map((tier, idx) => {
+                  {CAREER_TIERS.slice(0, 8).map((tier, idx) => {
                     const currentRank = rankData?.rank || 1;
                     const isCompleted = currentRank > tier.maxRank;
                     const isActive = currentRank >= tier.minRank && currentRank <= tier.maxRank;
@@ -133,13 +134,22 @@ export default function DashboardPage() {
                           isActive ? "bg-primary/5 border-primary ring-8 ring-primary/5" : "bg-muted/10 border-transparent"
                         )}>
                           <div className="flex justify-between items-start mb-2">
-                            <p className={cn("text-lg font-black uppercase tracking-tight", isActive ? "text-primary" : "text-foreground")}>{tier.title}</p>
+                            <div className="space-y-1">
+                              <p className={cn("text-lg font-black uppercase tracking-tight", isActive ? "text-primary" : "text-foreground")}>{tier.title}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Rank {tier.minRank} — {tier.maxRank}</p>
+                                <div className="w-1 h-1 bg-muted-foreground/30 rounded-full" />
+                                <div className="flex items-center gap-1">
+                                  <TrendingUp className="w-3 h-3 text-muted-foreground" />
+                                  <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{tier.req} XP</p>
+                                </div>
+                              </div>
+                            </div>
                             <div className="flex items-center gap-1.5 bg-yellow-500/10 px-3 py-1 rounded-xl border border-yellow-500/20">
                               <Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current animate-sparkle" />
                               <span className="text-xs font-black text-yellow-700">+{tier.reward}</span>
                             </div>
                           </div>
-                          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Rank {tier.minRank} — {tier.maxRank}</p>
                           
                           {isActive && (
                             <div className="mt-5 space-y-2">
