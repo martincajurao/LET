@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
@@ -126,7 +125,7 @@ function LetsPrepContent() {
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  pullStartY = React.useRef<number | null>(null);
+  const pullStartY = React.useRef<number | null>(null);
   
   const [newResultId, setNewResultId] = useState<string | undefined>(undefined);
 
@@ -231,7 +230,6 @@ function LetsPrepContent() {
   const startExam = async (category: 'General Education' | 'Professional Education' | 'Specialization' | 'all' | 'quickfire' | 'Major' | 'Prof Ed') => {
     if (!user) return;
 
-    // ABUSE PREVENTION: Strict Cooldown Check
     if (category === 'quickfire') {
       const now = Date.now();
       const lastQf = typeof user.lastQuickFireTimestamp === 'number' ? user.lastQuickFireTimestamp : 0;
@@ -285,7 +283,6 @@ function LetsPrepContent() {
     const isQuickFire = currentQuestions.length <= 5;
     const now = Date.now();
 
-    // ABUSE PREVENTION: Speed Check for Quick Fire
     if (isQuickFire && timeSpent < MIN_QUICK_FIRE_TIME) {
       toast({ 
         variant: "destructive", 
@@ -296,7 +293,6 @@ function LetsPrepContent() {
       return;
     }
 
-    // ABUSE PREVENTION: Final write check for Quick Fire
     if (isQuickFire) {
       const lastQf = typeof user.lastQuickFireTimestamp === 'number' ? user.lastQuickFireTimestamp : 0;
       if (lastQf + COOLDOWNS.QUICK_FIRE > now) {
