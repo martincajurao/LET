@@ -126,7 +126,6 @@ function LetsPrepContent() {
   const [examTime, setExamTime] = useState(0);
   const [lastXpEarned, setLastXpEarned] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState("");
   const [showAuthModal, setShowAuthModal] = useState(false);
   
@@ -152,6 +151,68 @@ function LetsPrepContent() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+
+  const startParam = searchParams.get('start');
+
+  const startExam = async (category: string) => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    
+    if (!firestore || isStartingRef.current) return;
+    isStartingRef.current = true;
+
+    if (category === 'quickfire') {
+      const now = Date.now();
+      const lastQf = Number(user.lastQuickFireTimestamp) || 0;
+      if (lastQf + COOLDOWNS.QUICK_FIRE > now) {
+        toast({ variant: "destructive", title: "Access Denied", description: "Cooldown in effect." });
+        isStartingRef.current = false;
+        return;
+      }
+    }
+
+    setLoading(true);
+    setLoadingMessage("Calibrating Learning Path...");
+    try {
+      const questionPool = await fetchQuestionsFromFirestore(firestore);
+      let finalQuestions: Question[] = [];
+      if (category === 'all') {
+        const genEd = shuffleArray(questionPool.filter(q => q.subject === 'General Education')).slice(0, limits.limitGenEd);
+        const profEd = shuffleArray(questionPool.filter(q => q.subject === 'Professional Education')).slice(0, limits.limitProfEd);
+        const spec = shuffleArray(questionPool.filter(q => q.subject === 'Specialization' && q.subCategory === (user?.majorship || 'English'))).slice(0, limits.limitSpec);
+        finalQuestions = [...genEd, ...profEd, ...spec];
+      } else if (category === 'quickfire') {
+        finalQuestions = shuffleArray(questionPool).slice(0, 5);
+      } else {
+        const target = category === 'Major' ? 'Specialization' : category;
+        finalQuestions = shuffleArray(questionPool.filter(q => q.subject === target)).slice(0, limits.limitGenEd);
+      }
+      
+      if (finalQuestions.length === 0) throw new Error(`Insufficient items found.`);
+      
+      setCurrentQuestions(finalQuestions);
+      setTimeout(() => { 
+        setState('exam'); 
+        setLoading(false); 
+        isStartingRef.current = false;
+      }, 300);
+    } catch (e: any) { 
+      toast({ variant: "destructive", title: "Simulation Failed", description: e.message }); 
+      setLoading(false); 
+      isStartingRef.current = false;
+    }
+  };
+
+  useEffect(() => {
+    if (user && startParam && !loading && state === 'dashboard') {
+      startExam(startParam);
+      // Clean up URL so it doesn't re-trigger on refresh
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [user, startParam, loading, state]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (window.scrollY <= 10) {
@@ -252,57 +313,6 @@ function LetsPrepContent() {
     return () => clearInterval(interval);
   }, [user]);
 
-  const startExam = async (category: string) => {
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
-    
-    if (!firestore || isStartingRef.current) return;
-    isStartingRef.current = true;
-
-    if (category === 'quickfire') {
-      const now = Date.now();
-      const lastQf = Number(user.lastQuickFireTimestamp) || 0;
-      if (lastQf + COOLDOWNS.QUICK_FIRE > now) {
-        toast({ variant: "destructive", title: "Access Denied", description: "Cooldown in effect." });
-        isStartingRef.current = false;
-        return;
-      }
-    }
-
-    setLoading(true);
-    setLoadingMessage("Calibrating Learning Path...");
-    try {
-      const questionPool = await fetchQuestionsFromFirestore(firestore);
-      let finalQuestions: Question[] = [];
-      if (category === 'all') {
-        const genEd = shuffleArray(questionPool.filter(q => q.subject === 'General Education')).slice(0, limits.limitGenEd);
-        const profEd = shuffleArray(questionPool.filter(q => q.subject === 'Professional Education')).slice(0, limits.limitProfEd);
-        const spec = shuffleArray(questionPool.filter(q => q.subject === 'Specialization' && q.subCategory === (user?.majorship || 'English'))).slice(0, limits.limitSpec);
-        finalQuestions = [...genEd, ...profEd, ...spec];
-      } else if (category === 'quickfire') {
-        finalQuestions = shuffleArray(questionPool).slice(0, 5);
-      } else {
-        const target = category === 'Major' ? 'Specialization' : category;
-        finalQuestions = shuffleArray(questionPool.filter(q => q.subject === target)).slice(0, limits.limitGenEd);
-      }
-      
-      if (finalQuestions.length === 0) throw new Error(`Insufficient items found.`);
-      
-      setCurrentQuestions(finalQuestions);
-      setTimeout(() => { 
-        setState('exam'); 
-        setLoading(false); 
-        isStartingRef.current = false;
-      }, 300);
-    } catch (e: any) { 
-      toast({ variant: "destructive", title: "Simulation Failed", description: e.message }); 
-      setLoading(false); 
-      isStartingRef.current = false;
-    }
-  };
-
   const handleExamComplete = async (answers: Record<string, string>, timeSpent: number, confidentAnswers: Record<string, boolean>) => {
     if (!user || !firestore) return;
     const isQuickFire = currentQuestions.length <= 5;
@@ -339,6 +349,26 @@ function LetsPrepContent() {
     else setState('results');
   };
 
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackText.trim() || !firestore || !user) return;
+    setIsSubmittingFeedback(true);
+    try {
+      await addDoc(collection(firestore, 'feedback'), {
+        userId: user.uid,
+        userName: user.displayName,
+        text: feedbackText,
+        timestamp: serverTimestamp()
+      });
+      toast({ variant: "reward", title: "Trace Recorded!", description: "Feedback saved." });
+      setFeedbackText("");
+      setShowFeedbackModal(false);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Sync Failed", description: "Feedback error." });
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
+
   if (authLoading) return <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-background"><EducationalLoader message="Synchronizing Session" /></div>;
 
   const displayStats = user ? [
@@ -359,6 +389,8 @@ function LetsPrepContent() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-background text-foreground font-body" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined }}>
       <Toaster />
+      
+      {/* Auth Modal */}
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-sm outline-none overflow-hidden">
           <div className="bg-emerald-500/10 p-10 flex flex-col items-center text-center">
@@ -368,6 +400,28 @@ function LetsPrepContent() {
           <div className="p-8 space-y-4">
             <Button onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} className="w-full h-14 rounded-2xl font-black gap-3 bg-white text-black border border-border"><GoogleIcon /> Continue with Google</Button>
             <Button onClick={async () => { await loginWithFacebook(); setShowAuthModal(false); }} className="w-full h-14 rounded-2xl font-black gap-3 bg-[#1877F2] text-white"><Facebook className="w-5 h-5 fill-current" /> Continue with Facebook</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Feedback Modal */}
+      <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-md outline-none overflow-hidden">
+          <div className="bg-primary/10 p-10 flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center shadow-lg mb-4"><MessageSquare className="w-8 h-8 text-primary" /></div>
+            <DialogTitle className="text-2xl font-black">Feedback Vault</DialogTitle>
+          </div>
+          <div className="p-8 space-y-6">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Your Suggestions</Label>
+              <Textarea value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} placeholder="Improve the simulation..." className="rounded-2xl min-h-[120px] border-2 p-4 text-sm font-medium resize-none" />
+            </div>
+            <DialogFooter className="sm:flex-col gap-3">
+              <Button onClick={handleFeedbackSubmit} disabled={isSubmittingFeedback || !feedbackText.trim()} className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-primary/30">
+                {isSubmittingFeedback ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Transmit Insight
+              </Button>
+              <Button variant="ghost" onClick={() => setShowFeedbackModal(false)} className="w-full font-bold text-muted-foreground">Discard</Button>
+            </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>
@@ -387,6 +441,7 @@ function LetsPrepContent() {
           </motion.div>
         ) : (
           <motion.div key="dashboard" variants={containerVariants} initial="hidden" animate="show" className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
+            {/* Quick Stats */}
             <motion.div variants={containerVariants} className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {displayStats.map((stat, i) => (
                 <motion.div key={i} variants={itemVariants} className="android-surface rounded-2xl p-3 flex items-center gap-3">
@@ -399,7 +454,7 @@ function LetsPrepContent() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-8 space-y-6">
                 <motion.div variants={itemVariants}>
-                  <Card className="overflow-hidden border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-primary/20 via-card to-background p-8 md:p-12">
+                  <Card className="overflow-hidden border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-primary/20 via-card to-background p-8 md:p-12 relative group">
                     <div className="relative z-10 space-y-6">
                       <Badge variant="secondary" className="font-bold text-[10px] uppercase px-4 py-1 bg-primary/20 text-primary border-none">Free Practice Access</Badge>
                       <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-foreground">Prepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
@@ -409,10 +464,13 @@ function LetsPrepContent() {
                         </Button>
                       ) : (
                         <motion.div animate={{ scale: [1, 1.02, 1] }} transition={{ duration: 3, repeat: Infinity }} className="w-fit">
-                          <Button size="lg" onClick={() => setShowAuthModal(true)} className="h-16 md:h-20 px-10 rounded-[2rem] font-black text-lg gap-6 shadow-2xl shadow-primary/40 bg-primary text-primary-foreground">
-                            <div className="flex items-center gap-3 bg-background/20 p-2 rounded-2xl"><GoogleIcon /><Facebook className="w-5 h-5 fill-current" /></div>
-                            <div className="flex flex-col items-start leading-none"><span className="uppercase">Sign In to Launch</span><span className="text-[10px] opacity-70 mt-1 uppercase">Secure Educator Entry</span></div>
-                            <ChevronRight className="w-6 h-6" />
+                          <Button size="lg" onClick={() => setShowAuthModal(true)} className="h-16 md:h-20 px-10 rounded-[2rem] font-black text-lg gap-6 shadow-2xl shadow-primary/40 bg-primary text-primary-foreground group">
+                            <div className="flex items-center gap-3 bg-background/20 p-2 rounded-2xl">
+                              <GoogleIcon />
+                              <div className="w-7 h-7 bg-[#1877F2] rounded-full flex items-center justify-center"><Facebook className="w-4 h-4 fill-current text-white" /></div>
+                            </div>
+                            <div className="flex flex-col items-start leading-none"><span className="uppercase tracking-tighter">Sign In to Launch</span><span className="text-[10px] opacity-70 mt-1 uppercase tracking-widest">Secure Educator Entry</span></div>
+                            <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
                           </Button>
                         </motion.div>
                       )}
@@ -420,6 +478,7 @@ function LetsPrepContent() {
                   </Card>
                 </motion.div>
 
+                {/* Training Zones */}
                 <div className="space-y-4">
                   <h3 className="text-xl font-black tracking-tight flex items-center gap-2"><Target className="w-5 h-5 text-primary" /> Training Zones</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -431,7 +490,7 @@ function LetsPrepContent() {
                       const isLocked = user && !isTrackUnlocked(rankData?.rank || 1, track.id, user.unlockedTracks);
                       return (
                         <motion.div key={i} variants={itemVariants}>
-                          <Card onClick={() => !isLocked && startExam(track.id)} className={cn("cursor-pointer border-2 rounded-[2rem] bg-card overflow-hidden active:scale-95 transition-all relative", isLocked ? "opacity-60 grayscale" : "hover:border-primary shadow-sm")}>
+                          <Card onClick={() => !isLocked && startExam(track.id)} className={cn("cursor-pointer border-2 rounded-[2rem] bg-card overflow-hidden active:scale-95 transition-all relative h-full", isLocked ? "opacity-60 grayscale" : "hover:border-primary shadow-sm")}>
                             <CardContent className="p-6 space-y-4 text-center">
                               <div className="w-12 h-12 bg-muted rounded-2xl mx-auto flex items-center justify-center">{track.icon}</div>
                               <h4 className="font-black text-lg">{track.name}</h4>
@@ -444,6 +503,7 @@ function LetsPrepContent() {
                   </div>
                 </div>
 
+                {/* Support Section */}
                 <div className="space-y-4 pt-4">
                   <h3 className="text-xl font-black tracking-tight flex items-center gap-2"><Users className="w-5 h-5 text-primary" /> Support & Community</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -459,21 +519,29 @@ function LetsPrepContent() {
                 </div>
               </div>
 
+              {/* Sidebar: Mobile App Download */}
               <div className="lg:col-span-4 space-y-6">
                 <Card className="android-surface border-none shadow-xl rounded-[2.25rem] bg-gradient-to-br from-emerald-500/20 via-card to-background p-6 overflow-hidden">
                   <div className="space-y-5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center"><Smartphone className="text-emerald-600 w-6 h-6" /></div>
-                        <div><h3 className="font-black text-lg">Get Mobile App</h3><p className="text-[10px] opacity-60 uppercase">Study Anywhere</p></div>
+                        <div><h3 className="font-black text-lg text-foreground leading-tight">Get Mobile App</h3><p className="text-[10px] opacity-60 uppercase font-bold tracking-widest">Study Anywhere</p></div>
                       </div>
-                      <Badge variant="outline" className="text-[9px] uppercase">{isApkLoading ? '---' : `v${apkInfo?.version}`}</Badge>
+                      <Badge variant="outline" className="text-[9px] uppercase font-black">{isApkLoading ? '---' : `v${apkInfo?.version}`}</Badge>
                     </div>
-                    <div className="flex flex-col items-center justify-center p-5 bg-card rounded-[2rem] border-2 border-dashed border-emerald-500/20">
-                      {isApkLoading ? <Loader2 className="animate-spin text-emerald-300" /> : qrCodeUrl && <div className="space-y-3 flex flex-col items-center"><div className="w-32 h-32 bg-white p-1 rounded-xl shadow-md"><img src={qrCodeUrl} alt="QR" className="w-full h-full" /></div><p className="text-[9px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-1"><QrCode className="w-3 h-3" /> Scan to Install</p></div>}
+                    <div className="flex flex-col items-center justify-center p-5 bg-card rounded-[2rem] border-2 border-dashed border-emerald-500/20 relative">
+                      {isApkLoading ? (
+                        <div className="w-32 h-32 flex items-center justify-center"><Loader2 className="animate-spin text-emerald-300 w-8 h-8" /></div>
+                      ) : qrCodeUrl ? (
+                        <div className="space-y-3 flex flex-col items-center">
+                          <div className="w-32 h-32 bg-white p-1 rounded-xl shadow-md"><img src={qrCodeUrl} alt="QR Code" className="w-full h-full" /></div>
+                          <p className="text-[9px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-1"><QrCode className="w-3 h-3" /> Scan to Install</p>
+                        </div>
+                      ) : null}
                     </div>
-                    <Button onClick={() => window.location.href = apkInfo?.downloadUrl || GITHUB_APK_URL} disabled={isApkLoading} className="w-full h-14 rounded-2xl font-black gap-3 bg-emerald-500 text-white shadow-xl shadow-emerald-500/30">
-                      {isApkLoading ? <Loader2 className="animate-spin" /> : <Download className="w-5 h-5" />} Direct Download
+                    <Button onClick={() => window.location.href = apkInfo?.downloadUrl || GITHUB_APK_URL} disabled={isApkLoading} className="w-full h-14 rounded-2xl font-black gap-3 bg-emerald-500 text-white shadow-xl shadow-emerald-500/30 hover:bg-emerald-600 active:scale-95 transition-all">
+                      {isApkLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <Download className="w-5 h-5" />} Direct Download
                     </Button>
                   </div>
                 </Card>
