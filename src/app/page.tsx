@@ -314,7 +314,7 @@ function LetsPrepContent() {
       }
       
       if (finalQuestions.length === 0) {
-        throw new Error(`Insufficient calibration items found in the vault for ${category}.`);
+        throw new Error(`Insufficient items found.`);
       }
       
       setCurrentQuestions(finalQuestions);
@@ -351,25 +351,16 @@ function LetsPrepContent() {
       toast({ 
         variant: "destructive", 
         title: "Calibration Divergence", 
-        description: "Professional trace was too rapid. Please engage with pedagogical content deeply to earn rewards." 
+        description: "Trace was too rapid. Engage deeply to earn rewards." 
       });
       setState('dashboard');
       return;
     }
 
-    if (isQuickFire) {
-      const lastQf = typeof user.lastQuickFireTimestamp === 'number' ? user.lastQuickFireTimestamp : 0;
-      if (lastQf + COOLDOWNS.QUICK_FIRE > now) {
-        toast({ variant: "destructive", title: "Sync Aborted", description: "Multiple sessions detected. Rewards will not be granted." });
-        setState('dashboard');
-        return;
-      }
-    }
-
     setExamAnswers(answers);
     setExamTime(timeSpent);
     setLoading(true);
-    setLoadingMessage("Commiting Traces...");
+    setLoadingMessage("Syncing Results...");
 
     const results = currentQuestions.map(q => {
       const isCorrect = answers[q.id] === q.correctAnswer;
@@ -428,11 +419,7 @@ function LetsPrepContent() {
 
   const handleWatchXpAd = async () => {
     if (!user || !firestore || adCooldown > 0 || claimingXp) return;
-    
-    if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
-      toast({ title: "Allowance Reached", description: "Daily professional clips limit reached.", variant: "destructive" });
-      return;
-    }
+    if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) return;
 
     setClaimingXp(true);
     setTimeout(async () => {
@@ -447,7 +434,7 @@ function LetsPrepContent() {
         toast({ variant: "reward", title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP earned.` });
         await refreshUser();
       } catch (e) { 
-        toast({ variant: "destructive", title: "Claim Failed", description: "Sync error." }); 
+        toast({ variant: "destructive", title: "Sync Failed", description: "Sync error." }); 
       } finally { 
         setClaimingXp(false); 
       }
@@ -456,20 +443,15 @@ function LetsPrepContent() {
 
   const formatTime = (ms: number) => {
     const totalSeconds = Math.ceil(ms / 1000);
-    if (totalSeconds >= 3600) {
-      const hours = Math.floor(totalSeconds / 3600);
-      const mins = Math.floor((totalSeconds % 3600) / 60);
-      return `${hours}h ${mins}m`;
-    }
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   if (authLoading) return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.2, ease: "easeOut" }} className="fixed inset-0 z-[2000] flex items-center justify-center bg-background bg-gradient-to-b from-background via-background to-primary/5">
-      <EducationalLoader message="Calibrating Educator Session" />
-    </motion.div>
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-background">
+      <EducationalLoader message="Synchronizing Educator Session" />
+    </div>
   );
 
   const displayStats = user ? [
@@ -485,58 +467,12 @@ function LetsPrepContent() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.2 }} className="min-h-screen bg-background text-foreground font-body transition-all duration-300" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined }}>
-      {isPulling && (
-        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center py-2 bg-primary/10 backdrop-blur-sm">
-          <Loader2 className={cn("w-5 h-5 text-primary animate-spin", isRefreshing ? "block" : "block")} />
-          <span className="ml-2 text-[10px] font-black uppercase tracking-widest text-primary">
-            {isRefreshing ? "Synchronizing..." : pullDistance > 60 ? "Release to sync" : "Pull down to refresh"}
-          </span>
-        </div>
-      )}
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-background text-foreground font-body transition-all duration-300" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined }}>
       <Toaster />
       
-      <Dialog open={loading}>
-        <DialogContent className="max-w-[320px] border-none shadow-2xl bg-card rounded-[3rem] p-10 z-[1001] outline-none">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Analytical Calibration</DialogTitle>
-            <DialogDescription>Synchronizing simulation engine parameters...</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-8">
-            <EducationalLoader message={loadingMessage} />
-            <div className="space-y-3">
-              <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground opacity-60">
-                <span>Simulation Path</span>
-                <span>{loadingStep}%</span>
-              </div>
-              <Progress value={loadingStep} className="h-2 w-full rounded-full bg-muted shadow-inner" />
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <RankUpDialog 
-        isOpen={showRankUp} 
-        onClose={() => setShowRankUp(false)} 
-        rank={celebratedRank} 
-        reward={celebratedReward} 
-      />
-
-      <ResultUnlockDialog
-        open={showResultUnlock}
-        onClose={() => setShowResultUnlock(false)}
-        onUnlock={() => setState('results')}
-        questionsCount={currentQuestions.length}
-        correctAnswers={Object.values(examAnswers).filter((answer, index) => {
-          const question = currentQuestions[index];
-          return question && answer === question.correctAnswer;
-        }).length}
-        timeSpent={examTime}
-      />
-
       {/* AUTH MODAL FOR GUESTS */}
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-[0_20px_50px_rgba(0,0,0,0.2)] p-0 max-w-sm outline-none overflow-hidden">
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-sm outline-none overflow-hidden">
           <div className="bg-emerald-500/10 p-10 flex flex-col items-center text-center relative">
             <div className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-xl mb-4 relative z-10">
               <ShieldCheck className="w-10 h-10 text-emerald-500" />
@@ -544,30 +480,23 @@ function LetsPrepContent() {
             <div className="space-y-1 relative z-10">
               <DialogTitle className="text-2xl font-black tracking-tight">Verified Access</DialogTitle>
               <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest">
-                Professional Credentials Required
+                Credentials Required
               </DialogDescription>
             </div>
-            <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent z-0" />
           </div>
           <div className="p-8 space-y-6 bg-card">
             <div className="grid gap-3">
-              <Button 
-                onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} 
-                className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-white text-black border border-border hover:bg-muted transition-all active:scale-95"
-              >
+              <Button onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-white text-black border border-border hover:bg-muted transition-all active:scale-95">
                 <GoogleIcon />
                 <span>Continue with Google</span>
               </Button>
-              <Button 
-                onClick={async () => { await loginWithFacebook(); setShowAuthModal(false); }} 
-                className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none transition-all active:scale-95"
-              >
+              <Button onClick={async () => { await loginWithFacebook(); setShowAuthModal(false); }} className="h-14 rounded-2xl font-black gap-3 shadow-xl bg-[#1877F2] text-white hover:bg-[#1877F2]/90 border-none transition-all active:scale-95">
                 <Facebook className="w-5 h-5 fill-current text-white" />
                 <span>Continue with Facebook</span>
               </Button>
             </div>
             <p className="text-center text-[10px] font-medium text-muted-foreground leading-relaxed px-4">
-              Sign in to track your professional board readiness and maintain your academic streak.
+              Sign in to track your board readiness metrics.
             </p>
           </div>
         </DialogContent>
@@ -601,7 +530,7 @@ function LetsPrepContent() {
                 <div key={i} className="android-surface rounded-2xl p-3 flex items-center gap-3">
                   <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0", stat.color)}>{stat.icon}</div>
                   <div>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">{stat.label}</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">{stat.label}</p>
                     <p className="text-lg font-black text-foreground leading-none">{stat.value}</p>
                   </div>
                 </div>
@@ -648,26 +577,24 @@ function LetsPrepContent() {
 
                 <Card className="overflow-hidden border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-primary/20 via-card to-background relative p-8 md:p-12 group active:scale-[0.98] transition-all">
                   <div className="relative z-10 space-y-6">
-                    <Badge variant="secondary" className="font-bold text-[10px] uppercase px-4 py-1 bg-primary/20 text-primary border-none">Free Forever Practice</Badge>
+                    <Badge variant="secondary" className="font-bold text-[10px] uppercase px-4 py-1 bg-primary/20 text-primary border-none">Free Practice Access</Badge>
                     <div className="space-y-4">
                       <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-foreground">Prepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
-                      <p className="text-muted-foreground font-medium md:text-xl max-w-lg">High-fidelity simulations with AI pedagogical analysis tailored for Filipino educators.</p>
+                      <p className="text-muted-foreground font-medium md:text-xl max-w-lg">High-fidelity simulations with AI analysis tailored for Filipino educators.</p>
                     </div>
                     <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all group"><Zap className="w-6 h-6 fill-current" /> <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" /></Button>
                   </div>
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/3" />
                 </Card>
 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between px-2">
                     <h3 className="text-xl font-black tracking-tight flex items-center gap-2"><Target className="w-5 h-5 text-primary" /> Training Zones</h3>
-                    <Badge variant="ghost" className="text-[10px] font-black uppercase tracking-widest opacity-40">Verified Tracks</Badge>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
-                      { id: 'General Education', name: 'Gen Ed', icon: <Languages />, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Core Knowledge', rnk: UNLOCK_RANKS.GENERAL_ED },
-                      { id: 'Professional Education', name: 'Prof Ed', icon: <GraduationCap />, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Teaching Strategy', rnk: UNLOCK_RANKS.PROFESSIONAL_ED },
-                      { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Subject Mastery', rnk: UNLOCK_RANKS.SPECIALIZATION }
+                      { id: 'General Education', name: 'Gen Ed', icon: <Languages />, color: 'text-blue-500', bg: 'bg-blue-500/10', rnk: UNLOCK_RANKS.GENERAL_ED },
+                      { id: 'Professional Education', name: 'Prof Ed', icon: <GraduationCap />, color: 'text-purple-500', bg: 'bg-purple-500/10', rnk: UNLOCK_RANKS.PROFESSIONAL_ED },
+                      { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star />, color: 'text-emerald-500', bg: 'bg-emerald-500/10', rnk: UNLOCK_RANKS.SPECIALIZATION }
                     ].map((track, i) => {
                       const isLocked = user && !isTrackUnlocked(rankData?.rank || 1, track.id, user.unlockedTracks);
                       return (
@@ -684,7 +611,6 @@ function LetsPrepContent() {
                             <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm", track.bg, track.color)}>{track.icon}</div>
                             <div>
                               <h4 className="font-black text-lg text-foreground">{track.name}</h4>
-                              <p className="text-xs text-muted-foreground font-medium">{track.desc}</p>
                             </div>
                           </CardContent>
                         </Card>
@@ -696,7 +622,6 @@ function LetsPrepContent() {
 
               <div className="lg:col-span-4 space-y-6">
                 <Card className="border-none shadow-xl rounded-[2.25rem] bg-foreground text-background p-8 relative overflow-hidden group active:scale-[0.98] transition-all">
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
                   <CardHeader className="p-0 mb-6"><CardTitle className="text-xl font-black tracking-tight flex items-center gap-3"><ShieldCheck className="w-6 h-6 text-primary" /> Verified Hub</CardTitle></CardHeader>
                   <CardContent className="p-0 space-y-8">
                     <div className="space-y-1"><p className="text-4xl font-black text-primary">3.5K+</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Curated Items</p></div>

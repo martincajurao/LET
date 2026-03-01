@@ -6,7 +6,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Link from 'next/link';
 import { 
   GraduationCap, 
-  ChevronDown, 
   User, 
   History, 
   LogOut, 
@@ -74,9 +73,7 @@ export function Navbar() {
   const { toast } = useToast();
   const router = useRouter();
   const { isDark, toggleDarkMode } = useTheme();
-  const isMobile = useIsMobile();
   const [showAdModal, setShowAdModal] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAlertsModal, setShowAlertsModal] = useState(false);
   const [watchingAd, setWatchingAd] = useState(false);
   const [verifyingAd, setVerifyingAd] = useState(false);
@@ -117,7 +114,7 @@ export function Navbar() {
     };
 
     calculateCounts();
-    const interval = setInterval(calculateCounts, 5000); // Pulse every 5s for counts
+    const interval = setInterval(calculateCounts, 5000);
     return () => clearInterval(interval);
   }, [user]);
 
@@ -125,18 +122,15 @@ export function Navbar() {
     if (!user || !firestore || watchingAd) return;
     
     if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
-      toast({ title: "Allowance Reached", description: "Daily professional limit met.", variant: "destructive" });
+      toast({ title: "Allowance Reached", description: "Daily limit reached.", variant: "destructive" });
       return;
     }
     
     setWatchingAd(true);
     setVerifyingAd(false);
 
-    // Hard playback delay (3.5s)
     setTimeout(async () => {
       setVerifyingAd(true);
-      
-      // Professional verification (1.5s)
       setTimeout(async () => {
         try {
           const userDocRef = doc(firestore, 'users', user.uid);
@@ -147,15 +141,11 @@ export function Navbar() {
             dailyAdCount: increment(1)
           });
           await refreshUser();
-          toast({ 
-            variant: "reward",
-            title: "Growth Boost Received!", 
-            description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 AI Credits added to vault.` 
-          });
+          toast({ variant: "reward", title: "Growth Boost Received!", description: `+${XP_REWARDS.AD_WATCH_XP} XP earned.` });
           setShowAdModal(false);
           setShowAlertsModal(false);
         } catch (e) {
-          toast({ variant: "destructive", title: "Sync Failed", description: "Could not verify reward." });
+          toast({ variant: "destructive", title: "Sync Failed", description: "Verification failed." });
         } finally {
           setWatchingAd(false);
           setVerifyingAd(false);
@@ -198,26 +188,24 @@ export function Navbar() {
     },
   ];
 
-  // HIDE NAVBAR COMPLETELY IF NOT LOGGED IN
+  // STRICT VISIBILITY: Navbar is hidden completely for guests
   if (loading || !user) return null;
 
   return (
     <>
-      <nav className="min-h-16 pt-[env(safe-area-inset-top)] flex items-center justify-between px-4 md:px-8 bg-background/80 backdrop-blur-xl border-b sticky top-0 z-[100] transition-all duration-300 shadow-sm">
+      <nav className="min-h-16 pt-[env(safe-area-inset-top)] flex items-center justify-between px-4 md:px-8 bg-background/80 backdrop-blur-xl border-b sticky top-0 z-[100] shadow-sm">
         <div className="h-16 flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-10 h-10 bg-primary rounded-[1rem] flex items-center justify-center shadow-lg shadow-primary/25 transition-transform group-active:scale-95">
+              <div className="w-10 h-10 bg-primary rounded-[1rem] flex items-center justify-center shadow-lg shadow-primary/25">
                 <GraduationCap className="text-primary-foreground w-6 h-6" />
               </div>
               <div className="hidden sm:block">
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-black tracking-tight text-foreground block leading-none">LET's Prep</span>
-                  {user && (
-                    <Badge variant="outline" className="h-5 px-2 font-black text-[9px] border-primary/20 text-primary bg-primary/5">
-                      {rankData?.title} (Rank {rankData?.rank})
-                    </Badge>
-                  )}
+                  <Badge variant="outline" className="h-5 px-2 font-black text-[9px] border-primary/20 text-primary bg-primary/5">
+                    Rank {rankData?.rank}
+                  </Badge>
                 </div>
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                   Professional Ranking
@@ -227,68 +215,62 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            {user && (
-              <div className="hidden lg:flex flex-col items-end gap-1 min-w-[120px] mr-2">
-                <div className="flex justify-between w-full px-1">
-                  <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">{rankData?.title}</span>
-                  <span className="text-[8px] font-black text-primary">{Math.round(rankData?.progress || 0)}%</span>
-                </div>
-                <Progress value={rankData?.progress} className="h-1 w-full bg-muted" />
+            <div className="hidden lg:flex flex-col items-end gap-1 min-w-[120px] mr-2">
+              <div className="flex justify-between w-full px-1">
+                <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">{rankData?.title}</span>
+                <span className="text-[8px] font-black text-primary">{Math.round(rankData?.progress || 0)}%</span>
               </div>
-            )}
+              <Progress value={rankData?.progress} className="h-1 w-full bg-muted" />
+            </div>
 
             <div className="flex items-center gap-1 sm:gap-2">
-              {user && (
-                <div className="hidden md:block">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="flex items-center gap-2 p-1 px-3 rounded-full hover:bg-muted transition-all border border-transparent hover:border-border outline-none">
-                        <Menu className="w-5 h-5 text-foreground" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56 mt-2 rounded-2xl border bg-card shadow-2xl p-2" align="end">
-                      <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground px-3 py-2">Quick Navigation</DropdownMenuLabel>
-                      {navItems.map((item) => (
-                        <DropdownMenuItem key={item.label} asChild onSelect={(e) => {
-                          if (item.onClick) {
-                            e.preventDefault();
-                            item.onClick();
-                          }
-                        }}>
-                          {item.onClick ? (
-                            <div className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
-                              <div className="text-primary">{item.icon}</div>
-                              {item.label}
-                            </div>
-                          ) : (
-                            <Link href={item.href} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
-                              <div className="text-primary">{item.icon}</div>
-                              {item.label}
-                            </Link>
-                          )}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              )}
+              <div className="hidden md:block">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 p-1 px-3 rounded-full hover:bg-muted transition-all border border-transparent hover:border-border outline-none">
+                      <Menu className="w-5 h-5 text-foreground" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 mt-2 rounded-2xl border bg-card shadow-2xl p-2" align="end">
+                    <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground px-3 py-2">Quick Navigation</DropdownMenuLabel>
+                    {navItems.map((item) => (
+                      <DropdownMenuItem key={item.label} asChild onSelect={(e) => {
+                        if (item.onClick) {
+                          e.preventDefault();
+                          item.onClick();
+                        }
+                      }}>
+                        {item.onClick ? (
+                          <div className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
+                            <div className="text-primary">{item.icon}</div>
+                            {item.label}
+                          </div>
+                        ) : (
+                          <Link href={item.href} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
+                            <div className="text-primary">{item.icon}</div>
+                            {item.label}
+                          </Link>
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
 
               <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-muted" onClick={toggleDarkMode}>
                 {isDark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-slate-600" />}
               </Button>
               
-              {user && (
-                <div 
-                  className="flex items-center gap-2 bg-muted/40 hover:bg-accent/10 px-3 sm:px-4 py-2 rounded-2xl border border-border/50 cursor-pointer transition-all active:scale-95 group"
-                  onClick={() => setShowAdModal(true)}
-                >
-                  <div className="w-5 h-5 rounded-full bg-yellow-500/10 flex items-center justify-center">
-                    <Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current animate-sparkle" />
-                  </div>
-                  <span className="text-sm font-black text-foreground">{typeof user.credits === 'number' ? user.credits : 0}</span>
-                  <Zap className="w-3 h-3 text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
+              <div 
+                className="flex items-center gap-2 bg-muted/40 hover:bg-accent/10 px-3 sm:px-4 py-2 rounded-2xl border border-border/50 cursor-pointer transition-all active:scale-95 group"
+                onClick={() => setShowAdModal(true)}
+              >
+                <div className="w-5 h-5 rounded-full bg-yellow-500/10 flex items-center justify-center">
+                  <Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current animate-sparkle" />
                 </div>
-              )}
+                <span className="text-sm font-black text-foreground">{typeof user.credits === 'number' ? user.credits : 0}</span>
+                <Zap className="w-3 h-3 text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
+              </div>
             </div>
 
             <DropdownMenu>
@@ -356,33 +338,27 @@ export function Navbar() {
             <div className="w-16 h-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-2">
               {verifyingAd ? <ShieldAlert className="w-8 h-8 text-primary animate-pulse" /> : <Zap className="w-8 h-8 text-primary" />}
             </div>
-            <DialogTitle className="text-2xl font-black text-center">{verifyingAd ? "Verifying Access..." : "Refill AI Credits"}</DialogTitle>
+            <DialogTitle className="text-2xl font-black text-center">{verifyingAd ? "Verifying..." : "Refill AI Credits"}</DialogTitle>
             <DialogDescription className="text-center text-muted-foreground font-medium">
-              {verifyingAd ? "Our system is validating your professional viewing." : "Watch a professional tutorial to earn "}<span className="text-primary font-black">+5 AI Credits</span>.
+              Watch a professional tutorial to earn <span className="text-primary font-black">+5 AI Credits</span>.
             </DialogDescription>
           </DialogHeader>
           
           <div className="py-10 flex flex-col items-center justify-center bg-muted/30 rounded-[2rem] border-2 border-dashed border-border/50 relative overflow-hidden">
-            {watchingAd && !verifyingAd && (
-              <div className="absolute inset-0 bg-primary/5 animate-pulse" />
-            )}
             <Play className={cn("w-14 h-14 transition-all duration-500", watchingAd ? "text-primary scale-110" : "text-primary opacity-20")} />
-            <div className="flex flex-col items-center mt-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Status</p>
-              <p className="text-sm font-bold text-center px-6 leading-tight">
-                {watchingAd ? "Please complete the clip to claim your reward." : `Daily Allowance: ${user?.dailyAdCount || 0} / ${DAILY_AD_LIMIT}`}
-              </p>
-            </div>
+            <p className="text-xs font-bold text-center mt-4 px-6 leading-tight">
+              {watchingAd ? "Please complete the clip." : `Daily Allowance: ${user?.dailyAdCount || 0} / ${DAILY_AD_LIMIT}`}
+            </p>
           </div>
 
           <DialogFooter className="flex-col gap-3">
             <Button 
-              className="w-full h-14 font-black rounded-2xl text-lg gap-3 shadow-lg shadow-primary/30 active:scale-[0.98] transition-all" 
+              className="w-full h-14 font-black rounded-2xl text-lg gap-3 shadow-lg bg-primary text-primary-foreground active:scale-[0.98] transition-all" 
               onClick={handleWatchAd} 
               disabled={watchingAd || (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT}
             >
-              {verifyingAd ? <Loader2 className="w-6 h-6 animate-spin" /> : watchingAd ? <div className="flex items-center gap-2">Watching... <Loader2 className="w-4 h-4 animate-spin" /></div> : <Play className="w-6 h-6 fill-current" />}
-              {!watchingAd && ((user?.dailyAdCount || 0) >= DAILY_AD_LIMIT ? "Limit Reached" : "Watch & Earn +5")}
+              {verifyingAd ? <Loader2 className="w-6 h-6 animate-spin" /> : watchingAd ? "Watching..." : <Play className="w-6 h-6 fill-current" />}
+              {!watchingAd && "Watch & Earn +5"}
             </Button>
             {!watchingAd && (
               <Button variant="ghost" className="w-full font-bold text-muted-foreground" onClick={() => setShowAdModal(false)}>Maybe Later</Button>
