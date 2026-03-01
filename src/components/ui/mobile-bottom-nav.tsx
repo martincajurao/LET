@@ -46,10 +46,15 @@ function NavContent() {
   const [availableTasksCount, setAvailableTasksCount] = useState(0);
   const [claimableTasksCount, setClaimableTasksCount] = useState(0);
 
+  // Memoized System Config Reference to prevent redundant re-subscriptions
+  const configDocRef = useMemo(() => {
+    if (!firestore) return null;
+    return doc(firestore, "system_configs", "global");
+  }, [firestore]);
+
   useEffect(() => {
-    if (!firestore) return;
-    const docRef = doc(firestore, "system_configs", "global");
-    const unsub = onSnapshot(docRef, (snap) => {
+    if (!configDocRef) return;
+    const unsub = onSnapshot(configDocRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         setLimits({
@@ -60,12 +65,12 @@ function NavContent() {
       }
     }, (error) => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: docRef.path,
+        path: configDocRef.path,
         operation: 'get'
       }));
     });
     return () => unsub();
-  }, [firestore]);
+  }, [configDocRef]);
 
   useEffect(() => {
     if (!user) {

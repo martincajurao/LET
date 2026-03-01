@@ -53,9 +53,9 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
 
-    // System Config
+    // System Config - Ensure globally readable for simulation calibration
     match /system_configs/{configId} {
-      allow read: if true;
+      allow read, get, list: if true;
       allow write: if false;
     }
   }

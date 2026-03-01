@@ -187,10 +187,15 @@ function LetsPrepContent() {
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
+  // Memoized System Config Reference
+  const configDocRef = useMemo(() => {
+    if (!firestore) return null;
+    return doc(firestore, "system_configs", "global");
+  }, [firestore]);
+
   useEffect(() => {
-    if (!firestore) return;
-    const docRef = doc(firestore, "system_configs", "global");
-    const unsub = onSnapshot(docRef, (snap) => {
+    if (!configDocRef) return;
+    const unsub = onSnapshot(configDocRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         setTimePerQuestion(data.timePerQuestion || 60);
@@ -198,21 +203,26 @@ function LetsPrepContent() {
       }
     }, (error) => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: docRef.path,
+        path: configDocRef.path,
         operation: 'get'
       }));
     });
     return () => unsub();
-  }, [firestore]);
+  }, [configDocRef]);
 
-  useEffect(() => {
-    if (!user || !firestore) return;
-    const q = query(
+  // Memoized Results Query Reference
+  const resultsQuery = useMemo(() => {
+    if (!user || !firestore) return null;
+    return query(
       collection(firestore, "exam_results"), 
       where("userId", "==", user.uid),
       limit(100)
     );
-    const unsub = onSnapshot(q, (snap) => {
+  }, [user?.uid, firestore]);
+
+  useEffect(() => {
+    if (!resultsQuery) return;
+    const unsub = onSnapshot(resultsQuery, (snap) => {
       const count = snap.size;
       setUserRank(count > 0 ? `#${count}` : '---');
     }, (error) => {
@@ -222,7 +232,7 @@ function LetsPrepContent() {
       }));
     });
     return () => unsub();
-  }, [user, firestore]);
+  }, [resultsQuery]);
 
   useEffect(() => {
     if (!user) return;
