@@ -226,6 +226,7 @@ function LetsPrepContent() {
   useEffect(() => {
     if (user && startParam && !loading && state === 'dashboard') {
       startExam(startParam);
+      // Clean up the URL
       const newUrl = window.location.pathname;
       window.history.replaceState({}, '', newUrl);
     }
@@ -352,18 +353,22 @@ function LetsPrepContent() {
 
     const resultsData = sanitizeData({ userId: user.uid, displayName: user.displayName || 'Guest Educator', timestamp: now, overallScore, timeSpent, xpEarned, results, lastActiveDate: serverTimestamp() });
 
-    const docRef = await addDoc(collection(firestore, "exam_results"), resultsData);
-    setNewResultId(docRef.id);
-    await updateDoc(doc(firestore, 'users', user.uid), { 
-      dailyQuestionsAnswered: increment(currentQuestions.length), 
-      xp: increment(xpEarned), 
-      lastActiveDate: serverTimestamp() 
-    });
-    await refreshUser();
-
-    setLoading(false);
-    if (isQuickFire) setState('quickfire_results');
-    else setState('results');
+    try {
+      const docRef = await addDoc(collection(firestore, "exam_results"), resultsData);
+      setNewResultId(docRef.id);
+      await updateDoc(doc(firestore, 'users', user.uid), { 
+        dailyQuestionsAnswered: increment(currentQuestions.length), 
+        xp: increment(xpEarned), 
+        lastActiveDate: serverTimestamp() 
+      });
+      await refreshUser();
+    } catch (e) {
+      console.error("Result sync error:", e);
+    } finally {
+      setLoading(false);
+      if (isQuickFire) setState('quickfire_results');
+      else setState('results');
+    }
   };
 
   const handleFeedbackSubmit = async () => {
@@ -407,7 +412,6 @@ function LetsPrepContent() {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-background text-foreground font-body" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined }}>
       <Toaster />
       
-      {/* Loading Overlay */}
       <AnimatePresence>
         {loading && (
           <motion.div 

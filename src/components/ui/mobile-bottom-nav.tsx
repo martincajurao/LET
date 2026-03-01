@@ -132,7 +132,7 @@ function NavContent() {
   };
 
   // Safe early return for Guests AFTER hooks
-  if (authLoading || !user) return null;
+  if (!user) return null;
 
   const navItems = [
     { id: 'home', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, href: '/dashboard' },

@@ -138,7 +138,7 @@ export function Navbar() {
   };
 
   // Safe early return for Guests AFTER hooks
-  if (loading || !user) return null;
+  if (!user) return null;
 
   const navItems = [
     { label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, href: '/dashboard' },
@@ -148,7 +148,7 @@ export function Navbar() {
         <div className="relative">
           <ListTodo className="w-4 h-4" />
           {claimableTasksCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-3-3 bg-primary text-primary-foreground text-[7px] font-black rounded-full flex items-center justify-center border border-card shadow-sm animate-bounce">
+            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary text-primary-foreground text-[7px] font-black rounded-full flex items-center justify-center border border-card shadow-sm animate-bounce">
               {claimableTasksCount}
             </span>
           )}
@@ -301,6 +301,7 @@ export function Navbar() {
             <div className="w-16 h-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-2">
               {verifyingAd ? <ShieldAlert className="w-8 h-8 text-primary animate-pulse" /> : <Zap className="w-8 h-8 text-primary" />}
             </div>
+            <DialogTitle className="text-2xl font-black text-center">{verifyingAd ? "Verifying..." : "Refill AI Credits"}</DialogTitle>
             <DialogTitle className="text-2xl font-black text-center">{verifyingAd ? "Verifying..." : "Refill AI Credits"}</DialogTitle>
             <DialogDescription className="text-center text-muted-foreground font-medium">Watch a professional tutorial to earn <span className="text-primary font-black">+5 AI Credits</span>.</DialogDescription>
           </DialogHeader>
