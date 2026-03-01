@@ -128,7 +128,6 @@ function LetsPrepContent() {
   const { user, loading: authLoading, loginWithGoogle, loginWithFacebook, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { isDark, toggleDarkMode } = useTheme();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
