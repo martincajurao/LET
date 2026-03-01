@@ -47,7 +47,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, getCareerRankTitle, DAILY_AD_LIMIT } from '@/lib/xp-system';
+import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, getCareerRankTitle, DAILY_AD_LIMIT, MIN_QUICK_FIRE_TIME } from '@/lib/xp-system';
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
@@ -126,7 +126,7 @@ function LetsPrepContent() {
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const pullStartY = React.useRef<number | null>(null);
+  pullStartY = React.useRef<number | null>(null);
   
   const [newResultId, setNewResultId] = useState<string | undefined>(undefined);
 
@@ -284,6 +284,17 @@ function LetsPrepContent() {
     
     const isQuickFire = currentQuestions.length <= 5;
     const now = Date.now();
+
+    // ABUSE PREVENTION: Speed Check for Quick Fire
+    if (isQuickFire && timeSpent < MIN_QUICK_FIRE_TIME) {
+      toast({ 
+        variant: "destructive", 
+        title: "Calibration Divergence", 
+        description: "Professional trace was too rapid. Please engage with pedagogical content deeply to earn rewards." 
+      });
+      setState('dashboard');
+      return;
+    }
 
     // ABUSE PREVENTION: Final write check for Quick Fire
     if (isQuickFire) {

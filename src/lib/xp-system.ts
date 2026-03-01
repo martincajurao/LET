@@ -1,3 +1,4 @@
+
 /**
  * Professional Growth (XP) Utility
  * Defines career progression, tiered unlock ranks, and scaling reward structures.
@@ -33,6 +34,11 @@ export const COOLDOWNS = {
   AD_XP: 30 * 60 * 1000, // 30 minutes
   QUICK_FIRE: 60 * 60 * 1000 // 1 hour
 };
+
+// ANTI-ABUSE THRESHOLDS
+export const MIN_QUESTION_TIME = 3; // Minimum seconds per question
+export const MIN_QUICK_FIRE_TIME = 15; // Minimum seconds for 5 items
+export const MIN_QOTD_TIME = 3; // Minimum seconds for QOTD
 
 // PROFITABILITY CONFIGURATION
 export const DAILY_AD_LIMIT = 20; // Maximum profitable clips per day

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -15,11 +16,14 @@ import {
   ChevronRight,
   Lock,
   Info,
-  Loader2
+  Loader2,
+  AlertCircle,
+  Sparkles,
+  ShieldCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Question } from "@/app/lib/mock-data";
-import { XP_REWARDS } from "@/lib/xp-system";
+import { XP_REWARDS, MIN_QOTD_TIME } from "@/lib/xp-system";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface QuestionOfTheDayProps {
@@ -37,6 +41,8 @@ export function QuestionOfTheDay({
   const [showResult, setShowResult] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [readingTime, setReadingTime] = useState(0);
+  const [isReadingLocked, setIsReadingLocked] = useState(true);
 
   const alreadyClaimed = useMemo(() => {
     if (!lastClaimDate) return false;
@@ -45,8 +51,25 @@ export function QuestionOfTheDay({
     return now.toDateString() === lastClaim.toDateString();
   }, [lastClaimDate]);
 
+  useEffect(() => {
+    if (alreadyClaimed) return;
+    
+    const timer = setInterval(() => {
+      setReadingTime(prev => {
+        if (prev >= MIN_QOTD_TIME) {
+          setIsReadingLocked(false);
+          clearInterval(timer);
+          return MIN_QOTD_TIME;
+        }
+        return prev + 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [alreadyClaimed]);
+
   const handleAnswer = async (answer: string) => {
-    if (showResult || alreadyClaimed || isSubmitting) return;
+    if (showResult || alreadyClaimed || isSubmitting || isReadingLocked) return;
     
     setSelectedAnswer(answer);
     setIsSubmitting(true);
@@ -103,9 +126,16 @@ export function QuestionOfTheDay({
       
       <CardContent className="p-6 space-y-6">
         <div className={cn(
-          "p-5 rounded-2xl border-2 border-dashed transition-all",
+          "p-5 rounded-2xl border-2 border-dashed transition-all relative overflow-hidden",
           alreadyClaimed ? "bg-muted/30 border-border opacity-60" : "bg-primary/5 border-primary/20"
         )}>
+          {isReadingLocked && !alreadyClaimed && (
+            <motion.div 
+              initial={{ width: 0 }} 
+              animate={{ width: `${(readingTime / MIN_QOTD_TIME) * 100}%` }} 
+              className="absolute top-0 left-0 h-1 bg-primary/20"
+            />
+          )}
           <p className="text-lg font-black leading-snug text-foreground">{question.text}</p>
           <div className="flex items-center gap-2 mt-4">
             <Badge variant="ghost" className="text-[8px] font-black uppercase bg-card border border-border/50 text-muted-foreground px-2">
@@ -138,23 +168,24 @@ export function QuestionOfTheDay({
               return (
                 <motion.button
                   key={index}
-                  whileTap={{ scale: 0.98 }}
+                  whileTap={!isReadingLocked ? { scale: 0.98 } : {}}
                   onClick={() => handleAnswer(option)}
-                  disabled={showResult || isSubmitting}
+                  disabled={showResult || isSubmitting || isReadingLocked}
                   className={cn(
                     "w-full p-4 rounded-xl text-left font-bold transition-all border-2 flex items-center gap-4 relative overflow-hidden",
                     showResult 
                       ? isCorrectAnswer 
                         ? "border-emerald-500 bg-emerald-500/10 text-emerald-700" 
                         : isSelected ? "border-rose-500 bg-rose-500/10 text-rose-700" : "border-border opacity-40"
-                      : isSelected ? "border-primary bg-primary/5" : "border-border hover:border-primary/20 bg-card"
+                      : isSelected ? "border-primary bg-primary/5" : "border-border hover:border-primary/20 bg-card",
+                    isReadingLocked && "opacity-50 grayscale-[0.5] cursor-wait"
                   )}
                 >
                   <div className={cn(
                     "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 border-2 transition-colors",
                     isSelected || (showResult && isCorrectAnswer) ? "bg-primary border-primary text-white" : "bg-muted border-border text-muted-foreground"
                   )}>
-                    {String.fromCharCode(65 + index)}
+                    {isReadingLocked && !showResult ? <Loader2 className="w-3 h-3 animate-spin" /> : String.fromCharCode(65 + index)}
                   </div>
                   <span className="text-sm flex-1 leading-tight">{option}</span>
                   
@@ -166,6 +197,12 @@ export function QuestionOfTheDay({
                 </motion.button>
               );
             })}
+            
+            {isReadingLocked && (
+              <p className="text-center text-[9px] font-black uppercase tracking-widest text-muted-foreground animate-pulse">
+                <ShieldCheck className="w-3 h-3 inline mr-1" /> Analytical Scan In Progress...
+              </p>
+            )}
           </div>
         )}
 
