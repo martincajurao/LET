@@ -23,8 +23,6 @@ import {
   Layers, 
   Send, 
   AlertTriangle,
-  Coffee,
-  Play,
   CheckCircle2,
   Timer,
   LayoutGrid,
@@ -66,15 +64,11 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   const [timeLeft, setTimeLeft] = useState(questions.length * (timePerQuestion || 60));
   const [startTime] = useState(Date.now());
   
-  // GAME DEV ENHANCEMENT: Focus Streaks
+  // FOCUS STREAKS
   const [correctStreak, setCorrectStreak] = useState(0);
   const [showFocusState, setShowFocusState] = useState(false);
 
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
-  const [showBreakScreen, setShowBreakScreen] = useState(false);
-  
-  const [isResting, setIsResting] = useState(false);
-  const [restSeconds, setRestSeconds] = useState(0);
 
   const handleSubmit = useCallback(() => {
     const timeSpent = Math.floor((Date.now() - startTime) / 1000);
@@ -90,26 +84,10 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     return () => clearInterval(timer);
   }, [timeLeft, handleSubmit]);
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isResting && showBreakScreen) {
-      interval = setInterval(() => {
-        setRestSeconds(prev => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isResting, showBreakScreen]);
-
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
-
-  const formatRestTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
   const handleAnswer = (val: string) => {
@@ -119,7 +97,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
     setAnswers(prev => ({ ...prev, [currentQ.id]: val }));
     
-    // GAME DEV ENHANCEMENT: Streak Logic
+    // Streak Logic
     if (isCorrectNow && !wasCorrectBefore) {
       setCorrectStreak(prev => {
         const next = prev + 1;
@@ -145,9 +123,9 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       setCurrentInPhaseIdx(prev => prev + 1);
     } else {
       if (currentPhaseIdx < groupedPhases.length - 1) {
-        setIsResting(false);
-        setRestSeconds(0);
-        setShowBreakScreen(true);
+        // Continuous flow: advance to next track automatically
+        setCurrentPhaseIdx(prev => prev + 1);
+        setCurrentInPhaseIdx(0);
       } else {
         setShowSubmitConfirm(true);
       }
@@ -194,7 +172,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
               <span className="text-xs font-black font-mono tracking-tighter">{formatTime(timeLeft)}</span>
             </div>
             
-            {/* GAME DEV: Streak Indicator */}
+            {/* Streak Indicator */}
             {correctStreak >= 3 && (
               <motion.div 
                 initial={{ scale: 0.5, opacity: 0 }}
@@ -438,68 +416,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
           </Button>
         </div>
       </footer>
-
-      <Dialog open={showBreakScreen} onOpenChange={setShowBreakScreen}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-[320px] text-center z-[1001] outline-none">
-          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="space-y-6">
-            <DialogHeader>
-              <div className="w-16 h-16 bg-emerald-500/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
-              </div>
-              <DialogTitle className="text-2xl font-black tracking-tight mb-1">Track Finalized</DialogTitle>
-              <DialogDescription className="text-muted-foreground font-bold text-xs uppercase tracking-[0.2em]">
-                Verified: <span className="text-primary">{currentPhase.subject}</span>
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="bg-muted/30 p-4 rounded-2xl border-2 border-dashed border-border/50 my-2 space-y-3 text-left">
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em]">Ascending To</span>
-                <Badge className="font-black text-[9px] uppercase bg-primary text-primary-foreground border-none px-3">
-                  {groupedPhases[currentPhaseIdx + 1]?.subject || 'End'}
-                </Badge>
-              </div>
-              <div className="flex items-start gap-2.5 text-[10px] font-bold text-foreground leading-relaxed">
-                <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                  <Coffee className="w-4 h-4 text-orange-500" />
-                </div>
-                <p>Strategic pauses during simulations increase conceptual retention by up to 15%.</p>
-              </div>
-            </div>
-
-            <div className="grid gap-3 pt-2">
-              <Button 
-                onClick={() => {
-                  setShowBreakScreen(false);
-                  setIsResting(false);
-                  setRestSeconds(0);
-                  setCurrentPhaseIdx(prev => prev + 1);
-                  setCurrentInPhaseIdx(0);
-                }}
-                className="h-14 rounded-2xl font-black text-sm uppercase tracking-widest gap-3 shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]"
-              >
-                <Play className="w-4 h-4 fill-current" />
-                Resume Simulation
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => setIsResting(true)}
-                className={cn(
-                  "h-12 rounded-2xl font-black text-[10px] uppercase tracking-widest border-2 transition-all",
-                  isResting ? "text-orange-600 bg-orange-50 border-orange-200" : "text-muted-foreground border-border hover:bg-muted/30"
-                )}
-              >
-                {isResting ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    Resting: {formatRestTime(restSeconds)}
-                  </span>
-                ) : "Request Short Pause"}
-              </Button>
-            </div>
-          </motion.div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-8 max-w-[300px] z-[1001] outline-none">
