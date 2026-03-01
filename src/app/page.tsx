@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo, useRef } from 'react';
@@ -12,7 +13,10 @@ import {
   DialogHeader, 
   DialogTitle, 
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   GraduationCap, 
   ChevronRight, 
@@ -35,7 +39,12 @@ import {
   Timer,
   LayoutDashboard,
   Users,
-  Facebook
+  Facebook,
+  MessageSquare,
+  Mail,
+  Send,
+  Heart,
+  Info
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
@@ -149,6 +158,11 @@ function LetsPrepContent() {
   const [showRankUp, setShowRankUp] = useState(false);
   const [celebratedRank, setCelebratedRank] = useState(1);
   const [celebratedReward, setCelebratedReward] = useState(0);
+
+  // Feedback State
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (window.scrollY <= 10) {
@@ -334,12 +348,25 @@ function LetsPrepContent() {
     }
   };
 
-  useEffect(() => {
-    const startParam = searchParams.get('start');
-    if (startParam && user && firestore && !authLoading && state === 'dashboard' && !loading && !isStartingRef.current) {
-      startExam(startParam as any);
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackText.trim() || !firestore || !user) return;
+    setIsSubmittingFeedback(true);
+    try {
+      await addDoc(collection(firestore, 'feedback'), {
+        userId: user.uid,
+        userName: user.displayName,
+        text: feedbackText,
+        timestamp: serverTimestamp()
+      });
+      toast({ variant: "reward", title: "Trace Recorded!", description: "Your pedagogical insight has been added to our vault." });
+      setFeedbackText("");
+      setShowFeedbackModal(false);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Sync Failed", description: "Could not record feedback trace." });
+    } finally {
+      setIsSubmittingFeedback(false);
     }
-  }, [searchParams, user, authLoading, state, firestore]);
+  };
 
   const handleExamComplete = async (answers: Record<string, string>, timeSpent: number, confidentAnswers: Record<string, boolean>) => {
     if (!user || !firestore) return;
@@ -502,6 +529,45 @@ function LetsPrepContent() {
         </DialogContent>
       </Dialog>
 
+      {/* FEEDBACK MODAL */}
+      <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-md outline-none overflow-hidden">
+          <div className="bg-primary/10 p-10 flex flex-col items-center text-center relative">
+            <div className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center shadow-lg mb-4 relative z-10">
+              <MessageSquare className="w-8 h-8 text-primary" />
+            </div>
+            <div className="space-y-1 relative z-10">
+              <DialogTitle className="text-2xl font-black tracking-tight">Feedback Vault</DialogTitle>
+              <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest">
+                Contribute to Academic Growth
+              </DialogDescription>
+            </div>
+          </div>
+          <div className="p-8 space-y-6">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Your Suggestions</Label>
+              <Textarea 
+                value={feedbackText}
+                onChange={(e) => setFeedbackText(e.target.value)}
+                placeholder="How can we improve your board preparation experience?"
+                className="rounded-2xl min-h-[120px] border-2 p-4 text-sm font-medium resize-none focus:border-primary transition-all"
+              />
+            </div>
+            <DialogFooter className="sm:flex-col gap-3">
+              <Button 
+                onClick={handleFeedbackSubmit} 
+                disabled={isSubmittingFeedback || !feedbackText.trim()}
+                className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-primary/30"
+              >
+                {isSubmittingFeedback ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                Transmit Insight
+              </Button>
+              <Button variant="ghost" onClick={() => setShowFeedbackModal(false)} className="w-full font-bold text-muted-foreground">Discard</Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <AnimatePresence mode="wait">
         {state === 'exam' ? (
           <motion.div key="exam" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full"><ExamInterface questions={currentQuestions} timePerQuestion={timePerQuestion} onComplete={handleExamComplete} /></motion.div>
@@ -613,6 +679,66 @@ function LetsPrepContent() {
                     })}
                   </div>
                 </div>
+
+                {/* Connect & Help Section */}
+                <div className="space-y-4 pt-4">
+                  <div className="flex items-center justify-between px-2">
+                    <h3 className="text-xl font-black tracking-tight flex items-center gap-2"><Users className="w-5 h-5 text-primary" /> Support & Community</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card onClick={() => setShowFeedbackModal(true)} className="android-surface cursor-pointer border-none shadow-md3-1 rounded-[2rem] bg-card overflow-hidden group active:scale-95 transition-all">
+                      <CardContent className="p-6 flex items-center gap-5">
+                        <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-primary transition-colors duration-500">
+                          <MessageSquare className="w-7 h-7 text-primary group-hover:text-primary-foreground transition-colors duration-500" />
+                        </div>
+                        <div>
+                          <h4 className="font-black text-lg text-foreground leading-none">Send Feedback</h4>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5 leading-snug">Suggest improvements for the platform</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card onClick={() => window.location.href = 'mailto:support@letprep.app'} className="android-surface cursor-pointer border-none shadow-md3-1 rounded-[2rem] bg-card overflow-hidden group active:scale-95 transition-all">
+                      <CardContent className="p-6 flex items-center gap-5">
+                        <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-emerald-500 transition-colors duration-500">
+                          <Mail className="w-7 h-7 text-emerald-600 group-hover:text-white transition-colors duration-500" />
+                        </div>
+                        <div>
+                          <h4 className="font-black text-lg text-foreground leading-none">Contact Us</h4>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1.5 leading-snug">Direct technical trace to developers</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card onClick={() => window.open('https://facebook.com/groups/letprep', '_blank')} className="android-surface md:col-span-2 cursor-pointer border-none shadow-md3-1 rounded-[2rem] bg-foreground text-background overflow-hidden group active:scale-[0.98] transition-all relative">
+                      <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:rotate-12 transition-transform duration-700">
+                        <Facebook className="w-20 h-20" />
+                      </div>
+                      <CardContent className="p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
+                        <div className="flex items-center gap-5">
+                          <div className="w-16 h-16 bg-[#1877F2] rounded-2xl flex items-center justify-center shadow-xl">
+                            <Facebook className="w-8 h-8 text-white fill-current" />
+                          </div>
+                          <div className="space-y-1">
+                            <h4 className="text-2xl font-black tracking-tight">Join Community</h4>
+                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60">Connect with 15K+ fellow educators</p>
+                          </div>
+                        </div>
+                        <Button className="rounded-xl font-black bg-white text-black hover:bg-white/90 h-12 px-8 active:scale-95 transition-all">Visit Lounge <ChevronRight className="w-4 h-4 ml-2" /></Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                <div className="pt-8 text-center pb-12">
+                  <div className="flex items-center justify-center gap-3 mb-4">
+                    <div className="h-[1px] w-12 bg-border" />
+                    <Heart className="w-4 h-4 text-rose-500 fill-current animate-pulse" />
+                    <div className="h-[1px] w-12 bg-border" />
+                  </div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-40">Dedicated to the Filipino Educator</p>
+                  <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-2 opacity-30">© 2024 LET's Prep Simulation Engine</p>
+                </div>
               </div>
 
               <div className="lg:col-span-4 space-y-6">
@@ -622,6 +748,29 @@ function LetsPrepContent() {
                     <div className="space-y-1"><p className="text-4xl font-black text-primary">3.5K+</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Curated Items</p></div>
                     <div className="space-y-1"><p className="text-4xl font-black text-secondary">82%</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Board Readiness</p></div>
                     <div className="space-y-1"><p className="text-4xl font-black text-blue-400">100%</p><p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Free Access</p></div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-none shadow-xl rounded-[2.25rem] bg-card p-8 border border-border/50">
+                  <CardHeader className="p-0 mb-4">
+                    <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                      <Info className="w-4 h-4 text-primary" /> System Trace
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0 space-y-4">
+                    <p className="text-xs font-medium text-muted-foreground leading-relaxed">
+                      Our engine is calibrated daily against the latest board exam competencies. Submit your traces consistently to generate high-fidelity pedagogical analytics.
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex justify-between text-[9px] font-black uppercase text-muted-foreground opacity-60">
+                        <span>Engine Version</span>
+                        <span>v2.2.0-Flash</span>
+                      </div>
+                      <div className="flex justify-between text-[9px] font-black uppercase text-muted-foreground opacity-60">
+                        <span>Calibration Status</span>
+                        <span className="text-emerald-600">Verified</span>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
