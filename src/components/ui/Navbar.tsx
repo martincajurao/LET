@@ -15,7 +15,6 @@ import {
   Sun, 
   Bell, 
   Settings, 
-  ShieldCheck,
   Menu,
   LayoutDashboard,
   ListTodo,
@@ -66,8 +65,8 @@ export function Navbar() {
   const [claimableTasksCount, setClaimableTasksCount] = useState(0);
 
   const rankData = user ? getRankData(user.xp || 0) : null;
-
   const userRef = useRef(user);
+
   useEffect(() => { userRef.current = user; }, [user]);
 
   useEffect(() => {
@@ -140,6 +139,7 @@ export function Navbar() {
     }, 3500);
   };
 
+  // Final visibility check after all hook calls
   if (loading || !user) return null;
 
   const navItems = [

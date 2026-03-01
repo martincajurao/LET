@@ -43,7 +43,6 @@ import {
   Mail,
   Send,
   Heart,
-  Info,
   Smartphone,
   Download,
   QrCode
@@ -164,12 +163,10 @@ function LetsPrepContent() {
   const [celebratedRank, setCelebratedRank] = useState(1);
   const [celebratedReward, setCelebratedReward] = useState(0);
 
-  // APK and GitHub State
   const [apkInfo, setApkInfo] = useState<{ version: string; downloadUrl: string } | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [isApkLoading, setIsApkLoading] = useState(true);
 
-  // Feedback State
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
@@ -556,7 +553,7 @@ function LetsPrepContent() {
       </Dialog>
 
       <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-md outline-none overflow-hidden">
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-md outline-none overflow-hidden">
           <div className="bg-primary/10 p-10 flex flex-col items-center justify-center text-center relative">
             <div className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center shadow-lg mb-4 relative z-10">
               <MessageSquare className="w-8 h-8 text-primary" />
@@ -583,11 +580,17 @@ function LetsPrepContent() {
 
       <AnimatePresence mode="wait">
         {state === 'exam' ? (
-          <motion.div key="exam" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full"><ExamInterface questions={currentQuestions} timePerQuestion={timePerQuestion} onComplete={handleExamComplete} /></motion.div>
+          <motion.div key="exam" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
+            <ExamInterface questions={currentQuestions} timePerQuestion={timePerQuestion} onComplete={handleExamComplete} />
+          </motion.div>
         ) : state === 'results' ? (
-          <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4"><ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} resultId={newResultId} onRestart={() => setState('dashboard')} /></motion.div>
+          <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">
+            <ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} resultId={newResultId} onRestart={() => setState('dashboard')} />
+          </motion.div>
         ) : state === 'quickfire_results' ? (
-          <motion.div key="quickfire_results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4"><QuickFireResults questions={currentQuestions} answers={examAnswers} timeSpent={examTime} xpEarned={lastXpEarned} onRestart={() => setState('dashboard')} /></motion.div>
+          <motion.div key="quickfire_results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">
+            <QuickFireResults questions={currentQuestions} answers={examAnswers} timeSpent={examTime} xpEarned={lastXpEarned} onRestart={() => setState('dashboard')} />
+          </motion.div>
         ) : (
           <motion.div key="dashboard" variants={containerVariants} initial="hidden" animate="show" className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
             <motion.div variants={containerVariants} className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -685,9 +688,7 @@ function LetsPrepContent() {
                 </motion.div>
 
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between px-2">
-                    <h3 className="text-xl font-black tracking-tight flex items-center gap-2"><Target className="w-5 h-5 text-primary" /> Training Zones</h3>
-                  </div>
+                  <h3 className="text-xl font-black tracking-tight flex items-center gap-2"><Target className="w-5 h-5 text-primary" /> Training Zones</h3>
                   <motion.div variants={containerVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
                       { id: 'General Education', name: 'Gen Ed', icon: <Languages />, color: 'text-blue-500', bg: 'bg-blue-500/10', rnk: UNLOCK_RANKS.GENERAL_ED },
@@ -708,7 +709,7 @@ function LetsPrepContent() {
                             )}
                             <CardContent className="p-6 space-y-4">
                               <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm", track.bg, track.color)}>{track.icon}</div>
-                              <div><h4 className="font-black text-lg text-foreground">{track.name}</h4></div>
+                              <h4 className="font-black text-lg text-foreground">{track.name}</h4>
                             </CardContent>
                           </Card>
                         </motion.div>
@@ -718,9 +719,7 @@ function LetsPrepContent() {
                 </div>
 
                 <div className="space-y-4 pt-4">
-                  <div className="flex items-center justify-between px-2">
-                    <h3 className="text-xl font-black tracking-tight flex items-center gap-2"><Users className="w-5 h-5 text-primary" /> Support & Community</h3>
-                  </div>
+                  <h3 className="text-xl font-black tracking-tight flex items-center gap-2"><Users className="w-5 h-5 text-primary" /> Support & Community</h3>
                   <motion.div variants={containerVariants} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <motion.div variants={itemVariants} whileTap={{ scale: 0.97 }}>
                       <Card onClick={() => setShowFeedbackModal(true)} className="android-surface h-full cursor-pointer border-none shadow-md3-1 rounded-[2rem] bg-card overflow-hidden group transition-all">
@@ -812,7 +811,7 @@ function LetsPrepContent() {
                     </CardContent>
                   </Card>
                 </motion.div>
-              </div>
+              </motion.div>
             </div>
           </motion.div>
         )}
