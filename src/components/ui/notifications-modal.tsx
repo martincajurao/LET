@@ -60,7 +60,7 @@ export function NotificationsModal({
   }, [isOpen]);
 
   useEffect(() => {
-    if (!userRef.current || !isOpen) return;
+    if (!isOpen) return;
 
     const calculateTime = () => {
       const currentUser = userRef.current;
@@ -80,9 +80,15 @@ export function NotificationsModal({
   }, [isOpen]);
 
   const formatTime = (ms: number) => {
-    const mins = Math.ceil(ms / (1000 * 60));
-    if (mins >= 60) return `${Math.floor(mins / 60)}h ${mins % 60}m`;
-    return `${mins}m`;
+    const totalSeconds = Math.ceil(ms / 1000);
+    if (totalSeconds >= 3600) {
+      const hours = Math.floor(totalSeconds / 3600);
+      const mins = Math.floor((totalSeconds % 3600) / 60);
+      return `${hours}h ${mins}m`;
+    }
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const adReachedLimit = (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT;
@@ -133,7 +139,10 @@ export function NotificationsModal({
               {qfAvailable ? (
                 <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[9px] uppercase">Ready</Badge>
               ) : (
-                <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground bg-background px-2 py-1 rounded-lg">
+                <div className={cn(
+                  "flex items-center gap-1.5 text-[10px] font-black font-mono px-2 py-1 rounded-lg transition-colors",
+                  qfTimeLeft < 60000 ? "text-amber-600 bg-amber-50 animate-pulse" : "text-muted-foreground bg-background"
+                )}>
                   <Timer className="w-3 h-3" />
                   {formatTime(qfTimeLeft)}
                 </div>
@@ -176,7 +185,10 @@ export function NotificationsModal({
               ) : adAvailable ? (
                 <Badge className="bg-yellow-500/10 text-yellow-600 border-none font-black text-[9px] uppercase">Available</Badge>
               ) : (
-                <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground bg-background px-2 py-1 rounded-lg">
+                <div className={cn(
+                  "flex items-center gap-1.5 text-[10px] font-black font-mono px-2 py-1 rounded-lg transition-colors",
+                  adTimeLeft < 60000 ? "text-amber-600 bg-amber-50 animate-pulse" : "text-muted-foreground bg-background"
+                )}>
                   <Timer className="w-3 h-3" />
                   {formatTime(adTimeLeft)}
                 </div>

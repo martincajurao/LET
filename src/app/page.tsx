@@ -46,7 +46,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, getCareerRankTitle } from '@/lib/xp-system';
+import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, getCareerRankTitle, DAILY_AD_LIMIT } from '@/lib/xp-system';
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
@@ -330,8 +330,15 @@ function LetsPrepContent() {
   };
 
   const formatCooldown = (ms: number) => {
-    const mins = Math.ceil(ms / (1000 * 60));
-    return mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
+    const totalSeconds = Math.ceil(ms / 1000);
+    if (totalSeconds >= 3600) {
+      const hours = Math.floor(totalSeconds / 3600);
+      const mins = Math.floor((totalSeconds % 3600) / 60);
+      return `${hours}h ${mins}m`;
+    }
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   if (authLoading) return (
@@ -429,7 +436,7 @@ function LetsPrepContent() {
                       <div className="grid grid-cols-2 gap-3 pt-2">
                         <Button onClick={handleWatchXpAd} disabled={claimingXp || adCooldown > 0} variant="outline" className="h-12 rounded-xl font-bold text-xs gap-2 border-primary/20 hover:bg-primary/5 active:scale-95 transition-all">
                           {claimingXp ? <Loader2 className="w-4 h-4 animate-spin" /> : adCooldown > 0 ? <Timer className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
-                          {adCooldown > 0 ? formatCooldown(adCooldown) : "XP Boost Clip"}
+                          <span className={cn(adCooldown > 0 && "font-mono")}>{adCooldown > 0 ? formatCooldown(adCooldown) : "XP Boost Clip"}</span>
                         </Button>
                         <Button onClick={() => router.push('/dashboard')} variant="default" className="h-12 rounded-xl font-bold text-xs gap-2 shadow-lg shadow-primary/20">
                           <LayoutDashboard className="w-4 h-4" />
