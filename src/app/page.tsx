@@ -512,19 +512,6 @@ function LetsPrepContent() {
         ) : (
           <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
             
-            {/* PUBLIC HEADER FOR GUESTS */}
-            {!user && (
-              <div className="flex items-center justify-between px-2 mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shadow-lg">
-                    <GraduationCap className="text-primary-foreground w-6 h-6" />
-                  </div>
-                  <h1 className="text-xl font-black tracking-tighter">LET's Prep</h1>
-                </div>
-                <Button onClick={() => setShowAuthModal(true)} className="rounded-2xl h-10 px-6 font-black text-xs uppercase tracking-widest shadow-md shadow-primary/20">Sign In</Button>
-              </div>
-            )}
-
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {displayStats.map((stat, i) => (
                 <div key={i} className="android-surface rounded-2xl p-3 flex items-center gap-3">
@@ -582,7 +569,15 @@ function LetsPrepContent() {
                       <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-foreground">Prepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
                       <p className="text-muted-foreground font-medium md:text-xl max-w-lg">High-fidelity simulations with AI analysis tailored for Filipino educators.</p>
                     </div>
-                    <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all group"><Zap className="w-6 h-6 fill-current" /> <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" /></Button>
+                    {user ? (
+                      <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all group">
+                        <Zap className="w-6 h-6 fill-current" /> <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                    ) : (
+                      <Button size="lg" onClick={() => setShowAuthModal(true)} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all">
+                        <ShieldCheck className="w-6 h-6" /> <span>Sign In to Launch</span>
+                      </Button>
+                    )}
                   </div>
                 </Card>
 

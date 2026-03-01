@@ -80,6 +80,9 @@ export function Navbar() {
   const [availableTasksCount, setAvailableTasksCount] = useState(0);
   const [claimableTasksCount, setClaimableTasksCount] = useState(0);
 
+  // STRICT VISIBILITY: Navbar is hidden completely for guests
+  if (loading || !user) return null;
+
   const rankData = user ? getRankData(user.xp || 0) : null;
 
   const userRef = useRef(user);
@@ -187,9 +190,6 @@ export function Navbar() {
       onClick: () => setShowAlertsModal(true)
     },
   ];
-
-  // STRICT VISIBILITY: Navbar is hidden completely for guests
-  if (loading || !user) return null;
 
   return (
     <>

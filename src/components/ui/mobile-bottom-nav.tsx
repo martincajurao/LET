@@ -46,6 +46,9 @@ function NavContent() {
   const [availableTasksCount, setAvailableTasksCount] = useState(0);
   const [claimableTasksCount, setClaimableTasksCount] = useState(0);
 
+  // STRICT VISIBILITY: Bottom Nav is hidden completely for guests
+  if (authLoading || !user) return null;
+
   // Memoized System Config Reference to prevent redundant re-subscriptions
   const configDocRef = useMemo(() => {
     if (!firestore) return null;
@@ -202,8 +205,6 @@ function NavContent() {
     if (item.id === 'notifications' && isAlertsOpen) return true;
     return false;
   };
-
-  if (authLoading) return null;
 
   return (
     <>
