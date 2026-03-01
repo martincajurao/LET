@@ -43,8 +43,12 @@ import {
   Mail,
   Send,
   Heart,
-  Info
+  Info,
+  Smartphone,
+  Download,
+  QrCode
 } from "lucide-react";
+import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
 import { QuickFireResults } from "@/components/exam/QuickFireResults";
@@ -73,6 +77,8 @@ const GoogleIcon = () => (
 );
 
 type AppState = 'dashboard' | 'exam' | 'results' | 'quickfire_results' | 'onboarding';
+
+const GITHUB_APK_URL = "https://github.com/martincajurao/LET/releases/download/V2.1.0/let.apk";
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array];
@@ -158,6 +164,11 @@ function LetsPrepContent() {
   const [celebratedRank, setCelebratedRank] = useState(1);
   const [celebratedReward, setCelebratedReward] = useState(0);
 
+  // APK and GitHub State
+  const [apkInfo, setApkInfo] = useState<{ version: string; downloadUrl: string } | null>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
+  const [isApkLoading, setIsApkLoading] = useState(true);
+
   // Feedback State
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
@@ -202,6 +213,38 @@ function LetsPrepContent() {
   };
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
+
+  useEffect(() => {
+    const fetchLatestApk = async () => {
+      try {
+        setIsApkLoading(true);
+        // Fetch latest release from GitHub dynamically
+        const response = await fetch('https://api.github.com/repos/martincajurao/LET/releases/latest');
+        let downloadUrl = GITHUB_APK_URL;
+        let version = "2.1.0";
+
+        if (response.ok) {
+          const data = await response.json();
+          const apkAsset = data.assets?.find((a: any) => a.name.endsWith('.apk'));
+          if (apkAsset) {
+            downloadUrl = apkAsset.browser_download_url;
+            version = data.tag_name.replace(/^V/, '');
+          }
+        }
+
+        setApkInfo({ version, downloadUrl });
+        const qr = await QRCode.toDataURL(downloadUrl, { width: 256, margin: 2, color: { dark: '#10b981', light: '#ffffff' } });
+        setQrCodeUrl(qr);
+      } catch (e) {
+        console.error("Failed to fetch APK info:", e);
+        // Fallback to static link
+        setApkInfo({ version: "2.1.0", downloadUrl: GITHUB_APK_URL });
+      } finally {
+        setIsApkLoading(false);
+      }
+    };
+    fetchLatestApk();
+  }, []);
 
   useEffect(() => {
     if (user && rankData && user.lastRewardedRank && rankData.rank > user.lastRewardedRank) {
@@ -467,6 +510,12 @@ function LetsPrepContent() {
     }, 3500);
   };
 
+  const handleDownloadApk = () => {
+    const url = apkInfo?.downloadUrl || GITHUB_APK_URL;
+    window.location.href = url;
+    toast({ title: "Downloading APK", description: "Directing to secure release trace." });
+  };
+
   const formatTime = (ms: number) => {
     const totalSeconds = Math.ceil(ms / 1000);
     const mins = Math.floor(totalSeconds / 60);
@@ -492,7 +541,6 @@ function LetsPrepContent() {
     { icon: <Trophy className="w-4 h-4 text-yellow-500" />, label: 'Readiness', value: '82%', color: 'text-yellow-500 bg-yellow-500/5' }
   ];
 
-  // Animation variants for staggered entrance
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -800,6 +848,61 @@ function LetsPrepContent() {
               </div>
 
               <motion.div variants={containerVariants} className="lg:col-span-4 space-y-6">
+                {/* Mobile App Section */}
+                <motion.div variants={itemVariants}>
+                  <Card className="android-surface border-none shadow-xl rounded-[2.25rem] bg-gradient-to-br from-emerald-500/20 via-card to-background p-6 overflow-hidden transition-all group active:scale-[0.98]">
+                    <div className="space-y-5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center shadow-inner">
+                            <Smartphone className="w-6 h-6 text-emerald-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-black text-lg text-foreground leading-tight">Get Mobile App</h3>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">Study Anywhere</p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="font-black text-[9px] border-emerald-500/30 text-emerald-600 bg-emerald-500/5 uppercase">
+                          {isApkLoading ? '---' : `v${apkInfo?.version}`}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex flex-col items-center justify-center p-5 bg-card rounded-[2rem] border-2 border-dashed border-emerald-500/20 relative overflow-hidden shadow-inner">
+                        <AnimatePresence mode="wait">
+                          {isApkLoading ? (
+                            <motion.div key="loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-32 h-32 flex items-center justify-center">
+                              <Loader2 className="w-8 h-8 text-emerald-300 animate-spin" />
+                            </motion.div>
+                          ) : qrCodeUrl ? (
+                            <motion.div key="qr" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center">
+                              <div className="w-32 h-32 relative z-10 bg-white p-1 rounded-xl shadow-md border border-emerald-100">
+                                <img src={qrCodeUrl} alt="Download QR" className="w-full h-full object-contain" />
+                              </div>
+                              <div className="flex items-center gap-2 mt-3 text-emerald-600">
+                                <QrCode className="w-3.5 h-3.5" />
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em]">Scan to Install</p>
+                              </div>
+                            </motion.div>
+                          ) : null}
+                        </AnimatePresence>
+                      </div>
+
+                      <Button 
+                        onClick={handleDownloadApk}
+                        disabled={isApkLoading}
+                        className="w-full h-14 rounded-2xl font-black gap-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl shadow-emerald-500/30 transition-all hover:scale-[1.02]"
+                      >
+                        {isApkLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+                        Direct Download
+                      </Button>
+                      <div className="flex items-center justify-center gap-2 text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-40">
+                        <ShieldCheck className="w-3 h-3" />
+                        <span>Dynamic Release Trace</span>
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+
                 <motion.div variants={itemVariants}>
                   <Card className="border-none shadow-xl rounded-[2.25rem] bg-foreground text-background p-8 relative overflow-hidden group active:scale-[0.98] transition-all">
                     <CardHeader className="p-0 mb-6"><CardTitle className="text-xl font-black tracking-tight flex items-center gap-3"><ShieldCheck className="w-6 h-6 text-primary" /> Verified Hub</CardTitle></CardHeader>
