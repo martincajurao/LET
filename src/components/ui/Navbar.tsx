@@ -171,12 +171,12 @@ export function Navbar() {
     }, 3500);
   };
 
-  // Visibility check placed AFTER all hooks to comply with Rules of Hooks
+  // Safe area aware visibility check
   if (!user) return null;
 
   return (
     <>
-      <nav className="min-h-16 pt-[env(safe-area-inset-top)] flex items-center justify-between px-4 md:px-8 bg-background/80 backdrop-blur-xl border-b sticky top-0 z-[100] shadow-sm">
+      <nav className="min-h-16 pt-safe flex items-center justify-between px-4 md:px-8 bg-background/80 backdrop-blur-xl border-b sticky top-0 z-[100] shadow-sm">
         <div className="h-16 flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2.5 group">

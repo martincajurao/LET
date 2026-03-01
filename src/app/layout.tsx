@@ -73,7 +73,7 @@ export default function RootLayout({
                 <Navbar />
               </Suspense>
               
-              <main className="pb-24 md:pb-8">
+              <main className="pb-24 md:pb-8 pt-safe">
                 <PageTransition>
                   <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
                     {children}
