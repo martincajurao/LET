@@ -146,6 +146,9 @@ export function DailyLoginRewards({
               const isFuture = dayNum > currentDay;
               const isVisuallyClaimed = isPast || (isCurrent && claimedToday);
               
+              const scaledXp = Math.round(reward.xp * multiplier);
+              const scaledCredits = Math.round(reward.credits * multiplier);
+
               return (
                 <motion.div 
                   key={dayNum}
@@ -153,7 +156,7 @@ export function DailyLoginRewards({
                   animate={isCurrent && !claimedToday ? { scale: [1, 1.05, 1] } : {}}
                   transition={{ duration: 2, repeat: Infinity }}
                   className={cn(
-                    "relative p-3 rounded-2xl text-center border-2 transition-all flex flex-col items-center justify-between min-h-[90px]",
+                    "relative p-2 rounded-2xl text-center border-2 transition-all flex flex-col items-center justify-between min-h-[110px]",
                     isVisuallyClaimed ? "bg-emerald-500/5 border-emerald-500/20" : 
                     isCurrent ? "bg-primary/5 border-primary shadow-lg ring-4 ring-primary/5" :
                     "bg-card border-border/50 opacity-60",
@@ -161,7 +164,7 @@ export function DailyLoginRewards({
                   )}
                 >
                   <div className={cn(
-                    "w-10 h-10 rounded-xl flex items-center justify-center mb-2 shadow-inner transition-colors",
+                    "w-9 h-9 rounded-xl flex items-center justify-center mb-1 shadow-inner transition-colors",
                     isVisuallyClaimed ? "bg-emerald-500/20" :
                     isCurrent ? "bg-primary text-primary-foreground" :
                     reward.type === 'legendary' ? "bg-amber-500 text-white" : "bg-muted"
@@ -176,7 +179,13 @@ export function DailyLoginRewards({
                       <span className="font-black text-sm">{dayNum}</span>
                     )}
                   </div>
-                  <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest leading-none">Day {dayNum}</p>
+                  
+                  <div className="flex flex-col items-center gap-0.5 mb-1">
+                    <p className="text-[10px] font-black text-foreground">{scaledXp}XP</p>
+                    <p className="text-[8px] font-bold text-muted-foreground">{scaledCredits}c</p>
+                  </div>
+
+                  <p className="text-[8px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none">Day {dayNum}</p>
                   
                   {isCurrent && !claimedToday && (
                     <motion.div 
