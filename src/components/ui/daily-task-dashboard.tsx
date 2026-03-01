@@ -4,8 +4,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useUser } from '@/firebase/auth/use-user';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/ui/progress";
+import { Badge } from "@/ui/badge";
 import { 
   Dialog,
   DialogContent,
@@ -28,14 +28,16 @@ import {
   Info,
   CheckCircle2,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Play,
+  ShieldAlert
 } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getRankData, STREAK_RECOVERY_COST } from '@/lib/xp-system';
+import { getRankData, STREAK_RECOVERY_COST, DAILY_AD_LIMIT, XP_REWARDS } from '@/lib/xp-system';
 
 interface Task {
   id: string;
@@ -60,6 +62,11 @@ export function DailyTaskDashboard() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [claimedReward, setLastClaimedReward] = useState(0);
 
+  // Insufficient Credits Dialog State
+  const [creditError, setCreditError] = useState<{ required: number; current: number } | null>(null);
+  const [watchingAdForRefill, setWatchingAdForRefill] = useState(false);
+  const [verifyingAdForRefill, setVerifyingAdForRefill] = useState(false);
+
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
   const tierMultiplier = rankData?.multiplier || 1.0;
 
@@ -83,7 +90,16 @@ export function DailyTaskDashboard() {
 
   const handleClaimReward = async (isRecovery = false) => {
     if (!user || !firestore || (claiming && !isRecovery)) return;
-    if (isRecovery) setRecovering(true); else setClaiming(true);
+    
+    if (isRecovery) {
+      if ((user.credits || 0) < STREAK_RECOVERY_COST) {
+        setCreditError({ required: STREAK_RECOVERY_COST, current: user.credits || 0 });
+        return;
+      }
+      setRecovering(true);
+    } else {
+      setClaiming(true);
+    }
 
     try {
       const readyTasks = tasks.filter(t => t.current >= t.goal && !t.isClaimed);
@@ -107,7 +123,7 @@ export function DailyTaskDashboard() {
         if (reward > 0) {
           setLastClaimedReward(reward - (isRecovery ? STREAK_RECOVERY_COST : 0));
           setShowSuccess(true);
-        } else {
+        } else if (isRecovery) {
           toast({ variant: "reward", title: "Streak Recovered!", description: "Your academic progress has been preserved." });
         }
       }
@@ -118,6 +134,40 @@ export function DailyTaskDashboard() {
       setRecovering(false);
       refreshUser();
     }
+  };
+
+  const handleRefillFromDialog = async () => {
+    if (!user || !firestore) return;
+    if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
+      toast({ title: "Limit Reached", description: "Daily allowance for clips reached.", variant: "destructive" });
+      return;
+    }
+
+    setWatchingAdForRefill(true);
+    setVerifyingAdForRefill(false);
+
+    setTimeout(async () => {
+      setVerifyingAdForRefill(true);
+      setTimeout(async () => {
+        try {
+          const userRef = doc(firestore, 'users', user.uid);
+          await updateDoc(userRef, {
+            credits: increment(5),
+            xp: increment(XP_REWARDS.AD_WATCH_XP),
+            lastAdXpTimestamp: Date.now(),
+            dailyAdCount: increment(1)
+          });
+          await refreshUser();
+          toast({ variant: "reward", title: "Refill Success!", description: "+5 Credits added to vault." });
+          setCreditError(null);
+        } catch (e) {
+          toast({ variant: "destructive", title: "Sync Failed", description: "Verification failed." });
+        } finally {
+          setWatchingAdForRefill(false);
+          setVerifyingAdForRefill(false);
+        }
+      }, 1500);
+    }, 3500);
   };
 
   return (
@@ -182,7 +232,7 @@ export function DailyTaskDashboard() {
               {claiming ? <Loader2 className="w-6 h-6 animate-spin" /> : canClaimAny ? <Gift className="w-6 h-6" /> : <Star className="w-6 h-6" />}
               {claiming ? 'Synchronizing...' : canClaimAny ? `Claim ${estimatedReward} Credits` : 'Build Readiness'}
             </Button>
-            <Button variant="outline" onClick={() => handleClaimReward(true)} disabled={recovering || (user?.credits || 0) < STREAK_RECOVERY_COST} className="h-16 rounded-[1.5rem] font-black text-xs uppercase tracking-widest gap-2 border-2 border-orange-500/20 text-orange-600 hover:bg-orange-50 active:scale-95 transition-all">
+            <Button variant="outline" onClick={() => handleClaimReward(true)} disabled={recovering} className="h-16 rounded-[1.5rem] font-black text-xs uppercase tracking-widest gap-2 border-2 border-orange-500/20 text-orange-600 hover:bg-orange-50 active:scale-95 transition-all">
               {recovering ? <Loader2 className="w-5 h-5 animate-spin" /> : <RotateCcw className="w-5 h-5" />}
               Streak Saver ({STREAK_RECOVERY_COST}c)
             </Button>
@@ -220,6 +270,57 @@ export function DailyTaskDashboard() {
               <div className="flex items-center gap-3"><div className="flex items-center gap-2 px-5 py-2.5 rounded-2xl animate-breathing-gold border-2 border-yellow-500/20 bg-background/50"><Sparkles className="w-8 h-8 text-yellow-600 fill-current animate-sparkle" /><span className="text-5xl font-black text-yellow-700">+{claimedReward}</span></div></div>
             </div>
             <Button onClick={() => setShowSuccess(false)} className="w-full h-16 rounded-[1.75rem] font-black text-lg gap-3 shadow-2xl shadow-primary/30 active:scale-95 transition-all">Continue Mission <ChevronRight className="w-5 h-5" /></Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Insufficient Credits Dialog */}
+      <Dialog open={!!creditError} onOpenChange={() => setCreditError(null)}>
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-[360px] overflow-hidden outline-none z-[1200]" hideCloseButton={watchingAdForRefill}>
+          <div className="bg-amber-500/10 p-10 flex flex-col items-center justify-center relative overflow-hidden">
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-xl relative z-10 border border-amber-200"
+            >
+              {verifyingAdForRefill ? <ShieldAlert className="w-10 h-10 text-amber-500 animate-pulse" /> : <Sparkles className="w-10 h-10 text-amber-500 fill-current animate-sparkle" />}
+            </motion.div>
+            <motion.div 
+              animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
+              transition={{ duration: 3, repeat: Infinity }}
+              className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-transparent z-0" 
+            />
+          </div>
+          
+          <div className="p-8 text-center space-y-6">
+            <div className="space-y-2">
+              <DialogHeader>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-600 mb-1">Vault Restricted</span>
+                <DialogTitle className="text-2xl font-black tracking-tight text-foreground">Refill Credits</DialogTitle>
+                <DialogDescription className="text-muted-foreground font-medium text-sm">
+                  Streak Saver requires <span className="text-foreground font-black">{creditError?.required}</span> credits but you only have <span className="text-amber-600 font-black">{creditError?.current}</span>.
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+
+            <div className="grid gap-3">
+              <Button 
+                onClick={handleRefillFromDialog}
+                disabled={watchingAdForRefill || (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT}
+                className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 shadow-lg bg-primary text-primary-foreground active:scale-95 transition-all"
+              >
+                {verifyingAdForRefill ? <Loader2 className="w-4 h-4 animate-spin" /> : watchingAdForRefill ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
+                {watchingAdForRefill ? (verifyingAdForRefill ? "Verifying..." : "Watching Clip...") : "Watch Ad for +5 Credits"}
+              </Button>
+              <Button 
+                variant="ghost" 
+                onClick={() => setCreditError(null)}
+                className="w-full h-10 rounded-xl font-bold text-muted-foreground"
+                disabled={watchingAdForRefill}
+              >
+                Maybe Later
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

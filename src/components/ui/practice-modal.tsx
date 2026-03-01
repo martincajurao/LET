@@ -19,7 +19,8 @@ import {
   AlertCircle,
   ChevronRight,
   Sparkles,
-  Trophy
+  Trophy,
+  Play
 } from 'lucide-react';
 import {
   Dialog,
@@ -27,11 +28,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { getRankData, isTrackUnlocked, UNLOCK_RANKS, getCareerRankTitle } from '@/lib/xp-system';
+import { getRankData, isTrackUnlocked, UNLOCK_RANKS, getCareerRankTitle, DAILY_AD_LIMIT, XP_REWARDS } from '@/lib/xp-system';
 import { useToast } from '@/hooks/use-toast';
-import { increment, arrayUnion } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import { increment, arrayUnion, doc, updateDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface PracticeModalProps {
@@ -49,12 +52,18 @@ export function PracticeModal({
   loading = false,
   limits = { limitGenEd: 10, limitProfEd: 10, limitSpec: 10 }
 }: PracticeModalProps) {
-  const { user, updateProfile } = useUser();
+  const { user, updateProfile, refreshUser } = useUser();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const [unlockingId, setUnlockingId] = useState<string | null>(null);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [lastUnlockedName, setLastUnlockedName] = useState("");
   
+  // Insufficient Credits Dialog State
+  const [creditError, setCreditError] = useState<{ required: number; current: number } | null>(null);
+  const [watchingAd, setWatchingAd] = useState(false);
+  const [verifyingAd, setVerifyingAd] = useState(false);
+
   const rankData = user ? getRankData(user.xp || 0) : { rank: 1 };
   const totalQuestions = limits.limitGenEd + limits.limitProfEd + limits.limitSpec;
 
@@ -141,12 +150,10 @@ export function PracticeModal({
     if (!user || unlockingId) return;
     
     const cost = mode.unlockCost;
-    if ((user.credits || 0) < cost) {
-      toast({ 
-        variant: "destructive", 
-        title: "Insufficient Credits", 
-        description: `You need ${cost} AI Credits to unlock this early.` 
-      });
+    const currentCredits = user.credits || 0;
+    
+    if (currentCredits < cost) {
+      setCreditError({ required: cost, current: currentCredits });
       return;
     }
 
@@ -165,6 +172,40 @@ export function PracticeModal({
     } finally {
       setUnlockingId(null);
     }
+  };
+
+  const handleWatchAd = async () => {
+    if (!user || !firestore) return;
+    if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
+      toast({ title: "Limit Reached", description: "Daily allowance for clips reached.", variant: "destructive" });
+      return;
+    }
+
+    setWatchingAd(true);
+    setVerifyingAd(false);
+
+    setTimeout(async () => {
+      setVerifyingAd(true);
+      setTimeout(async () => {
+        try {
+          const userRef = doc(firestore, 'users', user.uid);
+          await updateDoc(userRef, {
+            credits: increment(5),
+            xp: increment(XP_REWARDS.AD_WATCH_XP),
+            lastAdXpTimestamp: Date.now(),
+            dailyAdCount: increment(1)
+          });
+          await refreshUser();
+          toast({ variant: "reward", title: "Refill Success!", description: "+5 Credits added to vault." });
+          setCreditError(null);
+        } catch (e) {
+          toast({ variant: "destructive", title: "Sync Failed", description: "Verification failed." });
+        } finally {
+          setWatchingAd(false);
+          setVerifyingAd(false);
+        }
+      }, 1500);
+    }, 3500);
   };
 
   return (
@@ -416,6 +457,57 @@ export function PracticeModal({
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </motion.div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Insufficient Credits Dialog */}
+      <Dialog open={!!creditError} onOpenChange={() => setCreditError(null)}>
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-[360px] overflow-hidden outline-none z-[1200]" hideCloseButton={watchingAd}>
+          <div className="bg-amber-500/10 p-10 flex flex-col items-center justify-center relative overflow-hidden">
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-xl relative z-10 border border-amber-200"
+            >
+              {verifyingAd ? <ShieldAlert className="w-10 h-10 text-amber-500 animate-pulse" /> : <Sparkles className="w-10 h-10 text-amber-500 fill-current animate-sparkle" />}
+            </motion.div>
+            <motion.div 
+              animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
+              transition={{ duration: 3, repeat: Infinity }}
+              className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-transparent z-0" 
+            />
+          </div>
+          
+          <div className="p-8 text-center space-y-6">
+            <div className="space-y-2">
+              <DialogHeader>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-600 mb-1">Vault Restricted</span>
+                <DialogTitle className="text-2xl font-black tracking-tight text-foreground">Refill Credits</DialogTitle>
+                <DialogDescription className="text-muted-foreground font-medium text-sm">
+                  Unlock requires <span className="text-foreground font-black">{creditError?.required}</span> credits but you only have <span className="text-amber-600 font-black">{creditError?.current}</span>.
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+
+            <div className="grid gap-3">
+              <Button 
+                onClick={handleWatchAd}
+                disabled={watchingAd || (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT}
+                className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 shadow-lg bg-primary text-primary-foreground active:scale-95 transition-all"
+              >
+                {verifyingAd ? <Loader2 className="w-4 h-4 animate-spin" /> : watchingAd ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
+                {watchingAd ? (verifyingAd ? "Verifying..." : "Watching Clip...") : "Watch Ad for +5 Credits"}
+              </Button>
+              <Button 
+                variant="ghost" 
+                onClick={() => setCreditError(null)}
+                className="w-full h-10 rounded-xl font-bold text-muted-foreground"
+                disabled={watchingAd}
+              >
+                Maybe Later
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
