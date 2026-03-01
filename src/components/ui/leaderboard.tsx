@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useFirestore } from '@/firebase/index';
-import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Trophy, Medal, Star, Users, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { Button } from "@/components/ui/button";
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface LeaderboardEntry {
   id: string;
@@ -20,22 +22,38 @@ export function Leaderboard() {
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Memoize the query to prevent unnecessary re-subscriptions
+  const leaderboardQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, "exam_results"), 
+      orderBy("overallScore", "desc"), 
+      limit(10)
+    );
+  }, [firestore]);
+
   useEffect(() => {
-    const fetchLeaderboard = async () => {
-      if (!firestore) return;
-      try {
-        const q = query(collection(firestore, "exam_results"), orderBy("overallScore", "desc"), limit(10));
-        const snap = await getDocs(q);
+    if (!leaderboardQuery) return;
+
+    const unsub = onSnapshot(
+      leaderboardQuery, 
+      (snap) => {
         const allResults = snap.docs.map(d => ({ id: d.id, ...d.data() } as LeaderboardEntry));
         setLeaderboard(allResults);
-      } catch (e) {
-        console.error(e);
-      } finally {
+        setLoading(false);
+      },
+      async (err) => {
+        const permissionError = new FirestorePermissionError({
+          path: 'exam_results',
+          operation: 'list'
+        });
+        errorEmitter.emit('permission-error', permissionError);
         setLoading(false);
       }
-    };
-    fetchLeaderboard();
-  }, [firestore]);
+    );
+
+    return () => unsub();
+  }, [leaderboardQuery]);
 
   const displayedLeaderboard = isExpanded ? leaderboard : leaderboard.slice(0, 3);
 

@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, limit } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trophy, Clock, Users, Timer, Sparkles, ChevronRight, Loader2 } from "lucide-react";
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface Event {
   id: string;
@@ -21,27 +23,41 @@ interface Event {
 }
 
 export function EventsSection() {
-  const { user } = useUser();
   const firestore = useFirestore();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const eventsQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, "events"), 
+      where("isActive", "==", true), 
+      limit(3)
+    );
+  }, [firestore]);
+
   useEffect(() => {
-    const fetchEvents = async () => {
-      if (!firestore) return;
-      try {
-        const q = query(collection(firestore, "events"), where("isActive", "==", true), limit(3));
-        const snap = await getDocs(q);
+    if (!eventsQuery) return;
+
+    const unsub = onSnapshot(
+      eventsQuery, 
+      (snap) => {
         const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as Event));
         setEvents(list);
-      } catch (e) {
-        console.error("Events fetch error:", e);
-      } finally {
+        setLoading(false);
+      },
+      async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: 'events',
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
         setLoading(false);
       }
-    };
-    fetchEvents();
-  }, [firestore]);
+    );
+
+    return () => unsub();
+  }, [eventsQuery]);
 
   return (
     <div className="space-y-6">
@@ -83,7 +99,7 @@ export function EventsSection() {
               <CardContent className="p-8 pt-0 flex-grow">
                 <div className="p-4 bg-muted/20 rounded-2xl flex items-center justify-between border border-border/50">
                   <div className="flex items-center gap-3">
-                    <Sparkles className="w-4 h-4 text-yellow-500" />
+                    <Sparkles className="w-4 h-4 text-yellow-500 animate-sparkle" />
                     <span className="text-xs font-black uppercase text-muted-foreground">Reward</span>
                   </div>
                   <span className="text-sm font-black text-emerald-600">+{event.rewardAmount} {event.rewardType}</span>

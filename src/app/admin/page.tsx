@@ -91,6 +91,8 @@ import { format } from 'date-fns';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { getRankData } from '@/lib/xp-system';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function AdminDashboard() {
   const firestore = useFirestore();
@@ -121,13 +123,6 @@ export default function AdminDashboard() {
     isBlocked: false
   });
 
-  // APK Upload state
-  const [apkVersion, setApkVersion] = useState("");
-  const [apkFile, setApkFile] = useState<File | null>(null);
-  const [uploadingApk, setUploadingApk] = useState(false);
-  const [currentApkInfo, setCurrentApkInfo] = useState<any>(null);
-  const [loadingApkInfo, setLoadingApkInfo] = useState(false);
-
   const fetchData = async () => {
     if (!firestore) return;
     setLoading(true);
@@ -141,7 +136,12 @@ export default function AdminDashboard() {
         setTimePerQuestion(data.timePerQuestion || 60);
         setLimits({ limitGenEd: data.limitGenEd || 10, limitProfEd: data.limitProfEd || 10, limitSpec: data.limitSpec || 10 });
       }
-    } catch (error) { console.error(error); } finally { setLoading(false); }
+    } catch (error) { 
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: 'admin_fetch',
+        operation: 'get'
+      }));
+    } finally { setLoading(false); }
   };
 
   const fetchUsers = async () => {
@@ -150,23 +150,15 @@ export default function AdminDashboard() {
       const usersQuery = query(collection(firestore, "users"), orderBy("lastActiveDate", "desc"), queryLimit(100));
       const usersSnap = await getDocs(usersQuery);
       setUsers(usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    } catch (error) { console.error(error); }
-  };
-
-  const fetchApkInfo = async () => {
-    setLoadingApkInfo(true);
-    try {
-      const res = await fetch('/api/apk');
-      const data = await res.json();
-      setCurrentApkInfo(data);
-    } catch (error) {
-      console.error('Error fetching APK info:', error);
-    } finally {
-      setLoadingApkInfo(false);
+    } catch (error) { 
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: 'users',
+        operation: 'list'
+      }));
     }
   };
 
-  useEffect(() => { if (firestore) { fetchData(); fetchUsers(); fetchApkInfo(); } }, [firestore]);
+  useEffect(() => { if (firestore) { fetchData(); fetchUsers(); } }, [firestore]);
 
   const filteredUsers = useMemo(() => users.filter(u => 
     (u.email?.toLowerCase() || "").includes(userSearchQuery.toLowerCase()) || 
@@ -181,7 +173,13 @@ export default function AdminDashboard() {
       else { const id = crypto.randomUUID(); await setDoc(doc(firestore, "questions", id), { ...editingQuestion, id }); }
       toast({ title: "Success", description: "Item saved to vault." });
       setIsDialogOpen(false); setEditingQuestion(null); fetchData();
-    } catch (error: any) { toast({ variant: "destructive", title: "Error", description: error.message }); }
+    } catch (error: any) { 
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: 'questions',
+        operation: 'write',
+        requestResourceData: editingQuestion
+      }));
+    }
   };
 
   const handleOpenUserManagement = (user: any) => {
@@ -213,81 +211,13 @@ export default function AdminDashboard() {
       fetchUsers();
       setManageUser(null);
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Update Failed", description: e.message });
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: `users/${manageUser.id}`,
+        operation: 'update',
+        requestResourceData: editUserForm
+      }));
     } finally {
       setIsUpdatingUser(false);
-    }
-  };
-
-  const handleResetDailyTasks = async () => {
-    if (!firestore || !manageUser) return;
-    setIsResettingTasks(true);
-    try {
-      await updateDoc(doc(firestore, 'users', manageUser.id), {
-        dailyQuestionsAnswered: 0,
-        dailyTestsFinished: 0,
-        dailyAiUsage: 0,
-        dailyCreditEarned: 0,
-        dailyAdCount: 0,
-        taskLoginClaimed: false,
-        taskQuestionsClaimed: false,
-        taskMockClaimed: false,
-        taskMistakesClaimed: false,
-        lastTaskReset: serverTimestamp()
-      });
-      toast({ title: "Missions Reset", description: `Daily progress cleared for ${editUserForm.displayName}` });
-      fetchUsers();
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Reset Failed", description: e.message });
-    } finally {
-      setIsResettingTasks(false);
-    }
-  };
-
-  const handleDeleteUser = async () => {
-    if (!firestore || !manageUser) return;
-    setIsDeletingUser(true);
-    try {
-      await deleteDoc(doc(firestore, 'users', manageUser.id));
-      toast({ title: "Account Deleted", description: "Educator record has been removed." });
-      fetchUsers();
-      setManageUser(null);
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Deletion Failed", description: e.message });
-    } finally {
-      setIsDeletingUser(false);
-    }
-  };
-
-  const handleUploadApk = async () => {
-    if (!apkFile || !apkVersion) {
-      toast({ variant: "destructive", title: "Error", description: "Please select a file and enter version" });
-      return;
-    }
-    setUploadingApk(true);
-    try {
-      const formData = new FormData();
-      formData.append('apk', apkFile);
-      formData.append('version', apkVersion);
-      
-      const response = await fetch('/api/apk', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-        toast({ title: "Success", description: "APK uploaded successfully" });
-        setApkFile(null);
-        setApkVersion("");
-        fetchApkInfo();
-      } else {
-        throw new Error(data.error);
-      }
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Upload Failed", description: error.message });
-    } finally {
-      setUploadingApk(false);
     }
   };
 
@@ -314,7 +244,6 @@ export default function AdminDashboard() {
               <TabsTrigger value="questions" className="font-bold rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px]">Item Manager</TabsTrigger>
               <TabsTrigger value="users" className="font-bold rounded-xl flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px]"><Users className="w-3.5 h-3.5" /> User Base</TabsTrigger>
               <TabsTrigger value="config" className="font-bold rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px]">Global Config</TabsTrigger>
-              <TabsTrigger value="apk-upload" className="font-bold rounded-xl flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px]"><Smartphone className="w-3.5 h-3.5" /> APK Hub</TabsTrigger>
             </TabsList>
           </div>
 
@@ -421,7 +350,7 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell className="text-center">
                             <Badge variant="secondary" className="font-black gap-1 h-6 bg-yellow-500/10 text-yellow-700 border-none">
-                              <Sparkles className="w-3 h-3" /> {Number(user.credits) || 0}
+                              <Sparkles className="w-3 h-3 animate-sparkle" /> {Number(user.credits) || 0}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
@@ -474,95 +403,10 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-
-          <TabsContent value="apk-upload" className="space-y-6">
-            <Card className="android-surface rounded-[2rem] border-none shadow-xl">
-              <CardHeader className="p-8 border-b bg-muted/30">
-                <CardTitle className="text-xl font-black flex items-center gap-3">
-                  <Smartphone className="w-6 h-6 text-primary" /> APK Management Hub
-                </CardTitle>
-                <CardDescription className="text-xs font-bold uppercase tracking-widest">
-                  Deploy the latest Android simulation tool to educators
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-8 space-y-8">
-                <div className="bg-primary/5 rounded-[2rem] p-8 border-2 border-dashed border-primary/20 space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <h4 className="font-black text-sm uppercase tracking-[0.2em] text-muted-foreground">Live Deployment</h4>
-                      {loadingApkInfo ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-primary mt-2" />
-                      ) : currentApkInfo?.version ? (
-                        <Badge variant="default" className="font-black text-lg h-9 px-4 rounded-xl bg-primary text-primary-foreground shadow-lg">
-                          v{currentApkInfo.version}
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="font-bold h-8 px-4">Offline</Badge>
-                      )}
-                    </div>
-                    {currentApkInfo?.version && (
-                      <Button variant="outline" onClick={() => window.open(currentApkInfo.downloadURL, '_blank')} className="h-12 rounded-xl font-black gap-2 border-2 bg-card">
-                        <Download className="w-4 h-4" /> Download Binary
-                      </Button>
-                    )}
-                  </div>
-                  {currentApkInfo?.version && (
-                    <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                      <p className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> {currentApkInfo.fileName}</p>
-                      <div className="w-1 h-1 bg-border rounded-full" />
-                      <p className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5" /> {(currentApkInfo.fileSize / 1024 / 1024).toFixed(2)} MB</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Target Version String</label>
-                      <Input type="text" placeholder="e.g., 2.1.0-stable" value={apkVersion} onChange={(e) => setApkVersion(e.target.value)} className="rounded-xl h-14 font-black border-2" />
-                    </div>
-                    <div className="p-6 bg-yellow-500/5 rounded-2xl border border-yellow-500/10 flex items-start gap-3">
-                      <ShieldAlert className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
-                      <p className="text-[10px] font-medium text-yellow-800 leading-relaxed uppercase tracking-wider">Warning: Deploying a new APK will immediately update the download link for all educators. Ensure binary integrity before upload.</p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Binary Package (.apk)</label>
-                    <div className="border-2 border-dashed border-border rounded-[2rem] h-[180px] text-center hover:border-primary/50 transition-all cursor-pointer relative bg-muted/10 group flex flex-col items-center justify-center">
-                      <input type="file" accept=".apk" onChange={(e) => { const file = e.target.files?.[0]; if (file) setApkFile(file); }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                      {apkFile ? (
-                        <div className="space-y-2 relative z-0">
-                          <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
-                          <p className="font-black text-sm text-foreground">{apkFile.name}</p>
-                          <Badge variant="outline" className="font-bold border-border">{(apkFile.size / 1024 / 1024).toFixed(2)} MB</Badge>
-                        </div>
-                      ) : (
-                        <div className="space-y-3 relative z-0 text-muted-foreground group-hover:text-primary transition-colors">
-                          <Upload className="w-12 h-12 mx-auto opacity-20 group-hover:opacity-100" />
-                          <div className="space-y-1">
-                            <p className="font-black text-sm">Drop Binary or Click</p>
-                            <p className="text-[9px] uppercase font-bold tracking-widest opacity-60">Verified APK files only</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-6 border-t border-border/50">
-                  <Button onClick={handleUploadApk} disabled={uploadingApk || !apkFile || !apkVersion} className="w-full h-16 rounded-[2rem] font-black text-lg gap-3 shadow-2xl shadow-primary/20">
-                    {uploadingApk ? <Loader2 className="w-6 h-6 animate-spin" /> : <Zap className="w-6 h-6 fill-current" />}
-                    {uploadingApk ? "Synchronizing Binary..." : "Deploy to Production"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </main>
 
-      {/* Edit Question Dialog - Viewport Optimized */}
+      {/* Edit Question Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl rounded-[2rem] p-0 border-none shadow-2xl overflow-hidden flex flex-col max-h-[95vh] outline-none">
           <div className="bg-primary/10 p-5 border-b shrink-0 flex items-center justify-between">
@@ -631,12 +475,10 @@ export default function AdminDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Full User Management Dialog - Viewport Optimized */}
+      {/* User Management Dialog */}
       <Dialog open={!!manageUser} onOpenChange={() => setManageUser(null)}>
-        <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 border-none shadow-[0_30px_100px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col max-h-[95vh] outline-none">
-          {/* Header Zone */}
+        <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 border-none shadow-2xl overflow-hidden flex flex-col max-h-[95vh] outline-none">
           <div className="bg-foreground text-background p-5 flex flex-col sm:flex-row items-center gap-4 relative overflow-hidden shrink-0">
-            <div className="absolute top-0 right-0 p-6 opacity-5"><User className="w-32 h-32" /></div>
             <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-black text-2xl shadow-xl relative z-10 shrink-0">
               {manageUser?.displayName?.charAt(0) || 'E'}
             </div>
@@ -655,7 +497,6 @@ export default function AdminDashboard() {
             </DialogClose>
           </div>
 
-          {/* Scrollable Content Zone */}
           <div className="flex-1 overflow-y-auto p-5 space-y-5 no-scrollbar bg-background">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
@@ -676,7 +517,7 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2 p-4 bg-muted/20 rounded-2xl border border-border/50">
                 <label className="text-[9px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-yellow-600" /> Current Credits
+                  <Sparkles className="w-3.5 h-3.5 text-yellow-600 animate-sparkle" /> Current Credits
                 </label>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl border-2 shrink-0" onClick={() => setEditUserForm({...editUserForm, credits: Math.max(0, editUserForm.credits - 10)})}><Minus className="w-3.5 h-3.5" /></Button>
@@ -701,7 +542,33 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button 
                 variant="outline" 
-                onClick={handleResetDailyTasks} 
+                onClick={async () => {
+                  if (!firestore || !manageUser) return;
+                  setIsResettingTasks(true);
+                  try {
+                    await updateDoc(doc(firestore, 'users', manageUser.id), {
+                      dailyQuestionsAnswered: 0,
+                      dailyTestsFinished: 0,
+                      dailyAiUsage: 0,
+                      dailyCreditEarned: 0,
+                      dailyAdCount: 0,
+                      taskLoginClaimed: false,
+                      taskQuestionsClaimed: false,
+                      taskMockClaimed: false,
+                      taskMistakesClaimed: false,
+                      lastTaskReset: serverTimestamp()
+                    });
+                    toast({ title: "Missions Reset", description: `Daily progress cleared for ${editUserForm.displayName}` });
+                    fetchUsers();
+                  } catch (e: any) {
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({
+                      path: `users/${manageUser.id}`,
+                      operation: 'update'
+                    }));
+                  } finally {
+                    setIsResettingTasks(false);
+                  }
+                }} 
                 disabled={isResettingTasks}
                 className="h-12 rounded-xl font-black text-[9px] uppercase tracking-widest gap-2 border-2 border-amber-200 text-amber-700 bg-amber-50/30"
               >
@@ -726,7 +593,23 @@ export default function AdminDashboard() {
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter className="sm:flex-col gap-2 mt-4">
-                    <AlertDialogAction onClick={handleDeleteUser} className="bg-rose-600 hover:bg-rose-700 text-white h-12 rounded-xl font-black w-full">
+                    <AlertDialogAction onClick={async () => {
+                      if (!firestore || !manageUser) return;
+                      setIsDeletingUser(true);
+                      try {
+                        await deleteDoc(doc(firestore, 'users', manageUser.id));
+                        toast({ title: "Account Deleted", description: "Educator record has been removed." });
+                        fetchUsers();
+                        setManageUser(null);
+                      } catch (e: any) {
+                        errorEmitter.emit('permission-error', new FirestorePermissionError({
+                          path: `users/${manageUser.id}`,
+                          operation: 'delete'
+                        }));
+                      } finally {
+                        setIsDeletingUser(false);
+                      }
+                    }} className="bg-rose-600 hover:bg-rose-700 text-white h-12 rounded-xl font-black w-full">
                       {isDeletingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm Deletion'}
                     </AlertDialogAction>
                     <AlertDialogCancel className="h-11 rounded-xl font-bold border-2 w-full">Cancel</AlertDialogCancel>
@@ -734,34 +617,8 @@ export default function AdminDashboard() {
                 </AlertDialogContent>
               </AlertDialog>
             </div>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button 
-                variant={editUserForm.isPro ? "outline" : "default"} 
-                onClick={() => setEditUserForm({...editUserForm, isPro: !editUserForm.isPro})} 
-                className={cn(
-                  "flex-1 h-12 rounded-xl font-black text-[9px] uppercase tracking-widest gap-2 border-2 transition-all", 
-                  editUserForm.isPro ? "border-yellow-500/30 text-yellow-700" : "bg-yellow-500 text-yellow-950"
-                )}
-              >
-                <Crown className={cn("w-3.5 h-3.5", !editUserForm.isPro && "fill-current")} /> 
-                {editUserForm.isPro ? 'Revoke Platinum' : 'Grant Platinum'}
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => setEditUserForm({...editUserForm, isBlocked: !editUserForm.isBlocked})} 
-                className={cn(
-                  "flex-1 h-12 rounded-xl font-black text-[9px] uppercase tracking-widest gap-2 border-2 transition-all", 
-                  editUserForm.isBlocked ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-rose-50 border-rose-200 text-rose-700"
-                )}
-              >
-                {editUserForm.isBlocked ? <ShieldCheck className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
-                {editUserForm.isBlocked ? 'Restore Access' : 'Restrict (Block)'}
-              </Button>
-            </div>
           </div>
 
-          {/* Action Zone Footer */}
           <div className="p-5 bg-muted/5 border-t shrink-0">
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <Button variant="ghost" onClick={() => setManageUser(null)} className="w-full sm:w-auto h-12 px-6 rounded-xl font-bold text-muted-foreground">Cancel</Button>

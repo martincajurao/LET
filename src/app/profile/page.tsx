@@ -41,7 +41,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { collection, query, where, getDocs, limit, orderBy, doc, getDoc } from "firebase/firestore";
 import { format } from 'date-fns';
 import { cn } from "@/lib/utils";
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, Radar as RechartsRadar } from 'recharts';
 import { getRankData } from '@/lib/xp-system';
 import { ResultsOverview } from '@/components/exam/ResultsOverview';
 import { 
@@ -53,6 +53,8 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from 'framer-motion';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface ExamRecord {
   id: string;
@@ -88,10 +90,20 @@ function ProfilePageContent() {
     const fetchHistory = async () => {
       if (!user?.uid || !firestore) return;
       try {
-        const q = query(collection(firestore, "exam_results"), where("userId", "==", user.uid), orderBy("timestamp", "desc"), limit(20));
+        const q = query(
+          collection(firestore, "exam_results"), 
+          where("userId", "==", user.uid), 
+          orderBy("timestamp", "desc"), 
+          limit(20)
+        );
         const snap = await getDocs(q);
         setRecords(snap.docs.map(d => ({ id: d.id, ...d.data() } as ExamRecord)));
-      } catch (e) { console.error(e); } finally { setLoadingRecords(false); }
+      } catch (e) { 
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'exam_results',
+          operation: 'list'
+        }));
+      } finally { setLoadingRecords(false); }
     };
     fetchHistory();
   }, [user, firestore]);
@@ -128,7 +140,6 @@ function ProfilePageContent() {
     readiness: Math.min(100, (records.length * 3) + (records.length > 0 ? Math.max(...records.map(r => r.overallScore)) : 0) / 1.5)
   }), [records]);
 
-  // GAME DEV ENHANCEMENT: Normalizing Radar Data
   const radarData = useMemo(() => {
     const m: Record<string, { t: number, c: number }> = {
       'Gen Ed': { t: 0, c: 0 },
@@ -139,11 +150,9 @@ function ProfilePageContent() {
     };
 
     records.forEach(r => {
-      // Accuracy contribution
       m['Precision'].t += 100;
       m['Precision'].c += r.overallScore;
 
-      // Pacing contribution (capped at 60s/question for max score)
       const paceScore = Math.max(0, 100 - (r.timeSpent / (r.results?.length || 1) / 1.2));
       m['Pacing'].t += 100;
       m['Pacing'].c += paceScore;
@@ -350,7 +359,7 @@ function ProfilePageContent() {
                               dataKey="subject" 
                               tick={{ fontSize: 8, fontWeight: 900, fill: 'hsl(var(--muted-foreground))', textAnchor: 'middle' }}
                             />
-                            <Radar
+                            <RechartsRadar
                               name="Stats"
                               dataKey="A"
                               stroke="hsl(var(--primary))"

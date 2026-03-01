@@ -16,10 +16,10 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
 
-    // Question Bank Rules
+    // Question Bank Rules - Publicly readable for simulation entrance
     match /questions/{questionId} {
-      allow read: if isAuthenticated();
-      allow write: if false; // Admin only via console/functions
+      allow read: if true;
+      allow write: if false; 
     }
 
     // AI Explanations Cache
@@ -31,31 +31,26 @@ service cloud.firestore {
     // Exam Results Rules
     match /exam_results/{resultId} {
       allow create: if isAuthenticated();
-      // Individual documents can be read by their owner
       allow get: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      // Listing is allowed if:
-      // 1. The query is filtered by the user's own ID (limited to 100)
-      // 2. OR it's a leaderboard query (limited to 10 results)
-      allow list: if isAuthenticated() && (
-        (request.query.limit <= 100 && resource.data.userId == request.auth.uid) ||
-        (request.query.limit <= 10)
-      );
+      // Enforce query filters for private data or strict limits for public leaderboards
+      allow list: if (isAuthenticated() && resource.data.userId == request.auth.uid && request.query.limit <= 100) ||
+                  (request.query.limit <= 10);
     }
 
-    // Competition Events
+    // Competition Events - Publicly readable for Arena entrance
     match /events/{eventId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if false;
     }
 
     match /event_leaderboard/{eventId}/participants/{userId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isOwner(userId);
     }
 
-    // System Config - Ensure globally readable for simulation calibration
+    // System Config - Globally readable for simulation calibration
     match /system_configs/{configId} {
-      allow read, get, list: if true;
+      allow read: if true;
       allow write: if false;
     }
   }
