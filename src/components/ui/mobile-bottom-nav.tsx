@@ -38,9 +38,6 @@ function NavContent() {
   const [availableTasksCount, setAvailableTasksCount] = useState(0);
   const [claimableTasksCount, setClaimableTasksCount] = useState(0);
 
-  // STRICT VISIBILITY: Bottom Nav is hidden completely for guests
-  if (authLoading || !user) return null;
-
   const configDocRef = useMemo(() => {
     if (!firestore) return null;
     return doc(firestore, "system_configs", "global");
@@ -169,6 +166,10 @@ function NavContent() {
     if (item.id === 'notifications' && isAlertsOpen) return true;
     return false;
   };
+
+  // STRICT VISIBILITY: Bottom Nav is hidden completely for guests
+  // Hooks must always be called, so return after hook declarations
+  if (authLoading || !user) return null;
 
   return (
     <>

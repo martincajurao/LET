@@ -64,9 +64,6 @@ export function Navbar() {
   const [availableTasksCount, setAvailableTasksCount] = useState(0);
   const [claimableTasksCount, setClaimableTasksCount] = useState(0);
 
-  // STRICT VISIBILITY: Navbar is hidden completely for guests
-  if (loading || !user) return null;
-
   const rankData = user ? getRankData(user.xp || 0) : null;
 
   const userRef = useRef(user);
@@ -92,7 +89,8 @@ export function Navbar() {
       setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
 
       let claimableCount = 0;
-      const qGoal = currentUser.userTier === 'Platinum' ? 35 : 20;
+      const userTier = currentUser.userTier || 'Bronze';
+      const qGoal = userTier === 'Platinum' ? 35 : 20;
       if (!currentUser.taskLoginClaimed) claimableCount++;
       if ((currentUser.dailyQuestionsAnswered || 0) >= qGoal && !currentUser.taskQuestionsClaimed) claimableCount++;
       if ((currentUser.dailyTestsFinished || 0) >= 1 && !currentUser.taskMockClaimed) claimableCount++;
@@ -140,6 +138,10 @@ export function Navbar() {
       }, 1500); 
     }, 3500);
   };
+
+  // STRICT VISIBILITY: Navbar is hidden completely for guests
+  // Hooks must always be called, so return after hook declarations
+  if (loading || !user) return null;
 
   const navItems = [
     { label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, href: '/dashboard' },
