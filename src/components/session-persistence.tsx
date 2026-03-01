@@ -6,62 +6,59 @@ import { nativeAuth } from '@/lib/native-auth';
 import { useUser } from '@/firebase';
 
 /**
- * This component ensures session persistence in the WebView
- * by checking the auth state when routes change and listening for native auth events
+ * SessionPersistence maintains authentication stability within the Android WebView.
+ * It ensures the native Capacitor session is actively synchronized with the 
+ * client-side Firebase state during route transitions.
  */
 export function SessionPersistence() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, loading } = useUser();
+  const { user, loading, refreshUser } = useUser();
   const lastPathRef = useRef(pathname);
 
-  // Function to check and restore session
+  // Function to verify and restore native session
   const checkSession = useCallback(async () => {
     if (typeof window === 'undefined') return;
     
-    // Check if we're on a native platform
-    // @ts-ignore
-    const capacitor = window.Capacitor;
+    // Detect Capacitor environment
+    const win = window as any;
+    const capacitor = win.Capacitor;
     if (!capacitor) return;
     
-    // @ts-ignore
     const platform = capacitor.platform;
     if (platform !== 'android' && platform !== 'ios') return;
     
-    console.log('[SessionPersistence] Checking session...');
-    
     try {
-      // Check for existing native user
+      // Check for existing native user tokens via bridge
       const result = await nativeAuth.getCurrentUser();
       if (result.user) {
-        console.log('[SessionPersistence] Found native user:', result.user.uid);
-      } else {
-        console.log('[SessionPersistence] No native user found');
+        console.log('[SessionPersistence] Native Trace found:', result.user.uid);
+        // Force refresh to ensure local profile is hydrated with latest cloud metadata
+        if (!user && !loading) {
+          await refreshUser();
+        }
       }
     } catch (error) {
-      console.error('[SessionPersistence] Error checking session:', error);
+      console.error('[SessionPersistence] Sync Error:', error);
     }
-  }, []);
+  }, [user, loading, refreshUser]);
 
-  // Check session when route changes (but not on first load)
+  // Handle route change synchronization
   useEffect(() => {
-    // Skip on initial load
     if (lastPathRef.current === pathname) return;
     lastPathRef.current = pathname;
     
-    // Only check if user is not loaded and we're on native
+    // Only verify session if we appear unauthenticated in the web layer
     if (!loading && !user) {
-      console.log('[SessionPersistence] Route changed, checking session...');
       checkSession();
     }
-  }, [pathname, searchParams, loading, user, checkSession]);
+  }, [pathname, loading, user, checkSession]);
 
-  // Check on mount
+  // Initial mount verification
   useEffect(() => {
-    // Delay check to ensure app is fully loaded
     const timer = setTimeout(() => {
       checkSession();
-    }, 1000);
+    }, 1200); // Allow bridge initialization time
     
     return () => clearTimeout(timer);
   }, [checkSession]);

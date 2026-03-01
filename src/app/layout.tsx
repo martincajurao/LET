@@ -8,6 +8,7 @@ import { MobileBottomNav } from '@/components/ui/mobile-bottom-nav';
 import { WebViewBridge } from '@/components/webview-bridge';
 import { AutoUpdateChecker } from '@/components/auto-update-checker-firestore';
 import { PageTransition } from '@/components/page-transition';
+import { SessionPersistence } from '@/components/session-persistence';
 import Script from 'next/script';
 
 
@@ -62,6 +63,7 @@ export default function RootLayout({
         <body className="font-body antialiased selection:bg-primary/30 selection:text-primary-foreground min-h-screen">
           <ThemeProvider>
             <FirebaseClientProvider>
+              <SessionPersistence />
               <AutoUpdateChecker checkOnMount={true} checkInterval={24 * 60 * 60 * 1000} autoDownload={true} />
 
               <Navbar />

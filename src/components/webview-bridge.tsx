@@ -1,39 +1,52 @@
 'use client';
 
 import { useEffect, useCallback, useRef, useState } from 'react';
-
 import { useRouter, usePathname } from 'next/navigation';
 
 interface WebViewBridgeProps {
   children?: React.ReactNode;
 }
 
-// Component to handle routing in Android WebView
-// This intercepts navigation and ensures proper client-side routing
+/**
+ * WebViewBridge ensures seamless routing between the Next.js web layer 
+ * and the native Android wrapper. It intercepts native navigation messages
+ * and dispatches them through the client-side router.
+ */
 export function WebViewBridge({ children }: WebViewBridgeProps) {
   const router = useRouter();
   const pathname = usePathname();
   const isNavigatingRef = useRef(false);
 
-  // Handle messages from Android WebView
+  // Handle messages from Android WebView/Capacitor
   const handleMessage = useCallback((event: MessageEvent) => {
     try {
       const data = event.data;
       
+      // Standard route change requested by native code
       if (data && data.type === 'ROUTE_CHANGE') {
         const url = data.url;
         if (url && url.startsWith('/')) {
+          console.log('[WebViewBridge] Native Route Change:', url);
           router.push(url);
         }
       }
       
+      // Deep link handling (e.g. from notifications or intents)
       if (data && data.type === 'DEEP_LINK') {
         const url = data.url;
         if (url) {
-          const urlObj = new URL(url);
-          const path = urlObj.pathname;
-          if (path) {
-            router.push(path);
+          try {
+            const urlObj = new URL(url);
+            const path = urlObj.pathname;
+            if (path) {
+              console.log('[WebViewBridge] Deep Link detected:', path);
+              router.push(path);
+            }
+          } catch (e) {
+            // If not a full URL, attempt to use as direct path
+            if (url.startsWith('/')) {
+              router.push(url);
+            }
           }
         }
       }
@@ -42,12 +55,17 @@ export function WebViewBridge({ children }: WebViewBridgeProps) {
     }
   }, [router]);
 
-  // Set up WebView message listener
+  // Set up WebView message listener and native version logging
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.addEventListener) {
+    if (typeof window !== 'undefined') {
       window.addEventListener('message', handleMessage);
       
-      // Handle hash changes for routing
+      const win = window as any;
+      if (win.appVersion) {
+        console.log('[WebViewBridge] Native Android App detected. Version:', win.appVersion);
+      }
+      
+      // Handle hash changes for older legacy routing if needed
       const handleHashChange = () => {
         const hash = window.location.hash.slice(1);
         if (hash && hash !== pathname && !isNavigatingRef.current) {
@@ -66,16 +84,24 @@ export function WebViewBridge({ children }: WebViewBridgeProps) {
     }
   }, [handleMessage, router, pathname]);
 
-  // Notify native side of route changes
+  // Notify native side of route changes for system-level tracking
   useEffect(() => {
     const win = window as any;
-    if (typeof window !== 'undefined' && win.Capacitor?.isNativePlatform?.()) {
-      const Cordova = win.Cordova;
-      if (Cordova && Cordova.fireDocumentEvent) {
-        Cordova.fireDocumentEvent('routeChange', { 
-          path: pathname,
-          url: window.location.href 
-        });
+    if (typeof window !== 'undefined' && (win.Capacitor?.isNativePlatform?.() || win.android)) {
+      // Notify Capacitor
+      if (win.Capacitor?.isNativePlatform?.()) {
+        const Capacitor = win.Capacitor;
+        try {
+          // Attempt to notify native side using common bridge patterns
+          if (Capacitor.Plugins?.App?.notifyPathChange) {
+            Capacitor.Plugins.App.notifyPathChange({ path: pathname });
+          }
+        } catch (e) {}
+      }
+
+      // Legacy Android Bridge support
+      if (win.android && win.android.onRouteChanged) {
+        win.android.onRouteChanged(pathname);
       }
     }
   }, [pathname]);
@@ -83,21 +109,22 @@ export function WebViewBridge({ children }: WebViewBridgeProps) {
   return <>{children}</>;
 }
 
-// Hook to check if running in native WebView
+// Hook to check if running in a native context
 export function useIsNativeWebView(): boolean {
   if (typeof window === 'undefined') return false;
   
-  const capacitor = (window as any).Capacitor;
+  const win = window as any;
+  const capacitor = win.Capacitor;
   if (capacitor && capacitor.isNativePlatform && capacitor.isNativePlatform()) {
     return true;
   }
   
-  const android = (window as any).android;
+  const android = win.android;
   if (android) {
     return true;
   }
   
-  const webkit = (window as any).webkit;
+  const webkit = win.webkit;
   if (webkit && webkit.messageHandlers && webkit.messageHandlers.nativeReady) {
     return true;
   }
@@ -105,16 +132,25 @@ export function useIsNativeWebView(): boolean {
   return false;
 }
 
-// Hook to send messages to native WebView
+// Hook to send telemetry or events to native WebView
 export function useWebViewCommunication() {
   const sendMessage = useCallback((type: string, data: Record<string, any> = {}) => {
     if (typeof window !== 'undefined') {
-      const android = (window as any).android;
+      const win = window as any;
+      
+      // Standard Capacitor call pattern
+      if (win.Capacitor?.isNativePlatform?.()) {
+        window.postMessage({ type, ...data }, '*');
+      }
+
+      // Android JavaScript Interface
+      const android = win.android;
       if (android && android.onWebViewMessage) {
         android.onWebViewMessage(JSON.stringify({ type, ...data }));
       }
 
-      const webkit = (window as any).webkit;
+      // iOS Message Handlers
+      const webkit = win.webkit;
       if (webkit && webkit.messageHandlers && webkit.messageHandlers.nativeReady) {
         webkit.messageHandlers.nativeReady.postMessage({ type, ...data });
       }
@@ -124,7 +160,7 @@ export function useWebViewCommunication() {
   return { sendMessage };
 }
 
-// Hook for self-update functionality
+// Hook for high-fidelity self-update orchestration
 export function useSelfUpdate() {
   const [updateProgress, setUpdateProgress] = useState<number>(0);
   const [updateStatus, setUpdateStatus] = useState<string>('');
@@ -135,8 +171,12 @@ export function useSelfUpdate() {
     };
 
     const handleResult = (event: CustomEvent) => {
-      const data = JSON.parse(event.detail);
-      setUpdateStatus(data.status + ': ' + data.message);
+      try {
+        const data = typeof event.detail === 'string' ? JSON.parse(event.detail) : event.detail;
+        setUpdateStatus(data.status + ': ' + data.message);
+      } catch (e) {
+        setUpdateStatus('Update Status: ' + event.detail);
+      }
     };
 
     window.addEventListener('updateProgress', handleProgress as EventListener);
@@ -152,27 +192,20 @@ export function useSelfUpdate() {
     if (typeof window !== 'undefined') {
       const android = (window as any).android;
       if (android && android.checkForUpdate) {
-        // Only pass SHA256 if it's a valid non-empty hash (starts with sha256: or is 64 char hex)
         const hasValidSha256 = expectedSha256 && (
           expectedSha256.startsWith('sha256:') || 
           /^[a-fA-F0-9]{64}$/.test(expectedSha256)
         );
         
-        if (hasValidSha256) {
-          android.checkForUpdate(apkUrl, expectedSha256);
-        } else {
-          // Call without SHA256 or with empty string to skip verification
-          android.checkForUpdate(apkUrl, '');
-        }
-        setUpdateStatus('Starting download...');
+        android.checkForUpdate(apkUrl, hasValidSha256 ? expectedSha256 : '');
+        setUpdateStatus('Initiating secure download...');
       } else {
-        setUpdateStatus('Self-update not available on this platform');
+        setUpdateStatus('Self-update unavailable on this platform');
       }
     }
   }, []);
 
   return { downloadUpdate, updateProgress, updateStatus, setUpdateStatus };
 }
-
 
 export default WebViewBridge;
