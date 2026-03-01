@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { 
   Dialog, 
   DialogContent, 
@@ -24,11 +22,8 @@ import {
   Star,
   Loader2,
   BookOpen,
-  Facebook,
   ShieldCheck,
   Languages,
-  User,
-  Users,
   Moon,
   Sun,
   Crown,
@@ -36,20 +31,18 @@ import {
   Sparkles,
   Lock,
   Play,
-  ShieldAlert,
   Target,
   Timer,
   LayoutDashboard
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
-import { Question, MAJORSHIPS } from "@/app/lib/mock-data";
+import { Question } from "@/app/lib/mock-data";
 import { useUser, useFirestore } from "@/firebase";
 import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp, query, where, limit } from "firebase/firestore";
 import { fetchQuestionsFromFirestore } from "@/lib/db-seed";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -58,15 +51,6 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
 type AppState = 'dashboard' | 'exam' | 'results' | 'onboarding';
-
-const GoogleIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
-    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.18 1-.78 1.85-1.63 2.42v2.01h2.64c1.54-1.42 2.43-3.5 2.43-5.44z" fill="#4285F4"/>
-    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.33C3.99 20.15 7.7 23 12 23z" fill="#34A853"/>
-    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.67H2.18C1.43 9.24 1 10.57 1 12s.43 2.76 1.18 4.33l3.66-2.24z" fill="#FBBC05"/>
-    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.85 2.18 7.67l3.66 2.33c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-  </svg>
-);
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array];
@@ -114,7 +98,7 @@ const EducationalLoader = ({ message }: { message?: string }) => (
 );
 
 function LetsPrepContent() {
-  const { user, loading: authLoading, updateProfile, loginWithGoogle, loginWithFacebook, refreshUser } = useUser();
+  const { user, loading: authLoading, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const { isDark, toggleDarkMode } = useTheme();
@@ -129,7 +113,6 @@ function LetsPrepContent() {
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState("");
-  const [authIssue, setAuthIssue] = useState(false);
   
   const [timePerQuestion, setTimePerQuestion] = useState(60);
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
@@ -187,7 +170,6 @@ function LetsPrepContent() {
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
-  // Memoized System Config Reference
   const configDocRef = useMemo(() => {
     if (!firestore) return null;
     return doc(firestore, "system_configs", "global");
@@ -210,7 +192,6 @@ function LetsPrepContent() {
     return () => unsub();
   }, [configDocRef]);
 
-  // Memoized Results Query Reference
   const resultsQuery = useMemo(() => {
     if (!user || !firestore) return null;
     return query(
@@ -236,7 +217,6 @@ function LetsPrepContent() {
 
   useEffect(() => {
     if (!user) return;
-    if (user.uid !== 'bypass-user' && !user.onboardingComplete) { setState('onboarding'); return; }
     const interval = setInterval(() => {
       const now = Date.now();
       const lastAd = typeof user.lastAdXpTimestamp === 'number' ? user.lastAdXpTimestamp : 0;
@@ -248,7 +228,6 @@ function LetsPrepContent() {
   }, [user]);
 
   const startExam = async (category: 'General Education' | 'Professional Education' | 'Specialization' | 'all' | 'quickfire' | 'Major' | 'Prof Ed') => {
-    if (!user) { setAuthIssue(true); return; }
     setLoading(true);
     setLoadingStep(0);
     setLoadingMessage("Calibrating Learning Path...");
@@ -409,35 +388,6 @@ function LetsPrepContent() {
           <motion.div key="exam" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full"><ExamInterface questions={currentQuestions} timePerQuestion={timePerQuestion} onComplete={handleExamComplete} /></motion.div>
         ) : state === 'results' ? (
           <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4"><ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} resultId={newResultId} onRestart={() => setState('dashboard')} /></motion.div>
-        ) : state === 'onboarding' ? (
-          <motion.div key="onboarding" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-[85vh] flex items-center justify-center p-4">
-            <Card className="w-full max-w-md rounded-[3rem] bg-card border-none shadow-2xl overflow-hidden">
-              <div className="bg-primary/10 p-10 flex flex-col items-center text-center">
-                <div className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-xl mb-4 border border-primary/20"><ShieldCheck className="w-10 h-10 text-primary" /></div>
-                <h2 className="text-3xl font-black tracking-tight">Final Calibration</h2>
-                <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.3em] mt-2">Professional Credentials Required</p>
-              </div>
-              <CardContent className="p-10 space-y-8">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Academic Nickname</Label>
-                    <div className="relative">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
-                      <Input placeholder="e.g. Master Teacher" className="pl-11 h-14 rounded-2xl border-2 font-black text-lg focus:border-primary transition-all" value={user?.displayName || ""} onChange={(e) => {}} />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Specialization Track</Label>
-                    <Select value={user?.majorship || ""} onValueChange={(val) => updateProfile({ majorship: val })}>
-                      <SelectTrigger className="h-14 rounded-2xl border-2 px-4 font-black text-lg"><div className="flex items-center gap-3"><GraduationCap className="w-5 h-5 text-primary" /><SelectValue placeholder="Select specialized path..." /></div></SelectTrigger>
-                      <SelectContent className="rounded-2xl">{MAJORSHIPS.map(m => (<SelectItem key={m} value={m} className="font-bold py-4 px-6">{m}</SelectItem>))}</SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <Button onClick={() => setState('dashboard')} className="w-full h-16 rounded-[1.75rem] font-black text-lg shadow-2xl shadow-primary/30 active:scale-95 transition-all gap-3"><Zap className="w-6 h-6 fill-current" /> Enter Learning Vault</Button>
-              </CardContent>
-            </Card>
-          </motion.div>
         ) : (
           <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -481,9 +431,9 @@ function LetsPrepContent() {
                           {claimingXp ? <Loader2 className="w-4 h-4 animate-spin" /> : adCooldown > 0 ? <Timer className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
                           {adCooldown > 0 ? formatCooldown(adCooldown) : "XP Boost Clip"}
                         </Button>
-                        <Button onClick={() => startExam('quickfire')} disabled={quickFireCooldown > 0} variant="default" className="h-12 rounded-xl font-bold text-xs gap-2 shadow-lg shadow-primary/20">
-                          {quickFireCooldown > 0 ? <Timer className="w-4 h-4" /> : <LayoutDashboard className="w-4 h-4" />}
-                          {quickFireCooldown > 0 ? formatCooldown(quickFireCooldown) : "Quick Fire"}
+                        <Button onClick={() => router.push('/dashboard')} variant="default" className="h-12 rounded-xl font-bold text-xs gap-2 shadow-lg shadow-primary/20">
+                          <LayoutDashboard className="w-4 h-4" />
+                          View Roadmap
                         </Button>
                       </div>
                     </CardContent>

@@ -4,8 +4,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useUser } from '@/firebase/auth/use-user';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/ui/progress";
-import { Badge } from "@/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { 
   Dialog,
   DialogContent,
