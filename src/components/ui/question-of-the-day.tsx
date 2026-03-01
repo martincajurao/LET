@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -10,16 +9,13 @@ import {
   CheckCircle2, 
   XCircle, 
   Clock,
-  Star,
   Zap,
   BookOpen,
-  ChevronRight,
-  Lock,
-  Info,
   Loader2,
   AlertCircle,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Info
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Question } from "@/app/lib/mock-data";
@@ -44,15 +40,22 @@ export function QuestionOfTheDay({
   const [readingTime, setReadingTime] = useState(0);
   const [isReadingLocked, setIsReadingLocked] = useState(true);
 
-  const alreadyClaimed = useMemo(() => {
+  // Determine if the question was already claimed before this session
+  const alreadyClaimedOnMount = useMemo(() => {
     if (!lastClaimDate) return false;
     const now = new Date();
     const lastClaim = new Date(lastClaimDate);
     return now.toDateString() === lastClaim.toDateString();
   }, [lastClaimDate]);
 
+  // Handle the reading timer logic
   useEffect(() => {
-    if (alreadyClaimed) return;
+    if (alreadyClaimedOnMount) {
+      setIsReadingLocked(false);
+      setShowResult(true);
+      setIsCorrect(true); // Default to true if already done to show correct marking
+      return;
+    }
     
     const timer = setInterval(() => {
       setReadingTime(prev => {
@@ -66,10 +69,10 @@ export function QuestionOfTheDay({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [alreadyClaimed]);
+  }, [alreadyClaimedOnMount]);
 
   const handleAnswer = async (answer: string) => {
-    if (showResult || alreadyClaimed || isSubmitting || isReadingLocked) return;
+    if (showResult || alreadyClaimedOnMount || isSubmitting || isReadingLocked) return;
     
     setSelectedAnswer(answer);
     setIsSubmitting(true);
@@ -91,120 +94,129 @@ export function QuestionOfTheDay({
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'easy': return 'text-green-500 bg-green-500/10 border-green-500/30';
-      case 'medium': return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30';
-      case 'hard': return 'text-red-500 bg-red-500/10 border-red-500/30';
-      default: return 'text-gray-500 bg-gray-500/10 border-gray-500/30';
+      case 'easy': return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+      case 'medium': return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
+      case 'hard': return 'text-rose-500 bg-rose-500/10 border-rose-500/20';
+      default: return 'text-muted-foreground bg-muted/10';
     }
   };
 
   return (
-    <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
-      <CardHeader className="p-6 pb-2">
+    <Card className="android-surface border-none shadow-md3-2 rounded-[2.5rem] bg-card overflow-hidden">
+      <CardHeader className="p-6 pb-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20">
               <Lightbulb className="w-6 h-6 text-white" />
             </div>
             <div>
-              <CardTitle className="text-xl font-black">Daily Insight</CardTitle>
-              <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest opacity-60">Board Calibration</p>
+              <CardTitle className="text-xl font-black tracking-tight">Daily Insight</CardTitle>
+              <div className="flex items-center gap-2 mt-0.5">
+                <Badge variant="secondary" className={cn("h-5 px-2 font-black text-[8px] uppercase tracking-widest border-none", getDifficultyColor(question.difficulty))}>
+                  {question.difficulty}
+                </Badge>
+                <p className="text-[9px] font-black text-muted-foreground opacity-60 uppercase tracking-widest">Board Calibration</p>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge className={cn("font-black text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-lg border-none", getDifficultyColor(question.difficulty))}>
-              {question.difficulty}
+          {alreadyClaimedOnMount && (
+            <Badge variant="outline" className="h-6 px-3 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-black text-[9px] uppercase tracking-widest rounded-full">
+              <CheckCircle2 className="w-3 h-3 mr-1.5" /> Complete
             </Badge>
-            {alreadyClaimed && (
-              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-black text-[9px] uppercase">
-                <CheckCircle2 className="w-2.5 h-2.5 mr-1" /> Complete
-              </Badge>
-            )}
-          </div>
+          )}
         </div>
       </CardHeader>
       
       <CardContent className="p-6 space-y-6">
         <div className={cn(
           "p-5 rounded-2xl border-2 border-dashed transition-all relative overflow-hidden",
-          alreadyClaimed ? "bg-muted/30 border-border opacity-60" : "bg-primary/5 border-primary/20"
+          alreadyClaimedOnMount ? "bg-muted/10 border-border opacity-80" : "bg-primary/5 border-primary/20"
         )}>
-          {isReadingLocked && !alreadyClaimed && (
+          {isReadingLocked && !alreadyClaimedOnMount && (
             <motion.div 
               initial={{ width: 0 }} 
               animate={{ width: `${(readingTime / MIN_QOTD_TIME) * 100}%` }} 
               className="absolute top-0 left-0 h-1 bg-primary/20"
             />
           )}
-          <p className="text-lg font-black leading-snug text-foreground">{question.text}</p>
+          <p className="text-lg font-black leading-snug text-foreground tracking-tight">{question.text}</p>
           <div className="flex items-center gap-2 mt-4">
-            <Badge variant="ghost" className="text-[8px] font-black uppercase bg-card border border-border/50 text-muted-foreground px-2">
+            <Badge variant="ghost" className="text-[8px] font-black uppercase bg-card border border-border/50 text-muted-foreground px-2 h-5">
               <BookOpen className="w-2.5 h-2.5 mr-1" /> {question.subject}
             </Badge>
             {question.subCategory && (
-              <Badge variant="ghost" className="text-[8px] font-black uppercase bg-card border border-border/50 text-muted-foreground px-2">
+              <Badge variant="ghost" className="text-[8px] font-black uppercase bg-card border border-border/50 text-muted-foreground px-2 h-5">
                 {question.subCategory}
               </Badge>
             )}
           </div>
         </div>
 
-        {alreadyClaimed ? (
-          <div className="text-center py-10 space-y-4">
-            <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto">
-              <Clock className="w-8 h-8 text-emerald-600" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="font-black text-lg">Next Item Calibrating...</h3>
-              <p className="text-xs text-muted-foreground font-medium">You've completed today's professional challenge. Return tomorrow for your next growth trace.</p>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {question.options.map((option, index) => {
-              const isSelected = selectedAnswer === option;
-              const isCorrectAnswer = option === question.correctAnswer;
-              
-              return (
-                <motion.button
-                  key={index}
-                  whileTap={!isReadingLocked ? { scale: 0.98 } : {}}
-                  onClick={() => handleAnswer(option)}
-                  disabled={showResult || isSubmitting || isReadingLocked}
-                  className={cn(
-                    "w-full p-4 rounded-xl text-left font-bold transition-all border-2 flex items-center gap-4 relative overflow-hidden",
-                    showResult 
-                      ? isCorrectAnswer 
-                        ? "border-emerald-500 bg-emerald-500/10 text-emerald-700" 
-                        : isSelected ? "border-rose-500 bg-rose-500/10 text-rose-700" : "border-border opacity-40"
-                      : isSelected ? "border-primary bg-primary/5" : "border-border hover:border-primary/20 bg-card",
-                    isReadingLocked && "opacity-50 grayscale-[0.5] cursor-wait"
-                  )}
-                >
-                  <div className={cn(
-                    "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 border-2 transition-colors",
-                    isSelected || (showResult && isCorrectAnswer) ? "bg-primary border-primary text-white" : "bg-muted border-border text-muted-foreground"
-                  )}>
-                    {isReadingLocked && !showResult ? <Loader2 className="w-3 h-3 animate-spin" /> : String.fromCharCode(65 + index)}
-                  </div>
-                  <span className="text-sm flex-1 leading-tight">{option}</span>
-                  
-                  {isSubmitting && isSelected && (
-                    <Loader2 className="w-4 h-4 animate-spin text-primary ml-2" />
-                  )}
-                  {showResult && isCorrectAnswer && <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />}
-                  {showResult && isSelected && !isCorrectAnswer && <XCircle className="w-5 h-5 text-rose-500 shrink-0" />}
-                </motion.button>
-              );
-            })}
+        <div className="space-y-3">
+          {question.options.map((option, index) => {
+            const isSelected = selectedAnswer === option;
+            const isCorrectAnswer = option === question.correctAnswer;
+            const showAsCorrect = showResult && isCorrectAnswer;
+            const showAsWrong = showResult && isSelected && !isCorrectAnswer;
             
-            {isReadingLocked && (
-              <p className="text-center text-[9px] font-black uppercase tracking-widest text-muted-foreground animate-pulse">
-                <ShieldCheck className="w-3 h-3 inline mr-1" /> Analytical Scan In Progress...
-              </p>
+            return (
+              <motion.button
+                key={index}
+                whileTap={(!isReadingLocked && !showResult) ? { scale: 0.98 } : {}}
+                onClick={() => handleAnswer(option)}
+                disabled={showResult || isSubmitting || isReadingLocked}
+                className={cn(
+                  "w-full p-4 rounded-2xl text-left font-bold transition-all border-2 flex items-center gap-4 relative overflow-hidden active:scale-[0.99]",
+                  showAsCorrect 
+                    ? "border-emerald-500 bg-emerald-500/5 text-emerald-700 shadow-sm" 
+                    : showAsWrong 
+                    ? "border-rose-500 bg-rose-500/5 text-rose-700" 
+                    : showResult && !isSelected 
+                    ? "border-border/40 opacity-40 grayscale"
+                    : isSelected 
+                    ? "border-primary bg-primary/5 shadow-md" 
+                    : "border-border/60 bg-card hover:bg-muted/5",
+                  isReadingLocked && !alreadyClaimedOnMount && "opacity-50 cursor-wait"
+                )}
+              >
+                <div className={cn(
+                  "w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black shrink-0 border-2 transition-all",
+                  showAsCorrect ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20" :
+                  showAsWrong ? "bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-500/20" :
+                  isSelected ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" :
+                  "bg-muted/30 border-border/50 text-muted-foreground"
+                )}>
+                  {isReadingLocked && !showResult && !alreadyClaimedOnMount ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    String.fromCharCode(65 + index)
+                  )}
+                </div>
+                <span className="text-sm flex-1 leading-tight">{option}</span>
+                
+                {isSubmitting && isSelected && (
+                  <Loader2 className="w-5 h-5 animate-spin text-primary ml-2" />
+                )}
+                {showAsCorrect && <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0 animate-victory" />}
+                {showAsWrong && <XCircle className="w-6 h-6 text-rose-500 shrink-0" />}
+              </motion.button>
+            );
+          })}
+          
+          <AnimatePresence>
+            {isReadingLocked && !alreadyClaimedOnMount && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="flex items-center justify-center gap-2 py-2"
+              >
+                <ShieldCheck className="w-4 h-4 text-primary animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-primary">Analytical Scan Active...</span>
+              </motion.div>
             )}
-          </div>
-        )}
+          </AnimatePresence>
+        </div>
 
         <AnimatePresence>
           {showResult && (
@@ -212,42 +224,57 @@ export function QuestionOfTheDay({
               initial={{ height: 0, opacity: 0 }} 
               animate={{ height: 'auto', opacity: 1 }}
               className={cn(
-                "p-5 rounded-2xl space-y-3 border-2",
-                isCorrect ? "bg-emerald-50 border-emerald-100" : "bg-rose-50 border-rose-100"
+                "p-6 rounded-[2rem] space-y-4 border-2 shadow-inner",
+                isCorrect || alreadyClaimedOnMount ? "bg-emerald-500/10 border-emerald-500/20" : "bg-rose-500/10 border-rose-500/20"
               )}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {isCorrect ? <Sparkles className="w-5 h-5 text-emerald-600 animate-sparkle" /> : <AlertCircle className="w-5 h-5 text-rose-600" />}
-                  <span className={cn("font-black text-sm uppercase tracking-widest", isCorrect ? "text-emerald-700" : "text-rose-700")}>
-                    {isCorrect ? "Strategic Accuracy!" : "Calibration Divergence"}
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-10 h-10 rounded-xl flex items-center justify-center shadow-md",
+                    isCorrect || alreadyClaimedOnMount ? "bg-emerald-500 text-white" : "bg-rose-500 text-white"
+                  )}>
+                    {isCorrect || alreadyClaimedOnMount ? <Sparkles className="w-6 h-6 fill-current animate-sparkle" /> : <AlertCircle className="w-6 h-6" />}
+                  </div>
+                  <div>
+                    <p className={cn("font-black text-sm uppercase tracking-widest", isCorrect || alreadyClaimedOnMount ? "text-emerald-700" : "text-rose-700")}>
+                      {alreadyClaimedOnMount ? "Trace Logged" : isCorrect ? "Strategic Accuracy!" : "Calibration Divergence"}
+                    </p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest opacity-60">Pedagogical Insight</p>
+                  </div>
                 </div>
-                {isCorrect && (
-                  <Badge className="bg-emerald-600 text-white font-black text-[9px] uppercase border-none px-3 py-1">
+                {(isCorrect || alreadyClaimedOnMount) && !alreadyClaimedOnMount && (
+                  <Badge className="bg-emerald-600 text-white font-black text-xs px-3 py-1 border-none shadow-lg">
                     +{XP_REWARDS.QUESTION_OF_THE_DAY} XP
                   </Badge>
                 )}
               </div>
               
               {question.explanation && (
-                <div className="pt-3 border-t border-black/5">
-                  <div className="flex items-start gap-2">
+                <div className="pt-4 border-t border-black/5 bg-card/40 p-4 rounded-xl">
+                  <div className="flex items-start gap-3">
                     <Info className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-                    <p className="text-xs font-medium text-muted-foreground leading-relaxed italic">
+                    <p className="text-xs font-medium text-foreground leading-relaxed italic">
                       {question.explanation}
                     </p>
                   </div>
+                </div>
+              )}
+
+              {alreadyClaimedOnMount && (
+                <div className="flex items-center justify-center gap-2 pt-2">
+                  <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Next Item in 24h</span>
                 </div>
               )}
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div className="p-4 bg-muted/20 rounded-xl border border-border/50 flex items-center gap-3">
-          <Info className="w-4 h-4 text-primary opacity-40" />
-          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
-            Professional Rules: 1 Item / 24 Hours. Rewards: +25 XP. Correct items reinforce your board readiness trace.
+        <div className="p-4 bg-muted/20 rounded-2xl border border-border/50 flex items-start gap-3">
+          <Zap className="w-4 h-4 text-primary shrink-0 mt-0.5 opacity-60" />
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
+            <span className="text-primary font-black">Daily Protocol:</span> Complete 1 professional insight item every 24 hours to reinforce your analytical board readiness.
           </p>
         </div>
       </CardContent>
