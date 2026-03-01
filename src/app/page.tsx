@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo, useRef } from 'react';
@@ -37,6 +38,8 @@ import {
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
+import { ResultUnlockDialog } from "@/components/exam/ResultUnlockDialog";
+import { RankUpDialog } from "@/components/ui/rank-up-dialog";
 import { Question } from "@/app/lib/mock-data";
 import { useUser, useFirestore } from "@/firebase";
 import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp, query, where, limit } from "firebase/firestore";
@@ -129,6 +132,10 @@ function LetsPrepContent() {
   const isStartingRef = useRef(false);
   
   const [newResultId, setNewResultId] = useState<string | undefined>(undefined);
+  const [showResultUnlock, setShowResultUnlock] = useState(false);
+  const [showRankUp, setShowRankUp] = useState(false);
+  const [celebratedRank, setCelebratedRank] = useState(1);
+  const [celebratedReward, setCelebratedReward] = useState(0);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (window.scrollY <= 10) {
@@ -152,7 +159,6 @@ function LetsPrepContent() {
       setIsRefreshing(true);
       try {
         await refreshUser();
-        if (typeof window !== 'undefined') window.location.reload();
         toast({ title: "Refreshed", description: "Latest data loaded." });
       } catch (e) {
         console.error('Pull to refresh error:', e);
@@ -170,6 +176,22 @@ function LetsPrepContent() {
   };
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
+
+  // Rank-up celebration effect
+  useEffect(() => {
+    if (user && rankData && user.lastRewardedRank && rankData.rank > user.lastRewardedRank) {
+      setCelebratedRank(rankData.rank);
+      setCelebratedReward(rankData.rankUpReward);
+      setShowRankUp(true);
+      
+      if (firestore) {
+        updateDoc(doc(firestore, 'users', user.uid), {
+          lastRewardedRank: rankData.rank,
+          credits: increment(rankData.rankUpReward)
+        });
+      }
+    }
+  }, [rankData?.rank, user, firestore]);
 
   const configDocRef = useMemo(() => {
     if (!firestore) return null;
@@ -292,7 +314,6 @@ function LetsPrepContent() {
     }
   };
 
-  // Query parameter startup logic
   useEffect(() => {
     const startParam = searchParams.get('start');
     if (startParam && user && firestore && !authLoading && state === 'dashboard' && !loading && !isStartingRef.current) {
@@ -375,7 +396,13 @@ function LetsPrepContent() {
 
     setLoadingStep(100);
     setLoading(false);
-    setTimeout(() => { setState('results'); }, 300);
+    
+    // REDUCED FREQUENCY: Only show Result Unlock for Full Simulations (> 10 items)
+    if (!user.isPro && !isQuickFire && currentQuestions.length > 10) {
+      setShowResultUnlock(true);
+    } else {
+      setTimeout(() => { setState('results'); }, 300);
+    }
   };
 
   const handleWatchXpAd = async () => {
@@ -466,6 +493,25 @@ function LetsPrepContent() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <RankUpDialog 
+        isOpen={showRankUp} 
+        onClose={() => setShowRankUp(false)} 
+        rank={celebratedRank} 
+        reward={celebratedReward} 
+      />
+
+      <ResultUnlockDialog
+        open={showResultUnlock}
+        onClose={() => setShowResultUnlock(false)}
+        onUnlock={() => setState('results')}
+        questionsCount={currentQuestions.length}
+        correctAnswers={Object.values(examAnswers).filter((answer, index) => {
+          const question = currentQuestions[index];
+          return question && answer === question.correctAnswer;
+        }).length}
+        timeSpent={examTime}
+      />
 
       <AnimatePresence mode="wait">
         {state === 'exam' ? (
