@@ -102,12 +102,30 @@ function sanitizeData(data: any): any {
 const EducationalLoader = ({ message }: { message?: string }) => (
   <div className="flex flex-col items-center justify-center gap-8 animate-in fade-in duration-1000">
     <div className="relative">
-      <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} className="w-32 h-32 border-2 border-dashed border-primary/20 rounded-full absolute -inset-4" />
+      <motion.div 
+        animate={{ rotate: 360 }} 
+        transition={{ duration: 10, repeat: Infinity, ease: "linear" }} 
+        className="w-32 h-32 border-2 border-dashed border-primary/20 rounded-full absolute -inset-4" 
+      />
       <div className="w-24 h-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center relative z-10 shadow-2xl shadow-primary/10 overflow-hidden">
-        <motion.div animate={{ y: [0, -6, 0], rotate: [0, 3, -3, 0] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}><GraduationCap className="w-12 h-12 text-primary" /></motion.div>
+        <motion.div 
+          animate={{ y: [0, -6, 0], rotate: [0, 3, -3, 0] }} 
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <GraduationCap className="w-12 h-12 text-primary" />
+        </motion.div>
       </div>
     </div>
-    {message && <p className="font-black text-xl tracking-tight text-foreground uppercase text-center">{message}</p>}
+    {message && (
+      <div className="space-y-2 text-center">
+        <p className="font-black text-xl tracking-tight text-foreground uppercase tracking-widest">{message}</p>
+        <div className="flex items-center justify-center gap-1.5">
+          <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+          <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+          <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
+        </div>
+      </div>
+    )}
   </div>
 );
 
@@ -208,7 +226,6 @@ function LetsPrepContent() {
   useEffect(() => {
     if (user && startParam && !loading && state === 'dashboard') {
       startExam(startParam);
-      // Clean up URL so it doesn't re-trigger on refresh
       const newUrl = window.location.pathname;
       window.history.replaceState({}, '', newUrl);
     }
@@ -390,7 +407,20 @@ function LetsPrepContent() {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-background text-foreground font-body" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined }}>
       <Toaster />
       
-      {/* Auth Modal */}
+      {/* Loading Overlay */}
+      <AnimatePresence>
+        {loading && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1500] flex items-center justify-center bg-background/80 backdrop-blur-md"
+          >
+            <EducationalLoader message={loadingMessage} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-sm outline-none overflow-hidden">
           <div className="bg-emerald-500/10 p-10 flex flex-col items-center text-center">
@@ -404,7 +434,6 @@ function LetsPrepContent() {
         </DialogContent>
       </Dialog>
 
-      {/* Feedback Modal */}
       <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-md outline-none overflow-hidden">
           <div className="bg-primary/10 p-10 flex flex-col items-center justify-center text-center">
@@ -441,7 +470,6 @@ function LetsPrepContent() {
           </motion.div>
         ) : (
           <motion.div key="dashboard" variants={containerVariants} initial="hidden" animate="show" className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
-            {/* Quick Stats */}
             <motion.div variants={containerVariants} className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {displayStats.map((stat, i) => (
                 <motion.div key={i} variants={itemVariants} className="android-surface rounded-2xl p-3 flex items-center gap-3">
@@ -478,7 +506,6 @@ function LetsPrepContent() {
                   </Card>
                 </motion.div>
 
-                {/* Training Zones */}
                 <div className="space-y-4">
                   <h3 className="text-xl font-black tracking-tight flex items-center gap-2"><Target className="w-5 h-5 text-primary" /> Training Zones</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -503,7 +530,6 @@ function LetsPrepContent() {
                   </div>
                 </div>
 
-                {/* Support Section */}
                 <div className="space-y-4 pt-4">
                   <h3 className="text-xl font-black tracking-tight flex items-center gap-2"><Users className="w-5 h-5 text-primary" /> Support & Community</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -519,26 +545,32 @@ function LetsPrepContent() {
                 </div>
               </div>
 
-              {/* Sidebar: Mobile App Download */}
               <div className="lg:col-span-4 space-y-6">
                 <Card className="android-surface border-none shadow-xl rounded-[2.25rem] bg-gradient-to-br from-emerald-500/20 via-card to-background p-6 overflow-hidden">
                   <div className="space-y-5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center"><Smartphone className="text-emerald-600 w-6 h-6" /></div>
+                        <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center shadow-inner"><Smartphone className="text-emerald-600 w-6 h-6" /></div>
                         <div><h3 className="font-black text-lg text-foreground leading-tight">Get Mobile App</h3><p className="text-[10px] opacity-60 uppercase font-bold tracking-widest">Study Anywhere</p></div>
                       </div>
                       <Badge variant="outline" className="text-[9px] uppercase font-black">{isApkLoading ? '---' : `v${apkInfo?.version}`}</Badge>
                     </div>
-                    <div className="flex flex-col items-center justify-center p-5 bg-card rounded-[2rem] border-2 border-dashed border-emerald-500/20 relative">
+                    <div className="flex flex-col items-center justify-center p-5 bg-card rounded-[2rem] border-2 border-dashed border-emerald-500/20 relative min-h-[160px]">
                       {isApkLoading ? (
-                        <div className="w-32 h-32 flex items-center justify-center"><Loader2 className="animate-spin text-emerald-300 w-8 h-8" /></div>
+                        <div className="flex flex-col items-center gap-2">
+                          <Loader2 className="animate-spin text-emerald-300 w-8 h-8" />
+                          <span className="text-[8px] font-black uppercase text-muted-foreground">Fetching trace...</span>
+                        </div>
                       ) : qrCodeUrl ? (
                         <div className="space-y-3 flex flex-col items-center">
-                          <div className="w-32 h-32 bg-white p-1 rounded-xl shadow-md"><img src={qrCodeUrl} alt="QR Code" className="w-full h-full" /></div>
+                          <div className="w-32 h-32 bg-white p-1 rounded-xl shadow-md border border-emerald-100">
+                            <img src={qrCodeUrl} alt="QR Code" className="w-full h-full" />
+                          </div>
                           <p className="text-[9px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-1"><QrCode className="w-3 h-3" /> Scan to Install</p>
                         </div>
-                      ) : null}
+                      ) : (
+                        <p className="text-[10px] text-muted-foreground text-center">Unable to generate QR code.</p>
+                      )}
                     </div>
                     <Button onClick={() => window.location.href = apkInfo?.downloadUrl || GITHUB_APK_URL} disabled={isApkLoading} className="w-full h-14 rounded-2xl font-black gap-3 bg-emerald-500 text-white shadow-xl shadow-emerald-500/30 hover:bg-emerald-600 active:scale-95 transition-all">
                       {isApkLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <Download className="w-5 h-5" />} Direct Download
