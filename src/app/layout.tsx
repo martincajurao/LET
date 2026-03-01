@@ -69,7 +69,10 @@ export default function RootLayout({
               </Suspense>
               <AutoUpdateChecker checkOnMount={true} checkInterval={24 * 60 * 60 * 1000} autoDownload={true} />
 
-              <Navbar />
+              <Suspense fallback={null}>
+                <Navbar />
+              </Suspense>
+              
               <main className="pb-24 md:pb-8">
                 <PageTransition>
                   <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
@@ -77,7 +80,10 @@ export default function RootLayout({
                   </Suspense>
                 </PageTransition>
               </main>
-              <MobileBottomNav />
+
+              <Suspense fallback={null}>
+                <MobileBottomNav />
+              </Suspense>
             </FirebaseClientProvider>
           </ThemeProvider>
         </body>

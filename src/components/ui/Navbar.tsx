@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useUser, useFirestore } from '@/firebase/index';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Link from 'next/link';
@@ -99,6 +99,42 @@ export function Navbar() {
     return () => clearInterval(interval);
   }, [calculateCounts]);
 
+  const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
+
+  const navItems = useMemo(() => [
+    { label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, href: '/dashboard' },
+    { 
+      label: 'Daily Missions', 
+      icon: (
+        <div className="relative">
+          <ListTodo className="w-4 h-4" />
+          {claimableTasksCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary text-primary-foreground text-[7px] font-black rounded-full flex items-center justify-center border border-card shadow-sm animate-bounce">
+              {claimableTasksCount}
+            </span>
+          )}
+        </div>
+      ), 
+      href: '/tasks' 
+    },
+    { label: 'Global Arena', icon: <Trophy className="w-4 h-4" />, href: '/events' },
+    { 
+      label: 'Notifications',
+      icon: (
+        <div className="relative">
+          <Bell className="w-4 h-4" />
+          {availableTasksCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary text-primary-foreground text-[8px] font-black rounded-full flex items-center justify-center border border-card shadow-sm animate-bounce">
+              {availableTasksCount}
+            </span>
+          )}
+        </div>
+      ), 
+      href: '#', 
+      onClick: () => setShowAlertsModal(true)
+    },
+  ], [availableTasksCount, claimableTasksCount]);
+
   const handleWatchAd = async () => {
     if (!user || !firestore || watchingAd) return;
     
@@ -135,42 +171,8 @@ export function Navbar() {
     }, 3500);
   };
 
+  // EARLY RETURN FOR GUESTS - PLACED AFTER HOOKS
   if (!user) return null;
-
-  const rankData = getRankData(user.xp || 0);
-  const navItems = [
-    { label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, href: '/dashboard' },
-    { 
-      label: 'Daily Missions', 
-      icon: (
-        <div className="relative">
-          <ListTodo className="w-4 h-4" />
-          {claimableTasksCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary text-primary-foreground text-[7px] font-black rounded-full flex items-center justify-center border border-card shadow-sm animate-bounce">
-              {claimableTasksCount}
-            </span>
-          )}
-        </div>
-      ), 
-      href: '/tasks' 
-    },
-    { label: 'Global Arena', icon: <Trophy className="w-4 h-4" />, href: '/events' },
-    { 
-      label: 'Notifications',
-      icon: (
-        <div className="relative">
-          <Bell className="w-4 h-4" />
-          {availableTasksCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary text-primary-foreground text-[8px] font-black rounded-full flex items-center justify-center border border-card shadow-sm animate-bounce">
-              {availableTasksCount}
-            </span>
-          )}
-        </div>
-      ), 
-      href: '#', 
-      onClick: () => setShowAlertsModal(true)
-    },
-  ];
 
   return (
     <>
@@ -269,7 +271,7 @@ export function Navbar() {
                       <span className="text-muted-foreground">{rankData?.title}</span>
                       <span className="text-primary">{rankData?.xpInRank || 0} / {rankData?.nextRankXp} XP</span>
                     </div>
-                    <Progress value={rankData?.progress} className="h-1.5" />
+                    <Progress value={rankData?.progress || 0} className="h-1.5" />
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-2 bg-border/50" />

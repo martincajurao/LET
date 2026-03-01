@@ -72,8 +72,8 @@ function NavContent() {
     }
 
     const now = Date.now();
-    const adAvailable = (currentUser.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP <= now && (currentUser.dailyAdCount || 0) < DAILY_AD_LIMIT;
-    const qfAvailable = (currentUser.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE <= now;
+    const adAvailable = (Number(currentUser.lastAdXpTimestamp) || 0) + COOLDOWNS.AD_XP <= now && (currentUser.dailyAdCount || 0) < DAILY_AD_LIMIT;
+    const qfAvailable = (Number(currentUser.lastQuickFireTimestamp) || 0) + COOLDOWNS.QUICK_FIRE <= now;
     setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
 
     let claimableCount = 0;
@@ -103,8 +103,14 @@ function NavContent() {
   }, [lastScrollY]);
 
   const handleNavClick = (item: any) => {
-    if (item.id === 'practice') { setIsPracticeOpen(true); return; }
-    if (item.id === 'notifications') { setIsAlertsOpen(true); return; }
+    if (item.id === 'practice') { 
+      setIsPracticeOpen(true); 
+      return; 
+    }
+    if (item.id === 'notifications') { 
+      setIsAlertsOpen(true); 
+      return; 
+    }
     router.push(item.href);
   };
 
@@ -131,9 +137,7 @@ function NavContent() {
     }, 3500);
   };
 
-  if (!user) return null;
-
-  const navItems = [
+  const navItems = useMemo(() => [
     { id: 'home', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, href: '/dashboard' },
     { 
       id: 'tasks', 
@@ -163,7 +167,10 @@ function NavContent() {
       ), 
       href: '#' 
     }
-  ];
+  ], [claimableTasksCount, availableTasksCount]);
+
+  // EARLY RETURN FOR GUESTS - PLACED AFTER HOOKS
+  if (!user) return null;
 
   return (
     <>

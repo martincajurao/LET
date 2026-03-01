@@ -144,7 +144,7 @@ function LetsPrepContent() {
   const [examAnswers, setExamAnswers] = useState<Record<string, string>>({});
   const [examTime, setExamTime] = useState(0);
   const [lastXpEarned, setLastXpEarned] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [isCalibrating, setIsCalibrating] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
   const [showAuthModal, setShowAuthModal] = useState(false);
   
@@ -192,7 +192,7 @@ function LetsPrepContent() {
       }
     }
 
-    setLoading(true);
+    setIsCalibrating(true);
     setLoadingMessage("Calibrating Learning Path...");
     try {
       const questionPool = await fetchQuestionsFromFirestore(firestore);
@@ -215,24 +215,25 @@ function LetsPrepContent() {
       setCurrentQuestions(finalQuestions);
       setTimeout(() => { 
         setState('exam'); 
-        setLoading(false); 
+        setIsCalibrating(false); 
         isStartingRef.current = false;
       }, 300);
     } catch (e: any) { 
       toast({ variant: "destructive", title: "Simulation Failed", description: e.message }); 
-      setLoading(false); 
+      setIsCalibrating(false); 
       isStartingRef.current = false;
     }
   };
 
   useEffect(() => {
-    if (user && startParam && !loading && state === 'dashboard') {
+    if (user && startParam && !isCalibrating && state === 'dashboard') {
+      console.log('[Landing] Auto-launching track:', startParam);
       startExam(startParam);
       // Clean up the URL
       const newUrl = window.location.pathname;
       window.history.replaceState({}, '', newUrl);
     }
-  }, [user, startParam, loading, state]);
+  }, [user, startParam, isCalibrating, state]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (window.scrollY <= 10) {
@@ -340,7 +341,7 @@ function LetsPrepContent() {
 
     setExamAnswers(answers);
     setExamTime(timeSpent);
-    setLoading(true);
+    setIsCalibrating(true);
     setLoadingMessage("Syncing Results...");
 
     const results = currentQuestions.map(q => {
@@ -367,7 +368,7 @@ function LetsPrepContent() {
     } catch (e) {
       console.error("Result sync error:", e);
     } finally {
-      setLoading(false);
+      setIsCalibrating(false);
       if (isQuickFire) setState('quickfire_results');
       else setState('results');
     }
@@ -415,7 +416,7 @@ function LetsPrepContent() {
       <Toaster />
       
       <AnimatePresence>
-        {loading && (
+        {isCalibrating && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -493,8 +494,8 @@ function LetsPrepContent() {
                       <Badge variant="secondary" className="font-bold text-[10px] uppercase px-4 py-1 bg-primary/20 text-primary border-none">Free Practice Access</Badge>
                       <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-foreground">Prepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
                       {user ? (
-                        <Button size="lg" disabled={loading} onClick={() => startExam('all')} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 active:scale-95 group">
-                          {loading ? <Loader2 className="animate-spin" /> : <Zap className="w-6 h-6 fill-current" />} <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        <Button size="lg" disabled={isCalibrating} onClick={() => startExam('all')} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 active:scale-95 group">
+                          {isCalibrating ? <Loader2 className="animate-spin" /> : <Zap className="w-6 h-6 fill-current" />} <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </Button>
                       ) : (
                         <motion.div 
@@ -575,23 +576,27 @@ function LetsPrepContent() {
                       </div>
                       <Badge variant="outline" className="text-[9px] uppercase font-black">{isApkLoading ? '---' : `v${apkInfo?.version}`}</Badge>
                     </div>
+                    
                     <div className="flex flex-col items-center justify-center p-5 bg-card rounded-[2rem] border-2 border-dashed border-emerald-500/20 relative min-h-[160px]">
-                      {isApkLoading ? (
-                        <div className="flex flex-col items-center gap-2">
-                          <Loader2 className="animate-spin text-emerald-300 w-8 h-8" />
-                          <span className="text-[8px] font-black uppercase text-muted-foreground">Fetching trace...</span>
-                        </div>
-                      ) : qrCodeUrl ? (
-                        <div className="space-y-3 flex flex-col items-center">
-                          <div className="w-32 h-32 bg-white p-1 rounded-xl shadow-md border border-emerald-100">
-                            <img src={qrCodeUrl} alt="QR Code" className="w-full h-full" />
-                          </div>
-                          <p className="text-[9px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-1"><QrCode className="w-3 h-3" /> Scan to Install</p>
-                        </div>
-                      ) : (
-                        <p className="text-[10px] text-muted-foreground text-center">Unable to generate QR code.</p>
-                      )}
+                      <AnimatePresence mode="wait">
+                        {isApkLoading ? (
+                          <motion.div key="apk-loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-2">
+                            <Loader2 className="animate-spin text-emerald-300 w-8 h-8" />
+                            <span className="text-[8px] font-black uppercase text-muted-foreground">Fetching trace...</span>
+                          </motion.div>
+                        ) : qrCodeUrl ? (
+                          <motion.div key="apk-qr" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="space-y-3 flex flex-col items-center">
+                            <div className="w-32 h-32 bg-white p-1 rounded-xl shadow-md border border-emerald-100 overflow-hidden">
+                              <img src={qrCodeUrl} alt="QR Code" className="w-full h-full object-contain" />
+                            </div>
+                            <p className="text-[9px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-1"><QrCode className="w-3 h-3" /> Scan to Install</p>
+                          </motion.div>
+                        ) : (
+                          <motion.p key="apk-error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-muted-foreground text-center">Unable to generate QR code.</motion.p>
+                        )}
+                      </AnimatePresence>
                     </div>
+
                     <Button onClick={() => window.location.href = apkInfo?.downloadUrl || GITHUB_APK_URL} disabled={isApkLoading} className="w-full h-14 rounded-2xl font-black gap-3 bg-emerald-500 text-white shadow-xl shadow-emerald-500/30 hover:bg-emerald-600 active:scale-95 transition-all">
                       {isApkLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <Download className="w-5 h-5" />} Direct Download
                     </Button>
