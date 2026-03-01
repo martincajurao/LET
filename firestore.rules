@@ -31,8 +31,11 @@ service cloud.firestore {
     // Exam Results Rules
     match /exam_results/{resultId} {
       allow create: if isAuthenticated();
-      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
-      allow list: if isAuthenticated() && request.query.limit <= 100;
+      allow get: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
+      allow list: if isAuthenticated() && (
+        (request.query.limit <= 100 && (resource == null || resource.data.userId == request.auth.uid)) ||
+        (request.query.limit <= 10)
+      );
     }
 
     // Competition Events

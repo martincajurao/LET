@@ -17,6 +17,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { nativeAuth, NativeUser } from '@/lib/native-auth';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
+import { errorEmitter } from '../error-emitter';
+import { FirestorePermissionError } from '../errors';
 
 export interface UserProfile {
   uid: string;
@@ -365,9 +367,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }
           setLoading(false);
-        }, (error) => {
-          console.error("Firestore subscription error:", error);
-          toast({ variant: "destructive", title: "Sync Error", description: "Failed to sync your profile." });
+        }, async (error) => {
+          const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'get',
+          });
+          errorEmitter.emit('permission-error', permissionError);
           setLoading(false);
         });
       } else {

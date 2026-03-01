@@ -45,7 +45,7 @@ import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
 import { Question, MAJORSHIPS } from "@/app/lib/mock-data";
 import { useUser, useFirestore } from "@/firebase";
-import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp, query, where, getCountFromServer } from "firebase/firestore";
+import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp, query, where } from "firebase/firestore";
 import { fetchQuestionsFromFirestore } from "@/lib/db-seed";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
@@ -54,6 +54,8 @@ import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, getCareerRankTitle } from '@/lib/xp-system';
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 type AppState = 'dashboard' | 'exam' | 'results' | 'onboarding';
 
@@ -187,12 +189,18 @@ function LetsPrepContent() {
 
   useEffect(() => {
     if (!firestore) return;
-    const unsub = onSnapshot(doc(firestore, "system_configs", "global"), (snap) => {
+    const docRef = doc(firestore, "system_configs", "global");
+    const unsub = onSnapshot(docRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         setTimePerQuestion(data.timePerQuestion || 60);
         setLimits({ limitGenEd: data.limitGenEd || 10, limitProfEd: data.limitProfEd || 10, limitSpec: data.limitSpec || 10 });
       }
+    }, (error) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'get'
+      }));
     });
     return () => unsub();
   }, [firestore]);
@@ -200,10 +208,14 @@ function LetsPrepContent() {
   useEffect(() => {
     if (!user || !firestore) return;
     const q = query(collection(firestore, "exam_results"), where("userId", "==", user.uid));
-    const unsub = onSnapshot(q, async () => {
-      const snap = await getCountFromServer(q);
-      const count = snap.data().count;
+    const unsub = onSnapshot(q, (snap) => {
+      const count = snap.size;
       setUserRank(count > 0 ? `#${count}` : '---');
+    }, (error) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: 'exam_results',
+        operation: 'list'
+      }));
     });
     return () => unsub();
   }, [user, firestore]);
