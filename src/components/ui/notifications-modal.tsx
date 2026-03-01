@@ -89,8 +89,8 @@ export function NotificationsModal({
   };
 
   const adReachedLimit = (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT;
-  const adAvailable = adTimeLeft <= 0 && !adReachedLimit;
-  const qfAvailable = qfTimeLeft <= 0;
+  const adAvailable = adTimeLeft <= 0 && !adReachedLimit && !isWatchingAd;
+  const qfAvailable = qfTimeLeft <= 0 && !isWatchingAd;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !isWatchingAd && onClose()}>
@@ -130,7 +130,7 @@ export function NotificationsModal({
           {/* Quick Fire Card */}
           <div className={cn(
             "p-5 rounded-[2rem] border-2 transition-all active:scale-[0.98] group",
-            qfAvailable && !isWatchingAd ? "bg-card border-primary/20 shadow-md" : "bg-muted/30 border-transparent opacity-80"
+            qfAvailable ? "bg-card border-primary/20 shadow-md" : "bg-muted/30 border-transparent opacity-80"
           )}>
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -145,7 +145,7 @@ export function NotificationsModal({
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">+{XP_REWARDS.QUICK_FIRE_COMPLETE} XP Potential</p>
                 </div>
               </div>
-              {qfAvailable && !isWatchingAd && (
+              {qfAvailable && (
                 <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[9px] uppercase animate-pulse">Ready</Badge>
               )}
             </div>
@@ -158,7 +158,7 @@ export function NotificationsModal({
               }}
               className="w-full h-12 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg active:scale-95 transition-all"
             >
-              {qfAvailable ? "Begin Challenge" : `Locked: ${formatTime(qfTimeLeft)}`}
+              {qfAvailable ? "Begin Challenge" : <span className="font-mono">Locked: {formatTime(qfTimeLeft)}</span>}
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
@@ -166,7 +166,7 @@ export function NotificationsModal({
           {/* Ad Reward Card */}
           <div className={cn(
             "p-5 rounded-[2rem] border-2 transition-all relative overflow-hidden group",
-            adAvailable && !isWatchingAd ? "bg-card border-yellow-500/20 shadow-md" : "bg-muted/30 border-transparent opacity-80"
+            adAvailable ? "bg-card border-yellow-500/20 shadow-md" : "bg-muted/30 border-transparent opacity-80"
           )}>
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -181,7 +181,7 @@ export function NotificationsModal({
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">+{XP_REWARDS.AD_WATCH_XP} XP & +5 Credits</p>
                 </div>
               </div>
-              {adAvailable && !isWatchingAd && (
+              {adAvailable && (
                 <Badge className="bg-yellow-500/10 text-yellow-600 border-none font-black text-[9px] uppercase animate-pulse">Ready</Badge>
               )}
             </div>

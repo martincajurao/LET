@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
@@ -228,6 +229,18 @@ function LetsPrepContent() {
   }, [user]);
 
   const startExam = async (category: 'General Education' | 'Professional Education' | 'Specialization' | 'all' | 'quickfire' | 'Major' | 'Prof Ed') => {
+    if (!user) return;
+
+    // ABUSE PREVENTION: Strict Cooldown Check
+    if (category === 'quickfire') {
+      const now = Date.now();
+      const lastQf = typeof user.lastQuickFireTimestamp === 'number' ? user.lastQuickFireTimestamp : 0;
+      if (lastQf + COOLDOWNS.QUICK_FIRE > now) {
+        toast({ variant: "destructive", title: "Access Denied", description: "Brain Teaser is still calibrating. Please wait for the cooldown." });
+        return;
+      }
+    }
+
     setLoading(true);
     setLoadingStep(0);
     setLoadingMessage("Calibrating Learning Path...");
@@ -268,6 +281,20 @@ function LetsPrepContent() {
 
   const handleExamComplete = async (answers: Record<string, string>, timeSpent: number, confidentAnswers: Record<string, boolean>) => {
     if (!user || !firestore) return;
+    
+    const isQuickFire = currentQuestions.length <= 5;
+    const now = Date.now();
+
+    // ABUSE PREVENTION: Final write check for Quick Fire
+    if (isQuickFire) {
+      const lastQf = typeof user.lastQuickFireTimestamp === 'number' ? user.lastQuickFireTimestamp : 0;
+      if (lastQf + COOLDOWNS.QUICK_FIRE > now) {
+        toast({ variant: "destructive", title: "Sync Aborted", description: "Multiple sessions detected. Rewards will not be granted." });
+        setState('dashboard');
+        return;
+      }
+    }
+
     setExamAnswers(answers);
     setExamTime(timeSpent);
     setLoading(true);
@@ -296,18 +323,22 @@ function LetsPrepContent() {
       }
     });
 
-    const isQuickFire = currentQuestions.length <= 5;
     if (!isQuickFire) xpEarned += (currentQuestions.length >= 50 ? XP_REWARDS.FINISH_FULL_SIM : XP_REWARDS.FINISH_TRACK);
     else xpEarned += Math.round((correctCount / 5) * XP_REWARDS.QUICK_FIRE_COMPLETE);
 
     setLastXpEarned(xpEarned);
-    const resultsData = sanitizeData({ userId: user.uid, displayName: user.displayName || 'Guest Educator', timestamp: Date.now(), overallScore, timeSpent, xpEarned, results, lastActiveDate: serverTimestamp() });
+    const resultsData = sanitizeData({ userId: user.uid, displayName: user.displayName || 'Guest Educator', timestamp: now, overallScore, timeSpent, xpEarned, results, lastActiveDate: serverTimestamp() });
 
     if (!user.uid.startsWith('bypass')) {
       const docRef = await addDoc(collection(firestore, "exam_results"), resultsData);
       setNewResultId(docRef.id);
-      const updateData: any = { dailyQuestionsAnswered: increment(currentQuestions.length), dailyTestsFinished: increment(!isQuickFire ? 1 : 0), xp: increment(xpEarned), lastActiveDate: serverTimestamp() };
-      if (isQuickFire) updateData.lastQuickFireTimestamp = Date.now();
+      const updateData: any = { 
+        dailyQuestionsAnswered: increment(currentQuestions.length), 
+        dailyTestsFinished: increment(!isQuickFire ? 1 : 0), 
+        xp: increment(xpEarned), 
+        lastActiveDate: serverTimestamp() 
+      };
+      if (isQuickFire) updateData.lastQuickFireTimestamp = now;
       await updateDoc(doc(firestore, 'users', user.uid), updateData);
       await refreshUser();
     }
@@ -318,18 +349,34 @@ function LetsPrepContent() {
   };
 
   const handleWatchXpAd = async () => {
-    if (!user || !firestore || adCooldown > 0) return;
+    if (!user || !firestore || adCooldown > 0 || claimingXp) return;
+    
+    if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
+      toast({ title: "Allowance Reached", description: "Daily professional clip limit reached.", variant: "destructive" });
+      return;
+    }
+
     setClaimingXp(true);
     setTimeout(async () => {
       try {
-        await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(XP_REWARDS.AD_WATCH_XP), credits: increment(5), lastAdXpTimestamp: Date.now() });
+        const now = Date.now();
+        await updateDoc(doc(firestore, 'users', user.uid), { 
+          xp: increment(XP_REWARDS.AD_WATCH_XP), 
+          credits: increment(5), 
+          lastAdXpTimestamp: now,
+          dailyAdCount: increment(1)
+        });
         toast({ variant: "reward", title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP earned.` });
-        refreshUser();
-      } catch (e) { toast({ variant: "destructive", title: "Claim Failed", description: "Sync error." }); } finally { setClaimingXp(false); }
-    }, 2500);
+        await refreshUser();
+      } catch (e) { 
+        toast({ variant: "destructive", title: "Claim Failed", description: "Sync error." }); 
+      } finally { 
+        setClaimingXp(false); 
+      }
+    }, 3500);
   };
 
-  const formatCooldown = (ms: number) => {
+  const formatTime = (ms: number) => {
     const totalSeconds = Math.ceil(ms / 1000);
     if (totalSeconds >= 3600) {
       const hours = Math.floor(totalSeconds / 3600);
@@ -436,7 +483,7 @@ function LetsPrepContent() {
                       <div className="grid grid-cols-2 gap-3 pt-2">
                         <Button onClick={handleWatchXpAd} disabled={claimingXp || adCooldown > 0} variant="outline" className="h-12 rounded-xl font-bold text-xs gap-2 border-primary/20 hover:bg-primary/5 active:scale-95 transition-all">
                           {claimingXp ? <Loader2 className="w-4 h-4 animate-spin" /> : adCooldown > 0 ? <Timer className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
-                          <span className={cn(adCooldown > 0 && "font-mono")}>{adCooldown > 0 ? formatCooldown(adCooldown) : "XP Boost Clip"}</span>
+                          <span className={cn(adCooldown > 0 && "font-mono")}>{adCooldown > 0 ? formatTime(adCooldown) : "XP Boost Clip"}</span>
                         </Button>
                         <Button onClick={() => router.push('/dashboard')} variant="default" className="h-12 rounded-xl font-bold text-xs gap-2 shadow-lg shadow-primary/20">
                           <LayoutDashboard className="w-4 h-4" />
