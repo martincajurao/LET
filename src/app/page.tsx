@@ -2,7 +2,7 @@
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +34,8 @@ import {
   Play,
   Target,
   Timer,
-  LayoutDashboard
+  LayoutDashboard,
+  Users
 } from "lucide-react";
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
@@ -107,6 +108,7 @@ function LetsPrepContent() {
   const { isDark, toggleDarkMode } = useTheme();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   
   const [state, setState] = useState<AppState>('dashboard');
   const [currentQuestions, setCurrentQuestions] = useState<Question[]>([]);
@@ -302,6 +304,10 @@ function LetsPrepContent() {
       
       setCurrentQuestions(finalQuestions);
       setLoadingStep(100);
+      
+      // Clear URL query parameters after successful launch to prevent restart loops
+      router.replace(pathname, { scroll: false });
+      
       setTimeout(() => { 
         setState('exam'); 
         setLoading(false); 
