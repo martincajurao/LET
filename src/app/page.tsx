@@ -786,7 +786,9 @@ function LetsPrepContent() {
                             <motion.div key="loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-32 h-32 flex items-center justify-center"><Loader2 className="w-8 h-8 text-emerald-300 animate-spin" /></motion.div>
                           ) : qrCodeUrl ? (
                             <motion.div key="qr" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center">
-                              <div className="w-32 h-32 relative z-10 bg-white p-1 rounded-xl shadow-md border border-emerald-100"><img src={qrCodeUrl} alt="Download QR" className="w-full h-full object-contain" /></div>
+                              <div className="w-32 h-32 relative z-10 bg-white p-1 rounded-xl shadow-md border border-emerald-100">
+                                <img src={qrCodeUrl} alt="Download QR" className="w-full h-full object-contain" />
+                              </div>
                               <div className="flex items-center gap-2 mt-3 text-emerald-600 relative z-10">
                                 <QrCode className="w-3.5 h-3.5" />
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em]">Scan to Install</p>

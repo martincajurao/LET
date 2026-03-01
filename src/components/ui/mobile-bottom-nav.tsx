@@ -133,7 +133,6 @@ function NavContent() {
     }, 3500);
   };
 
-  // Safe visibility check: Hide completely for guests
   if (authLoading || !user) return null;
 
   const navItems = [

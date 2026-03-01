@@ -140,7 +140,6 @@ export function Navbar() {
     }, 3500);
   };
 
-  // Condition check for hiding Navbar entirely for guests
   if (loading || !user) return null;
 
   const navItems = [
