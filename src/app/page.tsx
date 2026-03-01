@@ -557,7 +557,7 @@ function LetsPrepContent() {
 
       <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-md outline-none overflow-hidden">
-          <div className="bg-primary/10 p-10 flex flex-col items-center text-center relative">
+          <div className="bg-primary/10 p-10 flex flex-col items-center justify-center text-center relative">
             <div className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center shadow-lg mb-4 relative z-10">
               <MessageSquare className="w-8 h-8 text-primary" />
             </div>
@@ -654,8 +654,14 @@ function LetsPrepContent() {
                           <Zap className="w-6 h-6 fill-current" /> <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </Button>
                       ) : (
-                        <Button size="lg" onClick={() => setShowAuthModal(true)} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all">
-                          <ShieldCheck className="w-6 h-6" /> <span>Sign In to Launch</span>
+                        <Button size="lg" onClick={() => setShowAuthModal(true)} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-4 shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all">
+                          <div className="flex items-center gap-2 shrink-0">
+                            <GoogleIcon />
+                            <div className="w-6 h-6 bg-[#1877F2] rounded-full flex items-center justify-center shadow-sm">
+                              <Facebook className="w-4 h-4 fill-current text-white" />
+                            </div>
+                          </div>
+                          <span>Sign In to Launch</span>
                         </Button>
                       )}
                     </div>
