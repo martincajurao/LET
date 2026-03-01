@@ -44,6 +44,7 @@ export interface UserProfile {
   streakCount?: number;
   lastActiveDate?: any;
   lastTaskReset?: any;
+  lastLoginRewardClaimedAt?: number;
   referralCode?: string;
   referredBy?: string;
   referralCount?: number;
@@ -109,10 +110,9 @@ function scrubUserData(data: any, prevUser: UserProfile | null): UserProfile {
     'credits', 'xp', 'streakCount', 'dailyAdCount', 
     'dailyQuestionsAnswered', 'dailyTestsFinished', 
     'dailyCreditEarned', 'referralCount', 'referralCreditsEarned', 
-    'mistakesReviewed', 'dailyAiUsage'
+    'mistakesReviewed', 'dailyAiUsage', 'lastLoginRewardClaimedAt'
   ];
 
-  // Distinguish between event dates (defaults to now) and cooldown dates (defaults to zero)
   const eventDateFields = ['lastActiveDate', 'lastTaskReset', 'lastQualityUpdate'];
   const cooldownDateFields = ['lastAdXpTimestamp', 'lastQuickFireTimestamp', 'lastExplanationRequest'];
 
@@ -132,7 +132,7 @@ function scrubUserData(data: any, prevUser: UserProfile | null): UserProfile {
 
   cooldownDateFields.forEach(key => {
     if (scrubbed[key] === undefined || scrubbed[key] === null || isFirestoreSentinel(scrubbed[key])) {
-      scrubbed[key] = (prevUser as any)?.[key] ?? 0; // CRITICAL: Cooldowns default to 0 so they are "ready"
+      scrubbed[key] = (prevUser as any)?.[key] ?? 0;
     } else if (scrubbed[key] && typeof scrubbed[key] === 'object' && scrubbed[key].toMillis) {
       scrubbed[key] = scrubbed[key].toMillis();
     }
@@ -282,6 +282,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       streakCount: 0,
       lastActiveDate: Date.now(),
       lastTaskReset: Date.now(),
+      lastLoginRewardClaimedAt: 0,
       referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
       taskLoginClaimed: false,
       taskQuestionsClaimed: false,

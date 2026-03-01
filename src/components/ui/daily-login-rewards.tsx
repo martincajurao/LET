@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -12,8 +13,7 @@ import {
   CheckCircle2,
   Zap,
   Trophy,
-  Gem,
-  Crown,
+  Loader2,
   ChevronRight,
   Sparkles
 } from "lucide-react";
@@ -33,7 +33,7 @@ const DAILY_REWARDS = [
 interface DailyLoginRewardsProps {
   currentDay: number;
   lastClaimDate?: number;
-  onClaim?: (day: number, xp: number, credits: number) => void;
+  onClaim?: (day: number, xp: number, credits: number) => Promise<void>;
 }
 
 export function DailyLoginRewards({ 
@@ -42,27 +42,33 @@ export function DailyLoginRewards({
   onClaim 
 }: DailyLoginRewardsProps) {
   const [showReward, setShowReward] = useState(false);
-  const [claimedToday, setClaimedToday] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
   const [selectedReward, setSelectedReward] = useState<typeof DAILY_REWARDS[0] | null>(null);
 
-  useEffect(() => {
-    if (lastClaimDate) {
-      const now = new Date();
-      const lastClaim = new Date(lastClaimDate);
-      const isSameDay = now.toDateString() === lastClaim.toDateString();
-      setClaimedToday(isSameDay);
-    }
+  const claimedToday = React.useMemo(() => {
+    if (!lastClaimDate) return false;
+    const now = new Date();
+    const lastClaim = new Date(lastClaimDate);
+    return now.toDateString() === lastClaim.toDateString();
   }, [lastClaimDate]);
 
-  const handleClaim = () => {
+  const handleClaim = async () => {
+    if (isClaiming || claimedToday) return;
+    
     const reward = DAILY_REWARDS[currentDay - 1];
-    if (reward && !claimedToday) {
+    if (!reward) return;
+
+    setIsClaiming(true);
+    try {
       setSelectedReward(reward);
-      setShowReward(true);
       if (onClaim) {
-        onClaim(currentDay, reward.xp, reward.credits);
+        await onClaim(currentDay, reward.xp, reward.credits);
       }
-      setClaimedToday(true);
+      setShowReward(true);
+    } catch (e) {
+      console.error('Failed to claim reward:', e);
+    } finally {
+      setIsClaiming(false);
     }
   };
 
@@ -82,7 +88,7 @@ export function DailyLoginRewards({
     }
   };
 
-  const canClaim = currentDay > 0 && !claimedToday;
+  const canClaim = currentDay > 0 && !claimedToday && !isClaiming;
 
   return (
     <>
@@ -99,11 +105,11 @@ export function DailyLoginRewards({
               </div>
             </div>
             {claimedToday ? (
-              <Badge className="bg-green-500/20 text-green-500 font-bold">
+              <Badge className="bg-green-500/20 text-green-500 font-bold border-none">
                 <CheckCircle2 className="w-3 h-3 mr-1" />Claimed
               </Badge>
             ) : (
-              <Badge className="bg-primary/20 text-primary font-bold animate-pulse">
+              <Badge className="bg-primary/20 text-primary font-bold animate-pulse border-none">
                 <Zap className="w-3 h-3 mr-1" />Available
               </Badge>
             )}
@@ -114,29 +120,69 @@ export function DailyLoginRewards({
           <div className="grid grid-cols-7 gap-2">
             {DAILY_REWARDS.map((reward, index) => {
               const dayNum = index + 1;
-              const isClaimed = dayNum < currentDay;
+              const isPast = dayNum < currentDay;
               const isCurrent = dayNum === currentDay;
-              const isLocked = dayNum > currentDay;
+              const isFuture = dayNum > currentDay;
+              
+              const isVisuallyClaimed = isPast || (isCurrent && claimedToday);
+              
               return (
-                <div key={dayNum} className={cn("relative p-2 rounded-xl text-center transition-all", isLocked && "opacity-40", isCurrent && !isClaimed && "ring-2 ring-primary ring-offset-2", isClaimed && "bg-green-500/10", !isLocked && !isClaimed && getRewardBgColor(reward.type))}>
-                  <div className={cn("w-10 h-10 mx-auto rounded-xl flex items-center justify-center mb-1", isLocked && "bg-muted", isClaimed && "bg-green-500/20", isCurrent && !isClaimed && "bg-gradient-to-br from-primary to-primary/80")}>
-                    {isLocked ? <Lock className="w-4 h-4 text-muted-foreground" /> : isClaimed ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <span className={cn("font-black text-sm", isCurrent ? "text-white" : "text-foreground")}>{dayNum}</span>}
+                <div key={dayNum} className={cn(
+                  "relative p-2 rounded-xl text-center transition-all", 
+                  isFuture && "opacity-40", 
+                  isCurrent && !claimedToday && "ring-2 ring-primary ring-offset-2", 
+                  isVisuallyClaimed && "bg-green-500/10", 
+                  !isFuture && !isVisuallyClaimed && getRewardBgColor(reward.type)
+                )}>
+                  <div className={cn(
+                    "w-10 h-10 mx-auto rounded-xl flex items-center justify-center mb-1", 
+                    isFuture && "bg-muted", 
+                    isVisuallyClaimed && "bg-green-500/20", 
+                    isCurrent && !claimedToday && "bg-gradient-to-br from-primary to-primary/80"
+                  )}>
+                    {isFuture ? (
+                      <Lock className="w-4 h-4 text-muted-foreground" />
+                    ) : isVisuallyClaimed ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <span className={cn("font-black text-sm", isCurrent ? "text-white" : "text-foreground")}>{dayNum}</span>
+                    )}
                   </div>
                   <p className="text-[8px] font-bold text-muted-foreground">Day {dayNum}</p>
-                  {!isLocked && <div className={cn("absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center", reward.type === 'legendary' ? "bg-yellow-500" : reward.type === 'special' ? "bg-purple-500" : "bg-emerald-500")}><span className="text-[8px] font-bold text-white">+</span></div>}
+                  {!isFuture && !isVisuallyClaimed && (
+                    <div className={cn("absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center", reward.type === 'legendary' ? "bg-yellow-500" : reward.type === 'special' ? "bg-purple-500" : "bg-emerald-500")}>
+                      <span className="text-[8px] font-bold text-white">+</span>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
-          <Button onClick={handleClaim} disabled={!canClaim} className={cn("w-full h-12 rounded-xl font-black text-base gap-2", canClaim ? "bg-gradient-to-r from-primary to-primary/80 shadow-lg shadow-primary/30 hover:scale-[1.02]" : "bg-muted text-muted-foreground")}>
-            {claimedToday ? <><CheckCircle2 className="w-5 h-5" />Come Back Tomorrow</> : <><Gift className="w-5 h-5" />Claim Today's Reward</>}
+          <Button 
+            onClick={handleClaim} 
+            disabled={!canClaim} 
+            className={cn(
+              "w-full h-12 rounded-xl font-black text-base gap-2 active:scale-95 transition-all", 
+              canClaim ? "bg-gradient-to-r from-primary to-primary/80 shadow-lg shadow-primary/30" : "bg-muted text-muted-foreground"
+            )}
+          >
+            {isClaiming ? (
+              <><Loader2 className="w-5 h-5 animate-spin" />Syncing Trace...</>
+            ) : claimedToday ? (
+              <><CheckCircle2 className="w-5 h-5" />Come Back Tomorrow</>
+            ) : (
+              <><Gift className="w-5 h-5" />Claim Today's Reward</>
+            )}
           </Button>
           {canClaim && (
-            <div className={cn("p-4 rounded-xl border", getRewardTypeColor(DAILY_REWARDS[currentDay - 1]?.type || 'normal'), getRewardBgColor(DAILY_REWARDS[currentDay - 1]?.type || 'normal'))}>
+            <div className={cn("p-4 rounded-xl border-2 border-dashed", getRewardTypeColor(DAILY_REWARDS[currentDay - 1]?.type || 'normal'), getRewardBgColor(DAILY_REWARDS[currentDay - 1]?.type || 'normal'))}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Sparkles className="w-6 h-6 text-emerald-500 animate-sparkle" />
-                  <div><p className="font-bold">Today's Reward</p><p className="text-xs text-muted-foreground">{DAILY_REWARDS[currentDay - 1]?.xp} XP + {DAILY_REWARDS[currentDay - 1]?.credits} AI Credits</p></div>
+                  <div>
+                    <p className="font-bold">Today's Reward</p>
+                    <p className="text-xs text-muted-foreground">{DAILY_REWARDS[currentDay - 1]?.xp} XP + {DAILY_REWARDS[currentDay - 1]?.credits} AI Credits</p>
+                  </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </div>
@@ -147,17 +193,30 @@ export function DailyLoginRewards({
 
       <AnimatePresence>
         {showReward && selectedReward && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowReward(false)}>
-            <motion.div initial={{ scale: 0.5, y: 50 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.5, y: 50 }} className={cn("relative p-8 rounded-[2rem] bg-card border-4", getRewardTypeColor(selectedReward.type))} onClick={(e) => e.stopPropagation()}>
-              <div className="absolute -top-4 -right-4 w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center animate-bounce"><Star className="w-6 h-6 text-white fill-current" /></div>
-              <div className="text-center space-y-4">
-                <div className={cn("w-20 h-20 mx-auto rounded-2xl flex items-center justify-center bg-gradient-to-br", getRewardTypeColor(selectedReward.type), "bg-white")}><Trophy className="w-10 h-10 text-amber-500" /></div>
-                <div><h3 className="text-2xl font-black">Reward Claimed!</h3><p className="text-muted-foreground">Day {currentDay} Complete</p></div>
-                <div className="flex items-center justify-center gap-4">
-                  <div className="px-4 py-2 rounded-xl bg-primary/10"><p className="text-2xl font-black text-primary">+{selectedReward.xp}</p><p className="text-xs text-muted-foreground font-bold">XP</p></div>
-                  <div className="px-4 py-2 rounded-xl bg-yellow-500/10"><p className="text-2xl font-black text-yellow-500">+{selectedReward.credits}</p><p className="text-xs text-muted-foreground font-bold">AI Credits</p></div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/60 backdrop-blur-md px-4" onClick={() => setShowReward(false)}>
+            <motion.div initial={{ scale: 0.5, y: 50, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.5, y: 50, opacity: 0 }} className={cn("relative p-10 rounded-[2.5rem] bg-card border-4 w-full max-w-sm shadow-2xl", getRewardTypeColor(selectedReward.type))} onClick={(e) => e.stopPropagation()}>
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-16 h-16 bg-yellow-500 rounded-2xl flex items-center justify-center shadow-xl animate-bounce">
+                <Star className="w-8 h-8 text-white fill-current" />
+              </div>
+              <div className="text-center space-y-6">
+                <div className={cn("w-24 h-24 mx-auto rounded-3xl flex items-center justify-center bg-gradient-to-br", getRewardTypeColor(selectedReward.type), "bg-white shadow-inner")}>
+                  <Trophy className="w-12 h-12 text-amber-500" />
                 </div>
-                <Button onClick={() => setShowReward(false)} className="w-full h-12 rounded-xl font-black">Awesome!</Button>
+                <div>
+                  <h3 className="text-3xl font-black tracking-tight">Vault Rewarded!</h3>
+                  <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px] mt-1 opacity-60">Day {currentDay} Simulation Complete</p>
+                </div>
+                <div className="flex items-center justify-center gap-4">
+                  <div className="px-5 py-3 rounded-2xl bg-primary/10 border border-primary/20">
+                    <p className="text-3xl font-black text-primary leading-none">+{selectedReward.xp}</p>
+                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">XP</p>
+                  </div>
+                  <div className="px-5 py-3 rounded-2xl bg-yellow-500/10 border border-yellow-500/20">
+                    <p className="text-3xl font-black text-yellow-600 leading-none">+{selectedReward.credits}</p>
+                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">Credits</p>
+                  </div>
+                </div>
+                <Button onClick={() => setShowReward(false)} className="w-full h-14 rounded-2xl font-black text-lg shadow-xl active:scale-95 transition-all">Launch Learning Path</Button>
               </div>
             </motion.div>
           </motion.div>

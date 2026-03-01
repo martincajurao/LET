@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -5,20 +6,57 @@ import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
 import { DailyLoginRewards } from '@/components/ui/daily-login-rewards';
 import { QuestionOfTheDay } from '@/components/ui/question-of-the-day';
 import { StudyTimer } from '@/components/ui/study-timer';
-import { Target, ArrowLeft, Timer, Gift, Lightbulb } from 'lucide-react';
+import { Target, ArrowLeft, Timer } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, updateDoc, increment } from 'firebase/firestore';
+import { doc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { INITIAL_QUESTIONS } from '@/app/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 export default function TasksPage() {
-  const { user } = useUser();
+  const { user, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+
+  const handleClaimLoginReward = async (day: number, xp: number, credits: number) => {
+    if (!user || !firestore) return;
+    
+    try {
+      const userRef = doc(firestore, 'users', user.uid);
+      await updateDoc(userRef, { 
+        xp: increment(xp),
+        credits: increment(credits),
+        lastLoginRewardClaimedAt: Date.now(),
+        lastActiveDate: serverTimestamp()
+      });
+      await refreshUser();
+      toast({ variant: "reward", title: "Reward Claimed!", description: `+${xp} XP and +${credits} Credits added to vault.` });
+    } catch (e) {
+      console.error('Failed to claim login reward:', e);
+      toast({ variant: "destructive", title: "Claim Failed", description: "Could not synchronize reward trace." });
+      throw e;
+    }
+  };
+
+  const handleQuestionComplete = async (isCorrect: boolean, xpEarned: number) => {
+    if (isCorrect && user && firestore) {
+      try {
+        const userRef = doc(firestore, 'users', user.uid);
+        await updateDoc(userRef, { 
+          xp: increment(xpEarned),
+          dailyQuestionsAnswered: increment(1),
+          lastActiveDate: serverTimestamp()
+        });
+        await refreshUser();
+        toast({ variant: "reward", title: "Great job!", description: `+${xpEarned} XP earned!` });
+      } catch (e) {
+        console.error('Failed to update question completion:', e);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8 pb-24">
@@ -45,15 +83,8 @@ export default function TasksPage() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               <DailyLoginRewards 
                 currentDay={Math.min(((user?.streakCount || 0) % 7) + 1, 7)}
-                onClaim={async (day: number, xp: number, credits: number) => {
-                  if (firestore) {
-                    await updateDoc(doc(firestore, 'users', user.uid), { 
-                      xp: increment(xp),
-                      credits: increment(credits)
-                    });
-                    toast({ variant: "reward", title: "Reward Claimed!", description: `+${xp} XP and +${credits} Credits!` });
-                  }
-                }} 
+                lastClaimDate={user.lastLoginRewardClaimedAt}
+                onClaim={handleClaimLoginReward} 
               />
             </motion.div>
           )}
@@ -63,15 +94,7 @@ export default function TasksPage() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <QuestionOfTheDay 
                 question={INITIAL_QUESTIONS[Math.floor(Date.now() / 86400000) % INITIAL_QUESTIONS.length]}
-                onComplete={async (isCorrect: boolean, xpEarned: number) => {
-                  if (isCorrect && firestore) {
-                    await updateDoc(doc(firestore, 'users', user.uid), { 
-                      xp: increment(xpEarned),
-                      dailyQuestionsAnswered: increment(1)
-                    });
-                    toast({ variant: "reward", title: "Great job!", description: `+${xpEarned} XP earned!` });
-                  }
-                }}
+                onComplete={handleQuestionComplete}
               />
             </motion.div>
           )}
