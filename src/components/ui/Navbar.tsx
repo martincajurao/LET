@@ -171,7 +171,7 @@ export function Navbar() {
     }, 3500);
   };
 
-  // EARLY RETURN FOR GUESTS - PLACED AFTER HOOKS
+  // Visibility check placed AFTER all hooks to comply with Rules of Hooks
   if (!user) return null;
 
   return (

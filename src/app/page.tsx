@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, Suspense, useMemo, useRef } from 'react';
+import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,7 +74,7 @@ const GoogleIcon = () => (
   </svg>
 );
 
-type AppState = 'dashboard' | 'exam' | 'results' | 'quickfire_results' | 'onboarding';
+type AppState = 'dashboard' | 'exam' | 'results' | 'quickfire_results';
 
 const GITHUB_APK_URL = "https://github.com/martincajurao/LET/releases/download/V2.1.0/let.apk";
 
@@ -134,7 +134,6 @@ function LetsPrepContent() {
   const { user, loading: authLoading, loginWithGoogle, loginWithFacebook, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { isDark, toggleDarkMode } = useTheme();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -173,7 +172,7 @@ function LetsPrepContent() {
 
   const startParam = searchParams.get('start');
 
-  const startExam = async (category: string) => {
+  const startExam = useCallback(async (category: string) => {
     if (!user) {
       setShowAuthModal(true);
       return;
@@ -223,17 +222,69 @@ function LetsPrepContent() {
       setIsCalibrating(false); 
       isStartingRef.current = false;
     }
-  };
+  }, [user, firestore, limits, toast]);
 
   useEffect(() => {
     if (user && startParam && !isCalibrating && state === 'dashboard') {
-      console.log('[Landing] Auto-launching track:', startParam);
       startExam(startParam);
-      // Clean up the URL
       const newUrl = window.location.pathname;
       window.history.replaceState({}, '', newUrl);
     }
-  }, [user, startParam, isCalibrating, state]);
+  }, [user, startParam, isCalibrating, state, startExam]);
+
+  useEffect(() => {
+    const fetchLatestApk = async () => {
+      try {
+        setIsApkLoading(true);
+        const response = await fetch('https://api.github.com/repos/martincajurao/LET/releases/latest');
+        let downloadUrl = GITHUB_APK_URL;
+        let version = "2.1.0";
+
+        if (response.ok) {
+          const data = await response.json();
+          const apkAsset = data.assets?.find((a: any) => a.name.endsWith('.apk'));
+          if (apkAsset) {
+            downloadUrl = apkAsset.browser_download_url;
+            version = data.tag_name.replace(/^V/, '');
+          }
+        }
+
+        setApkInfo({ version, downloadUrl });
+        const qr = await QRCode.toDataURL(downloadUrl, { width: 256, margin: 2, color: { dark: '#10b981', light: '#ffffff' } });
+        setQrCodeUrl(qr);
+      } catch (e) {
+        setApkInfo({ version: "2.1.0", downloadUrl: GITHUB_APK_URL });
+      } finally {
+        setIsApkLoading(false);
+      }
+    };
+    fetchLatestApk();
+  }, []);
+
+  useEffect(() => {
+    if (!firestore) return;
+    const configDocRef = doc(firestore, "system_configs", "global");
+    const unsub = onSnapshot(configDocRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setTimePerQuestion(data.timePerQuestion || 60);
+        setLimits({ limitGenEd: data.limitGenEd || 10, limitProfEd: data.limitProfEd || 10, limitSpec: data.limitSpec || 10 });
+      }
+    });
+    return () => unsub();
+  }, [firestore]);
+
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const lastAd = Number(user.lastAdXpTimestamp) || 0;
+      const lastQf = Number(user.lastQuickFireTimestamp) || 0;
+      setAdCooldown(Math.max(0, lastAd + COOLDOWNS.AD_XP - now));
+      setQuickFireCooldown(Math.max(0, lastQf + COOLDOWNS.QUICK_FIRE - now));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (window.scrollY <= 10) {
@@ -271,68 +322,6 @@ function LetsPrepContent() {
     }
     pullStartY.current = null;
   };
-
-  const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
-
-  useEffect(() => {
-    const fetchLatestApk = async () => {
-      try {
-        setIsApkLoading(true);
-        const response = await fetch('https://api.github.com/repos/martincajurao/LET/releases/latest');
-        let downloadUrl = GITHUB_APK_URL;
-        let version = "2.1.0";
-
-        if (response.ok) {
-          const data = await response.json();
-          const apkAsset = data.assets?.find((a: any) => a.name.endsWith('.apk'));
-          if (apkAsset) {
-            downloadUrl = apkAsset.browser_download_url;
-            version = data.tag_name.replace(/^V/, '');
-          }
-        }
-
-        setApkInfo({ version, downloadUrl });
-        const qr = await QRCode.toDataURL(downloadUrl, { width: 256, margin: 2, color: { dark: '#10b981', light: '#ffffff' } });
-        setQrCodeUrl(qr);
-      } catch (e) {
-        setApkInfo({ version: "2.1.0", downloadUrl: GITHUB_APK_URL });
-      } finally {
-        setIsApkLoading(false);
-      }
-    };
-    fetchLatestApk();
-  }, []);
-
-  const configDocRef = useMemo(() => {
-    if (!firestore) return null;
-    return doc(firestore, "system_configs", "global");
-  }, [firestore]);
-
-  useEffect(() => {
-    if (!configDocRef) return;
-    const unsub = onSnapshot(configDocRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setTimePerQuestion(data.timePerQuestion || 60);
-        setLimits({ limitGenEd: data.limitGenEd || 10, limitProfEd: data.limitProfEd || 10, limitSpec: data.limitSpec || 10 });
-      }
-    }, (error) => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configDocRef.path, operation: 'get' }));
-    });
-    return () => unsub();
-  }, [configDocRef]);
-
-  useEffect(() => {
-    if (!user) return;
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const lastAd = Number(user.lastAdXpTimestamp) || 0;
-      const lastQf = Number(user.lastQuickFireTimestamp) || 0;
-      setAdCooldown(Math.max(0, lastAd + COOLDOWNS.AD_XP - now));
-      setQuickFireCooldown(Math.max(0, lastQf + COOLDOWNS.QUICK_FIRE - now));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [user]);
 
   const handleExamComplete = async (answers: Record<string, string>, timeSpent: number, confidentAnswers: Record<string, boolean>) => {
     if (!user || !firestore) return;
@@ -396,6 +385,7 @@ function LetsPrepContent() {
 
   if (authLoading) return <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-background"><EducationalLoader message="Synchronizing Session" /></div>;
 
+  const rankData = user ? getRankData(user.xp || 0) : null;
   const displayStats = user ? [
     { icon: <Sparkles className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
     { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Arena', value: userRank, color: 'text-primary bg-primary/10' },

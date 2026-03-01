@@ -41,13 +41,9 @@ function NavContent() {
   const userRef = useRef(user);
   useEffect(() => { userRef.current = user; }, [user]);
 
-  const configDocRef = useMemo(() => {
-    if (!firestore) return null;
-    return doc(firestore, "system_configs", "global");
-  }, [firestore]);
-
   useEffect(() => {
-    if (!configDocRef) return;
+    if (!firestore) return;
+    const configDocRef = doc(firestore, "system_configs", "global");
     const unsub = onSnapshot(configDocRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
@@ -57,11 +53,9 @@ function NavContent() {
           limitSpec: data.limitSpec || 10
         });
       }
-    }, (error) => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: configDocRef.path, operation: 'get' }));
     });
     return () => unsub();
-  }, [configDocRef]);
+  }, [firestore]);
 
   const calculateAvailable = useCallback(() => {
     const currentUser = userRef.current;
@@ -169,7 +163,7 @@ function NavContent() {
     }
   ], [claimableTasksCount, availableTasksCount]);
 
-  // EARLY RETURN FOR GUESTS - PLACED AFTER HOOKS
+  // Early return gate placed AFTER all hook calls
   if (!user) return null;
 
   return (
