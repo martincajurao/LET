@@ -326,7 +326,7 @@ export function PracticeModal({
                     <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                   </h4>
                   <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed font-medium">
-                    New simulation tracks unlock automatically as you ascend professional ranks. Reach **Rank 5** to unlock the full 150-item simulation, or use credits to bypass the requirement instantly.
+                    New simulation tracks unlock automatically as you ascend professional ranks. Reach **Rank 10** to unlock the full 150-item simulation, or use credits to bypass the requirement instantly.
                   </p>
                 </div>
               </div>
