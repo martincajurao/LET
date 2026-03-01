@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense, useMemo, useRef } from 'react';
+import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
@@ -63,35 +63,33 @@ function NavContent() {
     return () => unsub();
   }, [configDocRef]);
 
-  useEffect(() => {
-    if (!userRef.current) {
+  const calculateAvailable = useCallback(() => {
+    const currentUser = userRef.current;
+    if (!currentUser) {
       setAvailableTasksCount(0);
       setClaimableTasksCount(0);
       return;
     }
 
-    const calculateAvailable = () => {
-      const currentUser = userRef.current;
-      if (!currentUser) return;
+    const now = Date.now();
+    const adAvailable = (currentUser.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP <= now && (currentUser.dailyAdCount || 0) < DAILY_AD_LIMIT;
+    const qfAvailable = (currentUser.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE <= now;
+    setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
 
-      const now = Date.now();
-      const adAvailable = (currentUser.lastAdXpTimestamp || 0) + COOLDOWNS.AD_XP <= now && (currentUser.dailyAdCount || 0) < DAILY_AD_LIMIT;
-      const qfAvailable = (currentUser.lastQuickFireTimestamp || 0) + COOLDOWNS.QUICK_FIRE <= now;
-      setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
+    let claimableCount = 0;
+    const qGoal = currentUser.userTier === 'Platinum' ? 35 : 20;
+    if (!currentUser.taskLoginClaimed) claimableCount++;
+    if ((currentUser.dailyQuestionsAnswered || 0) >= qGoal && !currentUser.taskQuestionsClaimed) claimableCount++;
+    if ((currentUser.dailyTestsFinished || 0) >= 1 && !currentUser.taskMockClaimed) claimableCount++;
+    if ((currentUser.mistakesReviewed || 0) >= 10 && !currentUser.taskMistakesClaimed) claimableCount++;
+    setClaimableTasksCount(claimableCount);
+  }, []);
 
-      let claimableCount = 0;
-      const qGoal = currentUser.userTier === 'Platinum' ? 35 : 20;
-      if (!currentUser.taskLoginClaimed) claimableCount++;
-      if ((currentUser.dailyQuestionsAnswered || 0) >= qGoal && !currentUser.taskQuestionsClaimed) claimableCount++;
-      if ((currentUser.dailyTestsFinished || 0) >= 1 && !currentUser.taskMockClaimed) claimableCount++;
-      if ((currentUser.mistakesReviewed || 0) >= 10 && !currentUser.taskMistakesClaimed) claimableCount++;
-      setClaimableTasksCount(claimableCount);
-    };
-
+  useEffect(() => {
     calculateAvailable();
     const interval = setInterval(calculateAvailable, 10000);
     return () => clearInterval(interval);
-  }, [user]);
+  }, [calculateAvailable]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -133,6 +131,7 @@ function NavContent() {
     }, 3500);
   };
 
+  // Safe early return for Guests AFTER hooks
   if (authLoading || !user) return null;
 
   const navItems = [

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useUser, useFirestore } from '@/firebase/index';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Link from 'next/link';
@@ -69,39 +69,37 @@ export function Navbar() {
 
   useEffect(() => { userRef.current = user; }, [user]);
 
-  useEffect(() => {
-    if (!userRef.current) {
+  const calculateCounts = useCallback(() => {
+    const currentUser = userRef.current;
+    if (!currentUser) {
       setAvailableTasksCount(0);
       setClaimableTasksCount(0);
       return;
     }
 
-    const calculateCounts = () => {
-      const currentUser = userRef.current;
-      if (!currentUser) return;
+    const now = Date.now();
+    const lastAd = Number(currentUser.lastAdXpTimestamp) || 0;
+    const lastQf = Number(currentUser.lastQuickFireTimestamp) || 0;
+    
+    const adAvailable = lastAd + COOLDOWNS.AD_XP <= now && (currentUser.dailyAdCount || 0) < DAILY_AD_LIMIT;
+    const qfAvailable = lastQf + COOLDOWNS.QUICK_FIRE <= now;
+    setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
 
-      const now = Date.now();
-      const lastAd = Number(currentUser.lastAdXpTimestamp) || 0;
-      const lastQf = Number(currentUser.lastQuickFireTimestamp) || 0;
-      
-      const adAvailable = lastAd + COOLDOWNS.AD_XP <= now && (currentUser.dailyAdCount || 0) < DAILY_AD_LIMIT;
-      const qfAvailable = lastQf + COOLDOWNS.QUICK_FIRE <= now;
-      setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
+    let claimableCount = 0;
+    const userTier = currentUser.userTier || 'Bronze';
+    const qGoal = userTier === 'Platinum' ? 35 : 20;
+    if (!currentUser.taskLoginClaimed) claimableCount++;
+    if ((currentUser.dailyQuestionsAnswered || 0) >= qGoal && !currentUser.taskQuestionsClaimed) claimableCount++;
+    if ((currentUser.dailyTestsFinished || 0) >= 1 && !currentUser.taskMockClaimed) claimableCount++;
+    if ((currentUser.mistakesReviewed || 0) >= 10 && !currentUser.taskMistakesClaimed) claimableCount++;
+    setClaimableTasksCount(claimableCount);
+  }, []);
 
-      let claimableCount = 0;
-      const userTier = currentUser.userTier || 'Bronze';
-      const qGoal = userTier === 'Platinum' ? 35 : 20;
-      if (!currentUser.taskLoginClaimed) claimableCount++;
-      if ((currentUser.dailyQuestionsAnswered || 0) >= qGoal && !currentUser.taskQuestionsClaimed) claimableCount++;
-      if ((currentUser.dailyTestsFinished || 0) >= 1 && !currentUser.taskMockClaimed) claimableCount++;
-      if ((currentUser.mistakesReviewed || 0) >= 10 && !currentUser.taskMistakesClaimed) claimableCount++;
-      setClaimableTasksCount(claimableCount);
-    };
-
+  useEffect(() => {
     calculateCounts();
     const interval = setInterval(calculateCounts, 5000);
     return () => clearInterval(interval);
-  }, [user]);
+  }, [calculateCounts]);
 
   const handleWatchAd = async () => {
     if (!user || !firestore || watchingAd) return;
@@ -139,6 +137,7 @@ export function Navbar() {
     }, 3500);
   };
 
+  // Safe early return for Guests AFTER hooks
   if (loading || !user) return null;
 
   const navItems = [
@@ -149,7 +148,7 @@ export function Navbar() {
         <div className="relative">
           <ListTodo className="w-4 h-4" />
           {claimableTasksCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-primary text-primary-foreground text-[7px] font-black rounded-full flex items-center justify-center border border-card shadow-sm animate-bounce">
+            <span className="absolute -top-1 -right-1 w-3-3 bg-primary text-primary-foreground text-[7px] font-black rounded-full flex items-center justify-center border border-card shadow-sm animate-bounce">
               {claimableTasksCount}
             </span>
           )}

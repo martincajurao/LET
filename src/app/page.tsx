@@ -428,8 +428,8 @@ function LetsPrepContent() {
             <DialogTitle className="text-2xl font-black">Verified Access</DialogTitle>
           </div>
           <div className="p-8 space-y-4">
-            <Button onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} className="w-full h-14 rounded-2xl font-black gap-3 bg-white text-black border border-border"><GoogleIcon /> Continue with Google</Button>
-            <Button onClick={async () => { await loginWithFacebook(); setShowAuthModal(false); }} className="w-full h-14 rounded-2xl font-black gap-3 bg-[#1877F2] text-white"><Facebook className="w-5 h-5 fill-current" /> Continue with Facebook</Button>
+            <Button onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} className="w-full h-14 rounded-2xl font-black gap-3 bg-white text-black border border-border transition-all active:scale-95"><GoogleIcon /> Continue with Google</Button>
+            <Button onClick={async () => { await loginWithFacebook(); setShowAuthModal(false); }} className="w-full h-14 rounded-2xl font-black gap-3 bg-[#1877F2] text-white transition-all active:scale-95"><Facebook className="w-5 h-5 fill-current" /> Continue with Facebook</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -491,14 +491,28 @@ function LetsPrepContent() {
                           {loading ? <Loader2 className="animate-spin" /> : <Zap className="w-6 h-6 fill-current" />} <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </Button>
                       ) : (
-                        <motion.div animate={{ scale: [1, 1.02, 1] }} transition={{ duration: 3, repeat: Infinity }} className="w-fit">
-                          <Button size="lg" onClick={() => setShowAuthModal(true)} className="h-16 md:h-20 px-10 rounded-[2rem] font-black text-lg gap-6 shadow-2xl shadow-primary/40 bg-primary text-primary-foreground group">
-                            <div className="flex items-center gap-3 bg-background/20 p-2 rounded-2xl">
+                        <motion.div 
+                          className="w-fit"
+                          animate={{ scale: [1, 1.02, 1] }}
+                          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                        >
+                          <Button 
+                            size="lg" 
+                            onClick={() => setShowAuthModal(true)} 
+                            className="h-16 md:h-20 px-10 md:px-14 rounded-[2rem] font-black text-lg md:text-xl gap-6 shadow-2xl shadow-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-all group relative overflow-hidden"
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                            <div className="flex items-center gap-3 shrink-0 bg-background/20 p-2 rounded-2xl shadow-inner border border-white/10">
                               <GoogleIcon />
-                              <div className="w-7 h-7 bg-[#1877F2] rounded-full flex items-center justify-center"><Facebook className="w-4 h-4 fill-current text-white" /></div>
+                              <div className="w-7 h-7 bg-[#1877F2] rounded-full flex items-center justify-center shadow-md border border-white/20">
+                                <Facebook className="w-4 h-4 fill-current text-white" />
+                              </div>
                             </div>
-                            <div className="flex flex-col items-start leading-none"><span className="uppercase tracking-tighter">Sign In to Launch</span><span className="text-[10px] opacity-70 mt-1 uppercase tracking-widest">Secure Educator Entry</span></div>
-                            <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                            <div className="flex flex-col items-start leading-none text-left">
+                              <span className="uppercase tracking-tighter">Sign In to Launch</span>
+                              <span className="text-[10px] font-bold opacity-70 mt-1 uppercase tracking-[0.2em]">Secure Educator Entry</span>
+                            </div>
+                            <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" />
                           </Button>
                         </motion.div>
                       )}
@@ -511,7 +525,7 @@ function LetsPrepContent() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
                       { id: 'General Education', name: 'Gen Ed', icon: <Languages />, rnk: UNLOCK_RANKS.GENERAL_ED },
-                      { id: 'Professional Education', name: 'Prof Ed', icon: <GraduationCap />, rnk: UNLOCK_RANKS.PROFESSIONAL_ED },
+                      { id: 'Professional Education', name: 'Prof Ed', icon: <BookOpen />, rnk: UNLOCK_RANKS.PROFESSIONAL_ED },
                       { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star />, rnk: UNLOCK_RANKS.SPECIALIZATION }
                     ].map((track, i) => {
                       const isLocked = user && !isTrackUnlocked(rankData?.rank || 1, track.id, user.unlockedTracks);
