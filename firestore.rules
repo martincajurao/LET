@@ -31,10 +31,9 @@ service cloud.firestore {
     // Exam Results Rules
     match /exam_results/{resultId} {
       allow create: if isAuthenticated();
-      allow get: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      // Enforce query filters for private data or strict limits for public leaderboards
-      allow list: if (isAuthenticated() && resource.data.userId == request.auth.uid && request.query.limit <= 100) ||
-                  (request.query.limit <= 10);
+      // Allow reading individual results if owner, or listing if owner-filtered or leaderboard-limited
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) ||
+                     (request.query.limit <= 10);
     }
 
     // Competition Events - Publicly readable for Arena entrance

@@ -12,7 +12,6 @@ import {
   Loader2,
   RefreshCw,
   CheckCircle2,
-  FileText,
   Brain,
   Users,
   RotateCcw,
@@ -126,36 +125,57 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     if (!firestore) return;
     setLoading(true);
-    try {
-      const qSnap = await getDocs(collection(firestore, "questions"));
-      const qList = qSnap.docs.map(d => ({ ...d.data(), id: d.id } as Question));
-      setQuestions(qList);
-      const configDoc = await getDoc(doc(firestore, "system_configs", "global"));
-      if (configDoc.exists()) {
-        const data = configDoc.data();
-        setTimePerQuestion(data.timePerQuestion || 60);
-        setLimits({ limitGenEd: data.limitGenEd || 10, limitProfEd: data.limitProfEd || 10, limitSpec: data.limitSpec || 10 });
-      }
-    } catch (error) { 
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: 'admin_fetch',
-        operation: 'get'
-      }));
-    } finally { setLoading(false); }
+    
+    // Questions Fetch
+    getDocs(collection(firestore, "questions"))
+      .then(qSnap => {
+        const qList = qSnap.docs.map(d => ({ ...d.data(), id: d.id } as Question));
+        setQuestions(qList);
+      })
+      .catch(error => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'questions',
+          operation: 'list'
+        }));
+      });
+
+    // Global Config Fetch
+    const configRef = doc(firestore, "system_configs", "global");
+    getDoc(configRef)
+      .then(configDoc => {
+        if (configDoc.exists()) {
+          const data = configDoc.data();
+          setTimePerQuestion(data.timePerQuestion || 60);
+          setLimits({ 
+            limitGenEd: data.limitGenEd || 10, 
+            limitProfEd: data.limitProfEd || 10, 
+            limitSpec: data.limitSpec || 10 
+          });
+        }
+      })
+      .catch(error => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: configRef.path,
+          operation: 'get'
+        }));
+      })
+      .finally(() => setLoading(false));
   };
 
   const fetchUsers = async () => {
     if (!firestore) return;
-    try {
-      const usersQuery = query(collection(firestore, "users"), orderBy("lastActiveDate", "desc"), queryLimit(100));
-      const usersSnap = await getDocs(usersQuery);
-      setUsers(usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    } catch (error) { 
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: 'users',
-        operation: 'list'
-      }));
-    }
+    const usersQuery = query(collection(firestore, "users"), orderBy("lastActiveDate", "desc"), queryLimit(100));
+    
+    getDocs(usersQuery)
+      .then(usersSnap => {
+        setUsers(usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      })
+      .catch(error => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'users',
+          operation: 'list'
+        }));
+      });
   };
 
   useEffect(() => { if (firestore) { fetchData(); fetchUsers(); } }, [firestore]);
@@ -168,18 +188,25 @@ export default function AdminDashboard() {
   const handleSaveQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!firestore || !editingQuestion) return;
-    try {
-      if (editingQuestion.id) await updateDoc(doc(firestore, "questions", editingQuestion.id), editingQuestion);
-      else { const id = crypto.randomUUID(); await setDoc(doc(firestore, "questions", id), { ...editingQuestion, id }); }
-      toast({ title: "Success", description: "Item saved to vault." });
-      setIsDialogOpen(false); setEditingQuestion(null); fetchData();
-    } catch (error: any) { 
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: 'questions',
-        operation: 'write',
-        requestResourceData: editingQuestion
-      }));
-    }
+    
+    const id = editingQuestion.id || crypto.randomUUID();
+    const docRef = doc(firestore, "questions", id);
+    const data = { ...editingQuestion, id };
+
+    setDoc(docRef, data, { merge: true })
+      .then(() => {
+        toast({ title: "Success", description: "Item saved to vault." });
+        setIsDialogOpen(false); 
+        setEditingQuestion(null); 
+        fetchData();
+      })
+      .catch(error => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'write',
+          requestResourceData: data
+        }));
+      });
   };
 
   const handleOpenUserManagement = (user: any) => {
@@ -197,28 +224,34 @@ export default function AdminDashboard() {
   const handleUpdateUser = async () => {
     if (!firestore || !manageUser) return;
     setIsUpdatingUser(true);
-    try {
-      await updateDoc(doc(firestore, 'users', manageUser.id), {
-        displayName: editUserForm.displayName,
-        majorship: editUserForm.majorship,
-        credits: Number(editUserForm.credits),
-        xp: Number(editUserForm.xp),
-        isPro: editUserForm.isPro,
-        isBlocked: editUserForm.isBlocked,
-        updatedAt: serverTimestamp()
+    
+    const userRef = doc(firestore, 'users', manageUser.id);
+    const data = {
+      displayName: editUserForm.displayName,
+      majorship: editUserForm.majorship,
+      credits: Number(editUserForm.credits),
+      xp: Number(editUserForm.xp),
+      isPro: editUserForm.isPro,
+      isBlocked: editUserForm.isBlocked,
+      updatedAt: serverTimestamp()
+    };
+
+    updateDoc(userRef, data)
+      .then(() => {
+        toast({ title: "Profile Updated", description: `Changes saved for ${editUserForm.displayName}` });
+        fetchUsers();
+        setManageUser(null);
+      })
+      .catch(e => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'update',
+          requestResourceData: data
+        }));
+      })
+      .finally(() => {
+        setIsUpdatingUser(false);
       });
-      toast({ title: "Profile Updated", description: `Changes saved for ${editUserForm.displayName}` });
-      fetchUsers();
-      setManageUser(null);
-    } catch (e: any) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: `users/${manageUser.id}`,
-        operation: 'update',
-        requestResourceData: editUserForm
-      }));
-    } finally {
-      setIsUpdatingUser(false);
-    }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
@@ -396,7 +429,29 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div className="pt-4 border-t border-border/50">
-                  <Button onClick={async () => { setSavingSettings(true); await setDoc(doc(firestore!, "system_configs", "global"), { timePerQuestion, limitGenEd: limits.limitGenEd, limitProfEd: limits.limitProfEd, limitSpec: limits.limitSpec, updatedAt: serverTimestamp() }, { merge: true }); setSavingSettings(false); toast({ title: "Configuration Updated", description: "Simulation engine has been recalibrated." }); }} disabled={savingSettings} className="h-14 rounded-2xl font-black text-base px-12 shadow-xl shadow-primary/20 w-full sm:w-auto">
+                  <Button 
+                    onClick={async () => { 
+                      if (!firestore) return;
+                      setSavingSettings(true); 
+                      const configRef = doc(firestore, "system_configs", "global");
+                      const data = { timePerQuestion, limitGenEd: limits.limitGenEd, limitProfEd: limits.limitProfEd, limitSpec: limits.limitSpec, updatedAt: serverTimestamp() };
+                      
+                      setDoc(configRef, data, { merge: true })
+                        .then(() => {
+                          toast({ title: "Configuration Updated", description: "Simulation engine has been recalibrated." });
+                        })
+                        .catch(e => {
+                          errorEmitter.emit('permission-error', new FirestorePermissionError({
+                            path: configRef.path,
+                            operation: 'write',
+                            requestResourceData: data
+                          }));
+                        })
+                        .finally(() => setSavingSettings(false));
+                    }} 
+                    disabled={savingSettings} 
+                    className="h-14 rounded-2xl font-black text-base px-12 shadow-xl shadow-primary/20 w-full sm:w-auto"
+                  >
                     {savingSettings ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />} Save System Parameters
                   </Button>
                 </div>
@@ -545,29 +600,32 @@ export default function AdminDashboard() {
                 onClick={async () => {
                   if (!firestore || !manageUser) return;
                   setIsResettingTasks(true);
-                  try {
-                    await updateDoc(doc(firestore, 'users', manageUser.id), {
-                      dailyQuestionsAnswered: 0,
-                      dailyTestsFinished: 0,
-                      dailyAiUsage: 0,
-                      dailyCreditEarned: 0,
-                      dailyAdCount: 0,
-                      taskLoginClaimed: false,
-                      taskQuestionsClaimed: false,
-                      taskMockClaimed: false,
-                      taskMistakesClaimed: false,
-                      lastTaskReset: serverTimestamp()
-                    });
+                  const userRef = doc(firestore, 'users', manageUser.id);
+                  updateDoc(userRef, {
+                    dailyQuestionsAnswered: 0,
+                    dailyTestsFinished: 0,
+                    dailyAiUsage: 0,
+                    dailyCreditEarned: 0,
+                    dailyAdCount: 0,
+                    taskLoginClaimed: false,
+                    taskQuestionsClaimed: false,
+                    taskMockClaimed: false,
+                    taskMistakesClaimed: false,
+                    lastTaskReset: serverTimestamp()
+                  })
+                  .then(() => {
                     toast({ title: "Missions Reset", description: `Daily progress cleared for ${editUserForm.displayName}` });
                     fetchUsers();
-                  } catch (e: any) {
+                  })
+                  .catch(e => {
                     errorEmitter.emit('permission-error', new FirestorePermissionError({
-                      path: `users/${manageUser.id}`,
+                      path: userRef.path,
                       operation: 'update'
                     }));
-                  } finally {
+                  })
+                  .finally(() => {
                     setIsResettingTasks(false);
-                  }
+                  });
                 }} 
                 disabled={isResettingTasks}
                 className="h-12 rounded-xl font-black text-[9px] uppercase tracking-widest gap-2 border-2 border-amber-200 text-amber-700 bg-amber-50/30"
@@ -596,19 +654,22 @@ export default function AdminDashboard() {
                     <AlertDialogAction onClick={async () => {
                       if (!firestore || !manageUser) return;
                       setIsDeletingUser(true);
-                      try {
-                        await deleteDoc(doc(firestore, 'users', manageUser.id));
-                        toast({ title: "Account Deleted", description: "Educator record has been removed." });
-                        fetchUsers();
-                        setManageUser(null);
-                      } catch (e: any) {
-                        errorEmitter.emit('permission-error', new FirestorePermissionError({
-                          path: `users/${manageUser.id}`,
-                          operation: 'delete'
-                        }));
-                      } finally {
-                        setIsDeletingUser(false);
-                      }
+                      const userRef = doc(firestore, 'users', manageUser.id);
+                      deleteDoc(userRef)
+                        .then(() => {
+                          toast({ title: "Account Deleted", description: "Educator record has been removed." });
+                          fetchUsers();
+                          setManageUser(null);
+                        })
+                        .catch(e => {
+                          errorEmitter.emit('permission-error', new FirestorePermissionError({
+                            path: userRef.path,
+                            operation: 'delete'
+                          }));
+                        })
+                        .finally(() => {
+                          setIsDeletingUser(false);
+                        });
                     }} className="bg-rose-600 hover:bg-rose-700 text-white h-12 rounded-xl font-black w-full">
                       {isDeletingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm Deletion'}
                     </AlertDialogAction>

@@ -87,26 +87,30 @@ function ProfilePageContent() {
   useEffect(() => { if (user?.majorship) setMajorship(user.majorship); }, [user]);
 
   useEffect(() => {
-    const fetchHistory = async () => {
-      if (!user?.uid || !firestore) return;
-      try {
-        const q = query(
-          collection(firestore, "exam_results"), 
-          where("userId", "==", user.uid), 
-          orderBy("timestamp", "desc"), 
-          limit(20)
-        );
-        const snap = await getDocs(q);
+    if (!user?.uid || !firestore) {
+      setLoadingRecords(false);
+      return;
+    }
+    
+    const historyQuery = query(
+      collection(firestore, "exam_results"), 
+      where("userId", "==", user.uid), 
+      orderBy("timestamp", "desc"), 
+      limit(20)
+    );
+
+    getDocs(historyQuery)
+      .then(snap => {
         setRecords(snap.docs.map(d => ({ id: d.id, ...d.data() } as ExamRecord)));
-      } catch (e) { 
+      })
+      .catch(error => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: 'exam_results',
           operation: 'list'
         }));
-      } finally { setLoadingRecords(false); }
-    };
-    fetchHistory();
-  }, [user, firestore]);
+      })
+      .finally(() => setLoadingRecords(false));
+  }, [user?.uid, firestore]);
 
   const handleRefreshData = async () => {
     setRefreshing(true);

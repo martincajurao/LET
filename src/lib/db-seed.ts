@@ -1,4 +1,3 @@
-
 import { Firestore, collection, getDocs, doc, writeBatch } from "firebase/firestore";
 import { INITIAL_QUESTIONS, Question } from "@/app/lib/mock-data";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -30,12 +29,23 @@ export async function seedInitialQuestions(db: Firestore) {
 
 /**
  * Fetches all questions from the Firestore 'questions' collection.
- * This function now throws errors so they can be handled contextually in the caller.
+ * This function handles permission errors contextually via the global emitter.
  */
 export async function fetchQuestionsFromFirestore(db: Firestore): Promise<Question[]> {
-  const snapshot = await getDocs(collection(db, "questions"));
-  return snapshot.docs.map(doc => ({
-    ...doc.data(),
-    id: doc.id
-  })) as Question[];
+  const questionsRef = collection(db, "questions");
+  
+  return getDocs(questionsRef)
+    .then(snapshot => {
+      return snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      })) as Question[];
+    })
+    .catch(error => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: questionsRef.path,
+        operation: 'list'
+      }));
+      throw error; // Re-throw to handle loading states in caller
+    });
 }
