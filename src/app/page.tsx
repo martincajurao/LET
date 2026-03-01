@@ -45,7 +45,7 @@ import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
 import { Question, MAJORSHIPS } from "@/app/lib/mock-data";
 import { useUser, useFirestore } from "@/firebase";
-import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp, query, where } from "firebase/firestore";
+import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp, query, where, limit } from "firebase/firestore";
 import { fetchQuestionsFromFirestore } from "@/lib/db-seed";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
@@ -207,7 +207,11 @@ function LetsPrepContent() {
 
   useEffect(() => {
     if (!user || !firestore) return;
-    const q = query(collection(firestore, "exam_results"), where("userId", "==", user.uid));
+    const q = query(
+      collection(firestore, "exam_results"), 
+      where("userId", "==", user.uid),
+      limit(100)
+    );
     const unsub = onSnapshot(q, (snap) => {
       const count = snap.size;
       setUserRank(count > 0 ? `#${count}` : '---');

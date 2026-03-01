@@ -31,9 +31,13 @@ service cloud.firestore {
     // Exam Results Rules
     match /exam_results/{resultId} {
       allow create: if isAuthenticated();
-      allow get: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
+      // Individual documents can be read by their owner
+      allow get: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Listing is allowed if:
+      // 1. The query is filtered by the user's own ID (limited to 100)
+      // 2. OR it's a leaderboard query (limited to 10 results)
       allow list: if isAuthenticated() && (
-        (request.query.limit <= 100 && (resource == null || resource.data.userId == request.auth.uid)) ||
+        (request.query.limit <= 100 && resource.data.userId == request.auth.uid) ||
         (request.query.limit <= 10)
       );
     }

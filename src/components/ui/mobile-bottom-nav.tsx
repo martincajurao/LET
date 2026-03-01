@@ -18,6 +18,8 @@ import { useFirestore, useUser } from '@/firebase';
 import { doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { XP_REWARDS, COOLDOWNS, DAILY_AD_LIMIT } from '@/lib/xp-system';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface NavItem {
   id: string;
@@ -46,7 +48,8 @@ function NavContent() {
 
   useEffect(() => {
     if (!firestore) return;
-    const unsub = onSnapshot(doc(firestore, "system_configs", "global"), (snap) => {
+    const docRef = doc(firestore, "system_configs", "global");
+    const unsub = onSnapshot(docRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         setLimits({
@@ -55,6 +58,11 @@ function NavContent() {
           limitSpec: data.limitSpec || 10
         });
       }
+    }, (error) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'get'
+      }));
     });
     return () => unsub();
   }, [firestore]);
