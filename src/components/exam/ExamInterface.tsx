@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog";
 import { 
   Bookmark,
-  Send, 
   Timer,
   ShieldCheck,
   ShieldAlert,
@@ -24,7 +23,6 @@ import {
   AlertTriangle,
   Coffee,
   ArrowRight,
-  BrainCircuit,
   CheckCircle2,
   Info,
   ChevronRight
@@ -68,6 +66,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     };
   }, []);
 
+  // Organize questions into pedagogical phases
   const phases = useMemo(() => {
     const p: Phase[] = [];
     let currentPhase: Phase | null = null;
@@ -82,6 +81,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     return p;
   }, [questions]);
 
+  // Disable phases for short simulations
   const isContinuous = useMemo(() => phases.length <= 1 || questions.length <= 10, [phases, questions.length]);
 
   const currentPhaseIndex = useMemo(() => {
@@ -110,7 +110,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       }
     }
 
-    // 2. If sequential end reached, return to any previously flagged items in this phase
+    // 2. If sequential end reached, return to any previously flagged (unanswered) items in this phase
     if (nextIdx === -1) {
       for (let i = phase.startIndex; i <= phaseEndIndex; i++) {
         if (!currentAnswers[questions[i].id]) {
@@ -123,15 +123,14 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     // 3. Phase Completion Logic
     if (nextIdx === -1) {
       if (currentPhaseIndex === phases.length - 1 || isContinuous) {
-        // End of entire simulation or continuous mode
-        if (Object.keys(currentAnswers).length === questions.length) {
-          setShowSubmitConfirm(true);
-        }
+        // End of entire simulation
+        setShowSubmitConfirm(true);
       } else {
-        // Pedagogical sector resolved -> Show Calibration Screen
+        // Pedagogical sector resolved -> Show Inline Calibration Screen
         setIsResting(true);
       }
     } else {
+      // Proceed to next item
       setSelectedOption(null);
       setCurrentIdx(nextIdx);
     }
@@ -221,7 +220,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
   return (
     <div className="fixed inset-0 z-[2000] bg-background flex flex-col overflow-hidden animate-in fade-in duration-300 font-body">
-      {/* Immersive Header */}
+      {/* Dynamic Header */}
       <header className="pt-safe border-b bg-card shrink-0 shadow-sm relative z-10">
         <div className="h-14 flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
@@ -258,7 +257,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                       initial={{ scale: 0.5, opacity: 0, x: 20 }}
                       animate={{ scale: 1, opacity: 1, x: 0 }}
                       exit={{ scale: 0.5, opacity: 0 }}
-                      className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full shadow-lg ring-2 ring-white/20"
+                      className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full shadow-lg"
                     >
                       <Flame className="w-3.5 h-3.5 fill-current animate-pulse" />
                       <span className="text-[10px] font-black uppercase tracking-tighter">{correctStreak} COMBO</span>
@@ -272,7 +271,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   className={cn(
                     "h-8 rounded-lg gap-1.5 transition-all border px-2",
                     confidentAnswers[currentQuestion.id] 
-                      ? "bg-emerald-500 border-emerald-600 text-white shadow-lg shadow-emerald-500/20" 
+                      ? "bg-emerald-500 border-emerald-600 text-white shadow-lg" 
                       : "bg-background border-border text-muted-foreground"
                   )}
                 >
@@ -287,7 +286,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </div>
       </header>
 
-      {/* Main Content Area */}
+      {/* Main Simulation Flow */}
       <main className="flex-1 overflow-y-auto px-4 py-4 md:p-12 no-scrollbar bg-background relative">
         <div className="max-w-xl mx-auto w-full h-full flex flex-col items-center justify-center">
           <AnimatePresence mode="wait">
@@ -321,7 +320,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                       </div>
                     </div>
                     <p className="text-[11px] font-medium text-muted-foreground leading-relaxed">
-                      Challenging items can be <span className="text-foreground font-black">Flagged</span> to be answered at the end of the phase. All sector items must be resolved before calibration.
+                      Challenging items can be <span className="text-foreground font-black">Flagged</span> to be answered at the end of each sector. All sector items must be resolved before calibration.
                     </p>
                   </div>
 
@@ -329,7 +328,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                     <div className="flex items-start gap-3">
                       <div className="mt-0.5 shrink-0"><Info className="w-4 h-4 text-primary" /></div>
                       <p className="text-[11px] font-medium text-muted-foreground leading-relaxed">
-                        <span className="text-foreground font-black">Anti-Abuse Lock:</span> Sequential back-navigation is disabled. Focus on your first-trace accuracy to maximize Rank multipliers.
+                        <span className="text-foreground font-black">Anti-Abuse Lock:</span> Sequential back-navigation is disabled. Focus on first-trace accuracy to maximize Rank multipliers.
                       </p>
                     </div>
                   </div>
@@ -381,7 +380,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                         <div key={idx} className={cn(
                           "flex items-center justify-between p-4 rounded-2xl border-2 transition-all",
                           isCompleted ? "bg-emerald-500/5 border-emerald-500/20" : 
-                          isNext ? "bg-primary/5 border-primary shadow-lg ring-4 ring-primary/5 scale-[1.02]" : 
+                          isNext ? "bg-primary/5 border-primary shadow-lg scale-[1.02]" : 
                           "bg-muted/20 border-transparent opacity-40"
                         )}>
                           <div className="flex items-center gap-4">
@@ -509,7 +508,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </div>
       </footer>
 
-      {/* Final Submission Confirmation */}
+      {/* Confirmation Modals (Dialogs remain high z-index) */}
       <Dialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
         <DialogContent className="rounded-[2rem] bg-card border-none shadow-2xl p-6 max-w-xs z-[5100] outline-none">
           <div className="text-center space-y-5">
@@ -534,7 +533,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </DialogContent>
       </Dialog>
 
-      {/* Exit Confirmation */}
       <Dialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-6 max-w-xs z-[5100] outline-none">
           <div className="text-center space-y-5">
