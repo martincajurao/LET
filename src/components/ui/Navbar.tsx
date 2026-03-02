@@ -51,8 +51,7 @@ import { NotificationsModal } from './notifications-modal';
 import { useRouter } from 'next/navigation';
 
 export function Navbar() {
-  // 1. Declare all hooks at the top level
-  const { user, loading, logout, refreshUser } = useUser();
+  const { user, logout, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
@@ -66,11 +65,8 @@ export function Navbar() {
   const [claimableTasksCount, setClaimableTasksCount] = useState(0);
 
   const userRef = useRef(user);
-  
-  // 2. Synchronize user ref
   useEffect(() => { userRef.current = user; }, [user]);
 
-  // 3. Define callbacks
   const calculateCounts = useCallback(() => {
     const currentUser = userRef.current;
     if (!currentUser) {
@@ -97,7 +93,6 @@ export function Navbar() {
     setClaimableTasksCount(claimableCount);
   }, []);
 
-  // 4. Set up intervals
   useEffect(() => {
     calculateCounts();
     const interval = setInterval(calculateCounts, 5000);
@@ -176,7 +171,6 @@ export function Navbar() {
     }, 3500);
   };
 
-  // 5. Final visibility gate (Strictly before JSX return)
   if (!user) return null;
 
   return (

@@ -383,7 +383,7 @@ function LetsPrepContent() {
 
   if (authLoading) return <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-background"><EducationalLoader message="Synchronizing Session" /></div>;
 
-  const rankData = user ? getRankData(user.xp || 0) : null;
+  const currentRankData = user ? getRankData(user.xp || 0) : null;
   const displayStats = user ? [
     { icon: <Sparkles className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
     { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Arena', value: userRank, color: 'text-primary bg-primary/10' },
@@ -523,7 +523,7 @@ function LetsPrepContent() {
                       { id: 'Professional Education', name: 'Prof Ed', icon: <BookOpen />, rnk: UNLOCK_RANKS.PROFESSIONAL_ED },
                       { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star />, rnk: UNLOCK_RANKS.SPECIALIZATION }
                     ].map((track, i) => {
-                      const isLocked = user && !isTrackUnlocked(rankData?.rank || 1, track.id, user.unlockedTracks);
+                      const isLocked = user && !isTrackUnlocked(currentRankData?.rank || 1, track.id, user.unlockedTracks);
                       return (
                         <motion.div key={i} variants={itemVariants}>
                           <Card onClick={() => !isLocked && startExam(track.id)} className={cn("cursor-pointer border-2 rounded-[2rem] bg-card overflow-hidden active:scale-95 transition-all relative h-full", isLocked ? "opacity-60 grayscale" : "hover:border-primary shadow-sm")}>
