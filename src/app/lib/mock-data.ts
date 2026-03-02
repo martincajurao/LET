@@ -25,78 +25,68 @@ export const MAJORSHIPS = [
 ];
 
 /**
- * High-fidelity practice questions for LET (Licensure Examination for Teachers).
- * These items reflect the near-realistic pedagogical depth required for the board exam.
+ * High-fidelity situational practice questions for LET (Licensure Examination for Teachers).
+ * These items reflect the near-realistic pedagogical depth and situational analysis required for the board exam.
  */
 export const INITIAL_QUESTIONS: Question[] = [
   {
-    id: "gen-ed-math-1",
-    text: "A merchant marks his goods 20% above the cost price and allows a discount of 10% on the marked price. What is his actual profit percentage?",
-    options: ["8%", "10%", "12%", "15%"],
-    correctAnswer: "8%",
-    subject: "General Education",
-    subCategory: "Mathematics",
-    difficulty: "medium",
-    explanation: "If cost is 100, marked price is 120. Discount of 10% on 120 is 12. Sale price is 108, which is 8% profit."
-  },
-  {
-    id: "gen-ed-lit-1",
-    text: "In Filipino literature, who is known as the 'Huseng Sisiw' and served as a mentor to Francisco Balagtas?",
-    options: ["Jose de la Cruz", "Modesto de Castro", "Pascual Poblete", "Lope K. Santos"],
-    correctAnswer: "Jose de la Cruz",
-    subject: "General Education",
-    subCategory: "Literature",
-    difficulty: "hard",
-    explanation: "Jose de la Cruz was the mentor of Balagtas and was known for requiring chicks (sisiw) as payment for his poems."
-  },
-  {
-    id: "prof-ed-theory-1",
-    text: "Which pillar of education, as defined by UNESCO, focuses on the development of the whole person—mind and body, intelligence, sensitivity, and aesthetic appreciation?",
-    options: ["Learning to know", "Learning to do", "Learning to be", "Learning to live together"],
-    correctAnswer: "Learning to be",
-    subject: "Professional Education",
-    subCategory: "Foundations of Education",
-    difficulty: "medium",
-    explanation: "Learning to be emphasizes the complete development of an individual to their full potential."
-  },
-  {
-    id: "prof-ed-dev-1",
-    text: "According to Piaget's stages of cognitive development, a child who can perform mental operations like conservation and reversibility but only on physical objects is in which stage?",
-    options: ["Sensorimotor", "Pre-operational", "Concrete operational", "Formal operational"],
-    correctAnswer: "Concrete operational",
+    id: "sit-prof-ed-1",
+    text: "Teacher Anna noticed that some of her Grade 7 students are consistently underperforming in collaborative tasks but excel in individual assessments. Following Vygotsky's Zone of Proximal Development, what should be her first strategic intervention to bridge this gap?",
+    options: [
+      "Provide scaffolding through peer-tutoring with high-performing classmates",
+      "Assign more individual projects to capitalize on their current strengths",
+      "Request a meeting with parents to discuss behavioral issues in groups",
+      "Re-administer the individual assessments to verify the students' scores"
+    ],
+    correctAnswer: "Provide scaffolding through peer-tutoring with high-performing classmates",
     subject: "Professional Education",
     subCategory: "Child and Adolescent Development",
-    difficulty: "medium",
-    explanation: "Concrete operational children (7-11 years) can reason logically about concrete events but struggle with abstract concepts."
+    difficulty: "hard",
+    explanation: "Scaffolding within the ZPD involves providing temporary support (peer tutoring) to help students perform tasks they cannot yet do independently."
   },
   {
-    id: "prof-ed-ethics-1",
-    text: "A teacher discovers a colleague is receiving money from parents in exchange for higher grades. According to the Code of Ethics for Professional Teachers, what is the most appropriate action?",
-    options: ["Ignore it to maintain harmony", "Publicly confront the teacher", "Report the matter to the proper school authorities", "Ask for a share of the money"],
-    correctAnswer: "Report the matter to the proper school authorities",
+    id: "sit-prof-ed-2",
+    text: "During a parent-teacher conference, a parent becomes aggressive and demands that her child's failing grade be changed, claiming that the teacher is 'too strict.' Which provision of the Code of Ethics for Professional Teachers should guide the teacher's professional response?",
+    options: [
+      "Maintain professional dignity and base the grade strictly on the established merit system",
+      "Concede to the parent's demand to maintain harmonious school-community relations",
+      "Publicly reprimand the parent to protect the teacher's authority in the classroom",
+      "Refer the parent to the principal and refuse to discuss the student's performance further"
+    ],
+    correctAnswer: "Maintain professional dignity and base the grade strictly on the established merit system",
     subject: "Professional Education",
     subCategory: "Professional Ethics",
+    difficulty: "medium",
+    explanation: "The Code of Ethics mandates that teachers maintain professional integrity and that grades must be based on actual student performance and merit."
+  },
+  {
+    id: "sit-gen-ed-1",
+    text: "A Science teacher uses a 'Flipped Classroom' model for a lesson on Ecosystems. However, she observes that students from low-income households struggle to access the pre-recorded video lectures at home. To ensure academic equity, which pedagogical adjustment is most appropriate?",
+    options: [
+      "Provide offline transcriptions and schedule supervised school lab time for those students",
+      "Revert to traditional lecture-style instruction for the entire class to ensure uniformity",
+      "Exempt the disadvantaged students from the pre-activities and only grade their in-class work",
+      "Grade the students on a separate curve to account for their lack of home resources"
+    ],
+    correctAnswer: "Provide offline transcriptions and schedule supervised school lab time for those students",
+    subject: "General Education",
+    subCategory: "Technology in Education",
     difficulty: "hard",
-    explanation: "Professional ethics mandate reporting corrupt practices through official channels to protect the integrity of the profession."
+    explanation: "Ensuring equity means providing alternative access methods (offline materials/lab time) rather than lowering standards or reverting to less effective models."
   },
   {
-    id: "spec-math-1",
-    text: "What is the limit of (sin x) / x as x approaches 0?",
-    options: ["0", "1", "Infinity", "Undefined"],
-    correctAnswer: "1",
-    subject: "Specialization",
-    subCategory: "Mathematics",
+    id: "sit-prof-ed-3",
+    text: "In a diverse classroom, Teacher Mark observes that his students have varying levels of English proficiency. He wants to implement a 'Differentiated Instruction' approach for a literature lesson. Which strategy best reflects this pedagogical principle?",
+    options: [
+      "Providing reading materials at different complexity levels but with the same core learning goals",
+      "Giving the same complex text to all students but grading them based on their initial level",
+      "Allowing students with low proficiency to skip the literature lesson and focus on grammar",
+      "Teaching only the students who can understand the material to keep the lesson on schedule"
+    ],
+    correctAnswer: "Providing reading materials at different complexity levels but with the same core learning goals",
+    subject: "Professional Education",
+    subCategory: "Principles of Teaching",
     difficulty: "medium",
-    explanation: "This is a fundamental limit in calculus derived from the Squeeze Theorem."
-  },
-  {
-    id: "spec-eng-1",
-    text: "In George Orwell's 'Animal Farm', the pigs' transition from revolutionaries to oppressors is a classic example of which literary device?",
-    options: ["Allegory", "Hyperbole", "Oxymoron", "Onomatopoeia"],
-    correctAnswer: "Allegory",
-    subject: "Specialization",
-    subCategory: "English",
-    difficulty: "medium",
-    explanation: "Animal Farm is an allegory where animals represent historical figures and events of the Russian Revolution."
+    explanation: "Differentiated Instruction involves varying the content, process, or product based on student readiness while keeping the learning objectives consistent."
   }
 ];
