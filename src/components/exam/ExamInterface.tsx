@@ -3,8 +3,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { 
   Dialog, 
@@ -58,7 +56,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const autoAdvanceTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // QuickFire sessions should be continuous (no rest phases)
   const isContinuous = useMemo(() => questions.length <= 10, [questions]);
 
   useEffect(() => {
@@ -116,6 +113,8 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   }, [currentIdx, answers, questions]);
 
   const handleAnswer = (val: string) => {
+    if (isResting) return;
+    
     const currentQ = questions[currentIdx];
     const isCorrect = val === currentQ.correctAnswer;
 
@@ -137,7 +136,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     if (isLastQuestionTotal) return;
 
     autoAdvanceTimer.current = setTimeout(() => {
-      // Bypassing rest phase if continuous mode
       if (isEndOfPhase && !isContinuous) {
         setIsResting(true);
       } else {
@@ -171,7 +169,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   if (!currentQuestion) return null;
 
   return (
-    <div className="fixed inset-0 z-[2000] bg-background flex flex-col overflow-hidden animate-in fade-in duration-300 font-body">
+    <div className="fixed inset-0 z-[2000] bg-background flex flex-col overflow-hidden animate-in fade-in duration-300 font-body pointer-events-auto">
       <header className="pt-safe border-b bg-card shrink-0 shadow-sm relative z-10">
         <div className="h-14 flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
@@ -271,7 +269,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                           "bg-muted/20 border-transparent opacity-40"
                         )}
                       >
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 pointer-events-none">
                           <div className={cn(
                             "w-9 h-9 rounded-xl flex items-center justify-center border-2 transition-all",
                             isCompleted ? "bg-emerald-500 border-emerald-500 text-white shadow-emerald-500/20" : 
@@ -290,7 +288,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                             </span>
                           </div>
                         </div>
-                        {isNext && <Badge className="bg-primary text-primary-foreground text-[8px] font-black uppercase tracking-tighter rounded-lg h-5 px-2">Up Next</Badge>}
+                        {isNext && <Badge className="bg-primary text-primary-foreground text-[8px] font-black uppercase tracking-tighter rounded-lg h-5 px-2 pointer-events-none">Up Next</Badge>}
                       </div>
                     );
                   })}
@@ -333,11 +331,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   {currentQuestion.text}
                 </h2>
 
-                <RadioGroup 
-                  value={selectedOption || ""} 
-                  onValueChange={handleAnswer} 
-                  className="grid grid-cols-1 gap-2 pt-1"
-                >
+                <div className="grid grid-cols-1 gap-2 pt-1">
                   {currentQuestion.options.map((opt, i) => (
                     <motion.div
                       key={i}
@@ -345,32 +339,32 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: i * 0.05 }}
                     >
-                      <Label 
+                      <button 
+                        onClick={() => handleAnswer(opt)}
                         className={cn(
-                          "flex items-center p-2.5 md:p-3 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] group relative overflow-hidden",
+                          "w-full flex items-center p-3 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] group relative overflow-hidden text-left",
                           selectedOption === opt 
                             ? "border-primary bg-primary/5 ring-2 ring-primary/5 shadow-md" 
                             : "border-border/60 bg-card hover:bg-muted/10 shadow-sm"
                         )}
                       >
-                        <RadioGroupItem value={opt} className="sr-only" />
                         <div className={cn(
-                          "w-8 h-8 rounded-xl border-2 flex items-center justify-center mr-3 font-black text-[10px] transition-all shrink-0",
+                          "w-8 h-8 rounded-xl border-2 flex items-center justify-center mr-3 font-black text-[10px] transition-all shrink-0 pointer-events-none",
                           selectedOption === opt 
                             ? "bg-primary border-primary text-primary-foreground" 
                             : "border-border/50 bg-muted/20 text-muted-foreground"
                         )}>
                           {String.fromCharCode(65+i)}
                         </div>
-                        <span className="text-sm font-bold text-foreground leading-tight flex-1 pr-4">{opt}</span>
+                        <span className="text-sm font-bold text-foreground leading-tight flex-1 pr-4 pointer-events-none">{opt}</span>
                         
                         {selectedOption === opt && (
-                          <Sparkles className="w-3.5 h-3.5 text-primary animate-sparkle absolute right-3" />
+                          <Sparkles className="w-3.5 h-3.5 text-primary animate-sparkle absolute right-3 pointer-events-none" />
                         )}
-                      </Label>
+                      </button>
                     </motion.div>
                   ))}
-                </RadioGroup>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -378,7 +372,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       </main>
 
       <footer className="shrink-0 border-t bg-card/95 backdrop-blur-xl px-4 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-        <div className="h-14 flex items-center justify-between w-full max-w-xl mx-auto">
+        <div className="h-14 flex items-center justify-between w-full max-xl mx-auto">
           <Button 
             variant="ghost" 
             onClick={handleBack} 
