@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
@@ -161,7 +162,6 @@ function LetsPrepContent() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const pullStartY = useRef<number | null>(null);
   const isStartingRef = useRef(false);
-  const processedParamRef = useRef<string | null>(null);
   
   const [newResultId, setNewResultId] = useState<string | undefined>(undefined);
   const [apkInfo, setApkInfo] = useState<{ version: string; downloadUrl: string } | null>(null);
@@ -237,14 +237,18 @@ function LetsPrepContent() {
     }
   }, [user, firestore, limits, toast]);
 
+  // Reliable start parameter listener
   useEffect(() => {
-    if (user && startParam && !isCalibrating && state === 'dashboard' && processedParamRef.current !== startParam) {
-      processedParamRef.current = startParam;
+    if (startParam && user && state === 'dashboard' && !isCalibrating) {
       startExam(startParam);
-      const newUrl = window.location.pathname;
+      
+      // Immediately clear the param from the URL to allow the effect to trigger again on next navigation
+      const params = new URLSearchParams(window.location.search);
+      params.delete('start');
+      const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : '');
       window.history.replaceState({}, '', newUrl);
     }
-  }, [user, startParam, isCalibrating, state, startExam]);
+  }, [startParam, user, state, isCalibrating, startExam]);
 
   useEffect(() => {
     const fetchLatestApk = async () => {
