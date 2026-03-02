@@ -18,10 +18,9 @@ import { useFirestore, useUser } from '@/firebase';
 import { doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { XP_REWARDS, COOLDOWNS, DAILY_AD_LIMIT } from '@/lib/xp-system';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 function NavContent() {
+  // 1. Declare all hooks at the top level
   const pathname = usePathname();
   const router = useRouter();
   const firestore = useFirestore();
@@ -39,8 +38,11 @@ function NavContent() {
   const [claimableTasksCount, setClaimableTasksCount] = useState(0);
 
   const userRef = useRef(user);
+  
+  // 2. Synchronize user ref
   useEffect(() => { userRef.current = user; }, [user]);
 
+  // 3. Define effect for global config
   useEffect(() => {
     if (!firestore) return;
     const configDocRef = doc(firestore, "system_configs", "global");
@@ -57,6 +59,7 @@ function NavContent() {
     return () => unsub();
   }, [firestore]);
 
+  // 4. Calculate available tasks
   const calculateAvailable = useCallback(() => {
     const currentUser = userRef.current;
     if (!currentUser) {
@@ -79,12 +82,14 @@ function NavContent() {
     setClaimableTasksCount(claimableCount);
   }, []);
 
+  // 5. Set up intervals
   useEffect(() => {
     calculateAvailable();
     const interval = setInterval(calculateAvailable, 10000);
     return () => clearInterval(interval);
   }, [calculateAvailable]);
 
+  // 6. Scroll visibility logic
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -163,6 +168,7 @@ function NavContent() {
     }
   ], [claimableTasksCount, availableTasksCount]);
 
+  // 7. Final visibility gate (Strictly before JSX return)
   if (!user) return null;
 
   return (

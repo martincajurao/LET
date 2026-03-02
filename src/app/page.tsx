@@ -62,8 +62,6 @@ import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, DAILY_AD_LIMIT, MIN_QUICK_FIRE_TIME } from '@/lib/xp-system';
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
