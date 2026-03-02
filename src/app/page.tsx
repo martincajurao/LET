@@ -165,7 +165,6 @@ function LetsPrepContent() {
   const [userRank, setUserRank] = useState<string | number>('---');
   const [adCooldown, setAdCooldown] = useState(0);
   const [quickFireCooldown, setQuickFireCooldown] = useState(0);
-  const [claimingXp, setClaimingXp] = useState(false);
   
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
@@ -210,7 +209,6 @@ function LetsPrepContent() {
       let finalQuestions: Question[] = [];
       
       if (category === 'all') {
-        // Restore standard phase order for Full Simulation
         const genEd = shuffleArray(questionPool.filter(q => q.subject === 'General Education')).slice(0, limits.limitGenEd);
         const profEd = shuffleArray(questionPool.filter(q => q.subject === 'Professional Education')).slice(0, limits.limitProfEd);
         const spec = shuffleArray(questionPool.filter(q => q.subject === 'Specialization' && q.subCategory === (user?.majorship || 'English'))).slice(0, limits.limitSpec);
@@ -470,7 +468,7 @@ function LetsPrepContent() {
   const currentRankData = user ? getRankData(user.xp || 0) : null;
   const displayStats = user ? [
     { icon: <Sparkles className="w-4 h-4 text-yellow-500 animate-sparkle" />, label: 'Credits', value: user.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
-    { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Arena', value: userRank, color: 'text-primary bg-primary/10' },
+    { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Arena', value: userRank || '---', color: 'text-primary bg-primary/10' },
     { icon: user.isPro ? <Crown className="w-4 h-4 text-yellow-600 fill-current" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user.isPro ? 'Platinum' : 'FREE', color: user.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
     { icon: <Flame className="w-4 h-4 text-orange-500 fill-current animate-pulse" />, label: 'Streak', value: user.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' }
   ] : [
@@ -501,7 +499,7 @@ function LetsPrepContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[2500] flex items-center justify-center bg-background/80 backdrop-blur-md"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-md"
           >
             <EducationalLoader message={loadingMessage} />
           </motion.div>

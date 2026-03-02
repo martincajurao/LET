@@ -68,7 +68,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     };
   }, []);
 
-  // Professional Phase Grouping: Restore multi-phase segments for Full Simulation
+  // Professional Phase Grouping: Locked logic for Full Simulation
   const phases = useMemo(() => {
     const p: Phase[] = [];
     let currentPhase: Phase | null = null;
@@ -83,7 +83,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     return p;
   }, [questions]);
 
-  // Locked logic: Continuous trace only for single-track category exams
+  // Continuous trace only for single-track category exams
   const isContinuous = useMemo(() => phases.length <= 1, [phases]);
 
   const currentPhaseIndex = useMemo(() => {
@@ -185,14 +185,12 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       <header className="pt-safe border-b bg-card shrink-0 shadow-sm relative z-10">
         <div className="h-14 flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <button 
               onClick={() => setShowExitConfirm(true)}
-              className="rounded-full h-9 w-9 text-muted-foreground hover:text-foreground active:scale-90 transition-all"
+              className="rounded-full h-9 w-9 flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-90 transition-all"
             >
               <X className="w-4 h-4" />
-            </Button>
+            </button>
             {!showBriefing && (
               <div className={cn(
                 "flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-all",
