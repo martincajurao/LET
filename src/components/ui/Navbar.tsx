@@ -92,7 +92,9 @@ export function Navbar() {
     let claimable = 0;
     const userTier = user.userTier || 'Bronze';
     const qGoal = userTier === 'Platinum' ? 35 : 20;
-    if (!user.taskLoginClaimed) claimable++;
+    
+    // Only increment badge if quest goal is met AND reward is not yet claimed
+    if ((user.dailyAiUsage || 0) >= 1 && !user.taskLoginClaimed) claimable++;
     if ((user.dailyQuestionsAnswered || 0) >= qGoal && !user.taskQuestionsClaimed) claimable++;
     if ((user.dailyTestsFinished || 0) >= 1 && !user.taskMockClaimed) claimable++;
     if ((user.mistakesReviewed || 0) >= 10 && !user.taskMistakesClaimed) claimable++;
