@@ -38,7 +38,8 @@ import {
   ShieldAlert,
   ArrowUpCircle,
   Info,
-  Timer
+  Timer,
+  Minus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -88,7 +89,8 @@ import {
   limit as queryLimit,
   serverTimestamp,
   increment,
-  getCountFromServer
+  getCountFromServer,
+  writeBatch
 } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
@@ -142,6 +144,7 @@ export default function AdminDashboard() {
   const [isUpdatingUser, setIsUpdatingUser] = useState(false);
   const [isResettingTasks, setIsResettingTasks] = useState(false);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
+  const [isResettingGlobal, setIsResettingGlobal] = useState(false);
   const [editUserForm, setEditUserForm] = useState({
     displayName: "",
     majorship: "",
@@ -311,6 +314,56 @@ export default function AdminDashboard() {
       .finally(() => {
         setIsUpdatingUser(false);
       });
+  };
+
+  const handleGlobalReset = async () => {
+    if (!firestore || users.length === 0) return;
+    setIsResettingGlobal(true);
+    
+    try {
+      const batch = writeBatch(firestore);
+      
+      // Reset daily progress for loaded users
+      users.forEach(u => {
+        const uRef = doc(firestore, 'users', u.id);
+        batch.update(uRef, {
+          dailyQuestionsAnswered: 0,
+          dailyTestsFinished: 0,
+          dailyAiUsage: 0,
+          dailyCreditEarned: 0,
+          dailyAdCount: 0,
+          taskLoginClaimed: false,
+          taskQuestionsClaimed: false,
+          taskMockClaimed: false,
+          taskMistakesClaimed: false,
+          mistakesReviewed: 0,
+          lastTaskReset: serverTimestamp()
+        });
+      });
+
+      // Update system config to record manual global reset
+      const configRef = doc(firestore, "system_configs", "global");
+      batch.update(configRef, {
+        lastGlobalManualReset: serverTimestamp()
+      });
+
+      await batch.commit();
+      
+      toast({ 
+        title: "Global Reset Success", 
+        description: `Purged daily progress for ${users.length} loaded educators.` 
+      });
+      fetchUsers();
+    } catch (e: any) {
+      console.error("Global reset failed:", e);
+      toast({ 
+        variant: "destructive", 
+        title: "Reset Failed", 
+        description: "An error occurred during batch synchronization." 
+      });
+    } finally {
+      setIsResettingGlobal(false);
+    }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><EducationalLoader message="Syncing Dashboard..." /></div>;
@@ -655,9 +708,31 @@ export default function AdminDashboard() {
                     <h4 className="font-black text-xl">Global Reset</h4>
                     <p className="text-xs font-medium text-muted-foreground mt-1">Purge all daily progress for every educator in the system base.</p>
                   </div>
-                  <Button variant="destructive" className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all gap-2">
-                    <AlertTriangle className="w-4 h-4" /> Trigger Global Reset
-                  </Button>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" disabled={isResettingGlobal} className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all gap-2">
+                        {isResettingGlobal ? <Loader2 className="w-4 h-4 animate-spin" /> : <AlertTriangle className="w-4 h-4" />} Trigger Global Reset
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="rounded-[3rem] border-none shadow-2xl p-10 outline-none">
+                      <AlertDialogHeader>
+                        <div className="w-16 h-16 bg-rose-500/10 rounded-[1.5rem] flex items-center justify-center mb-4 mx-auto shadow-inner">
+                          <AlertTriangle className="w-8 h-8 text-rose-600" />
+                        </div>
+                        <AlertDialogTitle className="text-2xl font-black text-center tracking-tighter">System Purge Protocol</AlertDialogTitle>
+                        <AlertDialogDescription className="text-center text-sm font-medium leading-relaxed px-4">
+                          This will reset daily questions, mock tests, focus sessions, and reward claims for <strong>all loaded educators</strong>. This action is irreversible.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="sm:flex-col gap-3 mt-6">
+                        <AlertDialogAction onClick={handleGlobalReset} className="bg-rose-600 hover:bg-rose-700 text-white h-16 rounded-2xl font-black w-full shadow-xl shadow-rose-500/30 text-xs uppercase tracking-widest">
+                          Execute Global Reset
+                        </AlertDialogAction>
+                        <AlertDialogCancel className="h-12 rounded-xl font-bold border-2 w-full text-[10px] uppercase tracking-widest">Abort Protocol</AlertDialogCancel>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </Card>
               </div>
             </div>
@@ -972,14 +1047,6 @@ function EducationalLoader({ message }: { message?: string }) {
       </div>
       {message && <p className="font-black text-sm uppercase tracking-[0.3em] text-muted-foreground opacity-60">{message}</p>}
     </div>
-  );
-}
-
-function Minus({ className }: { className?: string }) {
-  return (
-    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
   );
 }
 
