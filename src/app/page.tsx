@@ -54,7 +54,9 @@ import {
   Activity,
   Award,
   Unlock,
-  Compass
+  Compass,
+  Map as MapIcon,
+  ArrowRight
 } from "lucide-react";
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
@@ -164,7 +166,6 @@ function LetsPrepContent() {
     timeSpent: 0 
   });
 
-  // Track Locked Requirements State
   const [lockedTrackInfo, setLockedTrackInfo] = useState<any>(null);
   const [isUnlockingEarly, setIsUnlockingEarly] = useState(false);
   
@@ -213,7 +214,6 @@ function LetsPrepContent() {
     if (!firestore || isStartingRef.current) return;
     isStartingRef.current = true;
 
-    // Check Eligibility First
     const isLocked = !isTrackUnlocked(rankData?.rank || 1, category, user.unlockedTracks);
     if (isLocked && category !== 'quickfire') {
       const modeConfig = getTrackConfig(category, user?.majorship || 'Major');
