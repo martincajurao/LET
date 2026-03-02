@@ -148,20 +148,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (unsubFromProfile) unsubFromProfile();
       
       if (firebaseUser) {
-        setLoading(true);
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
-        unsubFromProfile = onSnapshot(userDocRef, (snap) => {
+        unsubFromProfile = onSnapshot(userDocRef, async (snap) => {
           if (snap.exists()) {
             const scrubbed = scrubUserData(snap.data(), userRef.current);
             setUser({ ...scrubbed, uid: firebaseUser.uid });
+            setLoading(false);
           } else {
-            // Document doesn't exist yet, wait for creation if bypassLogin is running
-            // or initialize standard profile for new social logins
-            if (!loading) {
-              createUserProfileInFirestore(firebaseUser).then(setUser);
-            }
+            // Profile document doesn't exist, create it
+            const profile = await createUserProfileInFirestore(firebaseUser);
+            setUser(profile);
+            setLoading(false);
           }
-          setLoading(false);
         }, (error) => {
           console.error('Firestore Snapshot Error:', error);
           setLoading(false);
@@ -179,22 +177,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [firestore, auth]);
 
   const createUserProfileInFirestore = async (firebaseUser: any) => {
+    // If it's an anonymous/bypass user, give them special stats
+    const isAnonymous = firebaseUser.isAnonymous || firebaseUser.uid.startsWith('bypass');
+    
     const newUserProfile: UserProfile = {
       uid: firebaseUser.uid,
-      displayName: firebaseUser.displayName || 'Educator',
-      email: firebaseUser.email,
-      photoURL: firebaseUser.photoURL,
-      onboardingComplete: false,
-      credits: 20, 
-      xp: 0,
+      displayName: isAnonymous ? `Premium Tester (${firebaseUser.uid.substring(0,4)})` : (firebaseUser.displayName || 'Educator'),
+      email: firebaseUser.email || 'anonymous@tester.app',
+      photoURL: firebaseUser.photoURL || 'https://picsum.photos/seed/tester/200/200',
+      onboardingComplete: isAnonymous,
+      credits: isAnonymous ? 100 : 20, 
+      xp: isAnonymous ? 15000 : 0,
       lastRewardedRank: 1,
-      isPro: false,
+      isPro: isAnonymous,
       dailyAdCount: 0,
       dailyAiUsage: 0,
       dailyQuestionsAnswered: 0,
       dailyTestsFinished: 0,
       dailyCreditEarned: 0,
-      streakCount: 0,
+      streakCount: isAnonymous ? 14 : 0,
+      majorship: isAnonymous ? 'Mathematics' : undefined,
       lastActiveDate: Date.now(),
       lastTaskReset: Date.now(),
       lastLoginRewardClaimedAt: 0,
@@ -209,9 +211,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       referralCreditsEarned: 0,
       referralTier: 'Bronze',
       dailyEventEntries: 1,
-      unlockedTracks: []
+      unlockedTracks: isAnonymous ? ['General Education', 'Professional Education', 'Specialization', 'all'] : []
     };
-    await setDoc(doc(firestore, 'users', firebaseUser.uid), newUserProfile);
+    
+    await setDoc(doc(firestore, 'users', firebaseUser.uid), newUserProfile, { merge: true });
     return newUserProfile;
   };
 
@@ -252,43 +255,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       if (!auth || !firestore) return;
-      
-      const cred = await signInAnonymously(auth);
-      const userDocRef = doc(firestore, 'users', cred.user.uid);
-      const snap = await getDoc(userDocRef);
-      
-      if (!snap.exists()) {
-        const testProfile: UserProfile = {
-          uid: cred.user.uid,
-          displayName: 'Premium Tester (' + cred.user.uid.substring(0, 4) + ')',
-          email: 'anonymous@tester.app',
-          photoURL: 'https://picsum.photos/seed/tester/200/200',
-          onboardingComplete: true,
-          credits: 100,
-          xp: 15000,
-          isPro: true,
-          streakCount: 14,
-          majorship: 'Mathematics',
-          lastRewardedRank: 1,
-          dailyAdCount: 0,
-          dailyQuestionsAnswered: 0,
-          dailyTestsFinished: 0,
-          dailyCreditEarned: 0,
-          lastTaskReset: Date.now(),
-          referralCode: 'TESTER-' + cred.user.uid.substring(0, 4).toUpperCase(),
-          taskLoginClaimed: false,
-          taskQuestionsClaimed: false,
-          taskMockClaimed: false,
-          taskMistakesClaimed: false,
-          unlockedTracks: ['General Education', 'Professional Education', 'Specialization', 'all']
-        };
-        await setDoc(userDocRef, testProfile);
-        setUser(testProfile);
-      } else {
-        const existingData = snap.data() as UserProfile;
-        setUser({ ...existingData, uid: cred.user.uid });
-      }
-      
+      // signInAnonymously will trigger onAuthStateChanged which now handles the document logic
+      await signInAnonymously(auth);
       toast({ 
         variant: "reward", 
         title: "Test Session Active", 
