@@ -41,7 +41,9 @@ if (getApps().length === 0) {
   // Set persistence for both web and WebView environments
   // We prefer indexedDB for WebView stability
   const persistence = isWebView ? indexedDBLocalPersistence : browserLocalPersistence;
-  setPersistence(auth, persistence).catch(console.error);
+  setPersistence(auth, persistence).catch(err => {
+    console.error('[Firebase] Persistence configuration failed:', err);
+  });
 } else {
   firebaseApp = getApp();
   auth = getAuth(firebaseApp);

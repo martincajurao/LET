@@ -150,15 +150,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let unsubFromProfile: (() => void) | undefined;
     const unsubFromAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (unsubFromProfile) unsubFromProfile();
+      if (unsubFromProfile) {
+        unsubFromProfile();
+        unsubFromProfile = undefined;
+      }
       
       if (firebaseUser) {
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
-        const snap = await getDoc(userDocRef);
-        if (!snap.exists()) {
-          await createUserProfileInFirestore(firebaseUser);
+        
+        // Initial fetch to ensure data is present for the UI immediately
+        try {
+          const snap = await getDoc(userDocRef);
+          if (!snap.exists()) {
+            await createUserProfileInFirestore(firebaseUser);
+          } else {
+            const scrubbed = scrubUserData(snap.data(), userRef.current);
+            setUser({ ...scrubbed, uid: firebaseUser.uid });
+          }
+        } catch (e) {
+          console.error('[Auth] Initial profile fetch error:', e);
         }
 
+        // Set up real-time listener for ongoing updates
         unsubFromProfile = onSnapshot(userDocRef, (profileSnap) => {
           if (profileSnap.exists()) {
             const scrubbed = scrubUserData(profileSnap.data(), userRef.current);
@@ -166,7 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setLoading(false);
           }
         }, (error) => {
-          console.error('Firestore Profile Sync Error:', error);
+          console.error('[Auth] Firestore Profile Sync Error:', error);
           setLoading(false);
         });
       } else {
@@ -254,7 +267,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       if (!auth || !firestore) return;
-      await signInAnonymously(auth);
+      const userCred = await signInAnonymously(auth);
+      if (userCred.user) {
+        // Manual immediate sync for WebView stability
+        await refreshUser();
+      }
       toast({ variant: "reward", title: "Test Session Active", description: "Authenticated via Firebase trace." });
     } catch (e: any) {
       console.warn('Bypassing to Virtual Persistent Trace:', e.message);
@@ -271,17 +288,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       localStorage.removeItem('virtual_educator_uid');
+      let firebaseUser: FirebaseUser | null = null;
+
       if (Capacitor.isNativePlatform()) {
         const result = await FirebaseAuthentication.signInWithGoogle();
         if (result.credential?.idToken) {
           const credential = GoogleAuthProvider.credential(result.credential.idToken);
-          await signInWithCredential(auth!, credential);
+          const userCred = await signInWithCredential(auth!, credential);
+          firebaseUser = userCred.user;
         }
       } else {
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
-        await signInWithPopup(auth!, provider);
+        const userCred = await signInWithPopup(auth!, provider);
+        firebaseUser = userCred.user;
       }
+
+      if (firebaseUser) {
+        // Direct sync: Manually fetch and update state to bypass WebView observer delay
+        const userDocRef = doc(firestore, 'users', firebaseUser.uid);
+        const snap = await getDoc(userDocRef);
+        if (!snap.exists()) {
+          const newProfile = await createUserProfileInFirestore(firebaseUser);
+          if (newProfile) setUser(newProfile);
+        } else {
+          const scrubbed = scrubUserData(snap.data(), userRef.current);
+          setUser({ ...scrubbed, uid: firebaseUser.uid });
+        }
+      }
+
       toast({ title: "Welcome back!", description: "Educator session synchronized." });
     } catch (error: any) {
       console.error('Google Sign-In Error:', error);
@@ -299,7 +334,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.removeItem('virtual_educator_uid');
       const provider = new FacebookAuthProvider();
-      await signInWithPopup(auth, provider);
+      const userCred = await signInWithPopup(auth, provider);
+      if (userCred.user) {
+        await refreshUser();
+      }
     } catch (error: any) {
       console.error('Facebook Error:', error);
     } finally {
@@ -309,10 +347,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     localStorage.removeItem('virtual_educator_uid');
-    if (Capacitor.isNativePlatform()) await FirebaseAuthentication.signOut();
-    if (auth) await signOut(auth);
-    setUser(null);
-    router.push('/');
+    setLoading(true);
+    try {
+      if (Capacitor.isNativePlatform()) await FirebaseAuthentication.signOut();
+      if (auth) await signOut(auth);
+      setUser(null);
+      router.push('/');
+    } catch (e) {
+      console.error('[Auth] Logout error:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateProfile = async (data: Partial<UserProfile>) => {
@@ -321,14 +366,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try { 
       await updateDoc(userDocRef, data); 
     } catch (e) { 
+      // Optimistic update fallback
       setUser(prev => prev ? { ...prev, ...data } : null);
     }
   };
 
   const refreshUser = async () => {
-    if (!firestore || !user?.uid) return;
-    const snap = await getDoc(doc(firestore, 'users', user.uid));
-    if (snap.exists()) setUser({ ...scrubUserData(snap.data(), user), uid: user.uid });
+    if (!firestore || !auth?.currentUser) return;
+    try {
+      const snap = await getDoc(doc(firestore, 'users', auth.currentUser.uid));
+      if (snap.exists()) {
+        const scrubbed = scrubUserData(snap.data(), userRef.current);
+        setUser({ ...scrubbed, uid: auth.currentUser.uid });
+      }
+    } catch (e) {
+      console.error('[Auth] Manual sync error:', e);
+    }
   };
 
   return (

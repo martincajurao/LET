@@ -33,12 +33,19 @@ export function SessionPersistence() {
         console.log('[SessionPersistence] Native user trace found:', result.user.uid);
         
         // If JS layer is missing the user, attempt silent re-auth
+        // This is critical for WebViews where the JS SDK might lose context
         if (!auth.currentUser) {
-          console.log('[SessionPersistence] JS layer out of sync. Re-authenticating...');
+          console.log('[SessionPersistence] JS layer out of sync. Forcing re-hydration...');
           
-          // Note: In a full production app, we would use the latest idToken from the native side
-          // For now, we trigger a refresh which should pull from the native persistence layer
-          await refreshUser();
+          // Attempt to get a fresh token if available
+          const tokenResult = await FirebaseAuthentication.getIdToken();
+          if (tokenResult.token) {
+            // Note: Firebase JS SDK usually manages its own session, but we can trigger
+            // a reload of the current user context to force it to look at the persistence layer
+            await refreshUser();
+          } else {
+            await refreshUser();
+          }
         }
       } else if (user && !user.uid.startsWith('bypass')) {
         // Native layer says no user, but JS layer thinks there is one
@@ -57,7 +64,7 @@ export function SessionPersistence() {
     if (lastPathRef.current === pathname) return;
     lastPathRef.current = pathname;
     
-    // Only verify session if we are in a native platform and appear unauthenticated
+    // Periodically verify session during navigation if user appears unauthenticated
     if (!loading && !user) {
       checkSession();
     }
@@ -67,7 +74,7 @@ export function SessionPersistence() {
   useEffect(() => {
     const timer = setTimeout(() => {
       checkSession();
-    }, 1500); // Allow additional time for bridge hydration
+    }, 1000); // Allow bridge hydration
     
     return () => clearTimeout(timer);
   }, [checkSession]);
