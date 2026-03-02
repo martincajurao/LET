@@ -190,14 +190,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const scrubbed = scrubUserData(snap.data(), userRef.current);
         setUser({ ...scrubbed, uid });
       } else {
-        // Create initial virtual document if missing
         const virtualProfile = createMockProfile(uid);
         await setDoc(userDocRef, virtualProfile);
         setUser(virtualProfile);
       }
     } catch (e) {
       console.error('Virtual Session Sync Error:', e);
-      // Even if firestore fails (due to rules), we let the UI function locally
       setUser(createMockProfile(uid));
     } finally {
       setLoading(false);
@@ -257,28 +255,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       if (!auth || !firestore) return;
-      
-      // Attempt standard anonymous auth
       await signInAnonymously(auth);
-      toast({ 
-        variant: "reward", 
-        title: "Test Session Active", 
-        description: "Authenticated via Firebase trace." 
-      });
+      toast({ variant: "reward", title: "Test Session Active", description: "Authenticated via Firebase trace." });
     } catch (e: any) {
       console.warn('Firebase Auth Restricted (Bypassing to Virtual Trace):', e.message);
-      
-      // Fallback: Virtual Trace (Persistent Local Session)
       const virtualUid = `bypass_${Math.random().toString(36).substring(2, 9)}`;
       localStorage.setItem('virtual_educator_uid', virtualUid);
-      
       await handleVirtualSession(virtualUid);
-      
-      toast({ 
-        variant: "reward", 
-        title: "Virtual Trace Active", 
-        description: "Standard Auth restricted. Using local persistence." 
-      });
+      toast({ variant: "reward", title: "Virtual Trace Active", description: "Standard Auth restricted. Using local persistence." });
     } finally {
       setLoading(false);
     }
@@ -333,7 +317,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try { 
       await updateDoc(userDocRef, data); 
     } catch (e) { 
-      // Fallback for virtual users if rules prevent write
       setUser(prev => prev ? { ...prev, ...data } : null);
     }
   };

@@ -12,7 +12,7 @@ import { useUser, useFirestore } from '@/firebase';
 import { doc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { INITIAL_QUESTIONS } from '@/app/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
-import Link from 'next/navigation';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 export default function TasksPage() {
@@ -98,7 +98,7 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8 pb-32 pt-safe">
+    <div className="min-h-screen bg-background p-4 md:p-8 pb-32">
       <div className="max-w-5xl mx-auto space-y-8">
         <div className="flex items-center justify-between px-2">
           <Link href="/dashboard">
