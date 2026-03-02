@@ -25,7 +25,8 @@ import {
   Star,
   TrendingUp,
   History,
-  ArrowDown
+  ArrowDown,
+  Info
 } from "lucide-react";
 import { 
   Dialog, 
@@ -175,7 +176,7 @@ export function ResultsOverview({
   const handleUnlockWithAd = async () => {
     if (!user || !firestore) return;
     if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
-      toast({ title: "Allowance Reached", description: "Daily professional clip limit reached.", variant: "destructive" });
+      toast({ title: "Allowance Reached", description: "Daily limit reached.", variant: "destructive" });
       return;
     }
 
@@ -205,7 +206,7 @@ export function ResultsOverview({
     if (!user || !firestore) return;
     const credits = typeof user.credits === 'number' ? user.credits : 0;
     if (credits < AI_UNLOCK_COST) {
-      toast({ variant: "destructive", title: "Vault Restricted", description: `Unlocking requires ${AI_UNLOCK_COST} credits (Current: ${credits}).` });
+      toast({ variant: "destructive", title: "Vault Restricted", description: `Requires ${AI_UNLOCK_COST} credits.` });
       return;
     }
     
@@ -231,11 +232,7 @@ export function ResultsOverview({
     const credits = typeof user.credits === 'number' ? user.credits : 0;
 
     if (!isPro && credits < AI_DEEP_DIVE_COST) {
-      toast({ 
-        variant: "destructive", 
-        title: "Credits Required", 
-        description: `Deep dive requires ${AI_DEEP_DIVE_COST} credits. (Current: ${credits})` 
-      });
+      toast({ variant: "destructive", title: "Credits Required", description: `Deep dive requires ${AI_DEEP_DIVE_COST} credits.` });
       return;
     }
     
@@ -281,8 +278,7 @@ export function ResultsOverview({
         await refreshUser();
       }
     } catch (e) {
-      console.error("Explanation Sync Error:", e);
-      setLocalExplanations(prev => ({ ...prev, [q.id]: "Pedagogical insight temporarily unavailable." }));
+      setLocalExplanations(prev => ({ ...prev, [q.id]: "Pedagogical insight unavailable." }));
     } finally {
       setGeneratingIds(prev => { const next = new Set(prev); next.delete(q.id); return next; });
     }
@@ -335,12 +331,12 @@ export function ResultsOverview({
                   <p className="text-muted-foreground font-medium text-sm max-w-sm mx-auto">Access accuracy charts, AI analysis, and full item review.</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-                  <Button onClick={handleUnlockWithAd} disabled={unlocking || (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT} className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-3 shadow-lg relative overflow-hidden bg-primary text-primary-foreground active:scale-95 transition-all">
+                  <Button onClick={handleUnlockWithAd} disabled={unlocking} className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-3 shadow-lg relative overflow-hidden bg-primary text-primary-foreground active:scale-95 transition-all">
                     {unlocking && !verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : verifying ? <ShieldAlert className="w-4 h-4 animate-pulse" /> : <Play className="w-4 h-4 fill-current" />}
                     {unlocking ? (verifying ? "Verifying..." : "Playing...") : "Watch Clip"}
                     <Badge className="absolute top-1.5 right-1.5 bg-background/20 text-background text-[7px] font-black uppercase border-none">FREE</Badge>
                   </Button>
-                  <Button variant="outline" onClick={handleUnlockWithCredits} disabled={unlocking || (user?.credits || 0) < AI_UNLOCK_COST} className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-2 border-2 border-primary/30 bg-primary/5 text-primary active:scale-95 transition-all">
+                  <Button variant="outline" onClick={handleUnlockWithCredits} disabled={unlocking} className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-2 border-2 border-primary/30 bg-primary/5 text-primary active:scale-95 transition-all">
                     <span className="flex-1 text-left px-1">Unlock Vault</span>
                     <div className="bg-background/90 px-2 py-1 rounded-lg border border-primary/30 flex items-center gap-1.5">
                       <span className="font-black text-xs">{AI_UNLOCK_COST}</span>

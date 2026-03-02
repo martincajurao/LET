@@ -153,12 +153,12 @@ function LetsPrepContent() {
   
   // Results Gating State
   const [showResultUnlock, setShowResultUnlock] = useState(false);
+  const [isResultsUnlocked, setIsResultsUnlocked] = useState(false);
   const [examStatsForUnlock, setExamStatsForUnlock] = useState({ 
     questionsCount: 0, 
     correctAnswers: 0, 
     timeSpent: 0 
   });
-  const [isResultsUnlocked, setIsResultsUnlocked] = useState(false);
   
   const [timePerQuestion, setTimePerQuestion] = useState(60);
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
@@ -236,6 +236,7 @@ function LetsPrepContent() {
       if (finalQuestions.length === 0) throw new Error(`Insufficient items found.`);
       
       setCurrentQuestions(finalQuestions);
+      setIsResultsUnlocked(false); // Reset unlock state for new attempt
       setTimeout(() => { 
         setState('exam'); 
         setIsCalibrating(false); 
@@ -419,7 +420,7 @@ function LetsPrepContent() {
       if (isQuickFire) {
         setState('quickfire_results');
       } else {
-        // Categorized or Full Simulation: Apply Results Gating
+        // All non-QuickFire exams (Categorized & Full) are gated for non-PRO users
         if (!user.isPro) {
           setIsResultsUnlocked(false);
           setExamStatsForUnlock({
@@ -464,7 +465,7 @@ function LetsPrepContent() {
   const displayStats = user ? [
     { icon: <Sparkles className="w-4 h-4 text-yellow-500 animate-sparkle" />, label: 'Credits', value: user.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
     { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Arena', value: userRank, color: 'text-primary bg-primary/10' },
-    { icon: user.isPro ? <Crown className="w-4 h-4 text-yellow-600 fill-current" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user.isPro ? 'Platinum' : 'FREE', color: 'text-blue-500 bg-blue-500/10' },
+    { icon: user.isPro ? <Crown className="w-4 h-4 text-yellow-600 fill-current" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user.isPro ? 'Platinum' : 'FREE', color: user.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
     { icon: <Flame className="w-4 h-4 text-orange-500 fill-current animate-pulse" />, label: 'Streak', value: user.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' }
   ] : [
     { icon: <Users className="w-4 h-4 text-blue-500" />, label: 'Community', value: '1.7K+', color: 'text-blue-500 bg-blue-500/5' },
