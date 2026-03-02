@@ -168,7 +168,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Achievements */}
+            {/* Achievements placeholder - will be handled by existing component */}
             <AchievementSystem 
               userStats={{
                 streakCount: user?.streakCount || 0,

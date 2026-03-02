@@ -67,7 +67,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
   const phases = useMemo(() => {
     if (isContinuous) {
-      return [{ name: 'Quick Fire', questions, startIndex: 0 }];
+      return [{ name: 'Continuous Trace', questions, startIndex: 0 }];
     }
 
     const p: Phase[] = [];
@@ -216,7 +216,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
               className={cn(
                 "h-8 rounded-lg gap-1.5 transition-all border px-2",
                 confidentAnswers[currentQuestion.id] 
-                  ? "bg-emerald-500 border-emerald-600 text-white" 
+                  ? "bg-emerald-500 border-emerald-600 text-white shadow-lg shadow-emerald-500/20" 
                   : "bg-background border-border text-muted-foreground"
               )}
             >
