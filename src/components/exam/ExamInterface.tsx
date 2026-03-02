@@ -61,8 +61,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const autoAdvanceTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const isContinuous = useMemo(() => questions.length <= 10, [questions]);
-
   useEffect(() => {
     document.body.classList.add('immersive-mode');
     return () => {
@@ -70,15 +68,13 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     };
   }, []);
 
+  // Professional Phase Grouping: Restore the multi-segment structure for Full Simulations
   const phases = useMemo(() => {
-    if (isContinuous) {
-      return [{ name: 'Continuous Trace', questions, startIndex: 0 }];
-    }
-
     const p: Phase[] = [];
     let currentPhase: Phase | null = null;
 
     questions.forEach((q, idx) => {
+      // Group by subject to create distinct segments (Gen Ed, Prof Ed, Spec)
       if (!currentPhase || currentPhase.name !== q.subject) {
         currentPhase = { name: q.subject, questions: [], startIndex: idx };
         p.push(currentPhase);
@@ -86,7 +82,10 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       currentPhase.questions.push(q);
     });
     return p;
-  }, [questions, isContinuous]);
+  }, [questions]);
+
+  // A simulation is continuous if it only has one subject track (e.g. just Gen Ed)
+  const isContinuous = useMemo(() => phases.length <= 1, [phases]);
 
   const currentPhaseIndex = useMemo(() => {
     return phases.findIndex(p => 
@@ -140,16 +139,21 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
     
-    const phase = phases[currentPhaseIndex];
-    const isEndOfPhase = currentIdx === phase.startIndex + phase.questions.length - 1;
-    const isLastQuestionTotal = currentIdx === questions.length - 1;
-
-    if (isLastQuestionTotal) return;
-
     autoAdvanceTimer.current = setTimeout(() => {
+      const phase = phases[currentPhaseIndex];
+      const isEndOfPhase = currentIdx === phase.startIndex + phase.questions.length - 1;
+      const isLastQuestionTotal = currentIdx === questions.length - 1;
+
+      if (isLastQuestionTotal) {
+        // At the absolute end, wait for the user to click Commit
+        return;
+      }
+
       if (isEndOfPhase && !isContinuous) {
+        // Transition to rest phase between segments
         setIsResting(true);
       } else {
+        // Standard progression
         setCurrentIdx(prev => prev + 1);
       }
     }, 450);

@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
@@ -211,6 +210,7 @@ function LetsPrepContent() {
       let finalQuestions: Question[] = [];
       
       if (category === 'all') {
+        // Build questions in subject blocks to ensure correct phase triggering in ExamInterface
         const genEd = shuffleArray(questionPool.filter(q => q.subject === 'General Education')).slice(0, limits.limitGenEd);
         const profEd = shuffleArray(questionPool.filter(q => q.subject === 'Professional Education')).slice(0, limits.limitProfEd);
         const spec = shuffleArray(questionPool.filter(q => q.subject === 'Specialization' && q.subCategory === (user?.majorship || 'English'))).slice(0, limits.limitSpec);
@@ -228,15 +228,21 @@ function LetsPrepContent() {
         const remaining = questionPool.filter(q => !selection.some(s => s.id === q.id));
         finalQuestions = shuffleArray([...selection, ...shuffleArray(remaining).slice(0, 5 - selection.length)]);
       } else {
-        const target = category === 'Major' ? 'Specialization' : category;
+        const target = category === 'Major' || category === 'Specialization' ? 'Specialization' : category;
+        const pool = questionPool.filter(q => {
+          if (target === 'Specialization') {
+            return q.subject === 'Specialization' && q.subCategory === (user?.majorship || 'English');
+          }
+          return q.subject === target;
+        });
         const targetLimit = target === 'General Education' ? limits.limitGenEd : target === 'Professional Education' ? limits.limitProfEd : limits.limitSpec;
-        finalQuestions = shuffleArray(questionPool.filter(q => q.subject === target)).slice(0, targetLimit);
+        finalQuestions = shuffleArray(pool).slice(0, targetLimit);
       }
       
       if (finalQuestions.length === 0) throw new Error(`Insufficient items found.`);
       
       setCurrentQuestions(finalQuestions);
-      setIsResultsUnlocked(false); // Reset unlock state for new attempt
+      setIsResultsUnlocked(false);
       setTimeout(() => { 
         setState('exam'); 
         setIsCalibrating(false); 
@@ -420,7 +426,7 @@ function LetsPrepContent() {
       if (isQuickFire) {
         setState('quickfire_results');
       } else {
-        // All non-QuickFire exams (Categorized & Full) are gated for non-PRO users
+        // Universal Gate: Unlock screen for GenEd, ProfEd, Spec, and Full Simulations
         if (!user.isPro) {
           setIsResultsUnlocked(false);
           setExamStatsForUnlock({
