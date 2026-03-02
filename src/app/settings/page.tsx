@@ -1,23 +1,18 @@
 "use client"
 
-import React, { useState, Suspense, useEffect } from 'react';
-import { useUser, useFirestore } from "@/firebase";
+import React, { useState, Suspense } from 'react';
+import { useUser } from "@/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeft, 
   Settings, 
   Smartphone, 
   RefreshCw, 
   Loader2, 
-  Check,
-  Moon,
-  Sun,
-  Bell,
-  Sparkles,
   Zap,
-  ShieldCheck
+  Moon,
+  Sun
 } from "lucide-react";
 
 import Link from 'next/link';
@@ -26,7 +21,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { SelfUpdate } from '@/components/self-update';
 import { useTheme } from '@/hooks/use-theme';
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { motion } from 'framer-motion';
 import { cn } from "@/lib/utils";
 
