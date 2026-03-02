@@ -28,6 +28,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { motion } from 'framer-motion';
+import { cn } from "@/lib/utils";
 
 function SettingsPageContent() {
   const { user, loading: userLoading, refreshUser } = useUser();
