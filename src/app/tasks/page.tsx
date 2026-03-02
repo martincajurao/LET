@@ -1,24 +1,66 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
 import { DailyLoginRewards } from '@/components/ui/daily-login-rewards';
 import { QuestionOfTheDay } from '@/components/ui/question-of-the-day';
 import { StudyTimer } from '@/components/ui/study-timer';
-import { Target, ArrowLeft, ShieldCheck, Brain, Loader2, Sparkles } from 'lucide-react';
+import { Target, ArrowLeft, ShieldCheck, Brain, Loader2, Sparkles, RefreshCw } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
-import { INITIAL_QUESTIONS } from '@/app/lib/mock-data';
+import { doc, updateDoc, increment, serverTimestamp, getDoc, setDoc } from 'firebase/firestore';
+import { Question } from '@/app/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
+import { generateDailyQuestion } from '@/ai/flows/generate-qotd-flow';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function TasksPage() {
   const { user, loading, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+
+  const [dailyQuestion, setDailyQuestion] = useState<Question | null>(null);
+  const [loadingQotd, setLoadingQotd] = useState(true);
+
+  // Fetch or Generate Daily Question from Firestore (Shared for all users)
+  useEffect(() => {
+    async function fetchDailyInsight() {
+      if (!firestore) return;
+      try {
+        const docRef = doc(firestore, 'system_configs', 'daily_insight');
+        const snap = await getDoc(docRef);
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.dateGenerated === today) {
+            setDailyQuestion({ ...data, id: 'qotd' } as Question);
+            setLoadingQotd(false);
+            return;
+          }
+        }
+
+        // Generate fresh if stale or missing (Lazy Client Generation)
+        setLoadingQotd(true);
+        const freshQuestion = await generateDailyQuestion();
+        const qotdData = {
+          ...freshQuestion,
+          dateGenerated: today,
+          timestamp: Date.now()
+        };
+        await setDoc(docRef, qotdData);
+        setDailyQuestion({ ...qotdData, id: 'qotd' } as Question);
+      } catch (e) {
+        console.error('Failed to sync daily insight:', e);
+      } finally {
+        setLoadingQotd(false);
+      }
+    }
+
+    fetchDailyInsight();
+  }, [firestore]);
 
   const handleClaimLoginReward = async (day: number, xp: number, credits: number) => {
     if (!user || !firestore) return;
@@ -137,14 +179,19 @@ export default function TasksPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-7 space-y-8">
-              {INITIAL_QUESTIONS.length > 0 && (
+              {loadingQotd ? (
+                <Card className="p-12 flex flex-col items-center justify-center gap-4 bg-muted/20 border-2 border-dashed border-border rounded-[2.5rem]">
+                  <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Calibrating AI Daily Insight...</p>
+                </Card>
+              ) : dailyQuestion && (
                 <motion.div 
                   initial={{ opacity: 0, x: -20 }} 
                   animate={{ opacity: 1, x: 0 }} 
                   transition={{ delay: 0.2, duration: 0.5 }}
                 >
                   <QuestionOfTheDay 
-                    question={INITIAL_QUESTIONS[Math.floor(Date.now() / 86400000) % INITIAL_QUESTIONS.length]}
+                    question={dailyQuestion}
                     lastClaimDate={user.lastQotdClaimedAt}
                     onComplete={handleQuestionComplete}
                   />

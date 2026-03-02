@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "UserProfile": {
@@ -76,6 +75,10 @@
     "/exam_results/{resultId}": {
       "schema": "ExamResult",
       "description": "Historical performance data."
+    },
+    "/system_configs/daily_insight": {
+      "schema": "Question",
+      "description": "Shared AI-generated question of the day."
     }
   }
 }

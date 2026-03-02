@@ -50,7 +50,7 @@ service cloud.firestore {
     // System Config - Globally readable for simulation calibration
     match /system_configs/{configId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if isAuthenticated(); // Allow users to update daily_insight cache
     }
   }
 }
