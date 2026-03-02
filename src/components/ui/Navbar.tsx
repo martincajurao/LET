@@ -22,7 +22,8 @@ import {
   Crown,
   Sparkles,
   ShieldAlert,
-  Smartphone
+  Smartphone,
+  Sword
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -108,10 +109,10 @@ export function Navbar() {
   const navItems = useMemo(() => [
     { label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, href: '/dashboard' },
     { 
-      label: 'Daily Missions', 
+      label: 'Daily Quests', 
       icon: (
         <div className="relative">
-          <ListTodo className="w-4 h-4" />
+          <Sword className="w-4 h-4" />
           {claimableTasksCount > 0 && (
             <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary text-primary-foreground text-[7px] font-black rounded-full flex items-center justify-center border border-card shadow-sm animate-bounce">
               {claimableTasksCount}

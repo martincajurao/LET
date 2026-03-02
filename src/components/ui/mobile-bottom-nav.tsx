@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard,
-  ListTodo, 
+  Sword, 
   Trophy, 
   Zap,
   Target,
@@ -150,10 +150,10 @@ function NavContent() {
     { id: 'home', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, href: '/dashboard' },
     { 
       id: 'tasks', 
-      label: 'Tasks', 
+      label: 'Quests', 
       icon: (
         <div className="relative">
-          <ListTodo className="w-5 h-5" />
+          <Sword className="w-5 h-5" />
           {claimableTasksCount > 0 && (
             <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-[9px] font-black rounded-full flex items-center justify-center border-2 border-card shadow-sm animate-bounce">{claimableTasksCount}</span>
           )}

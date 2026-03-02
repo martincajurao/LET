@@ -31,7 +31,8 @@ import {
   Sparkles,
   Play,
   ShieldAlert,
-  Package
+  Package,
+  Sword
 } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
@@ -40,7 +41,7 @@ import { doc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRankData, STREAK_RECOVERY_COST, DAILY_AD_LIMIT, XP_REWARDS } from '@/lib/xp-system';
 
-interface Task {
+interface Quest {
   id: string;
   title: string;
   description: string;
@@ -70,23 +71,23 @@ export function DailyTaskDashboard() {
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
   const tierMultiplier = rankData?.multiplier || 1.0;
 
-  const tasks: Task[] = useMemo(() => {
+  const quests: Quest[] = useMemo(() => {
     const qGoal = user?.userTier === 'Platinum' ? 35 : 20;
     return [
       { id: 'login', title: 'Daily Entrance', description: 'Access simulation vault', reward: Math.round(5 * tierMultiplier), goal: 1, current: user ? 1 : 0, isClaimed: !!user?.taskLoginClaimed, icon: <Key className="w-5 h-5" />, color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' },
-      { id: 'questions', title: 'Item Mastery', description: 'Complete board items', reward: Math.round(10 * tierMultiplier), goal: qGoal, current: user?.dailyQuestionsAnswered || 0, isClaimed: !!user?.taskQuestionsClaimed, icon: <Target className="w-5 h-5" />, color: 'text-blue-600', bgColor: 'bg-blue-500/10' },
+      { id: 'questions', title: 'Item Mastery', description: 'Complete board items', reward: Math.round(10 * tierMultiplier), goal: qGoal, current: user?.dailyQuestionsAnswered || 0, isClaimed: !!user?.taskQuestionsAnswered ? true : !!user?.taskQuestionsClaimed, icon: <Target className="w-5 h-5" />, color: 'text-blue-600', bgColor: 'bg-blue-500/10' },
       { id: 'mock', title: 'Full Simulation', description: 'Finish a timed mock test', reward: Math.round(15 * tierMultiplier), goal: 1, current: user?.dailyTestsFinished || 0, isClaimed: !!user?.taskMockClaimed, icon: <Trophy className="w-5 h-5" />, color: 'text-amber-600', bgColor: 'bg-amber-500/10' },
       { id: 'mistakes', title: 'Review Insights', description: 'Analyze pedagogical mistakes', reward: Math.round(10 * tierMultiplier), goal: 10, current: user?.mistakesReviewed || 0, isClaimed: !!user?.taskMistakesClaimed, icon: <BookOpen className="w-5 h-5" />, color: 'text-rose-600', bgColor: 'bg-rose-500/10' }
     ];
   }, [user, tierMultiplier]);
 
-  const totalProgress = tasks.reduce((acc, task) => acc + Math.min((task.current / task.goal) * 100, 100), 0) / tasks.length;
-  const canClaimAny = tasks.some(t => t.current >= t.goal && !t.isClaimed);
+  const totalProgress = quests.reduce((acc, quest) => acc + Math.min((quest.current / quest.goal) * 100, 100), 0) / quests.length;
+  const canClaimAny = quests.some(t => t.current >= t.goal && !t.isClaimed);
   
   const estimatedReward = useMemo(() => {
-    const readyTasks = tasks.filter(t => t.current >= t.goal && !t.isClaimed);
-    return readyTasks.reduce((acc, task) => acc + task.reward, 0);
-  }, [tasks]);
+    const readyQuests = quests.filter(t => t.current >= t.goal && !t.isClaimed);
+    return readyQuests.reduce((acc, quest) => acc + quest.reward, 0);
+  }, [quests]);
 
   const handleClaimReward = async (isRecovery = false) => {
     if (!user || !firestore || (claiming && !isRecovery)) return;
@@ -102,18 +103,18 @@ export function DailyTaskDashboard() {
     }
 
     try {
-      const readyTasks = tasks.filter(t => t.current >= t.goal && !t.isClaimed);
-      const reward = readyTasks.reduce((acc, task) => acc + task.reward, 0);
+      const readyQuests = quests.filter(t => t.current >= t.goal && !t.isClaimed);
+      const reward = readyQuests.reduce((acc, quest) => acc + quest.reward, 0);
 
       if (reward > 0 || isRecovery) {
         const userRef = doc(firestore, 'users', user.uid);
         const updateData: any = {
           credits: increment(reward - (isRecovery ? STREAK_RECOVERY_COST : 0)),
           dailyCreditEarned: increment(reward),
-          taskLoginClaimed: readyTasks.some(t => t.id === 'login') || !!user.taskLoginClaimed,
-          taskQuestionsClaimed: readyTasks.some(t => t.id === 'questions') || !!user.taskQuestionsClaimed,
-          taskMockClaimed: readyTasks.some(t => t.id === 'mock') || !!user.taskMockClaimed,
-          taskMistakesClaimed: readyTasks.some(t => t.id === 'mistakes') || !!user.taskMistakesClaimed,
+          taskLoginClaimed: readyQuests.some(t => t.id === 'login') || !!user.taskLoginClaimed,
+          taskQuestionsClaimed: readyQuests.some(t => t.id === 'questions') || !!user.taskQuestionsClaimed,
+          taskMockClaimed: readyQuests.some(t => t.id === 'mock') || !!user.taskMockClaimed,
+          taskMistakesClaimed: readyQuests.some(t => t.id === 'mistakes') || !!user.taskMistakesClaimed,
           lastActiveDate: serverTimestamp(),
           lastClaimTime: serverTimestamp()
         };
@@ -128,7 +129,7 @@ export function DailyTaskDashboard() {
         }
       }
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Sync Error", description: "Failed to calibrate mission rewards." });
+      toast({ variant: "destructive", title: "Sync Error", description: "Failed to calibrate quest rewards." });
     } finally {
       setClaiming(false);
       setRecovering(false);
@@ -176,9 +177,9 @@ export function DailyTaskDashboard() {
         <CardHeader className="bg-muted/30 p-6 md:p-8 border-b space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 shrink-0"><Target className="w-6 h-6 text-primary-foreground" /></div>
+              <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 shrink-0"><Sword className="w-6 h-6 text-primary-foreground" /></div>
               <div>
-                <CardTitle className="text-xl md:text-2xl font-black tracking-tight">Mission Hub</CardTitle>
+                <CardTitle className="text-xl md:text-2xl font-black tracking-tight">Daily Quests</CardTitle>
                 <div className="flex items-center gap-2 mt-0.5">
                   <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[8px] uppercase">{rankData?.title}</Badge>
                   <div className="flex items-center gap-1 text-[9px] font-black text-muted-foreground uppercase opacity-60 tracking-widest">
@@ -205,7 +206,7 @@ export function DailyTaskDashboard() {
           </div>
           <div className="space-y-2">
             <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
-              <span>Overall Progression</span>
+              <span>Saga Progression</span>
               <span>{Math.round(totalProgress)}%</span>
             </div>
             <Progress value={totalProgress} className="h-1.5 rounded-full bg-muted shadow-inner" />
@@ -214,35 +215,35 @@ export function DailyTaskDashboard() {
         
         <CardContent className="p-4 md:p-8 space-y-4">
           <div className="grid grid-cols-1 gap-2.5">
-            {tasks.map((task) => {
-              const isComplete = task.current >= task.goal;
+            {quests.map((quest) => {
+              const isComplete = quest.current >= quest.goal;
               return (
                 <motion.div 
-                  key={task.id} 
-                  whileHover={!task.isClaimed ? { x: 4 } : {}}
+                  key={quest.id} 
+                  whileHover={!quest.isClaimed ? { x: 4 } : {}}
                   className={cn(
                     "android-surface p-4 rounded-2xl flex items-center justify-between border-2", 
-                    task.isClaimed ? "opacity-40 border-transparent grayscale bg-muted/20" : 
+                    quest.isClaimed ? "opacity-40 border-transparent grayscale bg-muted/20" : 
                     isComplete ? "bg-accent/5 border-primary/20 ring-4 ring-primary/5 shadow-lg" : 
                     "border-border/50"
                   )}
                 >
                   <div className="flex items-center gap-4">
-                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shadow-inner shrink-0", task.bgColor, task.color)}>{task.icon}</div>
+                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shadow-inner shrink-0", quest.bgColor, quest.color)}>{quest.icon}</div>
                     <div className="min-w-0">
-                      <p className="text-sm font-black text-foreground leading-none mb-0.5 truncate">{task.title}</p>
-                      <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate">{task.description}</p>
+                      <p className="text-sm font-black text-foreground leading-none mb-0.5 truncate">{quest.title}</p>
+                      <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate">{quest.description}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className={cn("flex items-center gap-1 px-2.5 py-1.5 rounded-xl border-2 transition-all shrink-0", isComplete && !task.isClaimed ? "animate-breathing-gold border-yellow-500/30 bg-yellow-500/10" : "bg-muted/30 border-transparent")}>
+                    <div className={cn("flex items-center gap-1 px-2.5 py-1.5 rounded-xl border-2 transition-all shrink-0", isComplete && !quest.isClaimed ? "animate-breathing-gold border-yellow-500/30 bg-yellow-500/10" : "bg-muted/30 border-transparent")}>
                       <Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current animate-sparkle" />
-                      <span className="text-xs font-black text-yellow-700">+{task.reward}</span>
+                      <span className="text-xs font-black text-yellow-700">+{quest.reward}</span>
                     </div>
                     <div className="min-w-[40px] flex justify-end">
-                      {task.isClaimed ? <Badge variant="outline" className="text-[8px] font-black uppercase bg-emerald-500/5 text-emerald-600 border-emerald-500/20 px-1.5">Done</Badge> : 
+                      {quest.isClaimed ? <Badge variant="outline" className="text-[8px] font-black uppercase bg-emerald-500/5 text-emerald-600 border-emerald-500/20 px-1.5">Claimed</Badge> : 
                        isComplete ? <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-lg animate-victory"><CheckCircle2 className="w-4 h-4" /></div> : 
-                       <span className="text-[9px] font-black text-muted-foreground opacity-60">{task.current}/{task.goal}</span>}
+                       <span className="text-[9px] font-black text-muted-foreground opacity-60">{quest.current}/{quest.goal}</span>}
                     </div>
                   </div>
                 </motion.div>
@@ -254,7 +255,7 @@ export function DailyTaskDashboard() {
             <Button onClick={() => handleClaimReward()} disabled={!user || claiming || !canClaimAny} className={cn("h-16 rounded-2xl font-black text-base gap-3 shadow-xl group active:scale-95 transition-all relative overflow-hidden", canClaimAny ? "bg-primary text-primary-foreground shadow-primary/30 animate-focus-glow" : "bg-muted text-muted-foreground")}>
               {canClaimAny && <motion.div animate={{ x: [-100, 200] }} transition={{ duration: 2, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />}
               {claiming ? <Loader2 className="w-5 h-5 animate-spin" /> : canClaimAny ? <Gift className="w-5 h-5" /> : <Package className="w-5 h-5 opacity-40" />}
-              {claiming ? 'SYNCING...' : canClaimAny ? `CLAIM ${estimatedReward} CREDITS` : 'STAY CONSISTENT'}
+              {claiming ? 'SYNCING...' : canClaimAny ? `CLAIM ${estimatedReward} CREDITS` : 'QUESTS INCOMPLETE'}
             </Button>
             <Button variant="outline" onClick={() => handleClaimReward(true)} disabled={recovering} className="h-16 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] gap-2 border-2 border-orange-500/20 text-orange-600 hover:bg-orange-50 active:scale-95 transition-all">
               {recovering ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
@@ -265,7 +266,7 @@ export function DailyTaskDashboard() {
           <div className="p-4 bg-primary/5 rounded-2xl border-2 border-dashed border-primary/10 flex items-start gap-3">
             <Info className="w-4 h-4 text-primary shrink-0 mt-0.5 opacity-60" />
             <p className="text-[9px] font-bold text-muted-foreground leading-relaxed uppercase tracking-wider">
-              <span className="text-primary font-black">Rank Multiplier:</span> Multipliers scale with your rank. Ascend to higher tiers to increase mission yields.
+              <span className="text-primary font-black">Success Tip:</span> Completing quests consistently scales your multiplier. Higher ranks yield greater legendary loot.
             </p>
           </div>
         </CardContent>
@@ -279,7 +280,7 @@ export function DailyTaskDashboard() {
           </div>
           <div className="p-8 pt-4 text-center space-y-6">
             <div className="space-y-1">
-              <DialogHeader><DialogTitle className="text-2xl font-black tracking-tight text-foreground">Mission Complete!</DialogTitle><DialogDescription className="text-muted-foreground font-black text-[9px] uppercase tracking-widest">Vault Balance Increased</DialogDescription></DialogHeader>
+              <DialogHeader><DialogTitle className="text-2xl font-black tracking-tight text-foreground">Quest Success!</DialogTitle><DialogDescription className="text-muted-foreground font-black text-[9px] uppercase tracking-widest">Vault Balance Increased</DialogDescription></DialogHeader>
             </div>
             <div className="bg-muted/30 rounded-2xl p-5 border-2 border-border/50 flex flex-col items-center gap-1.5">
               <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Loot Yield</span>

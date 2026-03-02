@@ -21,7 +21,7 @@ import {
   Award,
   MapPin,
   CheckCircle2,
-  ListTodo,
+  Sword,
   ChevronRight,
   TrendingUp
 } from "lucide-react";
@@ -168,7 +168,6 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Achievements placeholder - will be handled by existing component */}
             <AchievementSystem 
               userStats={{
                 streakCount: user?.streakCount || 0,
@@ -187,17 +186,17 @@ export default function DashboardPage() {
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-700" />
               <div className="relative z-10 space-y-6">
                 <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
-                  <ListTodo className="w-6 h-6 text-primary" />
+                  <Sword className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black tracking-tight">Daily Missions</h3>
-                  <p className="text-sm text-muted-foreground font-medium opacity-80 mt-1">Complete tasks to earn AI credits.</p>
+                  <h3 className="text-xl font-black tracking-tight">Daily Quests</h3>
+                  <p className="text-sm text-muted-foreground font-medium opacity-80 mt-1">Succeed in professional quests to grow.</p>
                 </div>
                 <Button 
                   onClick={() => router.push('/tasks')}
                   className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
                 >
-                  Enter Mission Center
+                  Enter Quest Hub
                 </Button>
               </div>
             </Card>

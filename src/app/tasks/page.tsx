@@ -5,7 +5,7 @@ import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
 import { DailyLoginRewards } from '@/components/ui/daily-login-rewards';
 import { QuestionOfTheDay } from '@/components/ui/question-of-the-day';
 import { StudyTimer } from '@/components/ui/study-timer';
-import { Target, ArrowLeft, ShieldCheck, Brain, Loader2, Sparkles, RefreshCw } from 'lucide-react';
+import { Sword, ArrowLeft, ShieldCheck, Brain, Loader2, Sparkles, RefreshCw } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUser, useFirestore } from '@/firebase';
@@ -125,7 +125,7 @@ export default function TasksPage() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-10 h-10 animate-spin text-primary" />
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse">Syncing Mission Hub...</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse">Syncing Quest Hub...</p>
         </div>
       </div>
     );
@@ -148,7 +148,7 @@ export default function TasksPage() {
       <div className="max-w-5xl mx-auto space-y-8">
         <div className="flex items-center justify-between px-2">
           <Link href="/dashboard">
-            <Button variant="ghost" size="sm" className="gap-2 font-black text-muted-foreground uppercase tracking-widest text-[10px] hover:text-primary active:scale-95 transition-all">
+            <Button variant="ghost" size="sm" className="gap-2 font-black text-muted-foreground uppercase tracking-widest text-[10px] hover:text-primary active:scale-90 transition-all">
               <ArrowLeft className="w-4 h-4" /> Exit to Hub
             </Button>
           </Link>
@@ -161,11 +161,11 @@ export default function TasksPage() {
         <div className="space-y-2 px-2">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shadow-inner">
-              <Target className="w-6 h-6 text-primary" />
+              <Sword className="w-6 h-6 text-primary" />
             </div>
-            <h1 className="text-4xl font-black tracking-tighter text-foreground">Mission Hub</h1>
+            <h1 className="text-4xl font-black tracking-tighter text-foreground">Quest Hub</h1>
           </div>
-          <p className="text-sm text-muted-foreground font-bold uppercase tracking-[0.2em] opacity-60 ml-1">Academic Pacing & Professional Engagement</p>
+          <p className="text-sm text-muted-foreground font-bold uppercase tracking-[0.2em] opacity-60 ml-1">Professional Advancement & Daily Triumphs</p>
         </div>
 
         <div className="grid grid-cols-1 gap-8">
@@ -231,7 +231,7 @@ export default function TasksPage() {
                   </div>
                   <h3 className="text-xl font-black leading-tight">Consistency scales professional accuracy.</h3>
                   <p className="text-xs font-medium opacity-70 leading-relaxed">
-                    Complete your daily missions early to maximize rank multipliers and accelerate your path to Distinguished Scholar status.
+                    Complete your daily quests early to maximize rank multipliers and accelerate your path to Distinguished Scholar status.
                   </p>
                   <div className="pt-2">
                     <div className="h-[1px] w-full bg-background/20 mb-4" />
