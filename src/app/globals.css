@@ -113,6 +113,13 @@
   .animate-focus-glow {
     animation: focus-pulse 2s infinite;
   }
+
+  /* Immersive Mode Hiding */
+  .immersive-mode nav,
+  .immersive-mode footer[data-mobile-nav="true"],
+  .immersive-mode .mobile-bottom-nav {
+    display: none !important;
+  }
 }
 
 /* Material Design 3 Fluid Surfaces */
