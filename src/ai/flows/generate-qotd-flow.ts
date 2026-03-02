@@ -8,7 +8,7 @@ import { puter } from '@/ai/puter';
 import { z } from 'zod';
 
 const QuestionSchema = z.object({
-  text: z.string().describe('A comprehensive situational classroom management or pedagogical scenario.'),
+  text: z.string().describe('A concise situational classroom management or pedagogical scenario (2-3 sentences max).'),
   options: z.array(z.string()).length(4).describe('Four nuanced professional choices.'),
   correctAnswer: z.string().describe('The strategically correct answer.'),
   subject: z.string().describe('Pedagogical track (e.g., Professional Education).'),
@@ -34,16 +34,16 @@ export async function generateDailyQuestion(): Promise<DailyQuestion> {
       return getFallbackQuestion();
     }
 
-    const prompt = `You are an expert Board Exam (LET) Professor. Generate one unique, high-fidelity situational question for Filipino educators.
+    const prompt = `You are an expert Board Exam (LET) Professor. Generate one unique, concise situational question for Filipino educators.
       
       Requirements:
-      1. Scenario: Focus on professional ethics, classroom management, or modern pedagogical theories (Vygotsky, Piaget, Differentiated Instruction).
-      2. Complexity: The scenario must be comprehensive and require analytical reasoning (HOTS).
-      3. Options: Provide 4 plausible choices. Distractors should be common teacher mistakes or partially correct but not the best practice.
+      1. Scenario: Exactly 2-3 sentences. Focus on professional ethics, classroom management, or modern theories.
+      2. Directness: Avoid unnecessary fluff. Mirror the professional, concise style of actual PRC board exam items.
+      3. Options: Provide 4 plausible professional choices. 
       4. Language: Clear, professional English as used in the board exams.
       
       Return a JSON object with:
-      - text: string (the comprehensive scenario)
+      - text: string (the 2-3 sentence scenario)
       - options: array of exactly 4 strings
       - correctAnswer: string (must be one of the options)
       - subject: "Professional Education"
@@ -74,7 +74,7 @@ export async function generateDailyQuestion(): Promise<DailyQuestion> {
 
 function getFallbackQuestion(): DailyQuestion {
   return {
-    text: "Teacher Anna noticed that some of her Grade 7 students are consistently underperforming in collaborative tasks but excel in individual assessments. Following Vygotsky's Zone of Proximal Development, what should be her first strategic intervention to bridge this gap?",
+    text: "Teacher Anna noticed that some of her Grade 7 students consistently underperform in collaborative tasks but excel individually. Following Vygotsky's Zone of Proximal Development, what should be her first strategic intervention?",
     options: [
       "Provide scaffolding through peer-tutoring with high-performing classmates",
       "Assign more individual projects to capitalize on their current strengths",
