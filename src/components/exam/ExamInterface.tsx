@@ -95,14 +95,14 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     setStartTime(Date.now());
   };
 
-  const moveToNext = useCallback((currentAnswers: Record<string, string>, skipIdx?: number) => {
+  const moveToNext = useCallback((currentAnswers: Record<string, string>) => {
     const phase = phases[currentPhaseIndex];
     if (!phase) return;
 
     const phaseEndIndex = phase.startIndex + phase.questions.length - 1;
-    
-    // 1. Try to find the next sequential unanswered question in the current phase
     let nextIdx = -1;
+
+    // 1. Try to find the next sequential unanswered question in the current phase
     for (let i = currentIdx + 1; i <= phaseEndIndex; i++) {
       if (!currentAnswers[questions[i].id]) {
         nextIdx = i;
@@ -110,30 +110,28 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       }
     }
 
-    // 2. If sequence finished, return to any previously flagged (unanswered) items in this phase
+    // 2. If sequence finished, return to any previously skipped items in this phase
     if (nextIdx === -1) {
       for (let i = phase.startIndex; i <= phaseEndIndex; i++) {
         if (!currentAnswers[questions[i].id]) {
-          // If we just flagged this item and it's the only one left, it will stay here
           nextIdx = i;
           break;
         }
       }
     }
 
-    // 3. Logic for phase completion or end of simulation
+    // 3. Phase Completion Logic
     if (nextIdx === -1) {
       if (currentPhaseIndex === phases.length - 1 || isContinuous) {
-        // Last phase or continuous track: Check for global completion
+        // End of simulation or continuous track
         if (Object.keys(currentAnswers).length === questions.length) {
           setShowSubmitConfirm(true);
         }
       } else {
-        // Pedagogical sector complete -> Trigger Mandatory Phase Calibration
+        // Pedagogy sector resolved -> Show Calibration Dialog
         setIsResting(true);
       }
     } else {
-      // Transition to next item in the intra-phase queue
       setSelectedOption(null);
       setCurrentIdx(nextIdx);
     }
@@ -149,7 +147,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     setAnswers(newAnswers);
     setSelectedOption(val);
     
-    // Auto-resolve flag status on answer commit
     if (flaggedIndices.has(currentIdx)) {
       const nextFlags = new Set(flaggedIndices);
       nextFlags.delete(currentIdx);
@@ -172,10 +169,8 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
   const handleFlag = () => {
     if (isResting || answers[questions[currentIdx].id]) return;
-    
     setFlaggedIndices(prev => new Set(prev).add(currentIdx));
-    // Move forward without answering, the engine will loop back to this later in the phase
-    moveToNext(answers, currentIdx);
+    moveToNext(answers);
   };
 
   const toggleConfidence = () => {
@@ -219,13 +214,12 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
   const currentQuestion = questions[currentIdx];
   const answeredCount = Object.keys(answers).length;
-  const isComplete = answeredCount === questions.length;
   const progress = (answeredCount / questions.length) * 100;
 
   if (!currentQuestion) return null;
 
   return (
-    <div className="fixed inset-0 z-[2000] bg-background flex flex-col overflow-hidden animate-in fade-in duration-300 font-body pointer-events-auto">
+    <div className="fixed inset-0 z-[2000] bg-background flex flex-col overflow-hidden animate-in fade-in duration-300 font-body">
       <header className="pt-safe border-b bg-card shrink-0 shadow-sm relative z-10">
         <div className="h-14 flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
@@ -358,16 +352,9 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                 className="space-y-4"
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <Badge variant="outline" className="w-fit px-3 py-0.5 font-black uppercase text-[8px] tracking-[0.2em] border-primary/20 text-primary bg-primary/5 rounded-lg mb-1">
-                      Sector {currentPhaseIndex + 1}: {currentQuestion.subject}
-                    </Badge>
-                    {flaggedIndices.has(currentIdx) && (
-                      <span className="text-[8px] font-black uppercase text-orange-500 tracking-widest flex items-center gap-1 ml-1">
-                        <Bookmark className="w-2.5 h-2.5 fill-current" /> Returning to Flagged
-                      </span>
-                    )}
-                  </div>
+                  <Badge variant="outline" className="w-fit px-3 py-0.5 font-black uppercase text-[8px] tracking-[0.2em] border-primary/20 text-primary bg-primary/5 rounded-lg">
+                    Sector {currentPhaseIndex + 1}: {currentQuestion.subject}
+                  </Badge>
                   <AnimatePresence>
                     {comboPop && (
                       <motion.div
@@ -404,17 +391,17 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                         )}
                       >
                         <div className={cn(
-                          "w-8 h-8 rounded-xl border-2 flex items-center justify-center mr-3 font-black text-[10px] transition-all shrink-0 pointer-events-none",
+                          "w-8 h-8 rounded-xl border-2 flex items-center justify-center mr-3 font-black text-[10px] transition-all shrink-0",
                           selectedOption === opt 
                             ? "bg-primary border-primary text-primary-foreground" 
                             : "border-border/50 bg-muted/20 text-muted-foreground"
                         )}>
                           {String.fromCharCode(65+i)}
                         </div>
-                        <span className="text-sm font-bold text-foreground leading-tight flex-1 pr-4 pointer-events-none">{opt}</span>
+                        <span className="text-sm font-bold text-foreground leading-tight flex-1 pr-4">{opt}</span>
                         
                         {selectedOption === opt && (
-                          <div className="absolute right-3 pointer-events-none">
+                          <div className="absolute right-3">
                             <Sparkles className="w-3.5 h-3.5 text-primary animate-sparkle" />
                           </div>
                         )}
@@ -428,7 +415,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </div>
       </main>
 
-      <footer className="shrink-0 border-t bg-card/95 backdrop-blur-xl px-4 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+      <footer className="shrink-0 border-t bg-card/95 backdrop-blur-xl px-4 pb-safe z-50">
         <div className="h-14 flex items-center justify-between w-full max-xl mx-auto">
           {!showBriefing && (
             <>
@@ -442,52 +429,19 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                 Flag Later
               </Button>
 
-              <AnimatePresence>
-                {isComplete && !isResting && (
-                  <motion.div
-                    initial={{ y: 10, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 10, opacity: 0 }}
-                  >
-                    <Button 
-                      onClick={() => setShowSubmitConfirm(true)}
-                      className="rounded-xl px-6 h-10 font-black text-[9px] uppercase tracking-widest shadow-lg bg-primary text-primary-foreground active:scale-95"
-                    >
-                      <Send className="w-3 h-3 mr-2" />
-                      Commit
-                    </Button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {!isComplete && !isResting && (
-                <div className="flex flex-col items-end">
-                  <div className="flex items-center gap-1.5">
-                    {flaggedIndices.size > 0 && (
-                      <Badge variant="secondary" className="h-4 px-1.5 text-[7px] font-black bg-orange-500/10 text-orange-600 border-none">
-                        {flaggedIndices.size} Flagged
-                      </Badge>
-                    )}
-                    <span className="text-[9px] font-black text-foreground tabular-nums">{answeredCount}/{questions.length} Solved</span>
-                  </div>
-                  <p className="text-[7px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">Overall Trace</p>
-                </div>
-              )}
+              <div className="flex flex-col items-end">
+                <span className="text-[9px] font-black text-foreground tabular-nums">{answeredCount}/{questions.length} Solved</span>
+                <p className="text-[7px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">Overall Trace</p>
+              </div>
             </>
-          )}
-          {showBriefing && (
-            <div className="w-full flex items-center justify-center gap-2 text-muted-foreground/40">
-              <Zap className="w-3 h-3" />
-              <span className="text-[8px] font-black uppercase tracking-[0.3em]">Strategic Engine v2.5</span>
-            </div>
           )}
         </div>
       </footer>
 
-      {/* Phase Calibration Dialog - Strictly Persistent */}
+      {/* Phase Calibration Dialog - Elevated Stacking */}
       <Dialog open={isResting} onOpenChange={() => {}}>
         <DialogContent 
-          className="rounded-[3rem] bg-card border-none shadow-[0_40px_120px_rgba(0,0,0,0.5)] p-0 max-w-[400px] overflow-hidden outline-none z-[2102]" 
+          className="rounded-[3rem] bg-card border-none shadow-[0_40px_120px_rgba(0,0,0,0.5)] p-0 max-w-[400px] overflow-hidden outline-none z-[5100]" 
           persistent={true}
           hideCloseButton={true}
         >
@@ -506,7 +460,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-1">Phase Calibration</span>
               <DialogTitle className="text-3xl font-black tracking-tighter text-foreground">Sector Resolved</DialogTitle>
               <DialogDescription className="text-muted-foreground font-medium text-sm leading-relaxed px-4">
-                Recalibrate your pedagogical strategy. Next deployment zone is ready for synchronization.
+                Recalibrate your strategy. Next deployment zone is ready for synchronization.
               </DialogDescription>
             </div>
 
@@ -548,7 +502,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
       {/* Confirmation Dialogs */}
       <Dialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
-        <DialogContent className="rounded-[2rem] bg-card border-none shadow-2xl p-6 max-w-xs z-[2102] outline-none">
+        <DialogContent className="rounded-[2rem] bg-card border-none shadow-2xl p-6 max-w-xs z-[5100] outline-none">
           <div className="text-center space-y-5">
             <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto border-2 border-primary/20 shadow-lg">
               <Zap className="w-7 h-7 text-primary fill-current" />
@@ -572,7 +526,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       </Dialog>
 
       <Dialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-6 max-w-xs z-[2102] outline-none">
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-6 max-w-xs z-[5100] outline-none">
           <div className="text-center space-y-5">
             <div className="w-14 h-14 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto border-2 border-rose-500/20 shadow-lg">
               <AlertTriangle className="w-7 h-7 text-rose-600" />
