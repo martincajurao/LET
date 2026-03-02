@@ -202,39 +202,39 @@ export function ResultUnlockDialog({
     <>
       <Dialog open={open} onOpenChange={() => {}}>
         <DialogContent 
-          className="rounded-[3.5rem] bg-card border-none shadow-md3-3 p-0 max-w-[440px] overflow-hidden outline-none z-[1100]" 
+          className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-[380px] overflow-hidden outline-none z-[5100]" 
           persistent={true}
           hideCloseButton={true}
         >
-          <div className="relative p-12 pb-6 text-center overflow-hidden">
-            <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
-              <Lock className="w-40 h-40" />
+          <div className="relative p-6 text-center overflow-hidden">
+            <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
+              <Lock className="w-24 h-24" />
             </div>
             
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="relative z-10 space-y-6"
+              className="relative z-10 space-y-4"
             >
-              <div className="w-24 h-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 border-2 border-primary/20 shadow-2xl relative">
+              <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-primary/20 shadow-xl relative">
                 {verifying ? (
-                  <ShieldCheck className="w-12 h-12 text-primary animate-victory" />
+                  <ShieldCheck className="w-8 h-8 text-primary animate-victory" />
                 ) : (
-                  <BrainCircuit className="w-12 h-12 text-primary" />
+                  <BrainCircuit className="w-8 h-8 text-primary" />
                 )}
-                <div className="absolute -top-2 -right-2 w-10 h-10 bg-card border-2 border-primary rounded-full flex items-center justify-center shadow-lg">
-                  <Lock className="w-4 h-4 text-primary" />
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-card border-2 border-primary rounded-full flex items-center justify-center shadow-md">
+                  <Lock className="w-2.5 h-2.5 text-primary" />
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <DialogTitle className="text-4xl font-black tracking-tighter text-foreground">
-                  {showSuccess ? "Vault Decrypted" : "Analysis Gated"}
+              <div className="space-y-1">
+                <DialogTitle className="text-2xl font-black tracking-tight text-foreground">
+                  {showSuccess ? "Unlock Success" : "Unlock Result"}
                 </DialogTitle>
-                <DialogDescription className="text-muted-foreground font-medium text-base max-w-[320px] mx-auto leading-relaxed">
+                <DialogDescription className="text-muted-foreground font-medium text-xs max-w-[280px] mx-auto leading-relaxed">
                   {showSuccess 
                     ? "Calibration secure. Synchronizing professional results..."
-                    : "Simulation complete. Unlock the analytical roadmap to access your board rating and item review."
+                    : "Sim complete. Unlock the pedagogical analysis to view your board rating and review."
                   }
                 </DialogDescription>
               </div>
@@ -244,20 +244,17 @@ export function ResultUnlockDialog({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="flex items-center justify-center gap-4 mt-10 mb-6 relative z-10"
+              className="flex items-center justify-center gap-3 mt-6 relative z-10"
             >
-              <div className="bg-muted/30 rounded-[1.75rem] p-5 px-8 border border-border/50 flex flex-col items-center">
-                <span className="text-[9px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-1">Items</span>
-                <div className="flex items-center gap-2">
-                  <Star className="w-4 h-4 text-primary fill-current" />
-                  <span className="text-xl font-black">{questionsCount}</span>
+              <div className="bg-muted/30 rounded-xl p-3 px-6 border border-border/50 flex items-center gap-3">
+                <div className="flex flex-col items-center">
+                  <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest mb-0.5">Items</span>
+                  <span className="text-sm font-black">{questionsCount}</span>
                 </div>
-              </div>
-              <div className="bg-muted/30 rounded-[1.75rem] p-5 px-8 border border-border/50 flex flex-col items-center">
-                <span className="text-[9px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-1">Pacing</span>
-                <div className="flex items-center gap-2">
-                  <Timer className="w-4 h-4 text-primary" />
-                  <span className="text-xl font-black">{Math.floor(timeSpent / 60)}m</span>
+                <div className="w-[1px] h-6 bg-border mx-1" />
+                <div className="flex flex-col items-center">
+                  <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest mb-0.5">Pacing</span>
+                  <span className="text-sm font-black">{Math.floor(timeSpent / 60)}m</span>
                 </div>
               </div>
             </motion.div>
@@ -270,39 +267,36 @@ export function ResultUnlockDialog({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="px-10 pb-12 space-y-4 relative z-10"
+                className="px-6 pb-8 space-y-3 relative z-10"
               >
-                <div className="h-[1px] w-full bg-border/50 mb-8" />
+                <div className="h-[1px] w-full bg-border/50 mb-4" />
                 
                 <Button
                   onClick={handleUnlockWithAd}
                   disabled={unlocking || !canWatchAd}
                   className={cn(
-                    "w-full h-18 py-8 rounded-[2rem] font-black text-sm uppercase tracking-widest gap-4 transition-all relative overflow-hidden group shadow-2xl active:scale-95",
+                    "w-full h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-3 transition-all relative overflow-hidden active:scale-95 shadow-lg",
                     canWatchAd 
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/30" 
-                      : "bg-muted text-muted-foreground cursor-not-allowed border-none shadow-none"
+                      ? "bg-primary text-primary-foreground shadow-primary/20" 
+                      : "bg-muted text-muted-foreground"
                   )}
                 >
-                  <div className="flex items-center justify-between w-full px-4">
-                    <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-between w-full px-2">
+                    <div className="flex items-center gap-3">
                       {unlocking && unlockMethod === 'ad' ? (
-                        <Loader2 className="w-6 h-6 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        <Play className="w-6 h-6 fill-current" />
+                        <Play className="w-4 h-4 fill-current" />
                       )}
-                      <div className="text-left">
-                        <p className="leading-none text-lg">Watch Clip</p>
-                        {!unlocking && <p className="text-[9px] font-bold opacity-70 mt-1.5 uppercase tracking-wider">SECURE FREE ACCESS</p>}
-                      </div>
+                      <span>Watch & Unlock</span>
                     </div>
-                    <Badge variant="outline" className="bg-white/10 border-white/20 text-white text-[9px] font-black tracking-widest px-3 py-1">
-                      {unlocking && unlockMethod === 'ad' ? "BUSY" : `${DAILY_AD_LIMIT - (user?.dailyAdCount || 0)} LEFT`}
+                    <Badge variant="outline" className="bg-white/10 border-white/20 text-white text-[8px] font-black tracking-widest">
+                      {unlocking && unlockMethod === 'ad' ? "BUSY" : "FREE"}
                     </Badge>
                   </div>
                   
                   {unlocking && unlockMethod === 'ad' && (
-                    <div className="absolute bottom-0 left-0 h-1.5 bg-white/20 w-full">
+                    <div className="absolute bottom-0 left-0 h-1 bg-white/20 w-full">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${adProgress}%` }}
@@ -317,43 +311,28 @@ export function ResultUnlockDialog({
                   disabled={unlocking}
                   variant="outline"
                   className={cn(
-                    "w-full h-18 py-8 rounded-[2rem] font-black text-sm uppercase tracking-widest gap-4 border-2 transition-all relative overflow-hidden active:scale-95 shadow-lg",
+                    "w-full h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-3 border-2 transition-all active:scale-95",
                     credits >= AI_UNLOCK_COST 
-                      ? "border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary" 
-                      : "border-muted/50 bg-muted/10 text-muted-foreground"
+                      ? "border-primary/30 bg-primary/5 text-primary" 
+                      : "border-muted text-muted-foreground"
                   )}
                 >
-                  <div className="flex items-center justify-between w-full px-4">
-                    <div className="flex items-center gap-4">
-                      {unlocking && unlockMethod === 'credits' ? (
-                        <Loader2 className="w-6 h-6 animate-spin" />
-                      ) : (
-                        <Sparkles className="w-6 h-6 fill-current animate-sparkle" />
-                      )}
-                      <div className="text-left">
-                        <p className="leading-none text-lg">Vault Credits</p>
-                        <p className="text-[9px] font-bold opacity-70 mt-1.5 uppercase tracking-wider">
-                          {credits >= AI_UNLOCK_COST ? `COMMIT ${AI_UNLOCK_COST} UNITS` : `REFILL REQUIRED`}
-                        </p>
-                      </div>
-                    </div>
-                    <div className={cn(
-                      "flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all",
-                      credits >= AI_UNLOCK_COST ? "bg-primary border-primary/20 text-primary-foreground shadow-md" : "bg-muted border-border text-muted-foreground"
-                    )}>
-                      <span className="font-black text-base">{credits}</span>
-                      <Sparkles className="w-4 h-4 fill-current" />
+                  <div className="flex items-center justify-between w-full px-2">
+                    <span>Use Vault Units</span>
+                    <div className="flex items-center gap-1.5 bg-background/80 px-2 py-1 rounded-lg border border-primary/20">
+                      <span className="font-black text-xs">{AI_UNLOCK_COST}</span>
+                      <Sparkles className="w-3 h-3 text-primary fill-current animate-sparkle" />
                     </div>
                   </div>
                 </Button>
 
-                <div className="pt-6 flex flex-col items-center gap-4">
+                <div className="pt-4 flex justify-center">
                   <button 
                     onClick={() => setShowAbortConfirm(true)}
                     disabled={unlocking}
-                    className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground hover:text-destructive transition-colors disabled:opacity-20"
+                    className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground hover:text-destructive transition-colors disabled:opacity-20 active:scale-90"
                   >
-                    Discard Simulation
+                    Discard Results
                   </button>
                 </div>
               </motion.div>
@@ -364,21 +343,21 @@ export function ResultUnlockDialog({
                 key="success"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="px-12 pb-16 text-center"
+                className="px-8 pb-12 text-center"
               >
-                <div className="w-full h-[1px] bg-border/50 mb-12" />
+                <div className="w-full h-[1px] bg-border/50 mb-8" />
                 <motion.div
                   initial={{ scale: 0, rotate: -45 }}
                   animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: "spring", damping: 12, stiffness: 200, delay: 0.1 }}
-                  className="w-24 h-24 bg-emerald-500 text-white rounded-[2.5rem] flex items-center justify-center shadow-2xl mx-auto mb-8"
+                  transition={{ type: "spring", damping: 12, stiffness: 200 }}
+                  className="w-16 h-16 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-xl mx-auto mb-6"
                 >
-                  <CheckCircle2 className="w-12 h-12" />
+                  <CheckCircle2 className="w-8 h-8" />
                 </motion.div>
                 
-                <div className="space-y-3">
-                  <p className="text-2xl font-black tracking-tight text-foreground">Vault Opened</p>
-                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.25em] animate-pulse">
+                <div className="space-y-1">
+                  <p className="text-xl font-black text-foreground">Access Granted</p>
+                  <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest animate-pulse">
                     Synchronizing academic roadmap...
                   </p>
                 </div>
@@ -390,26 +369,26 @@ export function ResultUnlockDialog({
 
       {/* Abort Confirmation Dialog */}
       <Dialog open={showAbortConfirm} onOpenChange={(open) => !open && setShowAbortConfirm(false)}>
-        <DialogContent className="rounded-[3rem] bg-card border-none shadow-md3-3 p-0 max-w-[340px] overflow-hidden outline-none z-[1300]" persistent={true}>
-          <div className="bg-rose-500/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
-            <div className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-xl border-2 border-rose-500/20 relative z-10">
-              <AlertTriangle className="w-10 h-10 text-rose-600" />
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-[320px] overflow-hidden outline-none z-[5200]" persistent={true}>
+          <div className="bg-rose-500/10 p-8 flex flex-col items-center justify-center relative overflow-hidden">
+            <div className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center shadow-lg border-2 border-rose-500/20 relative z-10">
+              <AlertTriangle className="w-8 h-8 text-rose-600" />
             </div>
-            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.3, 0.1] }} transition={{ duration: 3, repeat: Infinity }} className="absolute inset-0 bg-rose-500/20" />
+            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }} transition={{ duration: 3, repeat: Infinity }} className="absolute inset-0 bg-rose-500/10" />
           </div>
-          <div className="p-10 text-center space-y-8">
-            <div className="space-y-2">
-              <DialogTitle className="text-2xl font-black text-foreground tracking-tight">Terminate Session?</DialogTitle>
-              <DialogDescription className="text-muted-foreground font-medium text-sm leading-relaxed px-2">
-                This professional trace will be <span className="text-rose-600 font-bold">permanently purged</span>. You will not be able to recover these analytical results.
+          <div className="p-8 text-center space-y-6">
+            <div className="space-y-1">
+              <DialogTitle className="text-xl font-black text-foreground tracking-tight">Purge Results?</DialogTitle>
+              <DialogDescription className="text-muted-foreground font-medium text-xs leading-relaxed px-4">
+                This professional trace will be <span className="text-rose-600 font-bold">permanently lost</span>. Analysis is currently unrecoverable.
               </DialogDescription>
             </div>
-            <div className="grid gap-3">
-              <Button variant="destructive" onClick={handleAbort} className="h-14 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all">
-                Confirm Purge
+            <div className="grid gap-2">
+              <Button variant="destructive" onClick={handleAbort} className="h-12 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all">
+                Terminate Sync
               </Button>
-              <Button variant="ghost" onClick={() => setShowAbortConfirm(false)} className="h-12 rounded-xl font-bold text-[10px] uppercase tracking-widest text-muted-foreground hover:bg-muted">
-                Return to Vault
+              <Button variant="ghost" onClick={() => setShowAbortConfirm(false)} className="h-10 rounded-xl font-bold text-[9px] uppercase tracking-widest text-muted-foreground active:scale-90">
+                Cancel
               </Button>
             </div>
           </div>
@@ -418,43 +397,43 @@ export function ResultUnlockDialog({
 
       {/* Credit Refill Dialog */}
       <Dialog open={!!creditError} onOpenChange={() => !watchingAdForRefill && setCreditError(null)}>
-        <DialogContent className="rounded-[3rem] bg-card border-none shadow-md3-3 p-0 max-w-[380px] overflow-hidden outline-none z-[1200]" persistent={watchingAdForRefill}>
-          <div className="bg-amber-500/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-[340px] overflow-hidden outline-none z-[5300]" persistent={watchingAdForRefill}>
+          <div className="bg-amber-500/10 p-8 flex flex-col items-center justify-center relative overflow-hidden">
             <motion.div 
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="w-24 h-24 bg-card rounded-[2.5rem] flex items-center justify-center shadow-2xl relative z-10 border-2 border-amber-200"
+              className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center shadow-lg relative z-10 border border-amber-200"
             >
-              {verifyingAdForRefill ? <ShieldAlert className="w-12 h-12 text-amber-500 animate-pulse" /> : <Sparkles className="w-12 h-12 text-amber-500 fill-current animate-sparkle" />}
+              {verifyingAdForRefill ? <ShieldAlert className="w-8 h-8 text-amber-500 animate-pulse" /> : <Sparkles className="w-8 h-8 text-amber-500 fill-current animate-sparkle" />}
             </motion.div>
-            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 4, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-amber-500/30 to-transparent" />
+            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.3, 0.1] }} transition={{ duration: 4, repeat: Infinity }} className="absolute inset-0 bg-amber-500/10" />
           </div>
           
-          <div className="p-10 text-center space-y-10">
-            <div className="space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-600 mb-1">Insufficient Units</span>
-              <DialogTitle className="text-3xl font-black tracking-tighter text-foreground">Refill Vault</DialogTitle>
-              <DialogDescription className="text-muted-foreground font-medium text-base leading-relaxed px-4">
-                Decrypting this trace requires <span className="text-foreground font-black">{creditError?.required}c</span>. Your current balance is <span className="text-amber-600 font-black">{creditError?.current}c</span>.
+          <div className="p-8 text-center space-y-6">
+            <div className="space-y-1">
+              <span className="text-[8px] font-black uppercase tracking-[0.3em] text-amber-600 mb-1">Insufficient Balance</span>
+              <DialogTitle className="text-xl font-black tracking-tight text-foreground">Refill Vault</DialogTitle>
+              <DialogDescription className="text-muted-foreground font-medium text-xs leading-relaxed">
+                Decrypting requires <span className="text-foreground font-black">{creditError?.required}c</span>. You currently have <span className="text-amber-600 font-black">{creditError?.current}c</span>.
               </DialogDescription>
             </div>
 
-            <div className="grid gap-3">
+            <div className="grid gap-2">
               <Button 
                 onClick={handleRefillFromDialog}
                 disabled={watchingAdForRefill || !canWatchAd}
-                className="w-full h-18 rounded-[2rem] font-black text-sm uppercase tracking-widest gap-4 shadow-2xl bg-primary text-primary-foreground active:scale-95 transition-all"
+                className="w-full h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-3 shadow-lg bg-primary text-primary-foreground active:scale-95 transition-all"
               >
-                {verifyingAdForRefill ? <Loader2 className="w-6 h-6 animate-spin" /> : watchingAdForRefill ? <Loader2 className="w-6 h-6 animate-spin" /> : <Play className="w-6 h-6 fill-current" />}
-                {watchingAdForRefill ? (verifyingAdForRefill ? "VERIFYING..." : "WATCHING...") : `Watch Ad (+5c)`}
+                {verifyingAdForRefill ? <Loader2 className="w-4 h-4 animate-spin" /> : watchingAdForRefill ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
+                {watchingAdForRefill ? (verifyingAdForRefill ? "VERIFYING..." : "SYNCING...") : `Watch Ad (+5c)`}
               </Button>
               <Button 
                 variant="ghost" 
                 onClick={() => setCreditError(null)}
-                className="w-full h-12 rounded-xl font-bold text-[10px] uppercase tracking-widest text-muted-foreground hover:bg-muted"
+                className="w-full h-10 rounded-xl font-bold text-[9px] uppercase tracking-widest text-muted-foreground active:scale-90"
                 disabled={watchingAdForRefill}
               >
-                Return to Gate
+                Close
               </Button>
             </div>
           </div>
