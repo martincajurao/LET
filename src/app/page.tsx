@@ -452,7 +452,7 @@ function LetsPrepContent() {
             <div className="pt-4 border-t border-border/50">
               <Button 
                 variant="ghost" 
-                onClick={() => { bypassLogin(); setShowAuthModal(false); }} 
+                onClick={async () => { await bypassLogin(); setShowAuthModal(false); }} 
                 className="w-full h-12 rounded-xl font-bold text-xs gap-2 text-muted-foreground hover:bg-muted active:scale-95 transition-all"
               >
                 <FlaskConical className="w-4 h-4" />

@@ -155,12 +155,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const scrubbed = scrubUserData(snap.data(), userRef.current);
             setUser({ ...scrubbed, uid: firebaseUser.uid });
           } else {
-            // For standard logins, initialize standard profile
-            createUserProfileInFirestore(firebaseUser).then(setUser);
+            // Document doesn't exist yet, wait for creation if bypassLogin is running
+            // or initialize standard profile for new social logins
+            if (!loading) {
+              createUserProfileInFirestore(firebaseUser).then(setUser);
+            }
           }
           setLoading(false);
         }, (error) => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: userDocRef.path, operation: 'get' }));
+          console.error('Firestore Snapshot Error:', error);
           setLoading(false);
         });
       } else {
