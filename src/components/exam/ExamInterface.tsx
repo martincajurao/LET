@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -314,7 +315,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -20, opacity: 0 }}
                 transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                className="space-y-5"
+                className="space-y-4"
               >
                 <div className="flex items-center justify-center">
                   <Badge variant="outline" className="px-3 py-0.5 font-black uppercase text-[8px] tracking-[0.2em] border-primary/20 text-primary bg-primary/5 rounded-lg">
@@ -340,7 +341,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                     >
                       <Label 
                         className={cn(
-                          "flex items-center p-3 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] group relative overflow-hidden",
+                          "flex items-center p-2.5 md:p-3 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] group relative overflow-hidden",
                           selectedOption === opt 
                             ? "border-primary bg-primary/5 ring-2 ring-primary/5 shadow-md" 
                             : "border-border/60 bg-card hover:bg-muted/10 shadow-sm"

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -47,7 +48,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     checkDarkMode();
     setMounted(true);
     
-    // Listen for system preference changes (optional, but keep for completeness)
+    // Listen for system preference changes
     if (window.matchMedia) {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleChange = (e: MediaQueryListEvent) => {

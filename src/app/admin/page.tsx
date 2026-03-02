@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -32,7 +33,8 @@ import {
   Ban,
   Trophy,
   AlertTriangle,
-  X
+  X,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -102,6 +104,7 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [timePerQuestion, setTimePerQuestion] = useState(60);
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
+  const [configNote, setConfigNote] = useState("");
   const [savingSettings, setSavingSettings] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Partial<Question> | null>(null);
@@ -151,6 +154,7 @@ export default function AdminDashboard() {
             limitProfEd: data.limitProfEd || 10, 
             limitSpec: data.limitSpec || 10 
           });
+          setConfigNote(data.note || "");
         }
       })
       .catch(error => {
@@ -427,6 +431,18 @@ export default function AdminDashboard() {
                     <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Spec Items</label>
                     <Input type="number" value={limits.limitSpec} onChange={(e) => setLimits({...limits, limitSpec: parseInt(e.target.value) || 10})} className="rounded-xl h-12 font-black text-lg border-2" />
                   </div>
+                  
+                  <div className="space-y-3 col-span-full">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-2">
+                      <FileText className="w-3 h-3" /> Calibration Note
+                    </label>
+                    <Textarea 
+                      value={configNote} 
+                      onChange={(e) => setConfigNote(e.target.value)} 
+                      placeholder="Enter a note for this simulation configuration..."
+                      className="rounded-2xl border-2 min-h-[100px] font-medium p-4 text-sm"
+                    />
+                  </div>
                 </div>
                 <div className="pt-4 border-t border-border/50">
                   <Button 
@@ -434,7 +450,14 @@ export default function AdminDashboard() {
                       if (!firestore) return;
                       setSavingSettings(true); 
                       const configRef = doc(firestore, "system_configs", "global");
-                      const data = { timePerQuestion, limitGenEd: limits.limitGenEd, limitProfEd: limits.limitProfEd, limitSpec: limits.limitSpec, updatedAt: serverTimestamp() };
+                      const data = { 
+                        timePerQuestion, 
+                        limitGenEd: limits.limitGenEd, 
+                        limitProfEd: limits.limitProfEd, 
+                        limitSpec: limits.limitSpec, 
+                        note: configNote,
+                        updatedAt: serverTimestamp() 
+                      };
                       
                       setDoc(configRef, data, { merge: true })
                         .then(() => {
