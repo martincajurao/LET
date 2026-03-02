@@ -21,7 +21,8 @@ import {
   Trophy,
   Crown,
   Sparkles,
-  ShieldAlert
+  ShieldAlert,
+  Smartphone
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -65,7 +66,10 @@ export function Navbar() {
   const [claimableTasksCount, setClaimableTasksCount] = useState(0);
 
   const userRef = useRef(user);
-  useEffect(() => { userRef.current = user; }, [user]);
+  
+  useEffect(() => { 
+    userRef.current = user; 
+  }, [user]);
 
   const calculateCounts = useCallback(() => {
     const currentUser = userRef.current;
@@ -277,6 +281,11 @@ export function Navbar() {
                 <DropdownMenuItem asChild>
                   <Link href="/profile?tab=settings" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
                     <Settings className="w-4 h-4 text-primary" /> Profile Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
+                    <Smartphone className="w-4 h-4 text-primary" /> App Settings
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
