@@ -50,7 +50,6 @@ export function AutoUpdateChecker({
   const [serverVersion, setServerVersion] = useState<string>('');
   const [downloadURL, setDownloadURL] = useState<string>('');
   const [releaseNotes, setReleaseNotes] = useState<string>('');
-  const [sha256, setSha256] = useState<string>('');
 
   // Get current app version - with retry logic for Android WebView
   useEffect(() => {
@@ -103,7 +102,6 @@ export function AutoUpdateChecker({
     try {
       console.log('[AutoUpdateChecker] Fetching version from Firestore...');
       
-      // Try to get from Firestore first (Spark plan - no Firebase Functions needed)
       const docRef = doc(firestore, 'app_config', 'version');
       const docSnap = await getDoc(docRef);
       
@@ -135,18 +133,10 @@ export function AutoUpdateChecker({
       const versionInfo = await fetchLatestVersion();
       
       if (versionInfo && versionInfo.version) {
-        // Extract version from tag
         const version = versionInfo.version.replace(/^v/, '');
         setServerVersion(version);
-        
-        // Set download URL
         setDownloadURL(versionInfo.downloadURL);
-        
-        // Set release notes
         setReleaseNotes(versionInfo.releaseNotes || 'New version available');
-
-        // Set SHA256 for verification (optional - omit for no verification)
-        setSha256(versionInfo.sha256 || '');
         
         // Compare versions
         const appVersion = currentVersion.replace(/^v/, '');
@@ -157,9 +147,8 @@ export function AutoUpdateChecker({
         if (hasUpdate) {
           setUpdateAvailable(true);
           if (autoDownload) {
-            // Auto-download without showing dialog
             console.log('[AutoUpdateChecker] Auto-downloading update...');
-            handleDownload(versionInfo.sha256 || '');
+            handleDownload();
           } else if (!silent) {
             setShowDialog(true);
           }
@@ -167,12 +156,10 @@ export function AutoUpdateChecker({
           setUpdateAvailable(false);
         }
       } else {
-        // No version info in Firestore - no update available
         console.log('[AutoUpdateChecker] No version info in Firestore');
         setUpdateAvailable(false);
       }
 
-      
       setLastCheck(Date.now());
       
     } catch (err: any) {
@@ -186,12 +173,10 @@ export function AutoUpdateChecker({
   // Auto-check on mount
   useEffect(() => {
     if (checkOnMount && isNative) {
-      // Check if enough time has passed since last check
       const shouldCheck = Date.now() - lastCheck > checkInterval;
       if (shouldCheck) {
-        // Small delay to let the app fully load
         const timer = setTimeout(() => {
-          checkForUpdates(true); // Silent check - only show dialog if update available
+          checkForUpdates(true); 
         }, 3000);
         return () => clearTimeout(timer);
       }
@@ -199,13 +184,14 @@ export function AutoUpdateChecker({
   }, [checkOnMount, isNative, checkInterval, lastCheck, checkForUpdates]);
 
   // Handle download
-  const handleDownload = useCallback((sha256: string = '') => {
+  const handleDownload = useCallback(() => {
     if (!downloadURL) {
       setError('No download URL available');
       return;
     }
     setIsDownloading(true);
-    downloadUpdate(downloadURL, sha256);
+    // Explicitly skipping SHA verification as requested
+    downloadUpdate(downloadURL, '');
   }, [downloadURL, downloadUpdate]);
 
   // Close dialog
@@ -213,7 +199,6 @@ export function AutoUpdateChecker({
     setShowDialog(false);
   };
 
-  // Don't render anything if not in native WebView
   if (!isNative) {
     return null;
   }
@@ -223,7 +208,6 @@ export function AutoUpdateChecker({
 
   return (
     <>
-      {/* Update Available Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="sm:max-w-md rounded-[2rem] border-none shadow-2xl">
           <DialogHeader className="space-y-4">
@@ -243,7 +227,6 @@ export function AutoUpdateChecker({
           </DialogHeader>
 
           <div className="space-y-6 py-4">
-            {/* Version Info */}
             <div className="flex items-center justify-center gap-4">
               <div className="text-center px-4 py-2 bg-muted/20 rounded-xl">
                 <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Current</p>
@@ -260,13 +243,11 @@ export function AutoUpdateChecker({
               </div>
             </div>
 
-            {/* Release Notes */}
             <div className="p-4 bg-muted/20 rounded-2xl border border-border/50">
               <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-2">What's New</p>
               <p className="text-sm font-medium">{releaseNotes}</p>
             </div>
 
-            {/* Download Progress */}
             {isDownloading && updateProgress > 0 && updateProgress < 100 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
@@ -277,7 +258,6 @@ export function AutoUpdateChecker({
               </div>
             )}
 
-            {/* Status Message */}
             {updateStatus && (
               <div className={`p-4 rounded-2xl flex items-start gap-3 ${
                 isSuccess ? 'bg-emerald-500/10 border border-emerald-500/20' : 
@@ -304,7 +284,7 @@ export function AutoUpdateChecker({
 
           <DialogFooter className="flex-col gap-3 sm:flex-col">
             <Button
-              onClick={() => handleDownload(sha256)}
+              onClick={() => handleDownload()}
               disabled={isDownloading || isSuccess}
               className="w-full h-14 rounded-2xl font-black text-base gap-2 shadow-lg shadow-primary/20"
             >

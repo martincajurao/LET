@@ -188,16 +188,12 @@ export function useSelfUpdate() {
     };
   }, []);
 
-  const downloadUpdate = useCallback((apkUrl: string, expectedSha256: string) => {
+  const downloadUpdate = useCallback((apkUrl: string, _expectedSha256: string) => {
     if (typeof window !== 'undefined') {
       const android = (window as any).android;
       if (android && android.checkForUpdate) {
-        const hasValidSha256 = expectedSha256 && (
-          expectedSha256.startsWith('sha256:') || 
-          /^[a-fA-F0-9]{64}$/.test(expectedSha256)
-        );
-        
-        android.checkForUpdate(apkUrl, hasValidSha256 ? expectedSha256 : '');
+        // Explicitly skipping SHA verification as requested for dynamic release workflow
+        android.checkForUpdate(apkUrl, '');
         setUpdateStatus('Initiating secure download...');
       } else {
         setUpdateStatus('Self-update unavailable on this platform');
