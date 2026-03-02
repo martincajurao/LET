@@ -28,7 +28,9 @@ import {
   Compass,
   Timer,
   Info,
-  ShieldCheck
+  ShieldCheck,
+  Gift,
+  RotateCcw
 } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
@@ -167,8 +169,62 @@ export function DailyQuestDashboard() {
           <div className="p-4 bg-primary/5 rounded-2xl border-2 border-dashed border-primary/10 flex items-start gap-3"><Info className="w-4 h-4 text-primary shrink-0 mt-0.5 opacity-60" /><p className="text-[9px] font-bold text-muted-foreground leading-relaxed uppercase tracking-wider"><span className="text-primary font-black">Success Tip:</span> Completing quests consistently scales your multiplier. Higher ranks yield greater legendary loot.</p></div>
         </CardContent>
       </Card>
-      <Dialog open={showSuccess} onOpenChange={setShowSuccess}><DialogContent className="rounded-[3rem] border-none shadow-md3-3 p-0 max-w-[320px] overflow-hidden outline-none"><div className="bg-primary/10 p-10 flex flex-col items-center justify-center relative overflow-hidden"><motion.div initial={{ scale: 0.8, rotate: -45 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", damping: 12, stiffness: 200 }} className="w-20 h-20 bg-primary text-primary-foreground rounded-[1.75rem] flex items-center justify-center shadow-2xl relative z-10"><CheckCircle2 className="w-10 h-10" /></motion.div><motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 3, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent z-0" /></div><div className="p-8 pt-4 text-center space-y-6"><div className="space-y-1"><DialogHeader><DialogTitle className="text-2xl font-black tracking-tight text-foreground">Quest Success!</DialogTitle><DialogDescription className="text-muted-foreground font-black text-[9px] uppercase tracking-widest">Vault Balance Increased</DialogDescription></DialogHeader></div><div className="bg-muted/30 rounded-2xl p-5 border-2 border-border/50 flex flex-col items-center gap-1.5"><span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Loot Yield</span><div className="flex items-center gap-2 px-4 py-1.5 rounded-xl animate-breathing-gold border-2 border-yellow-500/20 bg-card shadow-sm"><Sparkles className="w-6 h-6 text-yellow-600 fill-current animate-sparkle" /><span className="text-4xl font-black text-yellow-700">+{claimedReward}</span></div></div><Button onClick={() => setShowSuccess(false)} className="w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest gap-2 shadow-xl shadow-primary/30 active:scale-95 transition-all">Proceed <ChevronRight className="w-4 h-4" /></Button></div></DialogContent></Dialog>
-      <Dialog open={!!creditError} onOpenChange={() => setCreditError(null)}><DialogContent className="rounded-[2.5rem] bg-card border-none shadow-md3-3 p-0 max-w-[340px] overflow-hidden outline-none z-[1200]" hideCloseButton={watchingAdForRefill}><div className="bg-amber-500/10 p-10 flex flex-col items-center justify-center relative overflow-hidden"><motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center shadow-xl relative z-10 border border-amber-200">{verifyingAdForRefill ? <ShieldAlert className="w-8 h-8 text-amber-500 animate-pulse" /> : <Sparkles className="w-8 h-8 text-amber-500 fill-current animate-sparkle" />}</motion.div><motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 3, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-transparent z-0" /></div><div className="p-8 text-center space-y-6"><div className="space-y-1"><DialogHeader><span className="text-[9px] font-black uppercase tracking-widest text-amber-600 mb-1">Insufficient Credits</span><DialogTitle className="text-xl font-black tracking-tight text-foreground">Refill to Proceed</DialogTitle><DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase">Requires <span className="text-foreground">{creditError?.required}</span> credits (Current: {creditError?.current})</DialogDescription></DialogHeader></div><div className="grid gap-3"><Button onClick={handleRefillFromDialog} disabled={watchingAdForRefill || (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT} className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-lg bg-primary text-primary-foreground active:scale-95 transition-all">{verifyingAdForRefill ? <Loader2 className="w-4 h-4 animate-spin" /> : watchingAdForRefill ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-5 h-5 fill-current" />}{watchingAdForRefill ? (verifyingAdForRefill ? "VERIFYING..." : "WATCHING...") : "WATCH AD FOR +5"}</Button><Button variant="ghost" onClick={() => setCreditError(null)} className="w-full h-10 rounded-xl font-black text-[9px] uppercase tracking-widest text-muted-foreground" disabled={watchingAdForRefill}>Maybe Later</Button></div></div></DialogContent></Dialog>
+      <AnimatePresence>
+        {showSuccess && (
+          <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
+            <DialogContent className="rounded-[3rem] border-none shadow-md3-3 p-0 max-w-[320px] overflow-hidden outline-none">
+              <div className="bg-primary/10 p-10 flex flex-col items-center justify-center relative overflow-hidden">
+                <motion.div initial={{ scale: 0.8, rotate: -45 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", damping: 12, stiffness: 200 }} className="w-20 h-20 bg-primary text-primary-foreground rounded-[1.75rem] flex items-center justify-center shadow-2xl relative z-10">
+                  <CheckCircle2 className="w-10 h-10" />
+                </motion.div>
+                <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 3, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent z-0" />
+              </div>
+              <div className="p-8 pt-4 text-center space-y-6">
+                <div className="space-y-1">
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-black tracking-tight text-foreground">Quest Success!</DialogTitle>
+                    <DialogDescription className="text-muted-foreground font-black text-[9px] uppercase tracking-widest">Vault Balance Increased</DialogDescription>
+                  </DialogHeader>
+                </div>
+                <div className="bg-muted/30 rounded-2xl p-5 border-2 border-border/50 flex flex-col items-center gap-1.5">
+                  <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Loot Yield</span>
+                  <div className="flex items-center gap-2 px-4 py-1.5 rounded-xl animate-breathing-gold border-2 border-yellow-500/20 bg-card shadow-sm">
+                    <Sparkles className="w-6 h-6 text-yellow-600 fill-current animate-sparkle" />
+                    <span className="text-4xl font-black text-yellow-700">+{claimedReward}</span>
+                  </div>
+                </div>
+                <Button onClick={() => setShowSuccess(false)} className="w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest gap-2 shadow-xl shadow-primary/30 active:scale-95 transition-all">Proceed <ChevronRight className="w-4 h-4" /></Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </AnimatePresence>
+      <Dialog open={!!creditError} onOpenChange={() => setCreditError(null)}>
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-md3-3 p-0 max-w-[340px] overflow-hidden outline-none z-[1200]" hideCloseButton={watchingAdForRefill}>
+          <div className="bg-amber-500/10 p-10 flex flex-col items-center justify-center relative overflow-hidden">
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center shadow-xl relative z-10 border border-amber-200">
+              {verifyingAdForRefill ? <ShieldAlert className="w-8 h-8 text-amber-500 animate-pulse" /> : <Sparkles className="w-8 h-8 text-amber-500 fill-current animate-sparkle" />}
+            </motion.div>
+            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 3, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-transparent z-0" />
+          </div>
+          <div className="p-8 text-center space-y-6">
+            <div className="space-y-1">
+              <DialogHeader>
+                <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 mb-1">Insufficient Credits</span>
+                <DialogTitle className="text-xl font-black tracking-tight text-foreground">Refill to Proceed</DialogTitle>
+                <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase">Requires <span className="text-foreground">{creditError?.required}</span> credits (Current: {creditError?.current})</DialogDescription>
+              </DialogHeader>
+            </div>
+            <div className="grid gap-3">
+              <Button onClick={handleRefillFromDialog} disabled={watchingAdForRefill || (user?.dailyAdCount || 0) >= DAILY_AD_LIMIT} className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-lg bg-primary text-primary-foreground active:scale-95 transition-all">
+                {verifyingAdForRefill ? <Loader2 className="w-4 h-4 animate-spin" /> : watchingAdForRefill ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-5 h-5 fill-current" />}
+                {watchingAdForRefill ? (verifyingAdForRefill ? "VERIFYING..." : "WATCHING...") : "WATCH AD FOR +5"}
+              </Button>
+              <Button variant="ghost" onClick={() => setCreditError(null)} className="w-full h-10 rounded-xl font-black text-[9px] uppercase tracking-widest text-muted-foreground" disabled={watchingAdForRefill}>Maybe Later</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
