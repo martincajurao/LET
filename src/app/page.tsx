@@ -205,7 +205,17 @@ function LetsPrepContent() {
         const spec = shuffleArray(questionPool.filter(q => q.subject === 'Specialization' && q.subCategory === (user?.majorship || 'English'))).slice(0, limits.limitSpec);
         finalQuestions = [...genEd, ...profEd, ...spec];
       } else if (category === 'quickfire') {
-        finalQuestions = shuffleArray(questionPool).slice(0, 5);
+        const selection: Question[] = [];
+        const genEdPool = questionPool.filter(q => q.subject === 'General Education');
+        const profEdPool = questionPool.filter(q => q.subject === 'Professional Education');
+        const specPool = questionPool.filter(q => q.subject === 'Specialization');
+        
+        if (genEdPool.length > 0) selection.push(shuffleArray(genEdPool)[0]);
+        if (profEdPool.length > 0) selection.push(shuffleArray(profEdPool)[0]);
+        if (specPool.length > 0) selection.push(shuffleArray(specPool)[0]);
+        
+        const remaining = questionPool.filter(q => !selection.some(s => s.id === q.id));
+        finalQuestions = shuffleArray([...selection, ...shuffleArray(remaining).slice(0, 5 - selection.length)]);
       } else {
         const target = category === 'Major' ? 'Specialization' : category;
         const targetLimit = target === 'General Education' ? limits.limitGenEd : target === 'Professional Education' ? limits.limitProfEd : limits.limitSpec;
@@ -332,6 +342,12 @@ function LetsPrepContent() {
     const isQuickFire = currentQuestions.length <= 5;
     const now = Date.now();
 
+    if (isQuickFire && timeSpent < MIN_QUICK_FIRE_TIME) {
+      toast({ variant: "destructive", title: "Calibration Divergence", description: "Trace was too rapid. Engage deeply to earn rewards." });
+      setState('dashboard');
+      return;
+    }
+
     setExamAnswers(answers);
     setExamTime(timeSpent);
     setIsCalibrating(true);
@@ -345,9 +361,36 @@ function LetsPrepContent() {
     
     const correctCount = results.filter(h => h.isCorrect).length;
     const overallScore = Math.round((correctCount / (currentQuestions.length || 1)) * 100);
+    
+    // Core Score XP
     let xpEarned = correctCount * XP_REWARDS.CORRECT_ANSWER;
+    
+    // Skill Expression Bonuses (Confidence)
+    results.forEach(r => {
+      if (r.isConfident) {
+        if (r.isCorrect) xpEarned += XP_REWARDS.CONFIDENT_CORRECT_BONUS;
+        else xpEarned += XP_REWARDS.CONFIDENT_WRONG_PENALTY;
+      }
+    });
 
-    const resultsData = sanitizeData({ userId: user.uid, displayName: user.displayName || 'Guest Educator', timestamp: now, overallScore, timeSpent, xpEarned, results, lastActiveDate: serverTimestamp() });
+    // Completion Bonuses
+    if (isQuickFire) {
+      xpEarned += Math.round((correctCount / 5) * XP_REWARDS.QUICK_FIRE_COMPLETE);
+    } else {
+      xpEarned += (currentQuestions.length >= 50 ? XP_REWARDS.FINISH_FULL_SIM : XP_REWARDS.FINISH_TRACK);
+    }
+
+    setLastXpEarned(xpEarned);
+    const resultsData = sanitizeData({ 
+      userId: user.uid, 
+      displayName: user.displayName || 'Guest Educator', 
+      timestamp: now, 
+      overallScore, 
+      timeSpent, 
+      xpEarned, 
+      results, 
+      lastActiveDate: serverTimestamp() 
+    });
 
     try {
       if (!user.uid.startsWith('bypass')) {
@@ -355,6 +398,7 @@ function LetsPrepContent() {
         setNewResultId(docRef.id);
         const updatePayload: any = { 
           dailyQuestionsAnswered: increment(currentQuestions.length), 
+          dailyTestsFinished: increment(!isQuickFire ? 1 : 0),
           xp: increment(xpEarned), 
           lastActiveDate: serverTimestamp() 
         };
