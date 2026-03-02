@@ -751,35 +751,35 @@ function LetsPrepContent() {
 
               <div className="lg:col-span-4 space-y-6">
                 <motion.div variants={itemVariants}>
-                  <Card className="android-surface border-none shadow-2xl rounded-[2.5rem] bg-foreground text-background p-8 overflow-hidden group">
+                  <Card className="android-surface border-none shadow-2xl rounded-[2.5rem] bg-gradient-to-br from-emerald-500/20 via-card to-background p-8 overflow-hidden group">
                     <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:rotate-12 transition-transform duration-700">
-                      <Smartphone className="w-24 h-24" />
+                      <Smartphone className="w-24 h-24 text-emerald-600" />
                     </div>
                     <div className="relative z-10 space-y-6">
                       <div className="flex items-center justify-between">
-                        <div className="w-14 h-14 bg-primary/20 rounded-2xl flex items-center justify-center shadow-inner">
-                          <Download className="w-7 h-7 text-primary" />
+                        <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center shadow-inner">
+                          <Download className="w-7 h-7 text-emerald-600" />
                         </div>
-                        <Badge variant="outline" className="font-black text-[9px] border-primary/30 text-primary bg-primary/5 uppercase">{isApkLoading ? '---' : `v${apkInfo?.version}`}</Badge>
+                        <Badge variant="outline" className="font-black text-[9px] border-emerald-500/30 text-emerald-600 bg-emerald-500/5 uppercase">{isApkLoading ? '---' : `v${apkInfo?.version}`}</Badge>
                       </div>
                       <div>
                         <h3 className="text-2xl font-black tracking-tight leading-none mb-2">Native Client</h3>
                         <p className="text-xs font-medium opacity-60 leading-relaxed">Install the high-fidelity Android trace for seamless offline preparation.</p>
                       </div>
                       
-                      <div className="flex flex-col items-center justify-center p-6 bg-background rounded-3xl border-2 border-dashed border-white/10 relative min-h-[180px] shadow-inner">
+                      <div className="flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 border-dashed border-emerald-500/20 relative min-h-[180px] shadow-inner">
                         <AnimatePresence mode="wait">
                           {isApkLoading ? (
                             <motion.div key="apk-loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-2">
-                              <Loader2 className="animate-spin text-primary w-8 h-8" />
-                              <span className="text-[8px] font-black uppercase text-primary/60 tracking-[0.3em]">Syncing Trace...</span>
+                              <Loader2 className="animate-spin text-emerald-500 w-8 h-8" />
+                              <span className="text-[8px] font-black uppercase text-emerald-600/60 tracking-[0.3em]">Syncing Trace...</span>
                             </motion.div>
                           ) : qrCodeUrl ? (
                             <motion.div key="apk-qr" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="space-y-4 flex flex-col items-center">
-                              <div className="w-32 h-32 bg-white p-1.5 rounded-2xl shadow-xl border-4 border-white/5 overflow-hidden">
+                              <div className="w-32 h-32 bg-white p-1.5 rounded-2xl shadow-xl border-4 border-emerald-50 overflow-hidden">
                                 <img src={qrCodeUrl} alt="QR Code" className="w-full h-full object-contain" />
                               </div>
-                              <p className="text-[9px] font-black uppercase text-primary tracking-widest flex items-center gap-2"><QrCode className="w-3 h-3" /> Scan to Sideload</p>
+                              <p className="text-[9px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-2"><QrCode className="w-3 h-3" /> Scan to Sideload</p>
                             </motion.div>
                           ) : (
                             <motion.p key="apk-error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-muted-foreground text-center">Unable to generate QR code.</motion.p>
@@ -787,7 +787,7 @@ function LetsPrepContent() {
                         </AnimatePresence>
                       </div>
 
-                      <Button onClick={() => window.location.href = apkInfo?.downloadUrl || GITHUB_APK_URL} disabled={isApkLoading} className="w-full h-16 rounded-[1.75rem] font-black gap-3 bg-primary text-primary-foreground shadow-2xl shadow-primary/30 active:scale-95 transition-all">
+                      <Button onClick={() => window.location.href = apkInfo?.downloadUrl || GITHUB_APK_URL} disabled={isApkLoading} className="w-full h-16 rounded-[1.75rem] font-black gap-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-2xl shadow-emerald-500/30 active:scale-95 transition-all">
                         {isApkLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <Download className="w-5 h-5" />} Direct Install
                       </Button>
                     </div>

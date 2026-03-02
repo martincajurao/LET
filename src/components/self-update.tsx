@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -104,7 +105,7 @@ export function SelfUpdate() {
 
   const handleDownloadUpdate = () => {
     if (apkInfo?.downloadURL) {
-      // Explicitly skipping SHA verification as requested
+      // Explicitly skipping SHA verification as requested for dynamic release workflow
       downloadUpdate(apkInfo.downloadURL, '');
     } else {
       setError('Download trace unavailable. Please check again.');
@@ -119,9 +120,9 @@ export function SelfUpdate() {
     <div className="space-y-6">
       {/* Environment Status Notice */}
       {!isNative && (
-        <div className="p-4 bg-blue-500/10 border-2 border-dashed border-blue-500/20 rounded-2xl flex items-start gap-3 mb-4">
-          <Info className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-          <p className="text-[11px] font-bold text-blue-700 uppercase tracking-wider leading-relaxed">
+        <div className="p-4 bg-primary/10 border-2 border-dashed border-primary/20 rounded-2xl flex items-start gap-3 mb-4">
+          <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <p className="text-[11px] font-bold text-primary uppercase tracking-wider leading-relaxed">
             WEB PREVIEW: Self-update functions are restricted to the native Android environment. This section would manage binary traces in the app wrapper.
           </p>
         </div>
@@ -130,8 +131,8 @@ export function SelfUpdate() {
       {/* Version Card */}
       <div className="p-6 bg-muted/20 rounded-[2.25rem] border-2 border-dashed border-border/50 flex flex-col sm:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-5">
-          <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner">
-            <Smartphone className="w-7 h-7 text-primary" />
+          <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center shadow-inner">
+            <Smartphone className="w-7 h-7 text-emerald-600" />
           </div>
           <div className="text-center sm:text-left">
             <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-1">Active Binary</p>
@@ -167,8 +168,8 @@ export function SelfUpdate() {
             className="space-y-4"
           >
             {isDownloading && (
-              <div className="space-y-2 p-5 bg-primary/5 rounded-[1.75rem] border border-primary/10 shadow-inner">
-                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-primary">
+              <div className="space-y-2 p-5 bg-emerald-500/5 rounded-[1.75rem] border border-emerald-500/10 shadow-inner">
+                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-emerald-600">
                   <span className="flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> Downloading Trace</span>
                   <span>{updateProgress}%</span>
                 </div>
@@ -182,8 +183,8 @@ export function SelfUpdate() {
               isError ? "bg-rose-500/10 border-rose-500/20 text-rose-700" : 
               "bg-primary/5 border-primary/10 text-primary"
             )}>
-              {isSuccess ? <ShieldCheck className="w-6 h-6 shrink-0" /> : 
-               isError ? <AlertCircle className="w-6 h-6 shrink-0" /> : 
+              {isSuccess ? <ShieldCheck className="w-6 h-6 text-emerald-600 shrink-0" /> : 
+               isError ? <AlertCircle className="w-6 h-6 text-rose-600 shrink-0" /> : 
                <Info className="w-6 h-6 shrink-0 opacity-60" />}
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Network Status</p>
@@ -200,7 +201,7 @@ export function SelfUpdate() {
           <Button 
             onClick={handleDownloadUpdate} 
             disabled={isDownloading || !isNative} 
-            className="w-full h-16 rounded-[1.75rem] font-black text-lg gap-3 shadow-2xl shadow-primary/30 active:scale-95 transition-all group relative overflow-hidden"
+            className="w-full h-16 rounded-[1.75rem] font-black text-lg gap-3 shadow-2xl shadow-emerald-500/30 bg-emerald-500 hover:bg-emerald-600 text-white active:scale-95 transition-all group relative overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
             <Download className="w-6 h-6" />
