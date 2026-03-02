@@ -110,7 +110,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       }
     }
 
-    // 2. If sequence finished, return to any previously skipped items in this phase
+    // 2. If sequential end reached, return to any previously flagged items in this phase
     if (nextIdx === -1) {
       for (let i = phase.startIndex; i <= phaseEndIndex; i++) {
         if (!currentAnswers[questions[i].id]) {
@@ -123,12 +123,12 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     // 3. Phase Completion Logic
     if (nextIdx === -1) {
       if (currentPhaseIndex === phases.length - 1 || isContinuous) {
-        // End of simulation or continuous track
+        // End of entire simulation or continuous mode
         if (Object.keys(currentAnswers).length === questions.length) {
           setShowSubmitConfirm(true);
         }
       } else {
-        // Pedagogy sector resolved -> Show Calibration Dialog
+        // Pedagogical sector resolved -> Show Calibration Screen
         setIsResting(true);
       }
     } else {
@@ -147,6 +147,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     setAnswers(newAnswers);
     setSelectedOption(val);
     
+    // Clear flag if answered
     if (flaggedIndices.has(currentIdx)) {
       const nextFlags = new Set(flaggedIndices);
       nextFlags.delete(currentIdx);
@@ -193,14 +194,14 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   }, [answers, startTime, confidentAnswers, onComplete]);
 
   useEffect(() => {
-    if (showBriefing) return;
+    if (showBriefing || isResting) return;
     if (timeLeft <= 0) {
       handleSubmit();
       return;
     }
     const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
     return () => clearInterval(timer);
-  }, [timeLeft, handleSubmit, showBriefing]);
+  }, [timeLeft, handleSubmit, showBriefing, isResting]);
 
   useEffect(() => {
     setSelectedOption(answers[questions[currentIdx]?.id] || null);
@@ -220,6 +221,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
   return (
     <div className="fixed inset-0 z-[2000] bg-background flex flex-col overflow-hidden animate-in fade-in duration-300 font-body">
+      {/* Immersive Header */}
       <header className="pt-safe border-b bg-card shrink-0 shadow-sm relative z-10">
         <div className="h-14 flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
@@ -285,6 +287,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </div>
       </header>
 
+      {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto px-4 py-4 md:p-12 no-scrollbar bg-background relative">
         <div className="max-w-xl mx-auto w-full h-full">
           <AnimatePresence mode="wait">
@@ -413,8 +416,77 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
             )}
           </AnimatePresence>
         </div>
+
+        {/* Phase Calibration Overlay (Inline Replacement for Dialog) */}
+        <AnimatePresence>
+          {isResting && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[3000] bg-background flex flex-col items-center justify-center p-4"
+            >
+              <div className="w-full max-w-[440px] bg-card rounded-[3.5rem] shadow-2xl border border-border/50 overflow-hidden flex flex-col">
+                <div className="bg-primary/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
+                  <motion.div 
+                    initial={{ scale: 0.8, opacity: 0 }} 
+                    animate={{ scale: 1, opacity: 1 }} 
+                    className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-2xl relative z-10 border-2 border-primary/20 animate-levitate"
+                  >
+                    <Coffee className="w-10 h-10 text-primary" />
+                  </motion.div>
+                  <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 4, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent z-0" />
+                </div>
+                
+                <div className="p-10 text-center space-y-8">
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-1">Phase Calibration</span>
+                    <h3 className="text-3xl font-black tracking-tighter text-foreground leading-none">Sector Resolved</h3>
+                    <p className="text-muted-foreground font-medium text-sm leading-relaxed px-4 pt-2">
+                      Recalibrate your strategy. Next deployment zone is ready for synchronization.
+                    </p>
+                  </div>
+
+                  <div className="w-full space-y-3">
+                    {phases.map((p, idx) => {
+                      const isCompleted = idx <= currentPhaseIndex;
+                      const isNext = idx === currentPhaseIndex + 1;
+                      return (
+                        <div key={idx} className={cn(
+                          "flex items-center justify-between p-4 rounded-2xl border-2 transition-all",
+                          isCompleted ? "bg-emerald-500/5 border-emerald-500/20" : 
+                          isNext ? "bg-primary/5 border-primary shadow-lg ring-4 ring-primary/5 scale-[1.02]" : 
+                          "bg-muted/20 border-transparent opacity-40"
+                        )}>
+                          <div className="flex items-center gap-4">
+                            <div className={cn(
+                              "w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs border-2",
+                              isCompleted ? "bg-emerald-500 border-emerald-500 text-white" : 
+                              isNext ? "bg-primary border-primary text-primary-foreground" : "bg-muted border-border text-muted-foreground"
+                            )}>{isCompleted ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}</div>
+                            <span className={cn("font-black text-xs uppercase tracking-tight", isNext ? "text-primary" : "text-foreground")}>{p.name}</span>
+                          </div>
+                          {isNext && <Badge className="bg-primary text-primary-foreground text-[7px] font-black uppercase rounded-lg">Up Next</Badge>}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <Button 
+                    onClick={handleContinuePhase}
+                    className="w-full h-16 rounded-2xl font-black text-sm uppercase tracking-widest gap-3 shadow-2xl shadow-primary/30 active:scale-95 transition-all group"
+                  >
+                    Deploy to Sector {currentPhaseIndex + 2}
+                    <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
+      {/* Persistent Footer */}
       <footer className="shrink-0 border-t bg-card/95 backdrop-blur-xl px-4 pb-safe z-50">
         <div className="h-14 flex items-center justify-between w-full max-xl mx-auto">
           {!showBriefing && (
@@ -438,69 +510,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </div>
       </footer>
 
-      {/* Phase Calibration Dialog - Elevated Stacking */}
-      <Dialog open={isResting} onOpenChange={() => {}}>
-        <DialogContent 
-          className="rounded-[3rem] bg-card border-none shadow-[0_40px_120px_rgba(0,0,0,0.5)] p-0 max-w-[400px] overflow-hidden outline-none z-[5100]" 
-          persistent={true}
-          hideCloseButton={true}
-        >
-          <div className="bg-primary/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
-            <motion.div 
-              initial={{ scale: 0.8, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
-              className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-2xl relative z-10 border-2 border-primary/20 animate-levitate"
-            >
-              <Coffee className="w-10 h-10 text-primary" />
-            </motion.div>
-            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 4, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent z-0" />
-          </div>
-          <div className="p-10 text-center space-y-8">
-            <div className="space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-1">Phase Calibration</span>
-              <DialogTitle className="text-3xl font-black tracking-tighter text-foreground">Sector Resolved</DialogTitle>
-              <DialogDescription className="text-muted-foreground font-medium text-sm leading-relaxed px-4">
-                Recalibrate your strategy. Next deployment zone is ready for synchronization.
-              </DialogDescription>
-            </div>
-
-            <div className="w-full space-y-3">
-              {phases.map((p, idx) => {
-                const isCompleted = idx <= currentPhaseIndex;
-                const isNext = idx === currentPhaseIndex + 1;
-                return (
-                  <div key={idx} className={cn(
-                    "flex items-center justify-between p-4 rounded-2xl border-2 transition-all",
-                    isCompleted ? "bg-emerald-500/5 border-emerald-500/20" : 
-                    isNext ? "bg-primary/5 border-primary shadow-lg ring-4 ring-primary/5 scale-[1.02]" : 
-                    "bg-muted/20 border-transparent opacity-40"
-                  )}>
-                    <div className="flex items-center gap-4">
-                      <div className={cn(
-                        "w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs border-2",
-                        isCompleted ? "bg-emerald-500 border-emerald-500 text-white" : 
-                        isNext ? "bg-primary border-primary text-primary-foreground" : "bg-muted border-border text-muted-foreground"
-                      )}>{isCompleted ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}</div>
-                      <span className={cn("font-black text-xs uppercase tracking-tight", isNext ? "text-primary" : "text-foreground")}>{p.name}</span>
-                    </div>
-                    {isNext && <Badge className="bg-primary text-primary-foreground text-[7px] font-black uppercase rounded-lg">Up Next</Badge>}
-                  </div>
-                );
-              })}
-            </div>
-
-            <Button 
-              onClick={handleContinuePhase}
-              className="w-full h-16 rounded-2xl font-black text-sm uppercase tracking-widest gap-3 shadow-2xl shadow-primary/30 active:scale-95 transition-all group"
-            >
-              Deploy to Sector {currentPhaseIndex + 2}
-              <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Confirmation Dialogs */}
+      {/* Final Submission Confirmation */}
       <Dialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
         <DialogContent className="rounded-[2rem] bg-card border-none shadow-2xl p-6 max-w-xs z-[5100] outline-none">
           <div className="text-center space-y-5">
@@ -525,6 +535,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </DialogContent>
       </Dialog>
 
+      {/* Exit Confirmation */}
       <Dialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-6 max-w-xs z-[5100] outline-none">
           <div className="text-center space-y-5">
