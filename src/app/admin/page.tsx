@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -41,7 +40,8 @@ import {
   Timer,
   Minus,
   Lightbulb,
-  Eye
+  Eye,
+  Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -819,7 +819,7 @@ export default function AdminDashboard() {
             <Card className="android-surface border-none shadow-2xl rounded-[3rem] bg-card overflow-hidden">
               <CardHeader className="p-10 border-b bg-muted/20">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-emerald-500/10 rounded-[1.5rem] flex items-center justify-center shadow-inner">
+                  <div className="w-14 h-14 bg-emerald-500/10 rounded-1.5rem flex items-center justify-center shadow-inner">
                     <Smartphone className="w-7 h-7 text-emerald-600" />
                   </div>
                   <div>
@@ -929,7 +929,7 @@ export default function AdminDashboard() {
                   </label>
                   <div className="flex gap-2">
                     <Input value={editingQuestion?.options?.[idx] || ""} onChange={(e) => { const n = [...(editingQuestion?.options || ["","","",""])]; n[idx] = e.target.value; setEditingQuestion({...editingQuestion, options: n}); }} className="rounded-xl h-12 font-medium border-2 text-sm shadow-inner" />
-                    <Button type="button" variant="outline" size="icon" className={cn("h-12 w-12 rounded-xl shrink-0 border-2 transition-all active:scale-90", editingQuestion?.correctAnswer === editingQuestion?.options?.[idx] ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "hover:bg-muted")} onClick={() => setEditingQuestion({...editingQuestion, correctAnswer: editingQuestion?.options?.[idx]})}>
+                    <Button type="button" variant="outline" size="icon" className={cn("h-12 w-12 rounded-xl shrink-0 border-2 transition-all active:scale-90", editingQuestion?.correctAnswer === editingQuestion?.options?.[idx] ? "bg-emerald-50 border-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "hover:bg-muted")} onClick={() => setEditingQuestion({...editingQuestion, correctAnswer: editingQuestion?.options?.[idx]})}>
                       <Check className="w-5 h-5" />
                     </Button>
                   </div>
