@@ -81,7 +81,6 @@ function NavContent() {
     const userTier = user.userTier || 'Bronze';
     const qGoal = userTier === 'Platinum' ? 35 : 20;
     
-    // Only increment badge if quest goal is met AND reward is not yet claimed
     if ((user.dailyAiUsage || 0) >= 1 && !user.taskLoginClaimed) claimable++;
     if ((user.dailyQuestionsAnswered || 0) >= qGoal && !user.taskQuestionsClaimed) claimable++;
     if ((user.dailyTestsFinished || 0) >= 1 && !user.taskMockClaimed) claimable++;
@@ -178,21 +177,21 @@ function NavContent() {
 
   return (
     <>
-      <div className={cn("md:hidden fixed bottom-0 left-0 right-0 z-[60] px-4 pb-safe pt-2 transition-all duration-500 ease-in-out transform", isVisible ? "translate-y-0 opacity-100" : "translate-y-32 opacity-0")}>
-        <div className="mx-auto max-w-lg bg-card/95 backdrop-blur-2xl border border-border/40 rounded-[2.25rem] shadow-[0_12px_40px_rgba(0,0,0,0.15)] flex items-center justify-between px-2 h-16 mb-6 transition-colors ring-1 ring-inset ring-white/10">
+      <div className={cn("md:hidden fixed bottom-0 left-0 right-0 z-[60] pb-safe bg-card/95 backdrop-blur-2xl border-t border-border/40 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] transition-all duration-500 ease-in-out transform", isVisible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0")}>
+        <div className="flex items-center justify-between px-2 h-16 w-full">
           {user ? navItems.map((item) => {
             const active = pathname === item.href || (item.id === 'notifications' && isAlertsOpen);
             const isCenter = item.id === 'practice';
             if (isCenter) return (
-              <button key={item.id} onClick={() => handleNavClick(item)} className="relative -top-7 active:scale-90 transition-transform duration-200">
-                <div className="absolute inset-0 bg-primary blur-2xl opacity-30 animate-pulse" />
-                <div className="relative w-16 h-16 bg-primary text-primary-foreground rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-primary/40 ring-4 ring-background"><Zap className="w-8 h-8 fill-current" /></div>
+              <button key={item.id} onClick={() => handleNavClick(item)} className="relative -top-4 active:scale-90 transition-transform duration-200 px-2">
+                <div className="absolute inset-0 bg-primary blur-2xl opacity-20 animate-pulse" />
+                <div className="relative w-14 h-14 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center shadow-xl shadow-primary/40 border-4 border-background"><Zap className="w-7 h-7 fill-current" /></div>
               </button>
             );
             return (
               <button key={item.id} onClick={() => handleNavClick(item)} className={cn("flex-1 flex flex-col items-center justify-center gap-1 h-full transition-all duration-300 relative", active ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
                 <div className={cn("w-12 h-8 rounded-full flex items-center justify-center transition-all duration-300", active ? "bg-primary/15" : "bg-transparent")}>{item.icon}</div>
-                <span className={cn("text-[10px] font-bold uppercase tracking-tighter transition-opacity duration-300", active ? "opacity-100 scale-105" : "opacity-60")}>{item.label}</span>
+                <span className={cn("text-[10px] font-black uppercase tracking-tighter transition-opacity duration-300", active ? "opacity-100 scale-105" : "opacity-60")}>{item.label}</span>
               </button>
             );
           }) : (<div className="flex-1 flex items-center justify-center text-muted-foreground text-[10px] font-black uppercase tracking-widest opacity-40"><ShieldCheck className="w-4 h-4 mr-2" /> Educator Trace Required</div>)}
