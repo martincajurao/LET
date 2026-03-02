@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
 import { useUser, useFirestore } from "@/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -14,7 +14,10 @@ import {
   Check,
   Moon,
   Sun,
-  Bell
+  Bell,
+  Sparkles,
+  Zap,
+  ShieldCheck
 } from "lucide-react";
 
 import Link from 'next/link';
@@ -28,167 +31,125 @@ import { motion } from 'framer-motion';
 
 function SettingsPageContent() {
   const { user, loading: userLoading, refreshUser } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const { isDark, toggleDarkMode } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
-  // Handler for refreshing user data
   const handleRefreshData = async () => {
     setRefreshing(true);
     try {
       await refreshUser();
-      toast({ title: "Data Refreshed", description: "Latest data loaded successfully." });
+      toast({ title: "Data Re-synced", description: "Academic metadata updated from cloud." });
     } catch (e) {
-      toast({ variant: "destructive", title: "Refresh Failed", description: "Could not fetch latest data." });
+      toast({ variant: "destructive", title: "Sync Failed", description: "Trace interruption detected." });
     } finally {
       setRefreshing(false);
     }
   };
 
-  // Handler for notifications toggle
   const handleNotificationsToggle = (checked: boolean) => {
     setNotificationsEnabled(checked);
     toast({ 
-      title: checked ? "Notifications Enabled" : "Notifications Disabled", 
-      description: checked ? "You will receive push notifications." : "Push notifications have been muted." 
+      title: checked ? "Alerts Active" : "Alerts Muted", 
+      description: checked ? "Push notifications established." : "System alerts suspended." 
     });
   };
 
   if (userLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
-  if (!user) return <div className="min-h-screen flex flex-col items-center justify-center p-4"><Card className="p-10 text-center max-w-sm rounded-[2.5rem] android-surface border-none shadow-2xl"><Settings className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" /><h3 className="font-black text-xl mb-6">Authentication Required</h3><Link href="/"><Button className="w-full rounded-2xl h-14 font-black">Return Home</Button></Link></Card></div>;
+  if (!user) return <div className="min-h-screen flex flex-col items-center justify-center p-4"><Card className="p-10 text-center max-w-sm rounded-[2.5rem] android-surface border-none shadow-2xl"><Settings className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" /><h3 className="font-black text-xl mb-6">Credentials Required</h3><Link href="/"><Button className="w-full rounded-2xl h-14 font-black">Secure Exit</Button></Link></Card></div>;
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8 font-body">
+    <div className="min-h-screen bg-background p-4 md:p-8 font-body pt-safe">
       <Toaster />
-      <div className="max-w-4xl mx-auto space-y-8 pb-24">
-        <div className="flex items-center justify-between">
+      <div className="max-w-4xl mx-auto space-y-8 pb-32">
+        <div className="flex items-center justify-between px-2">
           <Link href="/">
-            <Button variant="ghost" size="sm" className="gap-2 font-bold text-muted-foreground">
-              <ArrowLeft className="w-4 h-4" /> Dashboard
+            <Button variant="ghost" size="sm" className="gap-2 font-black text-muted-foreground uppercase tracking-widest text-[10px] hover:text-primary">
+              <ArrowLeft className="w-4 h-4" /> Return to Hub
             </Button>
           </Link>
-          <Badge variant="outline" className="bg-card px-4 py-1.5 rounded-full font-bold text-[10px] uppercase tracking-widest">
-            App Settings
-          </Badge>
+          <div className="flex items-center gap-2 bg-primary/10 px-4 py-1.5 rounded-full border-2 border-primary/20 shadow-sm">
+            <Smartphone className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[9px] font-black uppercase text-primary tracking-[0.2em]">Android Client Config</span>
+          </div>
         </div>
 
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
           className="space-y-6"
         >
-          {/* App Updates Section */}
-          <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card">
-            <CardContent className="p-8 space-y-6">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
-                  <Smartphone className="w-7 h-7 text-primary" />
+          {/* App Maintenance Section */}
+          <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card border border-border/50">
+            <CardHeader className="bg-muted/30 p-8 border-b">
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
+                  <RefreshCw className="w-7 h-7 text-primary-foreground" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black tracking-tight">App Updates</h3>
-                  <p className="text-xs text-muted-foreground font-medium">Manage native Android client updates</p>
+                  <CardTitle className="text-2xl font-black tracking-tight">System Maintenance</CardTitle>
+                  <CardDescription className="text-xs font-bold uppercase tracking-widest opacity-60">Manage updates and binary traces</CardDescription>
                 </div>
               </div>
+            </CardHeader>
+            <CardContent className="p-8">
               <SelfUpdate />
             </CardContent>
           </Card>
 
-          {/* Appearance Section */}
-          <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card">
-            <CardContent className="p-8 space-y-6">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
-                  {isDark ? <Moon className="w-7 h-7 text-primary" /> : <Sun className="w-7 h-7 text-primary" />}
+          {/* Interface Calibration */}
+          <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card border border-border/50">
+            <CardHeader className="bg-muted/30 p-8 border-b">
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center shadow-inner">
+                  {isDark ? <Moon className="w-7 h-7 text-emerald-600" /> : <Sun className="w-7 h-7 text-yellow-500" />}
                 </div>
                 <div>
-                  <h3 className="text-xl font-black tracking-tight">Appearance</h3>
-                  <p className="text-xs text-muted-foreground font-medium">Customize the app look and feel</p>
+                  <CardTitle className="text-2xl font-black tracking-tight">Visual Pacing</CardTitle>
+                  <CardDescription className="text-xs font-bold uppercase tracking-widest opacity-60">Calibrate interface appearance</CardDescription>
                 </div>
               </div>
-              
-              <div className="flex items-center justify-between p-4 bg-muted/20 rounded-2xl border-2 border-dashed border-border/50">
-                <div className="flex items-center gap-3">
-                  {isDark ? (
-                    <Moon className="w-5 h-5 text-primary" />
-                  ) : (
-                    <Sun className="w-5 h-5 text-yellow-500" />
-                  )}
-                  <div>
-                    <p className="font-bold text-foreground">Dark Mode</p>
-                    <p className="text-[10px] font-medium text-muted-foreground">
-                      {isDark ? 'Currently using dark theme' : 'Currently using light theme'}
-                    </p>
-                  </div>
+            </CardHeader>
+            <CardContent className="p-8 space-y-6">
+              <div className="flex items-center justify-between p-6 bg-muted/20 rounded-[2rem] border-2 border-dashed border-border/50">
+                <div className="space-y-1">
+                  <p className="font-black text-lg text-foreground leading-none">Dark Mode</p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Adaptive high-contrast trace</p>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={toggleDarkMode}
-                  className="h-10 rounded-xl font-bold gap-2"
-                >
-                  {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                  {isDark ? 'Light' : 'Dark'}
-                </Button>
+                <Switch checked={isDark} onCheckedChange={toggleDarkMode} className="data-[state=checked]:bg-primary scale-125" />
+              </div>
+
+              <div className="flex items-center justify-between p-6 bg-muted/20 rounded-[2rem] border-2 border-dashed border-border/50">
+                <div className="space-y-1">
+                  <p className="font-black text-lg text-foreground leading-none">Push Notifications</p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Real-time academic alerts</p>
+                </div>
+                <Switch checked={notificationsEnabled} onCheckedChange={handleNotificationsToggle} className="data-[state=checked]:bg-emerald-500 scale-125" />
               </div>
             </CardContent>
           </Card>
 
-          {/* Notifications Section */}
-          <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card">
-            <CardContent className="p-8 space-y-6">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
-                  <Bell className="w-7 h-7 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black tracking-tight">Notifications</h3>
-                  <p className="text-xs text-muted-foreground font-medium">Manage notification preferences</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between p-4 bg-muted/20 rounded-2xl border-2 border-dashed border-border/50">
-                <div className="flex items-center gap-3">
-                  <Bell className="w-5 h-5 text-primary" />
-                  <div>
-                    <p className="font-bold text-foreground">Push Notifications</p>
-                    <p className="text-[10px] font-medium text-muted-foreground">
-                      Receive updates about tasks and achievements
-                    </p>
-                  </div>
-                </div>
-                <Switch 
-                  checked={notificationsEnabled} 
-                  onCheckedChange={handleNotificationsToggle}
-                  className="data-[state=checked]:bg-primary"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Data Management Section */}
-          <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card">
+          {/* Cloud Sync */}
+          <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-foreground text-background">
             <CardContent className="p-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
-                    <RefreshCw className={`w-7 h-7 text-primary ${refreshing && "animate-spin"}`} />
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-8">
+                <div className="flex items-center gap-5">
+                  <div className="w-16 h-16 bg-primary/20 rounded-[1.75rem] flex items-center justify-center shadow-inner">
+                    <RefreshCw className={cn("w-8 h-8 text-primary", refreshing && "animate-spin")} />
                   </div>
-                  <div>
-                    <h3 className="text-xl font-black tracking-tight">Data Sync</h3>
-                    <p className="text-xs text-muted-foreground font-medium">Refresh your latest progress</p>
+                  <div className="text-center sm:text-left">
+                    <h3 className="text-2xl font-black tracking-tight">Metadata Sync</h3>
+                    <p className="text-xs font-medium opacity-60">Refresh academic progression from cloud vault</p>
                   </div>
                 </div>
                 <Button 
                   onClick={handleRefreshData} 
                   disabled={refreshing}
-                  variant="outline" 
-                  className="h-12 rounded-2xl font-bold gap-2"
+                  className="w-full sm:w-auto h-14 px-12 rounded-2xl font-black text-xs uppercase tracking-widest bg-primary text-primary-foreground shadow-2xl shadow-primary/30 active:scale-95 transition-all gap-3"
                 >
-                  {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                  {refreshing ? "Syncing..." : "Sync Now"}
+                  {refreshing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5 fill-current" />}
+                  {refreshing ? "SYNCING..." : "COMMIT SYNC"}
                 </Button>
               </div>
             </CardContent>
@@ -199,12 +160,10 @@ function SettingsPageContent() {
   );
 }
 
-function SettingsPageWithParams() {
+export default function SettingsPage() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
       <SettingsPageContent />
     </Suspense>
   );
 }
-
-export default SettingsPageWithParams;
