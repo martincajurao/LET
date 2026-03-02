@@ -279,10 +279,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } else {
         const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
         await signInWithPopup(auth!, provider);
       }
+      toast({ title: "Welcome back!", description: "Educator session synchronized." });
     } catch (error: any) {
       console.error('Google Sign-In Error:', error);
+      if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+        toast({ variant: "destructive", title: "Sign-In Failed", description: error.message || "Could not authenticate with Google." });
+      }
     } finally {
       setLoading(false);
     }
