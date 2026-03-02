@@ -333,51 +333,51 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
             ) : isResting ? (
               <motion.div 
                 key="calibration"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05 }}
-                className="w-full max-w-[440px] bg-card rounded-[3.5rem] shadow-2xl border border-border/50 overflow-hidden flex flex-col"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="w-full max-w-[400px] bg-card rounded-[2.5rem] shadow-xl border border-border/40 overflow-hidden flex flex-col"
               >
-                <div className="bg-primary/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
+                <div className="bg-primary/5 p-8 flex flex-col items-center justify-center relative overflow-hidden">
                   <motion.div 
                     initial={{ scale: 0.8, opacity: 0 }} 
                     animate={{ scale: 1, opacity: 1 }} 
-                    className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-2xl relative z-10 border-2 border-primary/20 animate-levitate"
+                    className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center shadow-lg relative z-10 border border-primary/20"
                   >
-                    <Coffee className="w-10 h-10 text-primary" />
+                    <Coffee className="w-8 h-8 text-primary" />
                   </motion.div>
-                  <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 4, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent z-0" />
+                  <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.2, 0.1] }} transition={{ duration: 5, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent z-0" />
                 </div>
                 
-                <div className="p-10 text-center space-y-8">
-                  <div className="space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-1">Phase Calibration</span>
-                    <h3 className="text-3xl font-black tracking-tighter text-foreground leading-none">Sector Resolved</h3>
-                    <p className="text-muted-foreground font-medium text-sm leading-relaxed px-4 pt-2">
-                      Recalibrate your strategy. Next deployment zone is ready for synchronization.
+                <div className="p-6 text-center space-y-6">
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-primary mb-1">Sector Resolved</span>
+                    <h3 className="text-2xl font-black tracking-tighter text-foreground leading-none">Phase Calibration</h3>
+                    <p className="text-muted-foreground font-medium text-[11px] leading-relaxed px-4 pt-1 opacity-70">
+                      Pedagogical synchronization complete. Review the roadmap to proceed.
                     </p>
                   </div>
 
-                  <div className="w-full space-y-3">
+                  <div className="w-full space-y-2">
                     {phases.map((p, idx) => {
                       const isCompleted = idx <= currentPhaseIndex;
                       const isNext = idx === currentPhaseIndex + 1;
                       return (
                         <div key={idx} className={cn(
-                          "flex items-center justify-between p-4 rounded-2xl border-2 transition-all",
-                          isCompleted ? "bg-emerald-500/5 border-emerald-500/20" : 
-                          isNext ? "bg-primary/5 border-primary shadow-lg scale-[1.02]" : 
-                          "bg-muted/20 border-transparent opacity-40"
+                          "flex items-center justify-between p-3.5 rounded-xl border transition-all",
+                          isCompleted ? "bg-emerald-500/5 border-emerald-500/10" : 
+                          isNext ? "bg-primary/5 border-primary shadow-sm" : 
+                          "bg-muted/10 border-transparent opacity-40"
                         )}>
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-3">
                             <div className={cn(
-                              "w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs border-2",
+                              "w-7 h-7 rounded-lg flex items-center justify-center font-black text-[10px] border transition-all",
                               isCompleted ? "bg-emerald-500 border-emerald-500 text-white" : 
                               isNext ? "bg-primary border-primary text-primary-foreground" : "bg-muted border-border text-muted-foreground"
                             )}>{isCompleted ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}</div>
-                            <span className={cn("font-black text-xs uppercase tracking-tight", isNext ? "text-primary" : "text-foreground")}>{p.name}</span>
+                            <span className={cn("font-black text-[11px] uppercase tracking-tight", isNext ? "text-primary" : "text-foreground")}>{p.name}</span>
                           </div>
-                          {isNext && <Badge className="bg-primary text-primary-foreground text-[7px] font-black uppercase rounded-lg">Up Next</Badge>}
+                          {isNext && <Badge className="bg-primary text-primary-foreground text-[7px] font-black uppercase rounded px-1.5 h-4">Active</Badge>}
                         </div>
                       );
                     })}
@@ -385,10 +385,10 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
                   <Button 
                     onClick={handleContinuePhase}
-                    className="w-full h-16 rounded-2xl font-black text-sm uppercase tracking-widest gap-3 shadow-2xl shadow-primary/30 active:scale-95 transition-all group"
+                    className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-all group"
                   >
                     Deploy to Sector {currentPhaseIndex + 2}
-                    <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </div>
               </motion.div>
