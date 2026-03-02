@@ -5,7 +5,7 @@ import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
 import { DailyLoginRewards } from '@/components/ui/daily-login-rewards';
 import { QuestionOfTheDay } from '@/components/ui/question-of-the-day';
 import { StudyTimer } from '@/components/ui/study-timer';
-import { Target, ArrowLeft, ShieldCheck, Brain, Loader2 } from 'lucide-react';
+import { Target, ArrowLeft, ShieldCheck, Brain, Loader2, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUser, useFirestore } from '@/firebase';
