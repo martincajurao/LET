@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
+import { DailyQuestDashboard } from '@/components/ui/daily-task-dashboard';
 import { DailyLoginRewards } from '@/components/ui/daily-login-rewards';
 import { QuestionOfTheDay } from '@/components/ui/question-of-the-day';
 import { StudyTimer } from '@/components/ui/study-timer';
@@ -118,6 +118,23 @@ export default function TasksPage() {
     }
   };
 
+  const handleTimerComplete = async (sessions: number, xpEarned: number) => {
+    if (!user || !firestore) return;
+    try {
+      // Use dailyAiUsage as a counter for daily focus sessions completed
+      const userRef = doc(firestore, 'users', user.uid);
+      await updateDoc(userRef, {
+        xp: increment(xpEarned),
+        dailyAiUsage: increment(1),
+        lastActiveDate: serverTimestamp()
+      });
+      await refreshUser();
+      toast({ variant: "reward", title: "Focus Reward!", description: `+${xpEarned} XP added to vault.` });
+    } catch (e) {
+      console.error('Timer completion sync failed:', e);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -184,12 +201,12 @@ export default function TasksPage() {
                 </motion.div>
               )}
               <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
-                <StudyTimer />
+                <StudyTimer onComplete={handleTimerComplete} />
               </motion.div>
             </div>
             <div className="lg:col-span-5 space-y-8">
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4, duration: 0.5 }}>
-                <DailyTaskDashboard />
+                <DailyQuestDashboard />
               </motion.div>
               <Card className="android-surface border-none shadow-md3-1 rounded-[2rem] bg-foreground text-background p-8 overflow-hidden relative group">
                 <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:rotate-12 transition-transform duration-700"><Brain className="w-24 h-24" /></div>

@@ -19,20 +19,16 @@ import {
   Loader2, 
   BookOpen, 
   Target, 
-  Star, 
-  Gift, 
-  Key, 
-  ShieldCheck,
-  Zap,
-  RotateCcw,
+  CheckCircle2, 
+  ChevronRight, 
+  Sparkles, 
+  Play, 
+  ShieldAlert, 
+  Package, 
+  Compass,
+  Timer,
   Info,
-  CheckCircle2,
-  ChevronRight,
-  Sparkles,
-  Play,
-  ShieldAlert,
-  Package,
-  Compass
+  ShieldCheck
 } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
@@ -54,7 +50,7 @@ interface Quest {
   bgColor: string;
 }
 
-export function DailyTaskDashboard() {
+export function DailyQuestDashboard() {
   const { user, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -74,10 +70,10 @@ export function DailyTaskDashboard() {
   const quests: Quest[] = useMemo(() => {
     const qGoal = user?.userTier === 'Platinum' ? 35 : 20;
     return [
-      { id: 'login', title: 'Daily Entrance', description: 'Access simulation vault', reward: Math.round(5 * tierMultiplier), goal: 1, current: user ? 1 : 0, isClaimed: !!user?.taskLoginClaimed, icon: <Key className="w-5 h-5" />, color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' },
-      { id: 'questions', title: 'Item Mastery', description: 'Complete board items', reward: Math.round(10 * tierMultiplier), goal: qGoal, current: user?.dailyQuestionsAnswered || 0, isClaimed: !!user?.taskQuestionsAnswered ? true : !!user?.taskQuestionsClaimed, icon: <Target className="w-5 h-5" />, color: 'text-blue-600', bgColor: 'bg-blue-500/10' },
+      { id: 'questions', title: 'Item Mastery', description: 'Complete board items', reward: Math.round(10 * tierMultiplier), goal: qGoal, current: user?.dailyQuestionsAnswered || 0, isClaimed: !!user?.taskQuestionsClaimed, icon: <Target className="w-5 h-5" />, color: 'text-blue-600', bgColor: 'bg-blue-500/10' },
       { id: 'mock', title: 'Full Simulation', description: 'Finish a timed mock test', reward: Math.round(15 * tierMultiplier), goal: 1, current: user?.dailyTestsFinished || 0, isClaimed: !!user?.taskMockClaimed, icon: <Trophy className="w-5 h-5" />, color: 'text-amber-600', bgColor: 'bg-amber-500/10' },
-      { id: 'mistakes', title: 'Review Insights', description: 'Analyze pedagogical mistakes', reward: Math.round(10 * tierMultiplier), goal: 10, current: user?.mistakesReviewed || 0, isClaimed: !!user?.taskMistakesClaimed, icon: <BookOpen className="w-5 h-5" />, color: 'text-rose-600', bgColor: 'bg-rose-500/10' }
+      { id: 'mistakes', title: 'Review Insights', description: 'Analyze pedagogical mistakes', reward: Math.round(10 * tierMultiplier), goal: 10, current: user?.mistakesReviewed || 0, isClaimed: !!user?.taskMistakesClaimed, icon: <BookOpen className="w-5 h-5" />, color: 'text-rose-600', bgColor: 'bg-rose-500/10' },
+      { id: 'focus', title: 'Deep Focus', description: 'Complete a study session', reward: Math.round(10 * tierMultiplier), goal: 1, current: user?.dailyAiUsage || 0, isClaimed: !!user?.taskLoginClaimed, icon: <Timer className="w-5 h-5" />, color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' }
     ];
   }, [user, tierMultiplier]);
 
@@ -103,10 +99,10 @@ export function DailyTaskDashboard() {
         const updateData: any = {
           credits: increment(reward - (isRecovery ? STREAK_RECOVERY_COST : 0)),
           dailyCreditEarned: increment(reward),
-          taskLoginClaimed: readyQuests.some(t => t.id === 'login') || !!user.taskLoginClaimed,
           taskQuestionsClaimed: readyQuests.some(t => t.id === 'questions') || !!user.taskQuestionsClaimed,
           taskMockClaimed: readyQuests.some(t => t.id === 'mock') || !!user.taskMockClaimed,
           taskMistakesClaimed: readyQuests.some(t => t.id === 'mistakes') || !!user.taskMistakesClaimed,
+          taskLoginClaimed: readyQuests.some(t => t.id === 'focus') || !!user.taskLoginClaimed,
           lastActiveDate: serverTimestamp(),
           lastClaimTime: serverTimestamp()
         };
@@ -141,7 +137,7 @@ export function DailyTaskDashboard() {
 
   return (
     <>
-      <Card className="border-none shadow-md3-2 rounded-[2.5rem] bg-card overflow-hidden">
+      <Card className="android-surface border-none shadow-md3-2 rounded-[2.5rem] bg-card overflow-hidden">
         <CardHeader className="bg-muted/30 p-6 md:p-8 border-b space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div className="flex items-center gap-4">
