@@ -1,4 +1,3 @@
-
 /**
  * Professional Growth (XP) Utility
  * Defines career progression, tiered unlock ranks, and scaling reward structures.
