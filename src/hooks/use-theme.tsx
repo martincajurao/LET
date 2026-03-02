@@ -9,7 +9,7 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  isDark: false,
+  isDark: true, // Default to true
   toggleDarkMode: () => {},
   setDarkMode: () => {},
 });
@@ -23,18 +23,17 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true); // Default to dark
   const [mounted, setMounted] = useState(false);
 
-  // Check system preference and localStorage on mount
+  // Check preference and localStorage on mount
   useEffect(() => {
     const checkDarkMode = () => {
       const storedDarkMode = localStorage.getItem('darkMode');
-      const systemPrefersDark = window.matchMedia && 
-        window.matchMedia('(prefers-color-scheme: dark)').matches;
       
-      const darkMode = storedDarkMode === 'true' || 
-        (storedDarkMode === null && systemPrefersDark);
+      // Default to dark if no preference is stored (storedDarkMode === null)
+      // Otherwise use the stored preference
+      const darkMode = storedDarkMode !== 'false';
       
       setIsDark(darkMode);
       
@@ -48,11 +47,11 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     checkDarkMode();
     setMounted(true);
     
-    // Listen for system preference changes
+    // Listen for system preference changes (optional, but keep for completeness)
     if (window.matchMedia) {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleChange = (e: MediaQueryListEvent) => {
-        // Only auto-switch if user hasn't set a preference
+        // Only auto-switch if user hasn't set a preference manually
         if (localStorage.getItem('darkMode') === null) {
           setIsDark(e.matches);
           if (e.matches) {
@@ -93,7 +92,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
   };
 
-  // Prevent flash of wrong theme
+  // Prevent flash of wrong theme by waiting for mount
   if (!mounted) {
     return <>{children}</>;
   }
