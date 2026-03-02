@@ -250,7 +250,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
           </div>
 
           <div className="flex items-center gap-2">
-            {!showBriefing && (
+            {!showBriefing && !isResting && (
               <>
                 <AnimatePresence>
                   {correctStreak >= 3 && (
@@ -289,7 +289,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto px-4 py-4 md:p-12 no-scrollbar bg-background relative">
-        <div className="max-w-xl mx-auto w-full h-full">
+        <div className="max-w-xl mx-auto w-full h-full flex flex-col items-center justify-center">
           <AnimatePresence mode="wait">
             {showBriefing ? (
               <motion.div
@@ -297,7 +297,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="flex flex-col h-full space-y-6 pt-4 pb-10"
+                className="flex flex-col w-full space-y-6"
               >
                 <div className="text-center space-y-3">
                   <div className="w-16 h-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center mx-auto border-2 border-primary/20 shadow-xl">
@@ -335,7 +335,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   </div>
                 </div>
 
-                <div className="mt-auto">
+                <div className="pt-4">
                   <Button 
                     onClick={handleStartExam}
                     className="w-full h-16 rounded-[1.75rem] font-black text-lg uppercase tracking-widest gap-3 shadow-2xl shadow-primary/30 active:scale-95 transition-all"
@@ -345,88 +345,14 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   </Button>
                 </div>
               </motion.div>
-            ) : (
-              <motion.div
-                key={currentQuestion.id}
-                initial={{ x: 20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -20, opacity: 0 }}
-                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                className="space-y-4"
+            ) : isResting ? (
+              <motion.div 
+                key="calibration"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05 }}
+                className="w-full max-w-[440px] bg-card rounded-[3.5rem] shadow-2xl border border-border/50 overflow-hidden flex flex-col"
               >
-                <div className="flex items-center justify-between">
-                  <Badge variant="outline" className="w-fit px-3 py-0.5 font-black uppercase text-[8px] tracking-[0.2em] border-primary/20 text-primary bg-primary/5 rounded-lg">
-                    Sector {currentPhaseIndex + 1}: {currentQuestion.subject}
-                  </Badge>
-                  <AnimatePresence>
-                    {comboPop && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.5 }}
-                        animate={{ opacity: 1, y: -20, scale: 1.2 }}
-                        exit={{ opacity: 0, scale: 1.5 }}
-                        className="text-emerald-500 font-black text-xs uppercase italic tracking-tighter"
-                      >
-                        Perfect Trace!
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                <h2 className="text-base md:text-lg font-black leading-snug text-foreground text-center tracking-tight px-2">
-                  {currentQuestion.text}
-                </h2>
-
-                <div className="grid grid-cols-1 gap-2 pt-1">
-                  {currentQuestion.options.map((opt, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ y: 10, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: i * 0.05 }}
-                    >
-                      <button 
-                        onClick={() => handleAnswer(opt)}
-                        className={cn(
-                          "w-full flex items-center p-3 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] group relative overflow-hidden text-left",
-                          selectedOption === opt 
-                            ? "border-primary bg-primary/5 ring-2 ring-primary/5 shadow-md" 
-                            : "border-border/60 bg-card hover:bg-muted/10 shadow-sm"
-                        )}
-                      >
-                        <div className={cn(
-                          "w-8 h-8 rounded-xl border-2 flex items-center justify-center mr-3 font-black text-[10px] transition-all shrink-0",
-                          selectedOption === opt 
-                            ? "bg-primary border-primary text-primary-foreground" 
-                            : "border-border/50 bg-muted/20 text-muted-foreground"
-                        )}>
-                          {String.fromCharCode(65+i)}
-                        </div>
-                        <span className="text-sm font-bold text-foreground leading-tight flex-1 pr-4">{opt}</span>
-                        
-                        {selectedOption === opt && (
-                          <div className="absolute right-3">
-                            <Sparkles className="w-3.5 h-3.5 text-primary animate-sparkle" />
-                          </div>
-                        )}
-                      </button>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Phase Calibration Overlay (Inline Replacement for Dialog) */}
-        <AnimatePresence>
-          {isResting && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[3000] bg-background flex flex-col items-center justify-center p-4"
-            >
-              <div className="w-full max-w-[440px] bg-card rounded-[3.5rem] shadow-2xl border border-border/50 overflow-hidden flex flex-col">
                 <div className="bg-primary/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
                   <motion.div 
                     initial={{ scale: 0.8, opacity: 0 }} 
@@ -480,21 +406,89 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                     <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            ) : (
+              <motion.div
+                key={currentQuestion.id}
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -20, opacity: 0 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="space-y-6 w-full"
+              >
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline" className="w-fit px-3 py-0.5 font-black uppercase text-[8px] tracking-[0.2em] border-primary/20 text-primary bg-primary/5 rounded-lg">
+                    Sector {currentPhaseIndex + 1}: {currentQuestion.subject}
+                  </Badge>
+                  <AnimatePresence>
+                    {comboPop && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.5 }}
+                        animate={{ opacity: 1, y: -20, scale: 1.2 }}
+                        exit={{ opacity: 0, scale: 1.5 }}
+                        className="text-emerald-500 font-black text-xs uppercase italic tracking-tighter"
+                      >
+                        Perfect Trace!
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <h2 className="text-lg md:text-xl font-black leading-snug text-foreground text-center tracking-tight px-2">
+                  {currentQuestion.text}
+                </h2>
+
+                <div className="grid grid-cols-1 gap-2.5 pt-2">
+                  {currentQuestion.options.map((opt, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ y: 10, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: i * 0.05 }}
+                    >
+                      <button 
+                        onClick={() => handleAnswer(opt)}
+                        className={cn(
+                          "w-full flex items-center p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] group relative overflow-hidden text-left",
+                          selectedOption === opt 
+                            ? "border-primary bg-primary/5 ring-4 ring-primary/5 shadow-md" 
+                            : "border-border/60 bg-card hover:bg-muted/10 shadow-sm"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-9 h-9 rounded-xl border-2 flex items-center justify-center mr-4 font-black text-xs transition-all shrink-0",
+                          selectedOption === opt 
+                            ? "bg-primary border-primary text-primary-foreground shadow-lg" 
+                            : "border-border/50 bg-muted/20 text-muted-foreground"
+                        )}>
+                          {String.fromCharCode(65+i)}
+                        </div>
+                        <span className="text-sm font-bold text-foreground leading-tight flex-1 pr-4">{opt}</span>
+                        
+                        {selectedOption === opt && (
+                          <div className="absolute right-4">
+                            <Sparkles className="w-4 h-4 text-primary animate-sparkle" />
+                          </div>
+                        )}
+                      </button>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </main>
 
       {/* Persistent Footer */}
       <footer className="shrink-0 border-t bg-card/95 backdrop-blur-xl px-4 pb-safe z-50">
         <div className="h-14 flex items-center justify-between w-full max-xl mx-auto">
-          {!showBriefing && (
+          {!showBriefing && !isResting && (
             <>
               <Button 
                 variant="ghost" 
                 onClick={handleFlag} 
-                disabled={!!answers[currentQuestion.id] || isResting}
+                disabled={!!answers[currentQuestion.id]}
                 className="rounded-xl px-4 h-9 font-black text-[9px] uppercase tracking-widest hover:bg-muted active:scale-90 disabled:opacity-20 transition-all gap-2"
               >
                 <Bookmark className={cn("w-3.5 h-3.5", flaggedIndices.has(currentIdx) && "fill-current text-orange-500")} />
@@ -506,6 +500,11 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                 <p className="text-[7px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">Overall Trace</p>
               </div>
             </>
+          )}
+          {isResting && (
+            <div className="flex-1 flex items-center justify-center text-[9px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-40">
+              Calibration Protocol Active
+            </div>
           )}
         </div>
       </footer>
