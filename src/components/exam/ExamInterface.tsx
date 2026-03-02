@@ -485,7 +485,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       {/* Phase Calibration Dialog - Strictly Persistent */}
       <Dialog open={isResting} onOpenChange={() => {}}>
         <DialogContent 
-          className="rounded-[3rem] bg-card border-none shadow-[0_40px_120px_rgba(0,0,0,0.5)] p-0 max-w-[400px] overflow-hidden outline-none z-[2100]" 
+          className="rounded-[3rem] bg-card border-none shadow-[0_40px_120px_rgba(0,0,0,0.5)] p-0 max-w-[400px] overflow-hidden outline-none z-[2102]" 
           persistent={true}
           hideCloseButton={true}
         >
@@ -546,7 +546,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
       {/* Confirmation Dialogs */}
       <Dialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
-        <DialogContent className="rounded-[2rem] bg-card border-none shadow-2xl p-6 max-w-xs z-[2100] outline-none">
+        <DialogContent className="rounded-[2rem] bg-card border-none shadow-2xl p-6 max-w-xs z-[2102] outline-none">
           <div className="text-center space-y-5">
             <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto border-2 border-primary/20 shadow-lg">
               <Zap className="w-7 h-7 text-primary fill-current" />
@@ -570,7 +570,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       </Dialog>
 
       <Dialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-6 max-w-xs z-[2100] outline-none">
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-6 max-w-xs z-[2102] outline-none">
           <div className="text-center space-y-5">
             <div className="w-14 h-14 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto border-2 border-rose-500/20 shadow-lg">
               <AlertTriangle className="w-7 h-7 text-rose-600" />
