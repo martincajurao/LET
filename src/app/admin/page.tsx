@@ -39,7 +39,9 @@ import {
   ArrowUpCircle,
   Info,
   Timer,
-  Minus
+  Minus,
+  Lightbulb,
+  Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -102,6 +104,7 @@ import { getRankData } from '@/lib/xp-system';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { motion } from "framer-motion";
+import { generateDailyQuestion } from '@/ai/flows/generate-qotd-flow';
 
 export default function AdminDashboard() {
   const firestore = useFirestore();
@@ -116,7 +119,7 @@ export default function AdminDashboard() {
     userCount: 0,
     questionCount: 0,
     resultCount: 0,
-    activeQuests: 0
+    activeQuests: 4
   });
 
   // Global Config States
@@ -125,6 +128,10 @@ export default function AdminDashboard() {
   const [configNote, setConfigNote] = useState("");
   const [savingSettings, setSavingSettings] = useState(false);
   
+  // Daily Insight State
+  const [dailyInsight, setDailyInsight] = useState<any>(null);
+  const [isRegeneratingQotd, setIsRegeneratingQotd] = useState(false);
+
   // Version Control States
   const [versionInfo, setVersionInfo] = useState({
     version: "1.0.0",
@@ -188,6 +195,13 @@ export default function AdminDashboard() {
         setConfigNote(data.note || "");
       }
 
+      // Daily Insight Fetch
+      const insightRef = doc(firestore, "system_configs", "daily_insight");
+      const insightDoc = await getDoc(insightRef);
+      if (insightDoc.exists()) {
+        setDailyInsight(insightDoc.data());
+      }
+
       // Version Config Fetch
       const versionRef = doc(firestore, "app_config", "version");
       const versionDoc = await getDoc(versionRef);
@@ -223,6 +237,37 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => { if (firestore) { fetchData(); fetchUsers(); } }, [firestore]);
+
+  const handleRegenerateQotd = async () => {
+    if (!firestore) return;
+    setIsRegeneratingQotd(true);
+    try {
+      const freshQuestion = await generateDailyQuestion();
+      const today = new Date().toISOString().split('T')[0];
+      const qotdData = {
+        ...freshQuestion,
+        dateGenerated: today,
+        timestamp: Date.now()
+      };
+      
+      const docRef = doc(firestore, 'system_configs', 'daily_insight');
+      await setDoc(docRef, qotdData);
+      setDailyInsight(qotdData);
+      
+      toast({ 
+        title: "Insight Regenerated", 
+        description: "Fresh pedagogical content deployed to all educators." 
+      });
+    } catch (e) {
+      toast({ 
+        variant: "destructive", 
+        title: "Regeneration Failed", 
+        description: "AI engine could not commit fresh insight." 
+      });
+    } finally {
+      setIsRegeneratingQotd(false);
+    }
+  };
 
   const filteredUsers = useMemo(() => users.filter(u => 
     (u.email?.toLowerCase() || "").includes(userSearchQuery.toLowerCase()) || 
@@ -400,7 +445,7 @@ export default function AdminDashboard() {
               {[
                 { label: 'Total Educators', value: stats.userCount, icon: <Users className="w-5 h-5 text-blue-500" />, color: 'bg-blue-500/10' },
                 { label: 'Vault Items', value: stats.questionCount, icon: <Brain className="w-5 h-5 text-purple-500" />, color: 'bg-purple-500/10' },
-                { label: 'Simulations Run', value: stats.resultCount, icon: <History className="w-5 h-5 text-emerald-500" />, color: 'bg-emerald-500/10' },
+                { label: 'Exams Run', value: stats.resultCount, icon: <History className="w-5 h-5 text-emerald-500" />, color: 'bg-emerald-500/10' },
                 { label: 'Active Quests', value: stats.activeQuests, icon: <CompassIcon className="w-5 h-5 text-amber-500" />, color: 'bg-amber-500/10' }
               ].map((stat, i) => (
                 <Card key={i} className="android-surface border-none shadow-lg rounded-[2rem] p-6 text-center transition-all hover:shadow-xl group">
@@ -668,6 +713,44 @@ export default function AdminDashboard() {
               </Card>
 
               <div className="space-y-6">
+                <Card className="border-none shadow-xl rounded-[2.5rem] bg-card border border-border/50 overflow-hidden">
+                  <CardHeader className="bg-primary/5 p-8 border-b">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner">
+                        <Lightbulb className="w-6 h-6 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-black text-lg leading-none">Daily Insight</h4>
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Regenerate QOTD</p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-8 space-y-6">
+                    {dailyInsight ? (
+                      <div className="space-y-4">
+                        <div className="p-4 bg-muted/20 rounded-2xl border border-border/50 text-[11px] font-medium leading-relaxed italic text-muted-foreground">
+                          "{dailyInsight.text}"
+                        </div>
+                        <div className="flex items-center justify-between text-[9px] font-black uppercase text-muted-foreground tracking-widest opacity-60">
+                          <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {dailyInsight.dateGenerated}</span>
+                          <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> Shared Visibility</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="py-4 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-40">No active insight found.</div>
+                    )}
+                    
+                    <Button 
+                      onClick={handleRegenerateQotd}
+                      disabled={isRegeneratingQotd}
+                      className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-lg active:scale-95 transition-all"
+                    >
+                      {isRegeneratingQotd ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                      Regenerate Insight
+                    </Button>
+                  </CardContent>
+                </Card>
+
                 <Card className="border-none shadow-xl rounded-[2.5rem] bg-amber-500/5 border border-amber-500/20 p-8 space-y-6">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center shadow-inner">
@@ -690,12 +773,6 @@ export default function AdminDashboard() {
                     <div className="flex items-center justify-between p-4 bg-card rounded-2xl border border-amber-500/10">
                       <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Streak Recovery</span>
                       <Badge className="bg-amber-100 text-amber-700 font-black text-[10px]">50 Credits</Badge>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-amber-500/10 rounded-2xl border-2 border-dashed border-amber-500/20">
-                    <div className="flex items-start gap-3">
-                      <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                      <p className="text-[10px] font-bold text-amber-800 leading-relaxed uppercase tracking-tight">These economy values are currently tied to system constants. Dynamic runtime adjustment pending future sync.</p>
                     </div>
                   </div>
                 </Card>
