@@ -44,12 +44,16 @@ export default function TasksPage() {
 
         // Generate fresh if stale or missing (Lazy Client Generation)
         setLoadingQotd(true);
+        // This is now a client-side Puter.js call
         const freshQuestion = await generateDailyQuestion();
+        
         const qotdData = {
           ...freshQuestion,
           dateGenerated: today,
           timestamp: Date.now()
         };
+        
+        // Save to global cache so other users don't trigger AI call
         await setDoc(docRef, qotdData);
         setDailyQuestion({ ...qotdData, id: 'qotd' } as Question);
       } catch (e) {

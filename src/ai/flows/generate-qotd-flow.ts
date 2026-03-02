@@ -1,11 +1,11 @@
-'use server';
 /**
- * @fileOverview A Genkit flow to generate high-fidelity situational LET questions.
+ * @fileOverview A Puter.js-powered flow to generate high-fidelity situational LET questions.
  * This flow is used to create the "Question of the Day" shared by all users.
+ * Note: This function runs in the browser environment since Puter is loaded via script tag.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { puter } from '@/ai/puter';
+import { z } from 'zod';
 
 const QuestionSchema = z.object({
   text: z.string().describe('A comprehensive situational classroom management or pedagogical scenario.'),
@@ -16,21 +16,25 @@ const QuestionSchema = z.object({
   explanation: z.string().describe('Concise pedagogical reasoning (max 2 sentences).')
 });
 
-export async function generateDailyQuestion() {
-  return generateQotdFlow();
-}
+export type DailyQuestion = z.infer<typeof QuestionSchema>;
 
-const generateQotdFlow = ai.defineFlow(
-  {
-    name: 'generateQotdFlow',
-    inputSchema: z.void(),
-    outputSchema: QuestionSchema,
-  },
-  async () => {
-    const { output } = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
-      output: { schema: QuestionSchema },
-      prompt: `You are an expert Board Exam (LET) Professor. Generate one unique, high-fidelity situational question for Filipino educators.
+/**
+ * Generates a fresh SITUATIONAL question using Puter AI.
+ * This runs on the client-side.
+ */
+export async function generateDailyQuestion(): Promise<DailyQuestion> {
+  try {
+    // Check if we're in browser environment
+    if (typeof window === 'undefined') {
+      throw new Error("Puter AI is only available in browser environment");
+    }
+
+    if (!puter || !puter.ai) {
+      console.warn("Puter AI not available - using fallback question");
+      return getFallbackQuestion();
+    }
+
+    const prompt = `You are an expert Board Exam (LET) Professor. Generate one unique, high-fidelity situational question for Filipino educators.
       
       Requirements:
       1. Scenario: Focus on professional ethics, classroom management, or modern pedagogical theories (Vygotsky, Piaget, Differentiated Instruction).
@@ -38,10 +42,48 @@ const generateQotdFlow = ai.defineFlow(
       3. Options: Provide 4 plausible choices. Distractors should be common teacher mistakes or partially correct but not the best practice.
       4. Language: Clear, professional English as used in the board exams.
       
-      Return as a structured JSON object.`,
+      Return a JSON object with:
+      - text: string (the comprehensive scenario)
+      - options: array of exactly 4 strings
+      - correctAnswer: string (must be one of the options)
+      - subject: "Professional Education"
+      - difficulty: "hard"
+      - explanation: string (max 2 sentences)
+      
+      ONLY return JSON object.`;
+
+    const response = await puter.ai.chat(prompt, {
+      model: 'gpt-5-nano',
     });
 
-    if (!output) throw new Error('AI failed to generate daily insight.');
-    return output;
+    const rawText = response.toString() || "{}";
+    const jsonStr = rawText.substring(rawText.indexOf('{'), rawText.lastIndexOf('}') + 1);
+    const result = JSON.parse(jsonStr) as DailyQuestion;
+
+    // Validate result structure roughly
+    if (!result.text || !result.options || result.options.length !== 4) {
+      throw new Error("Invalid AI response structure");
+    }
+
+    return result;
+  } catch (e: any) {
+    console.error("Puter Daily Question Error:", e);
+    return getFallbackQuestion();
   }
-);
+}
+
+function getFallbackQuestion(): DailyQuestion {
+  return {
+    text: "Teacher Anna noticed that some of her Grade 7 students are consistently underperforming in collaborative tasks but excel in individual assessments. Following Vygotsky's Zone of Proximal Development, what should be her first strategic intervention to bridge this gap?",
+    options: [
+      "Provide scaffolding through peer-tutoring with high-performing classmates",
+      "Assign more individual projects to capitalize on their current strengths",
+      "Request a meeting with parents to discuss behavioral issues in groups",
+      "Re-administer the individual assessments to verify the students' scores"
+    ],
+    correctAnswer: "Provide scaffolding through peer-tutoring with high-performing classmates",
+    subject: "Professional Education",
+    difficulty: "hard",
+    explanation: "Scaffolding within the ZPD involves providing temporary support (peer tutoring) to help students perform tasks they cannot yet do independently."
+  };
+}
