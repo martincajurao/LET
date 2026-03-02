@@ -65,7 +65,6 @@ export function Navbar() {
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [isImmersive, setIsImmersive] = useState(false);
 
-  // Check for immersive mode (during exams)
   useEffect(() => {
     const checkImmersive = () => {
       setIsImmersive(document.body.classList.contains('immersive-mode'));
@@ -76,13 +75,11 @@ export function Navbar() {
     return () => observer.disconnect();
   }, []);
 
-  // Real-time ticker for cooldowns
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // INSTANT REACTIVE COUNTS
   const { availableTasksCount, claimableTasksCount } = useMemo(() => {
     if (!user) return { availableTasksCount: 0, claimableTasksCount: 0 };
 
@@ -206,7 +203,7 @@ export function Navbar() {
             </Link>
           </div>
 
-          {user && (
+          {user ? (
             <div className="flex items-center gap-2 sm:gap-4">
               <div className="flex items-center gap-1 sm:gap-2">
                 <div className="hidden md:block">
@@ -307,6 +304,8 @@ export function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+          ) : (
+            <Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest border-primary/20 opacity-40">Guest Educator</Badge>
           )}
         </div>
       </nav>

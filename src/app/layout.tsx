@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#a7d9ed',
+  themeColor: '#0a1a1f',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -51,7 +51,7 @@ export default function RootLayout({
                 (function() {
                   try {
                     var stored = localStorage.getItem('darkMode');
-                    // Default to dark theme (stored !== 'false' handles null and 'true')
+                    // Force dark theme as default (null or 'true' results in dark)
                     if (stored !== 'false') {
                       document.documentElement.classList.add('dark');
                     }
@@ -73,7 +73,7 @@ export default function RootLayout({
                 <Navbar />
               </Suspense>
               
-              <main className="pb-safe min-h-screen relative z-0">
+              <main className="min-h-screen relative z-0">
                 <PageTransition>
                   <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
                     {children}

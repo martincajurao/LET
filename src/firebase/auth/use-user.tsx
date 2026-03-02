@@ -212,7 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     lastRewardedRank: 1,
     isPro: true,
     streakCount: 14,
-    majorship: 'Mathematics',
+    majorship: 'English',
     lastActiveDate: Date.now(),
     lastTaskReset: Date.now(),
     unlockedTracks: ['General Education', 'Professional Education', 'Specialization', 'all'],
@@ -257,11 +257,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await signInAnonymously(auth);
       toast({ variant: "reward", title: "Test Session Active", description: "Authenticated via Firebase trace." });
     } catch (e: any) {
-      console.warn('Firebase Auth Restricted (Bypassing to Virtual Trace):', e.message);
-      const virtualUid = `bypass_${Math.random().toString(36).substring(2, 9)}`;
+      console.warn('Bypassing to Virtual Persistent Trace:', e.message);
+      const virtualUid = localStorage.getItem('virtual_educator_uid') || `bypass_${Math.random().toString(36).substring(2, 9)}`;
       localStorage.setItem('virtual_educator_uid', virtualUid);
       await handleVirtualSession(virtualUid);
-      toast({ variant: "reward", title: "Virtual Trace Active", description: "Using persistent local trace." });
+      toast({ variant: "reward", title: "Virtual Trace Active", description: "Using persistent local session." });
     } finally {
       setLoading(false);
     }

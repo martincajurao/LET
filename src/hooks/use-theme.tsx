@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -27,13 +26,11 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const [isDark, setIsDark] = useState(true); // Default to dark
   const [mounted, setMounted] = useState(false);
 
-  // Check preference and localStorage on mount
   useEffect(() => {
     const checkDarkMode = () => {
       const storedDarkMode = localStorage.getItem('darkMode');
       
-      // Default to dark if no preference is stored (storedDarkMode === null)
-      // Otherwise use the stored preference
+      // Default to dark if no preference is stored
       const darkMode = storedDarkMode !== 'false';
       
       setIsDark(darkMode);
@@ -48,11 +45,9 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     checkDarkMode();
     setMounted(true);
     
-    // Listen for system preference changes
     if (window.matchMedia) {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleChange = (e: MediaQueryListEvent) => {
-        // Only auto-switch if user hasn't set a preference manually
         if (localStorage.getItem('darkMode') === null) {
           setIsDark(e.matches);
           if (e.matches) {
@@ -93,7 +88,6 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
   };
 
-  // Prevent flash of wrong theme by waiting for mount
   if (!mounted) {
     return <>{children}</>;
   }
