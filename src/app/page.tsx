@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
@@ -51,7 +50,8 @@ import {
   FlaskConical,
   TrendingUp,
   BrainCircuit,
-  History
+  History,
+  Activity
 } from "lucide-react";
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
@@ -152,7 +152,6 @@ function LetsPrepContent() {
   const [loadingMessage, setLoadingMessage] = useState("");
   const [showAuthModal, setShowAuthModal] = useState(false);
   
-  // Results Gating State
   const [showResultUnlock, setShowResultUnlock] = useState(false);
   const [isResultsUnlocked, setIsResultsUnlocked] = useState(false);
   const [examStatsForUnlock, setExamStatsForUnlock] = useState({ 
@@ -184,6 +183,8 @@ function LetsPrepContent() {
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   const startParam = searchParams.get('start');
+
+  const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
   const startExam = useCallback(async (category: string) => {
     if (!user) {
@@ -632,16 +633,33 @@ function LetsPrepContent() {
                       
                       <div className="flex flex-wrap gap-4 pt-2">
                         {user ? (
-                          <button 
-                            disabled={isCalibrating} 
-                            onClick={() => startExam('all')} 
-                            className="h-16 md:h-20 px-10 md:px-14 rounded-2xl font-black text-lg md:text-xl gap-4 shadow-2xl shadow-primary/40 active:scale-95 transition-all group relative overflow-hidden bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center"
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                            {isCalibrating ? <Loader2 className="animate-spin w-7 h-7" /> : <Zap className="w-7 h-7 fill-current" />} 
-                            <span>Launch Full Battle</span> 
-                            <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
-                          </button>
+                          <div className="space-y-4 w-full sm:w-auto">
+                            <button 
+                              disabled={isCalibrating} 
+                              onClick={() => startExam('all')} 
+                              className="h-16 md:h-20 px-10 md:px-14 rounded-2xl font-black text-lg md:text-xl gap-4 shadow-2xl shadow-primary/40 active:scale-95 transition-all group relative overflow-hidden bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center"
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                              {isCalibrating ? <Loader2 className="animate-spin w-7 h-7" /> : <Zap className="w-7 h-7 fill-current" />} 
+                              <span>Launch Full Battle</span> 
+                              <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                            </button>
+                            
+                            {rankData && (
+                              <div className="flex items-center gap-3 bg-card/50 backdrop-blur-md p-3 rounded-2xl border border-border/50 shadow-sm animate-in slide-in-from-left duration-700">
+                                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                                  <TrendingUp className="w-4 h-4 text-primary" />
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                  <div className="flex justify-between text-[8px] font-black uppercase text-muted-foreground tracking-widest">
+                                    <span>Next Rank: {rankData.rank + 1}</span>
+                                    <span>{Math.round(rankData.progress)}%</span>
+                                  </div>
+                                  <Progress value={rankData.progress} className="h-1" />
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <motion.div 
                             className="w-full sm:w-fit"
@@ -787,7 +805,7 @@ function LetsPrepContent() {
                         </AnimatePresence>
                       </div>
 
-                      <Button onClick={() => window.location.href = apkInfo?.downloadUrl || GITHUB_APK_URL} disabled={isApkLoading} className="w-full h-16 rounded-[1.75rem] font-black gap-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-2xl shadow-emerald-500/30 active:scale-95 transition-all">
+                      <Button onClick={() => window.location.href = apkInfo?.downloadUrl || GITHUB_APK_URL} disabled={isApkLoading} className="w-full h-16 rounded-[1.75rem] font-black gap-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-2xl shadow-emerald-500/30 active:scale-95 transition-all text-[10px] uppercase tracking-widest">
                         {isApkLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <Download className="w-5 h-5" />} Direct Install
                       </Button>
                     </div>

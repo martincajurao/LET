@@ -30,7 +30,8 @@ import {
   ChevronRight,
   Sparkles,
   Play,
-  ShieldAlert
+  ShieldAlert,
+  Package
 } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
@@ -189,9 +190,16 @@ export function DailyTaskDashboard() {
             </div>
             <div className="flex flex-col items-end">
               <span className="text-[8px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-1">Career Streak</span>
-              <div className="flex items-center gap-2 bg-orange-500/10 px-4 py-1.5 rounded-2xl border-2 border-orange-500/20 shadow-sm">
-                <Flame className="w-5 h-5 text-orange-500 fill-current animate-pulse" />
+              <div className="flex items-center gap-2 bg-orange-500/10 px-4 py-1.5 rounded-2xl border-2 border-orange-500/20 shadow-sm relative group cursor-help">
+                <Flame className="w-5 h-5 text-orange-500 fill-current animate-pulse group-hover:scale-125 transition-transform" />
                 <span className="text-2xl font-black text-orange-600">{user?.streakCount || 0}</span>
+                {user?.streakCount && user.streakCount >= 7 && (
+                  <motion.div 
+                    animate={{ rotate: 360 }} 
+                    transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0 border-2 border-dashed border-orange-500/30 rounded-2xl" 
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -209,12 +217,16 @@ export function DailyTaskDashboard() {
             {tasks.map((task) => {
               const isComplete = task.current >= task.goal;
               return (
-                <div key={task.id} className={cn(
-                  "android-surface p-4 rounded-2xl flex items-center justify-between border-2", 
-                  task.isClaimed ? "opacity-40 border-transparent grayscale bg-muted/20" : 
-                  isComplete ? "bg-accent/5 border-primary/20 ring-4 ring-primary/5" : 
-                  "border-border/50"
-                )}>
+                <motion.div 
+                  key={task.id} 
+                  whileHover={!task.isClaimed ? { x: 4 } : {}}
+                  className={cn(
+                    "android-surface p-4 rounded-2xl flex items-center justify-between border-2", 
+                    task.isClaimed ? "opacity-40 border-transparent grayscale bg-muted/20" : 
+                    isComplete ? "bg-accent/5 border-primary/20 ring-4 ring-primary/5 shadow-lg" : 
+                    "border-border/50"
+                  )}
+                >
                   <div className="flex items-center gap-4">
                     <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shadow-inner shrink-0", task.bgColor, task.color)}>{task.icon}</div>
                     <div className="min-w-0">
@@ -233,14 +245,15 @@ export function DailyTaskDashboard() {
                        <span className="text-[9px] font-black text-muted-foreground opacity-60">{task.current}/{task.goal}</span>}
                     </div>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            <Button onClick={() => handleClaimReward()} disabled={!user || claiming || !canClaimAny} className={cn("h-16 rounded-2xl font-black text-base gap-3 shadow-xl group active:scale-95 transition-all", canClaimAny ? "bg-primary text-primary-foreground shadow-primary/30 animate-focus-glow" : "bg-muted text-muted-foreground")}>
-              {claiming ? <Loader2 className="w-5 h-5 animate-spin" /> : canClaimAny ? <Gift className="w-5 h-5" /> : <Star className="w-5 h-5" />}
+            <Button onClick={() => handleClaimReward()} disabled={!user || claiming || !canClaimAny} className={cn("h-16 rounded-2xl font-black text-base gap-3 shadow-xl group active:scale-95 transition-all relative overflow-hidden", canClaimAny ? "bg-primary text-primary-foreground shadow-primary/30 animate-focus-glow" : "bg-muted text-muted-foreground")}>
+              {canClaimAny && <motion.div animate={{ x: [-100, 200] }} transition={{ duration: 2, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />}
+              {claiming ? <Loader2 className="w-5 h-5 animate-spin" /> : canClaimAny ? <Gift className="w-5 h-5" /> : <Package className="w-5 h-5 opacity-40" />}
               {claiming ? 'SYNCING...' : canClaimAny ? `CLAIM ${estimatedReward} CREDITS` : 'STAY CONSISTENT'}
             </Button>
             <Button variant="outline" onClick={() => handleClaimReward(true)} disabled={recovering} className="h-16 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] gap-2 border-2 border-orange-500/20 text-orange-600 hover:bg-orange-50 active:scale-95 transition-all">

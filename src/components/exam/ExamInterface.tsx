@@ -29,7 +29,8 @@ import {
   Info,
   Shield,
   Target,
-  TrendingUp
+  TrendingUp,
+  Activity
 } from "lucide-react";
 import { Question } from "@/app/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -59,6 +60,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isResting, setIsResting] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [comboPop, setComboPop] = useState(false);
   const autoAdvanceTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -68,7 +70,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     };
   }, []);
 
-  // Phased Grouping Logic - LOCKED for Professional Multi-Track Traces
   const phases = useMemo(() => {
     const p: Phase[] = [];
     let currentPhase: Phase | null = null;
@@ -83,7 +84,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     return p;
   }, [questions]);
 
-  // RESTORED: Continuous only for single-subject tracks
   const isContinuous = useMemo(() => phases.length <= 1, [phases]);
 
   const currentPhaseIndex = useMemo(() => {
@@ -132,6 +132,8 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     
     if (isCorrect) {
       setCorrectStreak(prev => prev + 1);
+      setComboPop(true);
+      setTimeout(() => setComboPop(false), 1000);
     } else {
       setCorrectStreak(0);
     }
@@ -147,7 +149,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         return;
       }
 
-      // RESTORED: Multi-phase traces trigger professional rest
       if (isEndOfPhase && !isContinuous) {
         setIsResting(true);
       } else {
@@ -218,10 +219,10 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                       initial={{ scale: 0.5, opacity: 0, x: 20 }}
                       animate={{ scale: 1, opacity: 1, x: 0 }}
                       exit={{ scale: 0.5, opacity: 0 }}
-                      className="flex items-center gap-1 px-2 py-0.5 bg-orange-500 text-white rounded-full shadow-lg"
+                      className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full shadow-lg ring-2 ring-white/20"
                     >
-                      <Flame className="w-3 h-3 fill-current" />
-                      <span className="text-[8px] font-black uppercase">{correctStreak}</span>
+                      <Flame className="w-3.5 h-3.5 fill-current animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-tighter">{correctStreak} COMBO</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -406,10 +407,22 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                 transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
                 className="space-y-4"
               >
-                <div className="flex items-center justify-center">
+                <div className="flex items-center justify-between">
                   <Badge variant="outline" className="px-3 py-0.5 font-black uppercase text-[8px] tracking-[0.2em] border-primary/20 text-primary bg-primary/5 rounded-lg">
                     {currentQuestion.subject}
                   </Badge>
+                  <AnimatePresence>
+                    {comboPop && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.5 }}
+                        animate={{ opacity: 1, y: -20, scale: 1.2 }}
+                        exit={{ opacity: 0, scale: 1.5 }}
+                        className="text-emerald-500 font-black text-xs uppercase italic tracking-tighter"
+                      >
+                        Perfect Trace!
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 <h2 className="text-base md:text-lg font-black leading-snug text-foreground text-center tracking-tight px-2">
@@ -490,7 +503,10 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
               {!isComplete && !isResting && (
                 <div className="flex flex-col items-end">
-                  <span className="text-[9px] font-black text-foreground tabular-nums">{answeredCount}/{questions.length} Solved</span>
+                  <div className="flex items-center gap-1">
+                    {correctStreak >= 2 && <Activity className="w-3 h-3 text-emerald-500 animate-pulse" />}
+                    <span className="text-[9px] font-black text-foreground tabular-nums">{answeredCount}/{questions.length} Solved</span>
+                  </div>
                   <p className="text-[7px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">Progress</p>
                 </div>
               )}
