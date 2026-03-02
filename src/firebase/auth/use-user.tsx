@@ -15,8 +15,6 @@ import { auth, firestore } from '../index';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
-import { errorEmitter } from '../error-emitter';
-import { FirestorePermissionError } from '../errors';
 import { Capacitor } from '@capacitor/core';
 
 export interface UserProfile {
@@ -144,24 +142,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth || !firestore) return;
     
     let unsubFromProfile: (() => void) | undefined;
-    const unsubFromAuth = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubFromAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (unsubFromProfile) unsubFromProfile();
       
       if (firebaseUser) {
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
-        unsubFromProfile = onSnapshot(userDocRef, async (snap) => {
-          if (snap.exists()) {
-            const scrubbed = scrubUserData(snap.data(), userRef.current);
+        
+        // Initial check to see if document exists
+        const snap = await getDoc(userDocRef);
+        if (!snap.exists()) {
+          console.log('[Auth] Profile missing, creating new trace...');
+          await createUserProfileInFirestore(firebaseUser);
+        }
+
+        unsubFromProfile = onSnapshot(userDocRef, (profileSnap) => {
+          if (profileSnap.exists()) {
+            const scrubbed = scrubUserData(profileSnap.data(), userRef.current);
             setUser({ ...scrubbed, uid: firebaseUser.uid });
-            setLoading(false);
-          } else {
-            // Profile document doesn't exist, create it
-            const profile = await createUserProfileInFirestore(firebaseUser);
-            setUser(profile);
             setLoading(false);
           }
         }, (error) => {
-          console.error('Firestore Snapshot Error:', error);
+          console.error('Firestore Profile Sync Error:', error);
           setLoading(false);
         });
       } else {
@@ -177,15 +178,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [firestore, auth]);
 
   const createUserProfileInFirestore = async (firebaseUser: any) => {
-    // If it's an anonymous/bypass user, give them special stats
     const isAnonymous = firebaseUser.isAnonymous || firebaseUser.uid.startsWith('bypass');
     
     const newUserProfile: UserProfile = {
       uid: firebaseUser.uid,
-      displayName: isAnonymous ? `Premium Tester (${firebaseUser.uid.substring(0,4)})` : (firebaseUser.displayName || 'Educator'),
+      displayName: isAnonymous ? `Tester_${firebaseUser.uid.substring(0, 4)}` : (firebaseUser.displayName || 'Educator'),
       email: firebaseUser.email || 'anonymous@tester.app',
       photoURL: firebaseUser.photoURL || 'https://picsum.photos/seed/tester/200/200',
-      onboardingComplete: isAnonymous,
+      onboardingComplete: true,
       credits: isAnonymous ? 100 : 20, 
       xp: isAnonymous ? 15000 : 0,
       lastRewardedRank: 1,
@@ -196,7 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       dailyTestsFinished: 0,
       dailyCreditEarned: 0,
       streakCount: isAnonymous ? 14 : 0,
-      majorship: isAnonymous ? 'Mathematics' : undefined,
+      majorship: isAnonymous ? 'Mathematics' : 'English',
       lastActiveDate: Date.now(),
       lastTaskReset: Date.now(),
       lastLoginRewardClaimedAt: 0,
@@ -211,11 +211,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       referralCreditsEarned: 0,
       referralTier: 'Bronze',
       dailyEventEntries: 1,
-      unlockedTracks: isAnonymous ? ['General Education', 'Professional Education', 'Specialization', 'all'] : []
+      unlockedTracks: ['General Education', 'Professional Education', 'Specialization', 'all']
     };
     
-    await setDoc(doc(firestore, 'users', firebaseUser.uid), newUserProfile, { merge: true });
-    return newUserProfile;
+    try {
+      await setDoc(doc(firestore, 'users', firebaseUser.uid), newUserProfile, { merge: true });
+      return newUserProfile;
+    } catch (e) {
+      console.error('[Auth] Failed to create user profile:', e);
+      return null;
+    }
   };
 
   const loginWithGoogle = async () => {
@@ -232,7 +237,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await signInWithPopup(auth!, provider);
       }
     } catch (error: any) {
-      console.error('Sign-In Error:', error);
+      console.error('Google Sign-In Error:', error);
     } finally {
       setLoading(false);
     }
@@ -255,19 +260,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       if (!auth || !firestore) return;
-      // signInAnonymously will trigger onAuthStateChanged which now handles the document logic
       await signInAnonymously(auth);
       toast({ 
         variant: "reward", 
         title: "Test Session Active", 
-        description: "Actual user account established in Firestore." 
+        description: "Anonymous educator trace established." 
       });
     } catch (e) {
       console.error('Bypass login error:', e);
       toast({ 
         variant: "destructive", 
         title: "Bypass Failed", 
-        description: "Could not establish an actual test account." 
+        description: "Check your internet connection." 
       });
     } finally {
       setLoading(false);
