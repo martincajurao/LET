@@ -182,7 +182,7 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="min-h-16 pt-safe flex items-center justify-between px-4 md:px-8 bg-background/80 backdrop-blur-xl border-b sticky top-0 z-[100] shadow-sm">
+      <nav className="pt-safe bg-background/80 backdrop-blur-xl border-b sticky top-0 z-[100] shadow-sm px-4 md:px-8">
         <div className="h-16 flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2.5 group">
