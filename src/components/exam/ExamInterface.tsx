@@ -27,8 +27,7 @@ import {
   Coffee,
   ArrowRight,
   BrainCircuit,
-  CheckCircle2,
-  Clock
+  CheckCircle2
 } from "lucide-react";
 import { Question } from "@/app/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -59,6 +58,9 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const autoAdvanceTimer = useRef<NodeJS.Timeout | null>(null);
 
+  // QuickFire sessions should be continuous (no rest phases)
+  const isContinuous = useMemo(() => questions.length <= 10, [questions]);
+
   useEffect(() => {
     document.body.classList.add('immersive-mode');
     return () => {
@@ -67,6 +69,10 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   }, []);
 
   const phases = useMemo(() => {
+    if (isContinuous) {
+      return [{ name: 'Quick Fire', questions, startIndex: 0 }];
+    }
+
     const p: Phase[] = [];
     let currentPhase: Phase | null = null;
 
@@ -78,7 +84,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       currentPhase.questions.push(q);
     });
     return p;
-  }, [questions]);
+  }, [questions, isContinuous]);
 
   const currentPhaseIndex = useMemo(() => {
     return phases.findIndex(p => 
@@ -131,7 +137,8 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     if (isLastQuestionTotal) return;
 
     autoAdvanceTimer.current = setTimeout(() => {
-      if (isEndOfPhase) {
+      // Bypassing rest phase if continuous mode
+      if (isEndOfPhase && !isContinuous) {
         setIsResting(true);
       } else {
         setCurrentIdx(prev => prev + 1);
@@ -434,7 +441,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       </Dialog>
 
       <Dialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
-        <DialogContent className="rounded-[2rem] bg-card border-none shadow-2xl p-6 max-w-xs z-[2100] outline-none">
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-6 max-w-xs z-[2100] outline-none">
           <div className="text-center space-y-5">
             <div className="w-14 h-14 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto border-2 border-rose-500/20 shadow-lg">
               <AlertTriangle className="w-7 h-7 text-rose-600" />

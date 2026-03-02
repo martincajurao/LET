@@ -19,10 +19,14 @@
 - **Live Stopwatch**: High-visibility simulation clock added to the rest screen for pacing awareness.
 - **Auto-Advance**: Tapping an answer provides a visual highlight and automatically moves to the next question.
 
-### 4. Stability Pass: Resolved Crashes
+### 4. Continuous QuickFire Refactor
+- **Phase Bypass**: Short simulations (≤ 10 items) now bypass rest phases and roadmaps entirely.
+- **Mixed Content**: QuickFire correctly combines questions from all three pedagogical tracks into a single continuous trace.
+
+### 5. Stability Pass: Resolved Crashes
 - Fixed `ReferenceError: ShieldCheck is not defined` in `src/components/ui/mobile-bottom-nav.tsx`.
 - Fixed `ReferenceError: Sparkles is not defined` in `src/app/tasks/page.tsx`.
 - Optimized spacings and safe-area paddings to prevent overlapping UI in Android WebViews.
 
-### 5. Layout: Top Margin Correction
+### 6. Layout: Top Margin Correction
 - Removed redundant `pt-safe` paddings from page containers that were conflicting with the Appbar's own safe-area logic.
