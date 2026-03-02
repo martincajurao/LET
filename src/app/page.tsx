@@ -51,7 +51,9 @@ import {
   TrendingUp,
   BrainCircuit,
   History,
-  Activity
+  Activity,
+  Award,
+  Unlock
 } from "lucide-react";
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
@@ -60,14 +62,14 @@ import { QuickFireResults } from "@/components/exam/QuickFireResults";
 import { ResultUnlockDialog } from "@/components/exam/ResultUnlockDialog";
 import { Question } from "@/app/lib/mock-data";
 import { useUser, useFirestore } from "@/firebase";
-import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp, query, where, limit } from "firebase/firestore";
+import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp, query, where, limit, arrayUnion } from "firebase/firestore";
 import { fetchQuestionsFromFirestore } from "@/lib/db-seed";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, DAILY_AD_LIMIT, MIN_QUICK_FIRE_TIME } from '@/lib/xp-system';
+import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, DAILY_AD_LIMIT, MIN_QUICK_FIRE_TIME, getCareerRankTitle } from '@/lib/xp-system';
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
@@ -135,7 +137,7 @@ const EducationalLoader = ({ message }: { message?: string }) => (
 );
 
 function LetsPrepContent() {
-  const { user, loading: authLoading, loginWithGoogle, loginWithFacebook, bypassLogin, refreshUser } = useUser();
+  const { user, loading: authLoading, loginWithGoogle, loginWithFacebook, bypassLogin, refreshUser, updateProfile } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -159,6 +161,10 @@ function LetsPrepContent() {
     correctAnswers: 0, 
     timeSpent: 0 
   });
+
+  // Track Locked Requirements State
+  const [lockedTrackInfo, setLockedTrackInfo] = useState<any>(null);
+  const [isUnlockingEarly, setIsUnlockingEarly] = useState(false);
   
   const [timePerQuestion, setTimePerQuestion] = useState(60);
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
@@ -195,18 +201,27 @@ function LetsPrepContent() {
     if (!firestore || isStartingRef.current) return;
     isStartingRef.current = true;
 
+    // Check Eligibility First
+    const isLocked = !isTrackUnlocked(rankData?.rank || 1, category, user.unlockedTracks);
+    if (isLocked && category !== 'quickfire') {
+      const modeConfig = getTrackConfig(category, user?.majorship || 'Major');
+      setLockedTrackInfo(modeConfig);
+      isStartingRef.current = false;
+      return;
+    }
+
     if (category === 'quickfire') {
       const now = Date.now();
       const lastQf = Number(user.lastQuickFireTimestamp) || 0;
       if (lastQf + COOLDOWNS.QUICK_FIRE > now) {
-        toast({ variant: "destructive", title: "Access Denied", description: "QuickFire cooldown in effect." });
+        toast({ variant: "destructive", title: "Teaser Cooling Down", description: "Brain Teaser will be ready soon." });
         isStartingRef.current = false;
         return;
       }
     }
 
     setIsCalibrating(true);
-    setLoadingMessage("Calibrating Learning Path...");
+    setLoadingMessage("Syncing Analytical Path...");
     try {
       const questionPool = await fetchQuestionsFromFirestore(firestore);
       let finalQuestions: Question[] = [];
@@ -240,7 +255,7 @@ function LetsPrepContent() {
         finalQuestions = shuffleArray(pool).slice(0, targetLimit);
       }
       
-      if (finalQuestions.length === 0) throw new Error(`Insufficient items found.`);
+      if (finalQuestions.length === 0) throw new Error(`Insufficient trace data.`);
       
       setCurrentQuestions(finalQuestions);
       setActiveSimCategory(category);
@@ -251,11 +266,46 @@ function LetsPrepContent() {
         isStartingRef.current = false;
       }, 300);
     } catch (e: any) { 
-      toast({ variant: "destructive", title: "Simulation Failed", description: e.message }); 
+      toast({ variant: "destructive", title: "Trace Initialization Failed", description: e.message }); 
       setIsCalibrating(false); 
       isStartingRef.current = false;
     }
-  }, [user, firestore, limits, toast]);
+  }, [user, firestore, limits, toast, rankData]);
+
+  const getTrackConfig = (category: string, major: string) => {
+    switch (category) {
+      case 'all': return { id: 'all', name: 'Full Simulation', reqRank: UNLOCK_RANKS.FULL_SIMULATION, cost: 120, icon: <Zap className="w-6 h-6 text-primary" /> };
+      case 'General Education': return { id: 'General Education', name: 'General Education', reqRank: UNLOCK_RANKS.GENERAL_ED, cost: 0, icon: <Languages className="w-6 h-6 text-blue-500" /> };
+      case 'Professional Education': return { id: 'Professional Education', name: 'Professional Education', reqRank: UNLOCK_RANKS.PROFESSIONAL_ED, cost: 30, icon: <BookOpen className="w-6 h-6 text-purple-500" /> };
+      case 'Specialization': case 'Major': return { id: 'Specialization', name: major || 'Specialization', reqRank: UNLOCK_RANKS.SPECIALIZATION, cost: 60, icon: <Star className="w-6 h-6 text-emerald-500" /> };
+      default: return null;
+    }
+  };
+
+  const handleUnlockEarly = async () => {
+    if (!user || !lockedTrackInfo || isUnlockingEarly) return;
+    
+    const cost = lockedTrackInfo.cost;
+    if ((user.credits || 0) < cost) {
+      toast({ variant: "destructive", title: "Vault Restricted", description: `Requires ${cost} AI Credits to bypass rank requirements.` });
+      return;
+    }
+
+    setIsUnlockingEarly(true);
+    try {
+      await updateProfile({
+        credits: increment(-cost),
+        unlockedTracks: arrayUnion(lockedTrackInfo.id) as any
+      });
+      await refreshUser();
+      toast({ variant: "reward", title: "Sector Unlocked!", description: `${lockedTrackInfo.name} is now accessible.` });
+      setLockedTrackInfo(null);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Sync Failed", description: "Could not record unlock trace." });
+    } finally {
+      setIsUnlockingEarly(false);
+    }
+  };
 
   useEffect(() => {
     if (startParam && user && state === 'dashboard' && !isCalibrating) {
@@ -341,9 +391,9 @@ function LetsPrepContent() {
       setIsRefreshing(true);
       try {
         await refreshUser();
-        toast({ title: "Refreshed", description: "Latest data loaded." });
+        toast({ title: "Synchronized", description: "Latest educator metadata loaded." });
       } catch (e) {
-        toast({ variant: "destructive", title: "Refresh Failed", description: "Could not fetch latest data." });
+        toast({ variant: "destructive", title: "Sync Failed", description: "Could not refresh character." });
       } finally {
         setIsRefreshing(false);
         setIsPulling(false);
@@ -362,7 +412,7 @@ function LetsPrepContent() {
     const now = Date.now();
 
     if (isQuickFireMode && timeSpent < MIN_QUICK_FIRE_TIME) {
-      toast({ variant: "destructive", title: "Calibration Divergence", description: "Trace was too rapid. Engage deeply to earn rewards." });
+      toast({ variant: "destructive", title: "Trace Incomplete", description: "Engagement too rapid for reward calibration." });
       setState('dashboard');
       return;
     }
@@ -370,7 +420,7 @@ function LetsPrepContent() {
     setExamAnswers(answers);
     setExamTime(timeSpent);
     setIsCalibrating(true);
-    setLoadingMessage("Syncing Results...");
+    setLoadingMessage("Synchronizing Trace...");
 
     const results = currentQuestions.map(q => {
       const isCorrect = answers[q.id] === q.correctAnswer;
@@ -456,11 +506,11 @@ function LetsPrepContent() {
           timestamp: serverTimestamp()
         });
       }
-      toast({ variant: "reward", title: "Trace Recorded!", description: "Feedback saved." });
+      toast({ variant: "reward", title: "Trace Recorded!", description: "Thank you for contributing to our vault." });
       setFeedbackText("");
       setShowFeedbackModal(false);
     } catch (e) {
-      toast({ variant: "destructive", title: "Sync Failed", description: "Feedback error." });
+      toast({ variant: "destructive", title: "Sync Failed", description: "Could not record professional insight." });
     } finally {
       setIsSubmittingFeedback(false);
     }
@@ -545,7 +595,7 @@ function LetsPrepContent() {
           <div className="p-8 space-y-6">
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Your Suggestions</Label>
-              <Textarea value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} placeholder="Improve the simulation..." className="rounded-2xl min-h-[120px] border-2 p-4 text-sm font-medium resize-none focus:border-primary transition-all" />
+              <Textarea value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} placeholder="Improve the simulation experience..." className="rounded-2xl min-h-[120px] border-2 p-4 text-sm font-medium resize-none focus:border-primary transition-all" />
             </div>
             <DialogFooter className="sm:flex-col gap-3">
               <Button onClick={handleFeedbackSubmit} disabled={isSubmittingFeedback || !feedbackText.trim()} className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-primary/30 active:scale-95 transition-all">
@@ -557,12 +607,12 @@ function LetsPrepContent() {
         </DialogContent>
       </Dialog>
 
+      {/* Persistent Unlock Gate */}
       <ResultUnlockDialog 
         open={showResultUnlock}
         onClose={() => { 
-          if (!isResultsUnlocked) {
+          if (isResultsUnlocked) {
             setShowResultUnlock(false); 
-            setState('dashboard'); 
           }
         }}
         onUnlock={() => { 
@@ -573,6 +623,58 @@ function LetsPrepContent() {
         correctAnswers={examStatsForUnlock.correctAnswers}
         timeSpent={examStatsForUnlock.timeSpent}
       />
+
+      {/* Pre-Exam Eligibility Lock Dialog */}
+      <Dialog open={!!lockedTrackInfo} onOpenChange={(open) => !open && setLockedTrackInfo(null)}>
+        <DialogContent className="rounded-[3rem] bg-card border-none shadow-2xl p-0 max-w-[380px] overflow-hidden outline-none z-[1100]">
+          <div className="bg-primary/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              className="w-24 h-24 bg-card rounded-[2.5rem] flex items-center justify-center shadow-2xl relative z-10 border-2 border-primary/20"
+            >
+              {lockedTrackInfo?.icon}
+              <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary rounded-full flex items-center justify-center border-4 border-card shadow-lg">
+                <Lock className="w-4 h-4 text-primary-foreground" />
+              </div>
+            </motion.div>
+            <motion.div 
+              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} 
+              transition={{ duration: 4, repeat: Infinity }}
+              className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent z-0" 
+            />
+          </div>
+          
+          <div className="p-8 text-center space-y-8">
+            <div className="space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-1">Sector Restricted</span>
+              <DialogTitle className="text-3xl font-black tracking-tighter text-foreground">{lockedTrackInfo?.name}</DialogTitle>
+              <DialogDescription className="text-muted-foreground font-medium text-sm leading-relaxed px-2">
+                This academic sector requires <span className="text-foreground font-black">Rank {lockedTrackInfo?.reqRank}</span> ({getCareerRankTitle(lockedTrackInfo?.reqRank)}). Complete other tracks to ascend.
+              </DialogDescription>
+            </div>
+
+            <div className="grid gap-3">
+              <Button 
+                onClick={handleUnlockEarly} 
+                disabled={isUnlockingEarly}
+                className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 shadow-xl bg-primary text-primary-foreground active:scale-95 transition-all group"
+              >
+                {isUnlockingEarly ? <Loader2 className="w-5 h-5 animate-spin" /> : <Unlock className="w-5 h-5" />}
+                {isUnlockingEarly ? "UNLOCKING..." : `Unlock Early (${lockedTrackInfo?.cost}c)`}
+                {!isUnlockingEarly && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />}
+              </Button>
+              <Button 
+                variant="ghost" 
+                onClick={() => setLockedTrackInfo(null)}
+                className="w-full h-12 rounded-xl font-bold text-[10px] uppercase tracking-widest text-muted-foreground hover:bg-muted"
+              >
+                Return to Ground
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AnimatePresence mode="wait">
         {state === 'exam' ? (
@@ -620,7 +722,7 @@ function LetsPrepContent() {
                     <div className="relative z-10 space-y-8">
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary" className="font-black text-[10px] uppercase px-4 py-1.5 bg-primary/20 text-primary border-none rounded-lg shadow-sm">Verified Learning Path</Badge>
-                        <Badge variant="outline" className="font-black text-[10px] uppercase px-3 py-1 bg-white/10 text-primary-foreground border-primary/20 mix-blend-difference">Alpha v2.1</Badge>
+                        <Badge variant="outline" className="font-black text-[10px] uppercase px-3 py-1 bg-white/10 text-primary-foreground border-primary/20 mix-blend-difference">ALPHA V2.5</Badge>
                       </div>
                       <div className="space-y-4">
                         <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95] text-foreground">
@@ -652,7 +754,7 @@ function LetsPrepContent() {
                                 </div>
                                 <div className="flex-1 space-y-1">
                                   <div className="flex justify-between text-[8px] font-black uppercase text-muted-foreground tracking-widest">
-                                    <span>Next Rank: {rankData.rank + 1}</span>
+                                    <span>Next Title: {getCareerRankTitle(rankData.rank + 1)}</span>
                                     <span>{Math.round(rankData.progress)}%</span>
                                   </div>
                                   <Progress value={rankData.progress} className="h-1" />
@@ -706,7 +808,7 @@ function LetsPrepContent() {
                       </div>
                       Sector Maps
                     </h3>
-                    <Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest text-muted-foreground opacity-60">Quest Selection</Badge>
+                    <Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest text-muted-foreground opacity-60">Eligibility Controlled</Badge>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-1">
@@ -719,20 +821,25 @@ function LetsPrepContent() {
                       return (
                         <motion.div key={i} variants={itemVariants} whileTap={{ scale: 0.97 }}>
                           <Card 
-                            onClick={() => !isLocked && startExam(track.id)} 
+                            onClick={() => startExam(track.id)} 
                             className={cn(
                               "cursor-pointer border-2 rounded-[2.5rem] bg-card overflow-hidden active:scale-95 transition-all relative h-full group hover:shadow-xl", 
-                              isLocked ? "opacity-60 grayscale border-muted" : "hover:border-primary border-border/50 bg-gradient-to-br via-card to-card " + track.bg
+                              isLocked ? "border-muted/50 bg-muted/5" : "hover:border-primary border-border/50 bg-gradient-to-br via-card to-card " + track.bg
                             )}
                           >
                             <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
-                              <div className="relative">
-                                <div className="w-16 h-16 bg-muted rounded-[1.5rem] flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-500">{track.icon}</div>
-                                {isLocked && <div className="absolute -top-2 -right-2 w-8 h-8 bg-background border-2 border-muted rounded-full flex items-center justify-center shadow-sm"><Lock className="w-3.5 h-3.5 text-muted-foreground" /></div>}
+                              <div className={cn("relative transition-transform duration-500", !isLocked && "group-hover:scale-110")}>
+                                <div className={cn(
+                                  "w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-inner transition-colors",
+                                  isLocked ? "bg-muted text-muted-foreground opacity-40" : "bg-card text-foreground"
+                                )}>{track.icon}</div>
+                                {isLocked && <div className="absolute -top-2 -right-2 w-8 h-8 bg-card border-2 border-muted rounded-full flex items-center justify-center shadow-sm"><Lock className="w-3.5 h-3.5 text-muted-foreground" /></div>}
                               </div>
                               <div>
                                 <h4 className="font-black text-xl text-foreground">{track.name}</h4>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{isLocked ? `Unlock at Rank ${track.rnk}` : "Ready for Trace"}</p>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
+                                  {isLocked ? `Locked: Rank ${track.rnk}` : "Accessible"}
+                                </p>
                               </div>
                               {!isLocked && <div className="pt-2 opacity-0 group-hover:opacity-100 transition-opacity"><ChevronRight className="w-5 h-5 text-primary" /></div>}
                             </CardContent>
