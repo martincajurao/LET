@@ -68,7 +68,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     };
   }, []);
 
-  // Professional Phase Grouping: Groups questions by subject to create segments
+  // Professional Phase Grouping: Restore multi-phase segments for Full Simulation
   const phases = useMemo(() => {
     const p: Phase[] = [];
     let currentPhase: Phase | null = null;
@@ -83,7 +83,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     return p;
   }, [questions]);
 
-  // A simulation is continuous if it only has one subject track (e.g. just Gen Ed)
+  // Locked logic: Continuous trace only for single-track category exams
   const isContinuous = useMemo(() => phases.length <= 1, [phases]);
 
   const currentPhaseIndex = useMemo(() => {
@@ -144,15 +144,13 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       const isLastQuestionTotal = currentIdx === questions.length - 1;
 
       if (isLastQuestionTotal) {
-        // At the absolute end, wait for the user to click Commit
         return;
       }
 
+      // Restore: If it's a multi-phase trace (Full Simulation), show rest phase
       if (isEndOfPhase && !isContinuous) {
-        // Transition to rest phase between segments
         setIsResting(true);
       } else {
-        // Standard progression
         setCurrentIdx(prev => prev + 1);
       }
     }, 450);

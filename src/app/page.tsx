@@ -210,7 +210,7 @@ function LetsPrepContent() {
       let finalQuestions: Question[] = [];
       
       if (category === 'all') {
-        // Build questions in subject blocks to ensure correct phase triggering in ExamInterface
+        // Restore standard phase order for Full Simulation
         const genEd = shuffleArray(questionPool.filter(q => q.subject === 'General Education')).slice(0, limits.limitGenEd);
         const profEd = shuffleArray(questionPool.filter(q => q.subject === 'Professional Education')).slice(0, limits.limitProfEd);
         const spec = shuffleArray(questionPool.filter(q => q.subject === 'Specialization' && q.subCategory === (user?.majorship || 'English'))).slice(0, limits.limitSpec);
@@ -426,7 +426,7 @@ function LetsPrepContent() {
       if (isQuickFire) {
         setState('quickfire_results');
       } else {
-        // Universal Gate for all standard simulations
+        // Universal Result Gate for all professional tracks
         setState('results');
         if (user && !user.isPro) {
           setIsResultsUnlocked(false);
@@ -435,7 +435,6 @@ function LetsPrepContent() {
             correctAnswers: correctCount,
             timeSpent: timeSpent
           });
-          // Explicitly show the popup
           setShowResultUnlock(true);
         } else {
           setIsResultsUnlocked(true);
