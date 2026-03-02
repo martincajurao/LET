@@ -25,7 +25,8 @@ import {
   ArrowRight,
   CheckCircle2,
   Info,
-  ChevronRight
+  ChevronRight,
+  Clock
 } from "lucide-react";
 import { Question } from "@/app/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -51,6 +52,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   const [flaggedIndices, setFlaggedIndices] = useState<Set<number>>(new Set());
   const [timeLeft, setTimeLeft] = useState(questions.length * timePerQuestion);
   const [startTime, setStartTime] = useState(Date.now());
+  const [elapsedTime, setElapsedTime] = useState(0);
   const [correctStreak, setCorrectStreak] = useState(0);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -181,14 +183,21 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   }, [answers, startTime, confidentAnswers, onComplete]);
 
   useEffect(() => {
-    if (showBriefing || isResting) return;
-    if (timeLeft <= 0) {
-      handleSubmit();
-      return;
-    }
-    const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
+    if (showBriefing) return;
+    const timer = setInterval(() => {
+      setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+      if (!isResting) {
+        setTimeLeft((prev) => {
+          if (prev <= 0) {
+            handleSubmit();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }
+    }, 1000);
     return () => clearInterval(timer);
-  }, [timeLeft, handleSubmit, showBriefing, isResting]);
+  }, [showBriefing, isResting, startTime, handleSubmit]);
 
   useEffect(() => {
     setSelectedOption(answers[questions[currentIdx]?.id] || null);
@@ -230,7 +239,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
           <div className="flex flex-col items-center flex-1 mx-4 max-w-[140px]">
             <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60 mb-1">
-              {showBriefing ? "Initialization" : `Solved: ${answeredCount}/${questions.length}`}
+              {showBriefing ? "Initialization" : isResting ? "Calibration Hub" : `Solved: ${answeredCount}/${questions.length}`}
             </span>
             <Progress value={showBriefing ? 0 : progress} className="h-1 rounded-full bg-muted shadow-inner" />
           </div>
@@ -338,14 +347,22 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="w-full max-w-[400px] bg-card rounded-[2.5rem] shadow-xl border border-border/40 overflow-hidden flex flex-col"
               >
-                <div className="bg-primary/5 p-8 flex flex-col items-center justify-center relative overflow-hidden">
+                <div className="bg-primary/5 p-6 flex flex-col items-center justify-center relative overflow-hidden">
                   <motion.div 
                     initial={{ scale: 0.8, opacity: 0 }} 
                     animate={{ scale: 1, opacity: 1 }} 
-                    className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center shadow-lg relative z-10 border border-primary/20"
+                    className="w-14 h-14 bg-card rounded-2xl flex items-center justify-center shadow-lg relative z-10 border border-primary/20"
                   >
-                    <Coffee className="w-8 h-8 text-primary" />
+                    <Clock className="w-7 h-7 text-primary" />
                   </motion.div>
+                  
+                  <div className="mt-4 text-center relative z-10">
+                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-primary mb-1">Elapsed Trace Time</span>
+                    <div className="text-3xl font-black font-mono tracking-tighter text-foreground tabular-nums animate-pulse">
+                      {formatTime(elapsedTime)}
+                    </div>
+                  </div>
+
                   <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.2, 0.1] }} transition={{ duration: 5, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent z-0" />
                 </div>
                 
@@ -354,7 +371,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                     <span className="text-[9px] font-black uppercase tracking-[0.3em] text-primary mb-1">Sector Resolved</span>
                     <h3 className="text-2xl font-black tracking-tighter text-foreground leading-none">Phase Calibration</h3>
                     <p className="text-muted-foreground font-medium text-[11px] leading-relaxed px-4 pt-1 opacity-70">
-                      Pedagogical synchronization complete. Review the roadmap to proceed.
+                      Pedagogical synchronization complete.
                     </p>
                   </div>
 
@@ -364,7 +381,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                       const isNext = idx === currentPhaseIndex + 1;
                       return (
                         <div key={idx} className={cn(
-                          "flex items-center justify-between p-3.5 rounded-xl border transition-all",
+                          "flex items-center justify-between p-3 rounded-xl border transition-all",
                           isCompleted ? "bg-emerald-500/5 border-emerald-500/10" : 
                           isNext ? "bg-primary/5 border-primary shadow-sm" : 
                           "bg-muted/10 border-transparent opacity-40"
@@ -377,7 +394,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                             )}>{isCompleted ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}</div>
                             <span className={cn("font-black text-[11px] uppercase tracking-tight", isNext ? "text-primary" : "text-foreground")}>{p.name}</span>
                           </div>
-                          {isNext && <Badge className="bg-primary text-primary-foreground text-[7px] font-black uppercase rounded px-1.5 h-4">Active</Badge>}
+                          {isNext && <Badge className="bg-primary text-primary-foreground text-[7px] font-black uppercase rounded px-1.5 h-4">Up Next</Badge>}
                         </div>
                       );
                     })}
@@ -387,7 +404,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                     onClick={handleContinuePhase}
                     className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-all group"
                   >
-                    Deploy to Sector {currentPhaseIndex + 2}
+                    Resume Analytical Trace
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </div>
