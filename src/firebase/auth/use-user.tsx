@@ -142,7 +142,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!auth || !firestore) return;
     
-    // Check for Virtual Bypass Session first
     const virtualUid = localStorage.getItem('virtual_educator_uid');
     if (virtualUid) {
       handleVirtualSession(virtualUid);

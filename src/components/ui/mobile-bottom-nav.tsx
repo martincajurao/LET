@@ -37,7 +37,6 @@ function NavContent() {
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [isImmersive, setIsImmersive] = useState(false);
 
-  // Check for immersive mode (during exams)
   useEffect(() => {
     const checkImmersive = () => {
       setIsImmersive(document.body.classList.contains('immersive-mode'));
@@ -48,7 +47,6 @@ function NavContent() {
     return () => observer.disconnect();
   }, []);
 
-  // Real-time ticker for cooldowns
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
     return () => clearInterval(interval);
@@ -70,7 +68,6 @@ function NavContent() {
     return () => unsub();
   }, [firestore]);
 
-  // INSTANT REACTIVE COUNTS
   const { availableTasksCount, claimableTasksCount } = useMemo(() => {
     if (!user) return { availableTasksCount: 0, claimableTasksCount: 0 };
 

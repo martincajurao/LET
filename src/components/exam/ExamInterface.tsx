@@ -240,7 +240,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   </div>
                 </div>
 
-                {/* Simulation Roadmap */}
                 <div className="w-full space-y-3 px-2">
                   <div className="flex items-center gap-2 mb-2 px-2">
                     <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest border-primary/20 text-primary">Simulation Roadmap</Badge>
@@ -248,7 +247,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   {phases.map((p, idx) => {
                     const isCompleted = idx < currentPhaseIndex + 1;
                     const isNext = idx === currentPhaseIndex + 1;
-                    const isUpcoming = idx > currentPhaseIndex + 1;
                     
                     return (
                       <div key={idx} className={cn(
@@ -282,7 +280,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   })}
                 </div>
                 
-                {/* Running Clock */}
                 <div className="flex flex-col items-center gap-1.5 p-6 bg-card rounded-[2rem] border shadow-inner w-full mx-2">
                   <div className="flex items-center gap-3 text-primary">
                     <Timer className="w-6 h-6 animate-pulse" />
