@@ -17,13 +17,12 @@ import {
   Settings, 
   Menu,
   LayoutDashboard,
-  ListTodo,
   Trophy,
   Crown,
   Sparkles,
   ShieldAlert,
   Smartphone,
-  Sword
+  Compass
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -112,7 +111,7 @@ export function Navbar() {
       label: 'Daily Quests', 
       icon: (
         <div className="relative">
-          <Sword className="w-4 h-4" />
+          <Compass className="w-4 h-4" />
           {claimableTasksCount > 0 && (
             <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary text-primary-foreground text-[7px] font-black rounded-full flex items-center justify-center border border-card shadow-sm animate-bounce">
               {claimableTasksCount}
@@ -191,15 +190,9 @@ export function Navbar() {
               <div className="hidden sm:block">
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-black tracking-tight text-foreground block leading-none">LET's Prep</span>
-                  {user && (
-                    <Badge variant="outline" className="h-5 px-2 font-black text-[9px] border-primary/20 text-primary bg-primary/5">
-                      Rank {rankData?.rank}
-                    </Badge>
-                  )}
+                  {user && (<Badge variant="outline" className="h-5 px-2 font-black text-[9px] border-primary/20 text-primary bg-primary/5">Rank {rankData?.rank}</Badge>)}
                 </div>
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                  Professional Ranking
-                </span>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Professional Ranking</span>
               </div>
             </Link>
           </div>
@@ -215,41 +208,22 @@ export function Navbar() {
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56 mt-2 rounded-2xl border bg-card shadow-2xl p-2" align="end">
-                      <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground px-3 py-2">Quick Navigation</DropdownMenuLabel>
+                      <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground px-3 py-2">Navigation</DropdownMenuLabel>
                       {navItems.map((item) => (
-                        <DropdownMenuItem key={item.label} asChild onSelect={(e) => {
-                          if (item.onClick) { e.preventDefault(); item.onClick(); }
-                        }}>
-                          {item.onClick ? (
-                            <div className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
-                              <div className="text-primary">{item.icon}</div>
-                              {item.label}
-                            </div>
-                          ) : (
-                            <Link href={item.href} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
-                              <div className="text-primary">{item.icon}</div>
-                              {item.label}
-                            </Link>
-                          )}
+                        <DropdownMenuItem key={item.label} asChild onSelect={(e) => { if (item.onClick) { e.preventDefault(); item.onClick(); } }}>
+                          {item.onClick ? (<div className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors"><div className="text-primary">{item.icon}</div>{item.label}</div>) : (<Link href={item.href} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors"><div className="text-primary">{item.icon}</div>{item.label}</Link>)}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-
-                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-muted" onClick={toggleDarkMode}>
-                  {isDark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-slate-600" />}
-                </Button>
-                
+                <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-muted" onClick={toggleDarkMode}>{isDark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-slate-600" />}</Button>
                 <div className="flex items-center gap-2 bg-muted/40 hover:bg-accent/10 px-3 sm:px-4 py-2 rounded-2xl border border-border/50 cursor-pointer transition-all active:scale-95 group" onClick={() => setShowAdModal(true)}>
-                  <div className="w-5 h-5 rounded-full bg-yellow-500/10 flex items-center justify-center">
-                    <Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current animate-sparkle" />
-                  </div>
+                  <div className="w-5 h-5 rounded-full bg-yellow-500/10 flex items-center justify-center"><Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current animate-sparkle" /></div>
                   <span className="text-sm font-black text-foreground">{typeof user.credits === 'number' ? user.credits : 0}</span>
                   <Zap className="w-3 h-3 text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
                 </div>
               </div>
-
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 p-0.5 rounded-full hover:bg-muted transition-all outline-none focus:ring-2 focus:ring-primary/20 relative">
@@ -257,57 +231,26 @@ export function Navbar() {
                       {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || "User"} />}
                       <AvatarFallback className="text-xs font-black bg-primary/10 text-primary uppercase">{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
                     </Avatar>
-                    {user.isPro && (
-                      <div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-0.5 shadow-sm border border-background">
-                        <Crown className="w-2.5 h-2.5 text-yellow-900" />
-                      </div>
-                    )}
+                    {user.isPro && (<div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-0.5 shadow-sm border border-background"><Crown className="w-2.5 h-2.5 text-yellow-900" /></div>)}
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-64 mt-2 rounded-2xl border bg-card shadow-2xl p-2" align="end">
                   <div className="p-3 mb-2 bg-muted/30 rounded-xl">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <p className="text-sm font-black truncate">{user.displayName}</p>
-                      <Badge className="bg-primary/10 text-primary border-primary/20 text-[8px] font-black uppercase px-1.5 py-0">{rankData?.title}</Badge>
-                    </div>
+                    <div className="flex items-center justify-between gap-2 mb-1"><p className="text-sm font-black truncate">{user.displayName}</p><Badge className="bg-primary/10 text-primary border-primary/20 text-[8px] font-black uppercase px-1.5 py-0">{rankData?.title}</Badge></div>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">{user.email}</p>
                   </div>
                   <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground px-3 py-2">Career Overview</DropdownMenuLabel>
-                  <DropdownMenuItem asChild>
-                    <div className="px-3 py-2 space-y-2">
-                      <div className="flex justify-between items-center text-[10px] font-black uppercase">
-                        <span className="text-muted-foreground">{rankData?.title}</span>
-                        <span className="text-primary">{rankData?.xpInRank || 0} / {rankData?.nextRankXp} XP</span>
-                      </div>
-                      <Progress value={rankData?.progress || 0} className="h-1.5" />
-                    </div>
-                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild><div className="px-3 py-2 space-y-2"><div className="flex justify-between items-center text-[10px] font-black uppercase"><span className="text-muted-foreground">{rankData?.title}</span><span className="text-primary">{rankData?.xpInRank || 0} / {rankData?.nextRankXp} XP</span></div><Progress value={rankData?.progress || 0} className="h-1.5" /></div></DropdownMenuItem>
                   <DropdownMenuSeparator className="my-2 bg-border/50" />
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile?tab=settings" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
-                      <Settings className="w-4 h-4 text-primary" /> Profile Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
-                      <Smartphone className="w-4 h-4 text-primary" /> App Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile?tab=history" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors">
-                      <History className="w-4 h-4 text-emerald-500" /> Analysis Vault
-                    </Link>
-                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild><Link href="/profile?tab=settings" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors"><Settings className="w-4 h-4 text-primary" /> Profile Settings</Link></DropdownMenuItem>
+                  <DropdownMenuItem asChild><Link href="/settings" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors"><Smartphone className="w-4 h-4 text-primary" /> App Settings</Link></DropdownMenuItem>
+                  <DropdownMenuItem asChild><Link href="/profile?tab=history" className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl hover:bg-muted transition-colors"><History className="w-4 h-4 text-emerald-500" /> Analysis Vault</Link></DropdownMenuItem>
                   <DropdownMenuSeparator className="my-2 bg-border/50" />
-                  <DropdownMenuItem onClick={logout} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl text-destructive hover:bg-destructive/10 transition-colors">
-                    <LogOut className="w-4 h-4" /> Sign Out
-                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={logout} className="flex items-center gap-3 p-3 font-bold cursor-pointer rounded-xl text-destructive hover:bg-destructive/10 transition-colors"><LogOut className="w-4 h-4" /> Sign Out</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-          ) : (
-            <Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest border-primary/20 opacity-40">Guest Educator</Badge>
-          )}
+          ) : (<Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest border-primary/20 opacity-40">Guest Educator</Badge>)}
         </div>
       </nav>
 
@@ -316,9 +259,7 @@ export function Navbar() {
           <Dialog open={showAdModal} onOpenChange={(open) => !watchingAd && setShowAdModal(open)}>
             <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl max-w-[380px] outline-none" hideCloseButton={watchingAd}>
               <DialogHeader className="space-y-3">
-                <div className="w-16 h-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-2">
-                  {verifyingAd ? <ShieldAlert className="w-8 h-8 text-primary animate-pulse" /> : <Zap className="w-8 h-8 text-primary" />}
-                </div>
+                <div className="w-16 h-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-2">{verifyingAd ? <ShieldAlert className="w-8 h-8 text-primary animate-pulse" /> : <Zap className="w-8 h-8 text-primary" />}</div>
                 <DialogTitle className="text-2xl font-black text-center">{verifyingAd ? "Verifying..." : "Refill AI Credits"}</DialogTitle>
                 <DialogDescription className="text-center text-muted-foreground font-medium">Watch a professional tutorial to earn <span className="text-primary font-black">+5 AI Credits</span>.</DialogDescription>
               </DialogHeader>
@@ -335,15 +276,7 @@ export function Navbar() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-
-          <NotificationsModal 
-            isOpen={showAlertsModal}
-            onClose={() => !watchingAd && setShowAlertsModal(false)}
-            onStartQuickFire={() => router.push('/?start=quickfire')}
-            onWatchAd={handleWatchAd}
-            isWatchingAd={watchingAd}
-            isVerifyingAd={verifyingAd}
-          />
+          <NotificationsModal isOpen={showAlertsModal} onClose={() => !watchingAd && setShowAlertsModal(false)} onStartQuickFire={() => router.push('/?start=quickfire')} onWatchAd={handleWatchAd} isWatchingAd={watchingAd} isVerifyingAd={verifyingAd} />
         </>
       )}
     </>

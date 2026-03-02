@@ -5,13 +5,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard,
-  Sword, 
   Trophy, 
   Zap,
   Target,
   Bell,
   Loader2,
-  ShieldCheck
+  ShieldCheck,
+  Compass
 } from 'lucide-react';
 import { PracticeModal } from './practice-modal';
 import { NotificationsModal } from './notifications-modal';
@@ -103,14 +103,8 @@ function NavContent() {
   }, [lastScrollY]);
 
   const handleNavClick = (item: any) => {
-    if (item.id === 'practice') { 
-      setIsPracticeOpen(true); 
-      return; 
-    }
-    if (item.id === 'notifications') { 
-      setIsAlertsOpen(true); 
-      return; 
-    }
+    if (item.id === 'practice') { setIsPracticeOpen(true); return; }
+    if (item.id === 'notifications') { setIsAlertsOpen(true); return; }
     router.push(item.href);
   };
 
@@ -153,7 +147,7 @@ function NavContent() {
       label: 'Quests', 
       icon: (
         <div className="relative">
-          <Sword className="w-5 h-5" />
+          <Compass className="w-5 h-5" />
           {claimableTasksCount > 0 && (
             <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-[9px] font-black rounded-full flex items-center justify-center border-2 border-card shadow-sm animate-bounce">{claimableTasksCount}</span>
           )}
@@ -199,11 +193,7 @@ function NavContent() {
                 <span className={cn("text-[10px] font-bold uppercase tracking-tighter transition-opacity duration-300", active ? "opacity-100 scale-105" : "opacity-60")}>{item.label}</span>
               </button>
             );
-          }) : (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground text-[10px] font-black uppercase tracking-widest opacity-40">
-              <ShieldCheck className="w-4 h-4 mr-2" /> Educator Trace Required
-            </div>
-          )}
+          }) : (<div className="flex-1 flex items-center justify-center text-muted-foreground text-[10px] font-black uppercase tracking-widest opacity-40"><ShieldCheck className="w-4 h-4 mr-2" /> Educator Trace Required</div>)}
         </div>
       </div>
       {user && (

@@ -5,7 +5,7 @@ import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
 import { DailyLoginRewards } from '@/components/ui/daily-login-rewards';
 import { QuestionOfTheDay } from '@/components/ui/question-of-the-day';
 import { StudyTimer } from '@/components/ui/study-timer';
-import { Sword, ArrowLeft, ShieldCheck, Brain, Loader2, Sparkles, RefreshCw } from 'lucide-react';
+import { Compass, ArrowLeft, ShieldCheck, Brain, Loader2, Sparkles, RefreshCw } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUser, useFirestore } from '@/firebase';
@@ -44,7 +44,6 @@ export default function TasksPage() {
 
         // Generate fresh if stale or missing (Lazy Client Generation)
         setLoadingQotd(true);
-        // This is now a client-side Puter.js call
         const freshQuestion = await generateDailyQuestion();
         
         const qotdData = {
@@ -53,7 +52,6 @@ export default function TasksPage() {
           timestamp: Date.now()
         };
         
-        // Save to global cache so other users don't trigger AI call
         await setDoc(docRef, qotdData);
         setDailyQuestion({ ...qotdData, id: 'qotd' } as Question);
       } catch (e) {
@@ -161,7 +159,7 @@ export default function TasksPage() {
         <div className="space-y-2 px-2">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shadow-inner">
-              <Sword className="w-6 h-6 text-primary" />
+              <Compass className="w-6 h-6 text-primary" />
             </div>
             <h1 className="text-4xl font-black tracking-tighter text-foreground">Quest Hub</h1>
           </div>
@@ -169,16 +167,8 @@ export default function TasksPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-8">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ duration: 0.5 }}
-          >
-            <DailyLoginRewards 
-              currentDay={Math.min(((user?.streakCount || 0) % 7) + 1, 7)}
-              lastClaimDate={user.lastLoginRewardClaimedAt}
-              onClaim={handleClaimLoginReward} 
-            />
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <DailyLoginRewards currentDay={Math.min(((user?.streakCount || 0) % 7) + 1, 7)} lastClaimDate={user.lastLoginRewardClaimedAt} onClaim={handleClaimLoginReward} />
           </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -189,54 +179,25 @@ export default function TasksPage() {
                   <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Calibrating AI Daily Insight...</p>
                 </Card>
               ) : dailyQuestion && (
-                <motion.div 
-                  initial={{ opacity: 0, x: -20 }} 
-                  animate={{ opacity: 1, x: 0 }} 
-                  transition={{ delay: 0.2, duration: 0.5 }}
-                >
-                  <QuestionOfTheDay 
-                    question={dailyQuestion}
-                    lastClaimDate={user.lastQotdClaimedAt}
-                    onComplete={handleQuestionComplete}
-                  />
+                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, duration: 0.5 }}>
+                  <QuestionOfTheDay question={dailyQuestion} lastClaimDate={user.lastQotdClaimedAt} onComplete={handleQuestionComplete} />
                 </motion.div>
               )}
-
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }} 
-                animate={{ opacity: 1, x: 0 }} 
-                transition={{ delay: 0.3, duration: 0.5 }}
-              >
+              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
                 <StudyTimer />
               </motion.div>
             </div>
-
             <div className="lg:col-span-5 space-y-8">
-              <motion.div 
-                initial={{ opacity: 0, x: 20 }} 
-                animate={{ opacity: 1, x: 0 }} 
-                transition={{ delay: 0.4, duration: 0.5 }}
-              >
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4, duration: 0.5 }}>
                 <DailyTaskDashboard />
               </motion.div>
-
               <Card className="android-surface border-none shadow-md3-1 rounded-[2rem] bg-foreground text-background p-8 overflow-hidden relative group">
-                <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:rotate-12 transition-transform duration-700">
-                  <Brain className="w-24 h-24" />
-                </div>
+                <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:rotate-12 transition-transform duration-700"><Brain className="w-24 h-24" /></div>
                 <div className="relative z-10 space-y-4">
-                  <div className="flex items-center gap-2 text-primary">
-                    <Sparkles className="w-4 h-4 fill-current animate-sparkle" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em]">Strategic Advice</span>
-                  </div>
+                  <div className="flex items-center gap-2 text-primary"><Sparkles className="w-4 h-4 fill-current animate-sparkle" /><span className="text-[10px] font-black uppercase tracking-[0.3em]">Strategic Advice</span></div>
                   <h3 className="text-xl font-black leading-tight">Consistency scales professional accuracy.</h3>
-                  <p className="text-xs font-medium opacity-70 leading-relaxed">
-                    Complete your daily quests early to maximize rank multipliers and accelerate your path to Distinguished Scholar status.
-                  </p>
-                  <div className="pt-2">
-                    <div className="h-[1px] w-full bg-background/20 mb-4" />
-                    <p className="text-[9px] font-black uppercase tracking-widest text-primary">Board Readiness: 82%</p>
-                  </div>
+                  <p className="text-xs font-medium opacity-70 leading-relaxed">Complete your daily quests early to maximize rank multipliers and accelerate your path to Distinguished Scholar status.</p>
+                  <div className="pt-2"><div className="h-[1px] w-full bg-background/20 mb-4" /><p className="text-[9px] font-black uppercase tracking-widest text-primary">Board Readiness: 82%</p></div>
                 </div>
               </Card>
             </div>

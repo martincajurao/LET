@@ -53,7 +53,8 @@ import {
   History,
   Activity,
   Award,
-  Unlock
+  Unlock,
+  Compass
 } from "lucide-react";
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
@@ -192,6 +193,16 @@ function LetsPrepContent() {
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
+  const getTrackConfig = (category: string, major: string) => {
+    switch (category) {
+      case 'all': return { id: 'all', name: 'Full Simulation', reqRank: UNLOCK_RANKS.FULL_SIMULATION, cost: 120, icon: <Zap className="w-6 h-6 text-primary" /> };
+      case 'General Education': return { id: 'General Education', name: 'General Education', reqRank: UNLOCK_RANKS.GENERAL_ED, cost: 0, icon: <Languages className="w-6 h-6 text-blue-500" /> };
+      case 'Professional Education': return { id: 'Professional Education', name: 'Professional Education', reqRank: UNLOCK_RANKS.PROFESSIONAL_ED, cost: 30, icon: <BookOpen className="w-6 h-6 text-purple-500" /> };
+      case 'Specialization': case 'Major': return { id: 'Specialization', name: major || 'Specialization', reqRank: UNLOCK_RANKS.SPECIALIZATION, cost: 60, icon: <Star className="w-6 h-6 text-emerald-500" /> };
+      default: return null;
+    }
+  };
+
   const startExam = useCallback(async (category: string) => {
     if (!user) {
       setShowAuthModal(true);
@@ -271,16 +282,6 @@ function LetsPrepContent() {
       isStartingRef.current = false;
     }
   }, [user, firestore, limits, toast, rankData]);
-
-  const getTrackConfig = (category: string, major: string) => {
-    switch (category) {
-      case 'all': return { id: 'all', name: 'Full Simulation', reqRank: UNLOCK_RANKS.FULL_SIMULATION, cost: 120, icon: <Zap className="w-6 h-6 text-primary" /> };
-      case 'General Education': return { id: 'General Education', name: 'General Education', reqRank: UNLOCK_RANKS.GENERAL_ED, cost: 0, icon: <Languages className="w-6 h-6 text-blue-500" /> };
-      case 'Professional Education': return { id: 'Professional Education', name: 'Professional Education', reqRank: UNLOCK_RANKS.PROFESSIONAL_ED, cost: 30, icon: <BookOpen className="w-6 h-6 text-purple-500" /> };
-      case 'Specialization': case 'Major': return { id: 'Specialization', name: major || 'Specialization', reqRank: UNLOCK_RANKS.SPECIALIZATION, cost: 60, icon: <Star className="w-6 h-6 text-emerald-500" /> };
-      default: return null;
-    }
-  };
 
   const handleUnlockEarly = async () => {
     if (!user || !lockedTrackInfo || isUnlockingEarly) return;
@@ -607,24 +608,15 @@ function LetsPrepContent() {
         </DialogContent>
       </Dialog>
 
-      {/* Persistent Unlock Gate */}
       <ResultUnlockDialog 
         open={showResultUnlock}
-        onClose={() => { 
-          if (isResultsUnlocked) {
-            setShowResultUnlock(false); 
-          }
-        }}
-        onUnlock={() => { 
-          setIsResultsUnlocked(true);
-          setShowResultUnlock(false);
-        }}
+        onClose={() => { if (isResultsUnlocked) setShowResultUnlock(false); }}
+        onUnlock={() => { setIsResultsUnlocked(true); setShowResultUnlock(false); }}
         questionsCount={examStatsForUnlock.questionsCount}
         correctAnswers={examStatsForUnlock.correctAnswers}
         timeSpent={examStatsForUnlock.timeSpent}
       />
 
-      {/* Pre-Exam Eligibility Lock Dialog */}
       <Dialog open={!!lockedTrackInfo} onOpenChange={(open) => !open && setLockedTrackInfo(null)}>
         <DialogContent className="rounded-[3rem] bg-card border-none shadow-2xl p-0 max-w-[380px] overflow-hidden outline-none z-[1100]">
           <div className="bg-primary/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
@@ -638,13 +630,8 @@ function LetsPrepContent() {
                 <Lock className="w-4 h-4 text-primary-foreground" />
               </div>
             </motion.div>
-            <motion.div 
-              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} 
-              transition={{ duration: 4, repeat: Infinity }}
-              className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent z-0" 
-            />
+            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 4, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent z-0" />
           </div>
-          
           <div className="p-8 text-center space-y-8">
             <div className="space-y-2">
               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-1">Sector Restricted</span>
@@ -653,24 +640,11 @@ function LetsPrepContent() {
                 This academic sector requires <span className="text-foreground font-black">Rank {lockedTrackInfo?.reqRank}</span> ({getCareerRankTitle(lockedTrackInfo?.reqRank)}). Complete other tracks to ascend.
               </DialogDescription>
             </div>
-
             <div className="grid gap-3">
-              <Button 
-                onClick={handleUnlockEarly} 
-                disabled={isUnlockingEarly}
-                className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 shadow-xl bg-primary text-primary-foreground active:scale-95 transition-all group"
-              >
-                {isUnlockingEarly ? <Loader2 className="w-5 h-5 animate-spin" /> : <Unlock className="w-5 h-5" />}
-                {isUnlockingEarly ? "UNLOCKING..." : `Unlock Early (${lockedTrackInfo?.cost}c)`}
-                {!isUnlockingEarly && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />}
-              </Button>
-              <Button 
-                variant="ghost" 
-                onClick={() => setLockedTrackInfo(null)}
-                className="w-full h-12 rounded-xl font-bold text-[10px] uppercase tracking-widest text-muted-foreground hover:bg-muted"
-              >
-                Return to Ground
-              </Button>
+              <button onClick={handleUnlockEarly} disabled={isUnlockingEarly} className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 shadow-xl bg-primary text-primary-foreground active:scale-95 transition-all group flex items-center justify-center">
+                {isUnlockingEarly ? <Loader2 className="w-5 h-5 animate-spin" /> : <Unlock className="w-5 h-5" />} {isUnlockingEarly ? "UNLOCKING..." : `Unlock Early (${lockedTrackInfo?.cost}c)`}
+              </button>
+              <Button variant="ghost" onClick={() => setLockedTrackInfo(null)} className="w-full h-12 rounded-xl font-bold text-[10px] uppercase tracking-widest text-muted-foreground hover:bg-muted">Return to Ground</Button>
             </div>
           </div>
         </DialogContent>
@@ -683,14 +657,7 @@ function LetsPrepContent() {
           </motion.div>
         ) : state === 'results' ? (
           <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">
-            <ResultsOverview 
-              questions={currentQuestions} 
-              answers={examAnswers} 
-              timeSpent={examTime} 
-              resultId={newResultId} 
-              onRestart={() => setState('dashboard')} 
-              initialUnlocked={isResultsUnlocked}
-            />
+            <ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} resultId={newResultId} onRestart={() => setState('dashboard')} initialUnlocked={isResultsUnlocked} />
           </motion.div>
         ) : state === 'quickfire_results' ? (
           <motion.div key="quickfire_results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">
@@ -700,17 +667,9 @@ function LetsPrepContent() {
           <motion.div key="dashboard" variants={containerVariants} initial="hidden" animate="show" className="max-w-7xl mx-auto px-4 pb-8 space-y-6">
             <motion.div variants={containerVariants} className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {displayStats.map((stat, i) => (
-                <motion.div 
-                  key={i} 
-                  variants={itemVariants} 
-                  whileTap={{ scale: 0.95 }}
-                  className="android-surface rounded-2xl p-4 flex items-center gap-4 border-none shadow-md3-1"
-                >
+                <motion.div key={i} variants={itemVariants} whileTap={{ scale: 0.95 }} className="android-surface rounded-2xl p-4 flex items-center gap-4 border-none shadow-md3-1">
                   <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner", stat.color)}>{stat.icon}</div>
-                  <div>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider mb-0.5">{stat.label}</p>
-                    <p className="text-xl font-black text-foreground leading-none">{stat.value}</p>
-                  </div>
+                  <div><p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider mb-0.5">{stat.label}</p><p className="text-xl font-black text-foreground leading-none">{stat.value}</p></div>
                 </motion.div>
               ))}
             </motion.div>
@@ -725,92 +684,46 @@ function LetsPrepContent() {
                         <Badge variant="outline" className="font-black text-[10px] uppercase px-3 py-1 bg-white/10 text-primary-foreground border-primary/20 mix-blend-difference">ALPHA V2.5</Badge>
                       </div>
                       <div className="space-y-4">
-                        <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95] text-foreground">
-                          Elite Board <br /><span className="text-primary italic">Simulations.</span>
-                        </h1>
-                        <p className="text-muted-foreground font-medium text-lg md:text-2xl max-w-xl leading-relaxed">
-                          Sharpen your professional reasoning with AI-driven analysis built for the Filipino educator.
-                        </p>
+                        <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95] text-foreground">Elite Board <br /><span className="text-primary italic">Simulations.</span></h1>
+                        <p className="text-muted-foreground font-medium text-lg md:text-2xl max-w-xl leading-relaxed">Sharpen your professional reasoning with AI-driven analysis built for the Filipino educator.</p>
                       </div>
-                      
                       <div className="flex flex-wrap gap-4 pt-2">
                         {user ? (
                           <div className="space-y-4 w-full sm:w-auto">
-                            <button 
-                              disabled={isCalibrating} 
-                              onClick={() => startExam('all')} 
-                              className="h-16 md:h-20 px-10 md:px-14 rounded-2xl font-black text-lg md:text-xl gap-4 shadow-2xl shadow-primary/40 active:scale-95 transition-all group relative overflow-hidden bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center"
-                            >
+                            <button disabled={isCalibrating} onClick={() => startExam('all')} className="h-16 md:h-20 px-10 md:px-14 rounded-2xl font-black text-lg md:text-xl gap-4 shadow-2xl shadow-primary/40 active:scale-95 transition-all group relative overflow-hidden bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center">
                               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                              {isCalibrating ? <Loader2 className="animate-spin w-7 h-7" /> : <Zap className="w-7 h-7 fill-current" />} 
-                              <span>Launch Full Battle</span> 
-                              <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                              {isCalibrating ? <Loader2 className="animate-spin w-7 h-7" /> : <Zap className="w-7 h-7 fill-current" />} <span>Launch Full Battle</span> <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
                             </button>
-                            
                             {rankData && (
                               <div className="flex items-center gap-3 bg-card/50 backdrop-blur-md p-3 rounded-2xl border border-border/50 shadow-sm animate-in slide-in-from-left duration-700">
-                                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
-                                  <TrendingUp className="w-4 h-4 text-primary" />
-                                </div>
+                                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shrink-0"><TrendingUp className="w-4 h-4 text-primary" /></div>
                                 <div className="flex-1 space-y-1">
-                                  <div className="flex justify-between text-[8px] font-black uppercase text-muted-foreground tracking-widest">
-                                    <span>Next Title: {getCareerRankTitle(rankData.rank + 1)}</span>
-                                    <span>{Math.round(rankData.progress)}%</span>
-                                  </div>
+                                  <div className="flex justify-between text-[8px] font-black uppercase text-muted-foreground tracking-widest"><span>Next Title: {getCareerRankTitle(rankData.rank + 1)}</span><span>{Math.round(rankData.progress)}%</span></div>
                                   <Progress value={rankData.progress} className="h-1" />
                                 </div>
                               </div>
                             )}
                           </div>
                         ) : (
-                          <motion.div 
-                            className="w-full sm:w-fit"
-                            animate={{ scale: [1, 1.02, 1] }}
-                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                          >
-                            <button 
-                              onClick={() => setShowAuthModal(true)} 
-                              className="w-full h-16 md:h-20 px-10 md:px-14 rounded-3xl font-black text-xl gap-6 shadow-2xl shadow-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-all group relative overflow-hidden flex items-center justify-center"
-                            >
-                              <div className="flex items-center gap-3 shrink-0 bg-background/20 p-2 rounded-2xl shadow-inner border border-white/10">
-                                <GoogleIcon />
-                                <div className="w-7 h-7 bg-[#1877F2] rounded-full flex items-center justify-center shadow-md border border-white/20">
-                                  <Facebook className="w-4 h-4 fill-current text-white" />
-                                </div>
-                              </div>
-                              <div className="flex flex-col items-start leading-none text-left">
-                                <span className="uppercase tracking-tighter">Sign In to Launch</span>
-                                <span className="text-[10px] font-bold opacity-70 mt-1 uppercase tracking-[0.2em]">Secure Educator Entry</span>
-                              </div>
+                          <motion.div className="w-full sm:w-fit" animate={{ scale: [1, 1.02, 1] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
+                            <button onClick={() => setShowAuthModal(true)} className="w-full h-16 md:h-20 px-10 md:px-14 rounded-3xl font-black text-xl gap-6 shadow-2xl shadow-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-all group relative overflow-hidden flex items-center justify-center">
+                              <div className="flex items-center gap-3 shrink-0 bg-background/20 p-2 rounded-2xl shadow-inner border border-white/10"><GoogleIcon /><div className="w-7 h-7 bg-[#1877F2] rounded-full flex items-center justify-center shadow-md border border-white/20"><Facebook className="w-4 h-4 fill-current text-white" /></div></div>
+                              <div className="flex flex-col items-start leading-none text-left"><span className="uppercase tracking-tighter">Sign In to Launch</span><span className="text-[10px] font-bold opacity-70 mt-1 uppercase tracking-[0.2em]">Secure Educator Entry</span></div>
                               <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" />
                             </button>
                           </motion.div>
                         )}
                       </div>
                     </div>
-                    <motion.div 
-                      animate={{ 
-                        scale: [1, 1.1, 1],
-                        opacity: [0.05, 0.1, 0.05],
-                        rotate: [0, 10, 0]
-                      }} 
-                      transition={{ duration: 15, repeat: Infinity }} 
-                      className="absolute -top-20 -right-20 w-96 h-96 bg-primary/20 rounded-full blur-[80px]" 
-                    />
+                    <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.05, 0.1, 0.05], rotate: [0, 10, 0] }} transition={{ duration: 15, repeat: Infinity }} className="absolute -top-20 -right-20 w-96 h-96 bg-primary/20 rounded-full blur-[80px]" />
                   </Card>
                 </motion.div>
 
                 <div className="space-y-6">
                   <div className="flex items-center justify-between px-4">
-                    <h3 className="text-xl font-black tracking-tight flex items-center gap-3">
-                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shadow-inner">
-                        <Target className="w-5 h-5 text-primary" />
-                      </div>
-                      Sector Maps
-                    </h3>
+                    <h3 className="text-xl font-black tracking-tight flex items-center gap-3"><div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shadow-inner"><Target className="w-5 h-5 text-primary" /></div>Sector Maps</h3>
                     <Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest text-muted-foreground opacity-60">Eligibility Controlled</Badge>
                   </div>
-                  
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-1">
                     {[
                       { id: 'General Education', name: 'Gen Ed', icon: <Languages />, rnk: UNLOCK_RANKS.GENERAL_ED, bg: 'from-blue-500/10' },
@@ -820,27 +733,13 @@ function LetsPrepContent() {
                       const isLocked = user && !isTrackUnlocked(currentRankData?.rank || 1, track.id, user.unlockedTracks);
                       return (
                         <motion.div key={i} variants={itemVariants} whileTap={{ scale: 0.97 }}>
-                          <Card 
-                            onClick={() => startExam(track.id)} 
-                            className={cn(
-                              "cursor-pointer border-2 rounded-[2.5rem] bg-card overflow-hidden active:scale-95 transition-all relative h-full group hover:shadow-xl", 
-                              isLocked ? "border-muted/50 bg-muted/5" : "hover:border-primary border-border/50 bg-gradient-to-br via-card to-card " + track.bg
-                            )}
-                          >
+                          <Card onClick={() => startExam(track.id)} className={cn("cursor-pointer border-2 rounded-[2.5rem] bg-card overflow-hidden active:scale-95 transition-all relative h-full group hover:shadow-xl", isLocked ? "border-muted/50 bg-muted/5" : "hover:border-primary border-border/50 bg-gradient-to-br via-card to-card " + track.bg)}>
                             <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
                               <div className={cn("relative transition-transform duration-500", !isLocked && "group-hover:scale-110")}>
-                                <div className={cn(
-                                  "w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-inner transition-colors",
-                                  isLocked ? "bg-muted text-muted-foreground opacity-40" : "bg-card text-foreground"
-                                )}>{track.icon}</div>
+                                <div className={cn("w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-inner transition-colors", isLocked ? "bg-muted text-muted-foreground opacity-40" : "bg-card text-foreground")}>{track.icon}</div>
                                 {isLocked && <div className="absolute -top-2 -right-2 w-8 h-8 bg-card border-2 border-muted rounded-full flex items-center justify-center shadow-sm"><Lock className="w-3.5 h-3.5 text-muted-foreground" /></div>}
                               </div>
-                              <div>
-                                <h4 className="font-black text-xl text-foreground">{track.name}</h4>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
-                                  {isLocked ? `Locked: Rank ${track.rnk}` : "Accessible"}
-                                </p>
-                              </div>
+                              <div><h4 className="font-black text-xl text-foreground">{track.name}</h4><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{isLocked ? `Locked: Rank ${track.rnk}` : "Accessible"}</p></div>
                               {!isLocked && <div className="pt-2 opacity-0 group-hover:opacity-100 transition-opacity"><ChevronRight className="w-5 h-5 text-primary" /></div>}
                             </CardContent>
                           </Card>
@@ -851,12 +750,7 @@ function LetsPrepContent() {
                 </div>
 
                 <div className="space-y-4 pt-4">
-                  <h3 className="text-xl font-black tracking-tight flex items-center gap-3 px-4">
-                    <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center shadow-inner">
-                      <Users className="w-5 h-5 text-emerald-600" />
-                    </div>
-                    Lounge & Support
-                  </h3>
+                  <h3 className="text-xl font-black tracking-tight flex items-center gap-3 px-4"><div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center shadow-inner"><Users className="w-5 h-5 text-emerald-600" /></div>Lounge & Support</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-1">
                     <motion.div variants={itemVariants} whileTap={{ scale: 0.98 }}>
                       <Card onClick={() => setShowFeedbackModal(true)} className="android-surface cursor-pointer rounded-[2rem] p-6 flex items-center gap-5 border-none shadow-md3-1">
@@ -877,66 +771,30 @@ function LetsPrepContent() {
               <div className="lg:col-span-4 space-y-6">
                 <motion.div variants={itemVariants}>
                   <Card className="android-surface border-none shadow-2xl rounded-[2.5rem] bg-gradient-to-br from-emerald-500/20 via-card to-background p-8 overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:rotate-12 transition-transform duration-700">
-                      <Smartphone className="w-24 h-24 text-emerald-600" />
-                    </div>
+                    <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:rotate-12 transition-transform duration-700"><Smartphone className="w-24 h-24 text-emerald-600" /></div>
                     <div className="relative z-10 space-y-6">
                       <div className="flex items-center justify-between">
-                        <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center shadow-inner">
-                          <Download className="w-7 h-7 text-emerald-600" />
-                        </div>
+                        <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center shadow-inner"><Download className="w-7 h-7 text-emerald-600" /></div>
                         <Badge variant="outline" className="font-black text-[9px] border-emerald-500/30 text-emerald-600 bg-emerald-500/5 uppercase">{isApkLoading ? '---' : `v${apkInfo?.version}`}</Badge>
                       </div>
-                      <div>
-                        <h3 className="text-2xl font-black tracking-tight leading-none mb-2">Native Client</h3>
-                        <p className="text-xs font-medium opacity-60 leading-relaxed">Install the high-fidelity Android trace for seamless offline preparation.</p>
-                      </div>
-                      
+                      <div><h3 className="text-2xl font-black tracking-tight leading-none mb-2">Native Client</h3><p className="text-xs font-medium opacity-60 leading-relaxed">Install the high-fidelity Android trace for seamless offline preparation.</p></div>
                       <div className="flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 border-dashed border-emerald-500/20 relative min-h-[180px] shadow-inner">
                         <AnimatePresence mode="wait">
-                          {isApkLoading ? (
-                            <motion.div key="apk-loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-2">
-                              <Loader2 className="animate-spin text-emerald-500 w-8 h-8" />
-                              <span className="text-[8px] font-black uppercase text-emerald-600/60 tracking-[0.3em]">Syncing Trace...</span>
-                            </motion.div>
-                          ) : qrCodeUrl ? (
-                            <motion.div key="apk-qr" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="space-y-4 flex flex-col items-center">
-                              <div className="w-32 h-32 bg-white p-1.5 rounded-2xl shadow-xl border-4 border-emerald-50 overflow-hidden">
-                                <img src={qrCodeUrl} alt="QR Code" className="w-full h-full object-contain" />
-                              </div>
-                              <p className="text-[9px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-2"><QrCode className="w-3 h-3" /> Scan to Sideload</p>
-                            </motion.div>
-                          ) : (
-                            <motion.p key="apk-error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-muted-foreground text-center">Unable to generate QR code.</motion.p>
-                          )}
+                          {isApkLoading ? (<motion.div key="apk-loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-2"><Loader2 className="animate-spin text-emerald-500 w-8 h-8" /><span className="text-[8px] font-black uppercase text-emerald-600/60 tracking-[0.3em]">Syncing Trace...</span></motion.div>) : qrCodeUrl ? (<motion.div key="apk-qr" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="space-y-4 flex flex-col items-center"><div className="w-32 h-32 bg-white p-1.5 rounded-2xl shadow-xl border-4 border-emerald-50 overflow-hidden"><img src={qrCodeUrl} alt="QR Code" className="w-full h-full object-contain" /></div><p className="text-[9px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-2"><QrCode className="w-3 h-3" /> Scan to Sideload</p></motion.div>) : (<motion.p key="apk-error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-muted-foreground text-center">Unable to generate QR code.</motion.p>)}
                         </AnimatePresence>
                       </div>
-
-                      <Button onClick={() => window.location.href = apkInfo?.downloadUrl || GITHUB_APK_URL} disabled={isApkLoading} className="w-full h-16 rounded-[1.75rem] font-black gap-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-2xl shadow-emerald-500/30 active:scale-95 transition-all text-[10px] uppercase tracking-widest">
-                        {isApkLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <Download className="w-5 h-5" />} Direct Install
-                      </Button>
+                      <Button onClick={() => window.location.href = apkInfo?.downloadUrl || GITHUB_APK_URL} disabled={isApkLoading} className="w-full h-16 rounded-[1.75rem] font-black gap-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-2xl shadow-emerald-500/30 active:scale-95 transition-all text-[10px] uppercase tracking-widest">{isApkLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <Download className="w-5 h-5" />} Direct Install</Button>
                     </div>
                   </Card>
                 </motion.div>
 
                 <motion.div variants={itemVariants}>
                   <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-8 flex flex-col items-center text-center space-y-6">
-                    <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner">
-                      <BrainCircuit className="w-8 h-8 text-primary" />
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="text-xl font-black">Strategic Core</h4>
-                      <p className="text-xs text-muted-foreground font-medium px-4">Over 3.5K+ curated items analyzed by professional pedagogical engines.</p>
-                    </div>
+                    <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner"><BrainCircuit className="w-8 h-8 text-primary" /></div>
+                    <div className="space-y-2"><h4 className="text-xl font-black">Strategic Core</h4><p className="text-xs text-muted-foreground font-medium px-4">Over 3.5K+ curated items analyzed by professional pedagogical engines.</p></div>
                     <div className="w-full grid grid-cols-2 gap-3 pt-2">
-                      <div className="p-4 bg-muted/30 rounded-2xl border border-border/50">
-                        <p className="text-2xl font-black text-primary leading-none">82%</p>
-                        <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mt-1">Readiness</p>
-                      </div>
-                      <div className="p-4 bg-muted/30 rounded-2xl border border-border/50">
-                        <p className="text-2xl font-black text-emerald-600 leading-none">100%</p>
-                        <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mt-1">Access</p>
-                      </div>
+                      <div className="p-4 bg-muted/30 rounded-2xl border border-border/50"><p className="text-2xl font-black text-primary leading-none">82%</p><p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mt-1">Readiness</p></div>
+                      <div className="p-4 bg-muted/30 rounded-2xl border border-border/50"><p className="text-2xl font-black text-emerald-600 leading-none">100%</p><p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mt-1">Access</p></div>
                     </div>
                   </Card>
                 </motion.div>
@@ -944,13 +802,7 @@ function LetsPrepContent() {
             </div>
 
             <motion.div variants={itemVariants} className="pt-8 text-center pb-12">
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <div className="h-[1px] w-16 bg-border" />
-                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }}>
-                  <Heart className="w-5 h-5 text-rose-500 fill-current" />
-                </motion.div>
-                <div className="h-[1px] w-16 bg-border" />
-              </div>
+              <div className="flex items-center justify-center gap-3 mb-4"><div className="h-[1px] w-16 bg-border" /><motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }}><Heart className="w-5 h-5 text-rose-500 fill-current" /></motion.div><div className="h-[1px] w-16 bg-border" /></div>
               <p className="text-[10px] font-black uppercase tracking-[0.5em] text-muted-foreground opacity-40">Dedicated to the Filipino Educator</p>
             </motion.div>
           </motion.div>
