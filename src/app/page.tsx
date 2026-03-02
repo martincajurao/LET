@@ -142,6 +142,7 @@ function LetsPrepContent() {
   const pathname = usePathname();
   
   const [state, setState] = useState<AppState>('dashboard');
+  const [activeSimCategory, setActiveSimCategory] = useState<string | null>(null);
   const [currentQuestions, setCurrentQuestions] = useState<Question[]>([]);
   const [examAnswers, setExamAnswers] = useState<Record<string, string>>({});
   const [examTime, setExamTime] = useState(0);
@@ -240,6 +241,7 @@ function LetsPrepContent() {
       if (finalQuestions.length === 0) throw new Error(`Insufficient items found.`);
       
       setCurrentQuestions(finalQuestions);
+      setActiveSimCategory(category);
       setIsResultsUnlocked(false);
       setTimeout(() => { 
         setState('exam'); 
@@ -354,10 +356,10 @@ function LetsPrepContent() {
 
   const handleExamComplete = async (answers: Record<string, string>, timeSpent: number, confidentAnswers: Record<string, boolean>) => {
     if (!user || !firestore) return;
-    const isQuickFire = currentQuestions.length <= 5;
+    const isQuickFireMode = activeSimCategory === 'quickfire';
     const now = Date.now();
 
-    if (isQuickFire && timeSpent < MIN_QUICK_FIRE_TIME) {
+    if (isQuickFireMode && timeSpent < MIN_QUICK_FIRE_TIME) {
       toast({ variant: "destructive", title: "Calibration Divergence", description: "Trace was too rapid. Engage deeply to earn rewards." });
       setState('dashboard');
       return;
@@ -385,7 +387,7 @@ function LetsPrepContent() {
       }
     });
 
-    if (isQuickFire) {
+    if (isQuickFireMode) {
       xpEarned += Math.round((correctCount / 5) * XP_REWARDS.QUICK_FIRE_COMPLETE);
     } else {
       xpEarned += (currentQuestions.length >= 50 ? XP_REWARDS.FINISH_FULL_SIM : XP_REWARDS.FINISH_TRACK);
@@ -409,11 +411,11 @@ function LetsPrepContent() {
         setNewResultId(docRef.id);
         const updatePayload: any = { 
           dailyQuestionsAnswered: increment(currentQuestions.length), 
-          dailyTestsFinished: increment(!isQuickFire ? 1 : 0),
+          dailyTestsFinished: increment(!isQuickFireMode ? 1 : 0),
           xp: increment(xpEarned), 
           lastActiveDate: serverTimestamp() 
         };
-        if (isQuickFire) updatePayload.lastQuickFireTimestamp = now;
+        if (isQuickFireMode) updatePayload.lastQuickFireTimestamp = now;
         await updateDoc(doc(firestore, 'users', user.uid), updatePayload);
       }
       await refreshUser();
@@ -421,10 +423,10 @@ function LetsPrepContent() {
       console.error("Result sync error:", e);
     } finally {
       setIsCalibrating(false);
-      if (isQuickFire) {
+      if (isQuickFireMode) {
         setState('quickfire_results');
       } else {
-        // Universal Result Gate for all professional tracks
+        // ALWAYS use ResultsOverview (gated) for categorized and full simulations
         setState('results');
         if (user && !user.isPro) {
           setIsResultsUnlocked(false);

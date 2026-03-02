@@ -68,7 +68,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     };
   }, []);
 
-  // Professional Phase Grouping: Locked logic for Full Simulation
+  // Phased Grouping Logic - LOCKED for Professional Multi-Track Traces
   const phases = useMemo(() => {
     const p: Phase[] = [];
     let currentPhase: Phase | null = null;
@@ -83,7 +83,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     return p;
   }, [questions]);
 
-  // Continuous trace only for single-track category exams
+  // RESTORED: Continuous only for single-subject tracks
   const isContinuous = useMemo(() => phases.length <= 1, [phases]);
 
   const currentPhaseIndex = useMemo(() => {
@@ -147,7 +147,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         return;
       }
 
-      // Restore: If it's a multi-phase trace (Full Simulation), show rest phase
+      // RESTORED: Multi-phase traces trigger professional rest
       if (isEndOfPhase && !isContinuous) {
         setIsResting(true);
       } else {
@@ -329,7 +329,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   </div>
                   <div>
                     <h2 className="text-xl font-black tracking-tight text-foreground">Phase Calibration</h2>
-                    <p className="text-muted-foreground font-medium text-[10px] uppercase tracking-widest">A professional breather before the next track.</p>
+                    <p className="text-muted-foreground font-medium text-[10px] uppercase tracking-widest">Professional segment transition</p>
                   </div>
                 </div>
 
