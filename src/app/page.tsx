@@ -159,6 +159,7 @@ function LetsPrepContent() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const pullStartY = useRef<number | null>(null);
   const isStartingRef = useRef(false);
+  const processedParamRef = useRef<string | null>(null);
   
   const [newResultId, setNewResultId] = useState<string | undefined>(undefined);
   const [apkInfo, setApkInfo] = useState<{ version: string; downloadUrl: string } | null>(null);
@@ -184,7 +185,7 @@ function LetsPrepContent() {
       const now = Date.now();
       const lastQf = Number(user.lastQuickFireTimestamp) || 0;
       if (lastQf + COOLDOWNS.QUICK_FIRE > now) {
-        toast({ variant: "destructive", title: "Access Denied", description: "Cooldown in effect." });
+        toast({ variant: "destructive", title: "Access Denied", description: "QuickFire cooldown in effect." });
         isStartingRef.current = false;
         return;
       }
@@ -195,6 +196,7 @@ function LetsPrepContent() {
     try {
       const questionPool = await fetchQuestionsFromFirestore(firestore);
       let finalQuestions: Question[] = [];
+      
       if (category === 'all') {
         const genEd = shuffleArray(questionPool.filter(q => q.subject === 'General Education')).slice(0, limits.limitGenEd);
         const profEd = shuffleArray(questionPool.filter(q => q.subject === 'Professional Education')).slice(0, limits.limitProfEd);
@@ -224,8 +226,10 @@ function LetsPrepContent() {
   }, [user, firestore, limits, toast]);
 
   useEffect(() => {
-    if (user && startParam && !isCalibrating && state === 'dashboard') {
+    if (user && startParam && !isCalibrating && state === 'dashboard' && processedParamRef.current !== startParam) {
+      processedParamRef.current = startParam;
       startExam(startParam);
+      // Clean URL without losing state
       const newUrl = window.location.pathname;
       window.history.replaceState({}, '', newUrl);
     }
@@ -348,15 +352,15 @@ function LetsPrepContent() {
       if (!user.uid.startsWith('bypass')) {
         const docRef = await addDoc(collection(firestore, "exam_results"), resultsData);
         setNewResultId(docRef.id);
-        await updateDoc(doc(firestore, 'users', user.uid), { 
+        const updatePayload: any = { 
           dailyQuestionsAnswered: increment(currentQuestions.length), 
           xp: increment(xpEarned), 
           lastActiveDate: serverTimestamp() 
-        });
-      } else {
-        // Just update local bypass user for stats
-        await refreshUser();
+        };
+        if (isQuickFire) updatePayload.lastQuickFireTimestamp = now;
+        await updateDoc(doc(firestore, 'users', user.uid), updatePayload);
       }
+      await refreshUser();
     } catch (e) {
       console.error("Result sync error:", e);
     } finally {

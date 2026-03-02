@@ -5,8 +5,8 @@ import { DailyTaskDashboard } from '@/components/ui/daily-task-dashboard';
 import { DailyLoginRewards } from '@/components/ui/daily-login-rewards';
 import { QuestionOfTheDay } from '@/components/ui/question-of-the-day';
 import { StudyTimer } from '@/components/ui/study-timer';
-import { Target, ArrowLeft, Timer, ShieldCheck, Sparkles, Brain } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Target, ArrowLeft, ShieldCheck, Brain, Loader2 } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUser, useFirestore } from '@/firebase';
 import { doc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
@@ -16,7 +16,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 export default function TasksPage() {
-  const { user, refreshUser } = useUser();
+  const { user, loading, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -74,8 +74,31 @@ export default function TasksPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse">Syncing Mission Hub...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <Card className="p-10 text-center max-w-sm rounded-[2.5rem] android-surface border-none shadow-2xl">
+          <ShieldCheck className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+          <h3 className="font-black text-xl mb-6">Authentication Required</h3>
+          <Link href="/"><Button className="w-full rounded-2xl h-14 font-black">Return Home</Button></Link>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8 pb-32">
+    <div className="min-h-screen bg-background p-4 md:p-8 pb-32 pt-safe">
       <div className="max-w-5xl mx-auto space-y-8">
         <div className="flex items-center justify-between px-2">
           <Link href="/dashboard">
@@ -100,25 +123,21 @@ export default function TasksPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-8">
-          {/* Daily Login Rewards - Premium Horizontal Tiles */}
-          {user && (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              transition={{ duration: 0.5 }}
-            >
-              <DailyLoginRewards 
-                currentDay={Math.min(((user?.streakCount || 0) % 7) + 1, 7)}
-                lastClaimDate={user.lastLoginRewardClaimedAt}
-                onClaim={handleClaimLoginReward} 
-              />
-            </motion.div>
-          )}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.5 }}
+          >
+            <DailyLoginRewards 
+              currentDay={Math.min(((user?.streakCount || 0) % 7) + 1, 7)}
+              lastClaimDate={user.lastLoginRewardClaimedAt}
+              onClaim={handleClaimLoginReward} 
+            />
+          </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-7 space-y-8">
-              {/* Daily Insight / Question of the Day */}
-              {user && INITIAL_QUESTIONS.length > 0 && (
+              {INITIAL_QUESTIONS.length > 0 && (
                 <motion.div 
                   initial={{ opacity: 0, x: -20 }} 
                   animate={{ opacity: 1, x: 0 }} 
@@ -132,7 +151,6 @@ export default function TasksPage() {
                 </motion.div>
               )}
 
-              {/* Study Timer - MD3 Refactor */}
               <motion.div 
                 initial={{ opacity: 0, x: -20 }} 
                 animate={{ opacity: 1, x: 0 }} 
@@ -143,7 +161,6 @@ export default function TasksPage() {
             </div>
 
             <div className="lg:col-span-5 space-y-8">
-              {/* Daily Mission Tracking Dashboard */}
               <motion.div 
                 initial={{ opacity: 0, x: 20 }} 
                 animate={{ opacity: 1, x: 0 }} 
@@ -152,7 +169,6 @@ export default function TasksPage() {
                 <DailyTaskDashboard />
               </motion.div>
 
-              {/* Tips / Academic Context Tile */}
               <Card className="android-surface border-none shadow-md3-1 rounded-[2rem] bg-foreground text-background p-8 overflow-hidden relative group">
                 <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:rotate-12 transition-transform duration-700">
                   <Brain className="w-24 h-24" />

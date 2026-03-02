@@ -61,7 +61,7 @@ export default function RootLayout({
             }}
           />
         </head>
-        <body className="font-body antialiased selection:bg-primary/30 selection:text-primary-foreground min-h-screen">
+        <body className="font-body antialiased selection:bg-primary/30 selection:text-primary-foreground min-h-screen bg-background">
           <ThemeProvider>
             <FirebaseClientProvider>
               <Suspense fallback={null}>
@@ -73,7 +73,7 @@ export default function RootLayout({
                 <Navbar />
               </Suspense>
               
-              <main className="pt-safe pb-safe min-h-screen">
+              <main className="pt-safe pb-safe min-h-screen relative z-0">
                 <PageTransition>
                   <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
                     {children}
