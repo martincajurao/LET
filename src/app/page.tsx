@@ -50,12 +50,14 @@ import {
   AlertCircle,
   FlaskConical,
   TrendingUp,
-  BrainCircuit
+  BrainCircuit,
+  History
 } from "lucide-react";
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
 import { QuickFireResults } from "@/components/exam/QuickFireResults";
+import { ResultUnlockDialog } from "@/components/exam/ResultUnlockDialog";
 import { Question } from "@/app/lib/mock-data";
 import { useUser, useFirestore } from "@/firebase";
 import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp, query, where, limit } from "firebase/firestore";
@@ -149,6 +151,15 @@ function LetsPrepContent() {
   const [loadingMessage, setLoadingMessage] = useState("");
   const [showAuthModal, setShowAuthModal] = useState(false);
   
+  // Results Gating State
+  const [showResultUnlock, setShowResultUnlock] = useState(false);
+  const [examStatsForUnlock, setExamStatsForUnlock] = useState({ 
+    questionsCount: 0, 
+    correctAnswers: 0, 
+    timeSpent: 0 
+  });
+  const [isResultsUnlocked, setIsResultsUnlocked] = useState(false);
+  
   const [timePerQuestion, setTimePerQuestion] = useState(60);
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
 
@@ -237,12 +248,9 @@ function LetsPrepContent() {
     }
   }, [user, firestore, limits, toast]);
 
-  // Reliable start parameter listener
   useEffect(() => {
     if (startParam && user && state === 'dashboard' && !isCalibrating) {
       startExam(startParam);
-      
-      // Immediately clear the param from the URL to allow the effect to trigger again on next navigation
       const params = new URLSearchParams(window.location.search);
       params.delete('start');
       const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : '');
@@ -257,7 +265,6 @@ function LetsPrepContent() {
         const response = await fetch('https://api.github.com/repos/martincajurao/LET/releases/latest');
         let downloadUrl = GITHUB_APK_URL;
         let version = "2.1.0";
-
         if (response.ok) {
           const data = await response.json();
           const apkAsset = data.assets?.find((a: any) => a.name.endsWith('.apk'));
@@ -266,7 +273,6 @@ function LetsPrepContent() {
             version = data.tag_name.replace(/^V/, '');
           }
         }
-
         setApkInfo({ version, downloadUrl });
         const qr = await QRCode.toDataURL(downloadUrl, { width: 256, margin: 2, color: { dark: '#10b981', light: '#ffffff' } });
         setQrCodeUrl(qr);
@@ -366,10 +372,7 @@ function LetsPrepContent() {
     const correctCount = results.filter(h => h.isCorrect).length;
     const overallScore = Math.round((correctCount / (currentQuestions.length || 1)) * 100);
     
-    // Core Score XP
     let xpEarned = correctCount * XP_REWARDS.CORRECT_ANSWER;
-    
-    // Skill Expression Bonuses (Confidence)
     results.forEach(r => {
       if (r.isConfident) {
         if (r.isCorrect) xpEarned += XP_REWARDS.CONFIDENT_CORRECT_BONUS;
@@ -377,7 +380,6 @@ function LetsPrepContent() {
       }
     });
 
-    // Completion Bonuses
     if (isQuickFire) {
       xpEarned += Math.round((correctCount / 5) * XP_REWARDS.QUICK_FIRE_COMPLETE);
     } else {
@@ -414,8 +416,23 @@ function LetsPrepContent() {
       console.error("Result sync error:", e);
     } finally {
       setIsCalibrating(false);
-      if (isQuickFire) setState('quickfire_results');
-      else setState('results');
+      if (isQuickFire) {
+        setState('quickfire_results');
+      } else {
+        // Categorized or Full Simulation: Apply Results Gating
+        if (!user.isPro) {
+          setIsResultsUnlocked(false);
+          setExamStatsForUnlock({
+            questionsCount: currentQuestions.length,
+            correctAnswers: correctCount,
+            timeSpent: timeSpent
+          });
+          setShowResultUnlock(true);
+        } else {
+          setIsResultsUnlocked(true);
+          setState('results');
+        }
+      }
     }
   };
 
@@ -532,6 +549,19 @@ function LetsPrepContent() {
         </DialogContent>
       </Dialog>
 
+      <ResultUnlockDialog 
+        open={showResultUnlock}
+        onClose={() => { setShowResultUnlock(false); setState('dashboard'); }}
+        onUnlock={() => { 
+          setIsResultsUnlocked(true);
+          setShowResultUnlock(false);
+          setState('results'); 
+        }}
+        questionsCount={examStatsForUnlock.questionsCount}
+        correctAnswers={examStatsForUnlock.correctAnswers}
+        timeSpent={examStatsForUnlock.timeSpent}
+      />
+
       <AnimatePresence mode="wait">
         {state === 'exam' ? (
           <motion.div key="exam" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
@@ -539,7 +569,14 @@ function LetsPrepContent() {
           </motion.div>
         ) : state === 'results' ? (
           <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">
-            <ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} resultId={newResultId} onRestart={() => setState('dashboard')} />
+            <ResultsOverview 
+              questions={currentQuestions} 
+              answers={examAnswers} 
+              timeSpent={examTime} 
+              resultId={newResultId} 
+              onRestart={() => setState('dashboard')} 
+              initialUnlocked={isResultsUnlocked}
+            />
           </motion.div>
         ) : state === 'quickfire_results' ? (
           <motion.div key="quickfire_results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">
@@ -622,7 +659,6 @@ function LetsPrepContent() {
                         )}
                       </div>
                     </div>
-                    {/* Background Visual Juice */}
                     <motion.div 
                       animate={{ 
                         scale: [1, 1.1, 1],

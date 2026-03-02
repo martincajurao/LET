@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
@@ -51,6 +52,7 @@ interface ResultsOverviewProps {
   onRestart: () => void;
   resultId?: string;
   isHistorical?: boolean;
+  initialUnlocked?: boolean;
 }
 
 function TypewriterText({ text, speed = 15 }: { text: string; speed?: number }) {
@@ -69,12 +71,20 @@ function TypewriterText({ text, speed = 15 }: { text: string; speed?: number }) 
   return <span>{displayedText}</span>;
 }
 
-export function ResultsOverview({ questions, answers, timeSpent, onRestart, resultId, isHistorical = false }: ResultsOverviewProps) {
+export function ResultsOverview({ 
+  questions, 
+  answers, 
+  timeSpent, 
+  onRestart, 
+  resultId, 
+  isHistorical = false,
+  initialUnlocked = false
+}: ResultsOverviewProps) {
   const { user, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  const [isUnlocked, setIsUnlocked] = useState(isHistorical);
+  const [isUnlocked, setIsUnlocked] = useState(initialUnlocked || isHistorical);
   const [unlocking, setUnlocking] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [showPurchaseSuccess, setShowPurchaseSuccess] = useState(false);
@@ -97,10 +107,10 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
   }, [questions]);
 
   useEffect(() => {
-    if (user?.isPro || isHistorical) {
+    if (user?.isPro || isHistorical || initialUnlocked) {
       setIsUnlocked(true);
     }
-  }, [user, isHistorical]);
+  }, [user, isHistorical, initialUnlocked]);
 
   const stats = useMemo(() => {
     let correct = 0;
@@ -220,7 +230,6 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
     const isPro = !!user.isPro;
     const credits = typeof user.credits === 'number' ? user.credits : 0;
 
-    // NO POPUP IN EVERY QUESTION: Frequent actions use toasts instead of dialogs
     if (!isPro && credits < AI_DEEP_DIVE_COST) {
       toast({ 
         variant: "destructive", 
@@ -269,7 +278,6 @@ export function ResultsOverview({ questions, answers, timeSpent, onRestart, resu
             await updateDoc(examDocRef, { results: updatedResults });
           }
         }
-        
         await refreshUser();
       }
     } catch (e) {
