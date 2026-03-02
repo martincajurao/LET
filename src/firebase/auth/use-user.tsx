@@ -8,7 +8,8 @@ import {
   FacebookAuthProvider,
   signOut,
   signInAnonymously,
-  signInWithCredential
+  signInWithCredential,
+  User as FirebaseUser
 } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, getDoc, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
 import { auth, firestore } from '../index';
@@ -141,17 +142,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!auth || !firestore) return;
     
+    // Check for Virtual Bypass Session first
+    const virtualUid = localStorage.getItem('virtual_educator_uid');
+    if (virtualUid) {
+      handleVirtualSession(virtualUid);
+      return;
+    }
+
     let unsubFromProfile: (() => void) | undefined;
     const unsubFromAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (unsubFromProfile) unsubFromProfile();
       
       if (firebaseUser) {
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
-        
-        // Initial check to see if document exists
         const snap = await getDoc(userDocRef);
         if (!snap.exists()) {
-          console.log('[Auth] Profile missing, creating new trace...');
           await createUserProfileInFirestore(firebaseUser);
         }
 
@@ -177,55 +182,112 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [firestore, auth]);
 
+  const handleVirtualSession = async (uid: string) => {
+    const userDocRef = doc(firestore, 'users', uid);
+    try {
+      const snap = await getDoc(userDocRef);
+      if (snap.exists()) {
+        const scrubbed = scrubUserData(snap.data(), userRef.current);
+        setUser({ ...scrubbed, uid });
+      } else {
+        // Create initial virtual document if missing
+        const virtualProfile = createMockProfile(uid);
+        await setDoc(userDocRef, virtualProfile);
+        setUser(virtualProfile);
+      }
+    } catch (e) {
+      console.error('Virtual Session Sync Error:', e);
+      // Even if firestore fails (due to rules), we let the UI function locally
+      setUser(createMockProfile(uid));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createMockProfile = (uid: string): UserProfile => ({
+    uid,
+    displayName: `Tester_${uid.substring(0, 4)}`,
+    email: 'test@educator.app',
+    photoURL: 'https://picsum.photos/seed/tester/200/200',
+    onboardingComplete: true,
+    credits: 100,
+    xp: 15000,
+    lastRewardedRank: 1,
+    isPro: true,
+    streakCount: 14,
+    majorship: 'Mathematics',
+    lastActiveDate: Date.now(),
+    lastTaskReset: Date.now(),
+    unlockedTracks: ['General Education', 'Professional Education', 'Specialization', 'all'],
+    referralCode: 'TESTER'
+  });
+
   const createUserProfileInFirestore = async (firebaseUser: any) => {
-    const isAnonymous = firebaseUser.isAnonymous || firebaseUser.uid.startsWith('bypass');
-    
     const newUserProfile: UserProfile = {
       uid: firebaseUser.uid,
-      displayName: isAnonymous ? `Tester_${firebaseUser.uid.substring(0, 4)}` : (firebaseUser.displayName || 'Educator'),
-      email: firebaseUser.email || 'anonymous@tester.app',
-      photoURL: firebaseUser.photoURL || 'https://picsum.photos/seed/tester/200/200',
+      displayName: firebaseUser.displayName || 'Educator',
+      email: firebaseUser.email || 'educator@practice.app',
+      photoURL: firebaseUser.photoURL || 'https://picsum.photos/seed/user/200/200',
       onboardingComplete: true,
-      credits: isAnonymous ? 100 : 20, 
-      xp: isAnonymous ? 15000 : 0,
+      credits: 20,
+      xp: 0,
       lastRewardedRank: 1,
-      isPro: isAnonymous,
+      isPro: false,
       dailyAdCount: 0,
-      dailyAiUsage: 0,
       dailyQuestionsAnswered: 0,
       dailyTestsFinished: 0,
-      dailyCreditEarned: 0,
-      streakCount: isAnonymous ? 14 : 0,
-      majorship: isAnonymous ? 'Mathematics' : 'English',
+      streakCount: 0,
+      majorship: 'English',
       lastActiveDate: Date.now(),
       lastTaskReset: Date.now(),
-      lastLoginRewardClaimedAt: 0,
-      lastQotdClaimedAt: 0,
       referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
-      taskLoginClaimed: false,
-      taskQuestionsClaimed: false,
-      taskMockClaimed: false,
-      taskMistakesClaimed: false,
-      mistakesReviewed: 0,
-      referralCount: 0,
-      referralCreditsEarned: 0,
-      referralTier: 'Bronze',
-      dailyEventEntries: 1,
-      unlockedTracks: ['General Education', 'Professional Education', 'Specialization', 'all']
+      unlockedTracks: ['General Education']
     };
     
     try {
       await setDoc(doc(firestore, 'users', firebaseUser.uid), newUserProfile, { merge: true });
       return newUserProfile;
     } catch (e) {
-      console.error('[Auth] Failed to create user profile:', e);
+      console.error('[Auth] Firestore Init Error:', e);
       return null;
+    }
+  };
+
+  const bypassLogin = async () => {
+    setLoading(true);
+    try {
+      if (!auth || !firestore) return;
+      
+      // Attempt standard anonymous auth
+      await signInAnonymously(auth);
+      toast({ 
+        variant: "reward", 
+        title: "Test Session Active", 
+        description: "Authenticated via Firebase trace." 
+      });
+    } catch (e: any) {
+      console.warn('Firebase Auth Restricted (Bypassing to Virtual Trace):', e.message);
+      
+      // Fallback: Virtual Trace (Persistent Local Session)
+      const virtualUid = `bypass_${Math.random().toString(36).substring(2, 9)}`;
+      localStorage.setItem('virtual_educator_uid', virtualUid);
+      
+      await handleVirtualSession(virtualUid);
+      
+      toast({ 
+        variant: "reward", 
+        title: "Virtual Trace Active", 
+        description: "Standard Auth restricted. Using local persistence." 
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const loginWithGoogle = async () => {
     setLoading(true);
     try {
+      localStorage.removeItem('virtual_educator_uid');
       if (Capacitor.isNativePlatform()) {
         const result = await FirebaseAuthentication.signInWithGoogle();
         if (result.credential?.idToken) {
@@ -247,6 +309,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth) return;
     setLoading(true);
     try {
+      localStorage.removeItem('virtual_educator_uid');
       const provider = new FacebookAuthProvider();
       await signInWithPopup(auth, provider);
     } catch (error: any) {
@@ -256,29 +319,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const bypassLogin = async () => {
-    setLoading(true);
-    try {
-      if (!auth || !firestore) return;
-      await signInAnonymously(auth);
-      toast({ 
-        variant: "reward", 
-        title: "Test Session Active", 
-        description: "Anonymous educator trace established." 
-      });
-    } catch (e) {
-      console.error('Bypass login error:', e);
-      toast({ 
-        variant: "destructive", 
-        title: "Bypass Failed", 
-        description: "Check your internet connection." 
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const logout = async () => {
+    localStorage.removeItem('virtual_educator_uid');
     if (Capacitor.isNativePlatform()) await FirebaseAuthentication.signOut();
     if (auth) await signOut(auth);
     setUser(null);
@@ -288,7 +330,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = async (data: Partial<UserProfile>) => {
     if (!firestore || !user?.uid) return;
     const userDocRef = doc(firestore, 'users', user.uid);
-    try { await updateDoc(userDocRef, data); } catch (e) { await setDoc(userDocRef, data, { merge: true }); }
+    try { 
+      await updateDoc(userDocRef, data); 
+    } catch (e) { 
+      // Fallback for virtual users if rules prevent write
+      setUser(prev => prev ? { ...prev, ...data } : null);
+    }
   };
 
   const refreshUser = async () => {

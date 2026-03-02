@@ -12,7 +12,7 @@ import { useUser, useFirestore } from '@/firebase';
 import { doc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { INITIAL_QUESTIONS } from '@/app/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
-import Link from 'next/link';
+import Link from 'next/navigation';
 import { motion } from 'framer-motion';
 
 export default function TasksPage() {
