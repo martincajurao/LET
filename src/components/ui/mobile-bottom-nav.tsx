@@ -35,6 +35,18 @@ function NavContent() {
   const [watchingAd, setWatchingAd] = useState(false);
   const [verifyingAd, setVerifyingAd] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [isImmersive, setIsImmersive] = useState(false);
+
+  // Check for immersive mode (during exams)
+  useEffect(() => {
+    const checkImmersive = () => {
+      setIsImmersive(document.body.classList.contains('immersive-mode'));
+    };
+    checkImmersive();
+    const observer = new MutationObserver(checkImmersive);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   // Real-time ticker for cooldowns
   useEffect(() => {
@@ -58,7 +70,7 @@ function NavContent() {
     return () => unsub();
   }, [firestore]);
 
-  // INSTANT REACTIVE COUNTS: Derived directly from user state
+  // INSTANT REACTIVE COUNTS
   const { availableTasksCount, claimableTasksCount } = useMemo(() => {
     if (!user) return { availableTasksCount: 0, claimableTasksCount: 0 };
 
@@ -168,6 +180,8 @@ function NavContent() {
       href: '#' 
     }
   ], [claimableTasksCount, availableTasksCount]);
+
+  if (isImmersive) return null;
 
   return (
     <>

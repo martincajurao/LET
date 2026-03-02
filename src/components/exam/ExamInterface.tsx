@@ -47,6 +47,14 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const autoAdvanceTimer = useRef<NodeJS.Timeout | null>(null);
 
+  // Apply immersive mode class to body to hide layout navbars
+  useEffect(() => {
+    document.body.classList.add('immersive-mode');
+    return () => {
+      document.body.classList.remove('immersive-mode');
+    };
+  }, []);
+
   const handleSubmit = useCallback(() => {
     const timeSpent = Math.floor((Date.now() - startTime) / 1000);
     onComplete(answers, timeSpent, confidentAnswers);
@@ -61,7 +69,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     return () => clearInterval(timer);
   }, [timeLeft, handleSubmit]);
 
-  // Sync internal selected option state with stored answers when index changes
   useEffect(() => {
     setSelectedOption(answers[questions[currentIdx]?.id] || null);
   }, [currentIdx, answers, questions]);
@@ -73,14 +80,12 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     setAnswers(prev => ({ ...prev, [currentQ.id]: val }));
     setSelectedOption(val);
     
-    // Streak logic
     if (isCorrect) {
       setCorrectStreak(prev => prev + 1);
     } else {
       setCorrectStreak(0);
     }
 
-    // Auto-advance after small delay for tactile feedback
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
     
     if (currentIdx < questions.length - 1) {
@@ -116,7 +121,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
   return (
     <div className="fixed inset-0 z-[2000] bg-background flex flex-col overflow-hidden animate-in fade-in duration-300 font-body">
-      {/* Immersive Android Header */}
       <header className="pt-safe border-b bg-card shrink-0 shadow-sm relative z-10">
         <div className="h-16 flex items-center justify-between px-4">
           <div className="flex items-center gap-3">
@@ -164,7 +168,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </div>
       </header>
 
-      {/* Content Area with Native Padding */}
       <main className="flex-1 overflow-y-auto px-6 py-10 md:p-12 no-scrollbar bg-background">
         <div className="max-w-2xl mx-auto space-y-8 pb-32">
           <AnimatePresence mode="wait">
@@ -251,7 +254,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </div>
       </main>
 
-      {/* Immersive Footer with Native Padding */}
       <footer className="shrink-0 border-t bg-card/95 backdrop-blur-2xl px-6 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         <div className="h-24 flex items-center justify-between w-full max-w-4xl mx-auto">
           <Button 
@@ -290,7 +292,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </div>
       </footer>
 
-      {/* Native Confirmation Dialogs */}
       <Dialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
         <DialogContent className="rounded-[3rem] bg-card border-none shadow-2xl p-10 max-w-sm z-[2100] outline-none">
           <div className="text-center space-y-6">

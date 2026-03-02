@@ -63,6 +63,18 @@ export function Navbar() {
   const [watchingAd, setWatchingAd] = useState(false);
   const [verifyingAd, setVerifyingAd] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [isImmersive, setIsImmersive] = useState(false);
+
+  // Check for immersive mode (during exams)
+  useEffect(() => {
+    const checkImmersive = () => {
+      setIsImmersive(document.body.classList.contains('immersive-mode'));
+    };
+    checkImmersive();
+    const observer = new MutationObserver(checkImmersive);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   // Real-time ticker for cooldowns
   useEffect(() => {
@@ -70,7 +82,7 @@ export function Navbar() {
     return () => clearInterval(interval);
   }, []);
 
-  // INSTANT REACTIVE COUNTS: Derived directly from user state
+  // INSTANT REACTIVE COUNTS
   const { availableTasksCount, claimableTasksCount } = useMemo(() => {
     if (!user) return { availableTasksCount: 0, claimableTasksCount: 0 };
 
@@ -167,8 +179,8 @@ export function Navbar() {
     }, 3500);
   };
 
-  // Stability: Keep the nav mounted but hide content if no user.
-  // This helps React maintain component state during route changes in WebViews.
+  if (isImmersive) return null;
+
   return (
     <>
       <nav className="min-h-16 pt-safe flex items-center justify-between px-4 md:px-8 bg-background/80 backdrop-blur-xl border-b sticky top-0 z-[100] shadow-sm">
