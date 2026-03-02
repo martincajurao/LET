@@ -426,15 +426,16 @@ function LetsPrepContent() {
       if (isQuickFire) {
         setState('quickfire_results');
       } else {
-        // Universal Gate: Unlock screen for GenEd, ProfEd, Spec, and Full Simulations
+        // Universal Gate for all standard simulations
         setState('results');
-        if (!user.isPro) {
+        if (user && !user.isPro) {
           setIsResultsUnlocked(false);
           setExamStatsForUnlock({
             questionsCount: currentQuestions.length,
             correctAnswers: correctCount,
             timeSpent: timeSpent
           });
+          // Explicitly show the popup
           setShowResultUnlock(true);
         } else {
           setIsResultsUnlocked(true);
@@ -627,27 +628,25 @@ function LetsPrepContent() {
                       
                       <div className="flex flex-wrap gap-4 pt-2">
                         {user ? (
-                          <Button 
-                            size="lg" 
+                          <button 
                             disabled={isCalibrating} 
                             onClick={() => startExam('all')} 
-                            className="h-16 md:h-20 px-10 md:px-14 rounded-2xl font-black text-lg md:text-xl gap-4 shadow-2xl shadow-primary/40 active:scale-95 transition-all group relative overflow-hidden bg-primary text-primary-foreground hover:bg-primary/90"
+                            className="h-16 md:h-20 px-10 md:px-14 rounded-2xl font-black text-lg md:text-xl gap-4 shadow-2xl shadow-primary/40 active:scale-95 transition-all group relative overflow-hidden bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center"
                           >
                             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                             {isCalibrating ? <Loader2 className="animate-spin w-7 h-7" /> : <Zap className="w-7 h-7 fill-current" />} 
                             <span>Launch Full Battle</span> 
                             <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
-                          </Button>
+                          </button>
                         ) : (
                           <motion.div 
                             className="w-full sm:w-fit"
                             animate={{ scale: [1, 1.02, 1] }}
                             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                           >
-                            <Button 
-                              size="lg" 
+                            <button 
                               onClick={() => setShowAuthModal(true)} 
-                              className="w-full h-16 md:h-20 px-10 md:px-14 rounded-3xl font-black text-xl gap-6 shadow-2xl shadow-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-all group relative overflow-hidden"
+                              className="w-full h-16 md:h-20 px-10 md:px-14 rounded-3xl font-black text-xl gap-6 shadow-2xl shadow-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-all group relative overflow-hidden flex items-center justify-center"
                             >
                               <div className="flex items-center gap-3 shrink-0 bg-background/20 p-2 rounded-2xl shadow-inner border border-white/10">
                                 <GoogleIcon />
@@ -660,7 +659,7 @@ function LetsPrepContent() {
                                 <span className="text-[10px] font-bold opacity-70 mt-1 uppercase tracking-[0.2em]">Secure Educator Entry</span>
                               </div>
                               <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" />
-                            </Button>
+                            </button>
                           </motion.div>
                         )}
                       </div>
