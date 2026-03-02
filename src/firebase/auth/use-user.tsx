@@ -4,18 +4,17 @@ import { useState, useEffect, createContext, useContext, ReactNode, useRef } fro
 import {
   onAuthStateChanged,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   GoogleAuthProvider,
   FacebookAuthProvider,
   signOut,
   signInAnonymously,
+  signInWithCredential
 } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, getDoc, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
 import { auth, firestore } from '../index';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { nativeAuth, NativeUser } from '@/lib/native-auth';
+import { nativeAuth } from '@/lib/native-auth';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
@@ -114,8 +113,7 @@ function scrubUserData(data: any, prevUser: UserProfile | null): UserProfile {
     'lastQotdClaimedAt'
   ];
 
-  const eventDateFields = ['lastActiveDate', 'lastTaskReset', 'lastQualityUpdate'];
-  const cooldownDateFields = ['lastAdXpTimestamp', 'lastQuickFireTimestamp', 'lastExplanationRequest'];
+  const dateFields = ['lastActiveDate', 'lastTaskReset', 'lastQualityUpdate', 'lastAdXpTimestamp', 'lastQuickFireTimestamp', 'lastExplanationRequest'];
 
   numFields.forEach(key => {
     if (scrubbed[key] === undefined || scrubbed[key] === null || isFirestoreSentinel(scrubbed[key])) {
@@ -123,53 +121,15 @@ function scrubUserData(data: any, prevUser: UserProfile | null): UserProfile {
     }
   });
 
-  eventDateFields.forEach(key => {
+  dateFields.forEach(key => {
     if (scrubbed[key] === undefined || scrubbed[key] === null || isFirestoreSentinel(scrubbed[key])) {
       scrubbed[key] = (prevUser as any)?.[key] ?? 0;
     } else if (scrubbed[key] && typeof scrubbed[key] === 'object' && scrubbed[key].toMillis) {
       scrubbed[key] = scrubbed[key].toMillis();
     }
   });
-
-  cooldownDateFields.forEach(key => {
-    if (scrubbed[key] === undefined || scrubbed[key] === null || isFirestoreSentinel(scrubbed[key])) {
-      scrubbed[key] = (prevUser as any)?.[key] ?? 0;
-    } else if (scrubbed[key] && typeof scrubbed[key] === 'object' && scrubbed[key].toMillis) {
-      scrubbed[key] = scrubbed[key].toMillis();
-    }
-  });
-
-  for (const key in scrubbed) {
-    if (!numFields.includes(key) && !eventDateFields.includes(key) && !cooldownDateFields.includes(key)) {
-      if (isFirestoreSentinel(scrubbed[key])) {
-        scrubbed[key] = (prevUser as any)?.[key] ?? null;
-      }
-    }
-  }
 
   return scrubbed as UserProfile;
-}
-
-function cleanFirestoreData(data: any): any {
-  if (data === undefined) return null;
-  if (data === null || typeof data !== 'object') return data;
-  if (isFirestoreData(data)) return data;
-  if (Array.isArray(data)) return data.map(cleanFirestoreData);
-  
-  const cleaned: any = {};
-  for (const key in data) {
-    const val = cleanFirestoreData(data[key]);
-    if (val !== undefined) cleaned[key] = val;
-  }
-  return cleaned;
-}
-
-function isFirestoreData(val: any): boolean {
-  return val && typeof val === 'object' && (
-    val.constructor?.name === 'FieldValue' ||
-    typeof val._methodName === 'string' ||
-    (val.type && typeof val.type === 'string')
-  );
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -183,92 +143,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => { userRef.current = user; }, [user]);
 
   useEffect(() => {
-    if (!auth) return;
-    getRedirectResult(auth).catch(console.error);
-  }, [auth]);
-
-  useEffect(() => {
-    if (!auth) return;
-    let unsubscribe: (() => void) | null = null;
-    const setupAuthListener = async () => {
-      try {
-        const handler = await FirebaseAuthentication.addListener('authStateChange', async (event) => {
-          if (event.user) {
-            const userProfile = await fetchUserProfileFromFirestore(event.user.uid);
-            if (userProfile) setUser(userProfile);
-            else {
-              const newProfile = await createUserProfileInFirestore({ uid: event.user.uid, displayName: event.user.displayName, email: event.user.email, photoURL: event.user.photoUrl });
-              setUser(newProfile);
-            }
-          }
-        });
-        unsubscribe = () => handler.remove();
-      } catch (error) { console.error('[Auth] Native listener failed:', error); }
-    };
-    setupAuthListener();
-    return () => { if (unsubscribe) unsubscribe(); };
-  }, [auth, firestore]);
-
-  useEffect(() => {
-    if (!auth || !firestore) { setLoading(false); return; }
+    if (!auth || !firestore) return;
+    
     let unsubFromProfile: (() => void) | undefined;
     const unsubFromAuth = onAuthStateChanged(auth, (firebaseUser) => {
       if (unsubFromProfile) unsubFromProfile();
+      
       if (firebaseUser) {
         setLoading(true);
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
-        unsubFromProfile = onSnapshot(userDocRef, async (snap) => {
+        unsubFromProfile = onSnapshot(userDocRef, (snap) => {
           if (snap.exists()) {
             const scrubbed = scrubUserData(snap.data(), userRef.current);
             setUser({ ...scrubbed, uid: firebaseUser.uid });
           } else {
-            const newUserProfile = await createUserProfileInFirestore(firebaseUser);
-            setUser(newUserProfile);
+            createUserProfileInFirestore(firebaseUser).then(setUser);
           }
           setLoading(false);
-        }, async (error) => {
+        }, (error) => {
           errorEmitter.emit('permission-error', new FirestorePermissionError({ path: userDocRef.path, operation: 'get' }));
           setLoading(false);
         });
-      } else { 
-        // If we have a bypass user, don't clear it
+      } else {
+        // Hold user state if it's a bypass user OR if we might be in a route transition
         if (!userRef.current?.uid.startsWith('bypass')) {
-          setUser(null); 
+          setUser(null);
         }
-        setLoading(false); 
+        setLoading(false);
       }
     });
-    return () => { unsubFromAuth(); if (unsubFromProfile) unsubFromProfile(); };
-  }, [toast, firestore, auth]);
 
-  useEffect(() => {
-    if (user?.uid && !user.uid.startsWith('bypass') && firestore && !isResettingRef.current) {
-      const now = new Date();
-      const lastReset = user.lastTaskReset || 0;
-      if (lastReset !== 0 && new Date(lastReset).toDateString() !== now.toDateString()) {
-        isResettingRef.current = true;
-        const userRef = doc(firestore, 'users', user.uid);
-        updateDoc(userRef, {
-          dailyQuestionsAnswered: 0,
-          dailyTestsFinished: 0,
-          dailyAiUsage: 0,
-          dailyCreditEarned: 0,
-          dailyAdCount: 0,
-          taskLoginClaimed: false,
-          taskQuestionsClaimed: false,
-          taskMockClaimed: false,
-          taskMistakesClaimed: false,
-          lastTaskReset: serverTimestamp()
-        }).finally(() => { isResettingRef.current = false; });
-      }
-    }
-  }, [user?.uid, user?.lastTaskReset, firestore]);
-
-  const fetchUserProfileFromFirestore = async (uid: string) => {
-    if (!firestore) return null;
-    const snap = await getDoc(doc(firestore, 'users', uid));
-    return snap.exists() ? snap.data() as UserProfile : null;
-  };
+    return () => {
+      unsubFromAuth();
+      if (unsubFromProfile) unsubFromProfile();
+    };
+  }, [firestore, auth]);
 
   const createUserProfileInFirestore = async (firebaseUser: any) => {
     const newUserProfile: UserProfile = {
@@ -311,18 +220,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       if (Capacitor.isNativePlatform()) {
-        const result = await nativeAuth.signInWithGoogle();
-        if (result.user) {
-          let userProfile = await fetchUserProfileFromFirestore(result.user.uid);
-          if (!userProfile) userProfile = await createUserProfileInFirestore(result.user);
-          setUser(userProfile);
+        const result = await FirebaseAuthentication.signInWithGoogle();
+        if (result.credential?.idToken) {
+          const credential = GoogleAuthProvider.credential(result.credential.idToken);
+          await signInWithCredential(auth!, credential);
         }
       } else {
         const provider = new GoogleAuthProvider();
         await signInWithPopup(auth!, provider);
       }
-    } catch (error: any) { console.error('Sign-In Error:', error); }
-    finally { setLoading(false); }
+    } catch (error: any) {
+      console.error('Sign-In Error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const loginWithFacebook = async () => {
@@ -331,8 +242,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const provider = new FacebookAuthProvider();
       await signInWithPopup(auth, provider);
-    } catch (error: any) { console.error('Facebook Error:', error); }
-    finally { setLoading(false); }
+    } catch (error: any) {
+      console.error('Facebook Error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const bypassLogin = () => {
@@ -345,7 +259,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       onboardingComplete: true,
       credits: 100,
       xp: 15000,
-      level: 30,
       isPro: true,
       streakCount: 14,
       majorship: 'Mathematics',
@@ -364,11 +277,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     setUser(mockUser);
     setLoading(false);
-    toast({ variant: "reward", title: "Bypass Mode Active", description: "Running in testing environment." });
+    toast({ variant: "reward", title: "Bypass Mode Active", description: "Test environment established." });
   };
 
   const logout = async () => {
-    if (Capacitor.isNativePlatform()) await nativeAuth.signOut();
+    if (Capacitor.isNativePlatform()) await FirebaseAuthentication.signOut();
     if (auth) await signOut(auth);
     setUser(null);
     router.push('/');
@@ -380,9 +293,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(prev => prev ? ({ ...prev, ...data }) : null);
       return;
     }
-    const cleaned = cleanFirestoreData(data);
     const userDocRef = doc(firestore, 'users', user.uid);
-    try { await updateDoc(userDocRef, cleaned); } catch (e) { await setDoc(userDocRef, cleaned, { merge: true }); }
+    try { await updateDoc(userDocRef, data); } catch (e) { await setDoc(userDocRef, data, { merge: true }); }
   };
 
   const refreshUser = async () => {

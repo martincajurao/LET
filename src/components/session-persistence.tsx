@@ -1,54 +1,63 @@
 'use client';
 
 import { useEffect, useCallback, useRef } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { nativeAuth } from '@/lib/native-auth';
-import { useUser } from '@/firebase';
+import { usePathname } from 'next/navigation';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { auth } from '@/firebase';
+import { useUser } from '@/firebase/auth/use-user';
+import { Capacitor } from '@capacitor/core';
 
 /**
  * SessionPersistence maintains authentication stability within the Android WebView.
  * It ensures the native Capacitor session is actively synchronized with the 
- * client-side Firebase state during route transitions.
+ * client-side Firebase state during mount and route transitions.
  */
 export function SessionPersistence() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { user, loading, refreshUser } = useUser();
   const lastPathRef = useRef(pathname);
+  const syncInProgress = useRef(false);
 
   // Function to verify and restore native session
   const checkSession = useCallback(async () => {
-    if (typeof window === 'undefined') return;
-    
-    // Detect Capacitor environment
-    const win = window as any;
-    const capacitor = win.Capacitor;
-    if (!capacitor) return;
-    
-    const platform = capacitor.platform;
-    if (platform !== 'android' && platform !== 'ios') return;
+    if (!Capacitor.isNativePlatform() || !auth || syncInProgress.current) return;
     
     try {
-      // Check for existing native user tokens via bridge
-      const result = await nativeAuth.getCurrentUser();
+      syncInProgress.current = true;
+      
+      // Check native layer for current user
+      const result = await FirebaseAuthentication.getCurrentUser();
+      
       if (result.user) {
-        console.log('[SessionPersistence] Native Trace found:', result.user.uid);
-        // Force refresh to ensure local profile is hydrated with latest cloud metadata
-        if (!user && !loading) {
+        console.log('[SessionPersistence] Native user trace found:', result.user.uid);
+        
+        // If JS layer is missing the user, attempt silent re-auth
+        if (!auth.currentUser) {
+          console.log('[SessionPersistence] JS layer out of sync. Re-authenticating...');
+          
+          // Note: In a full production app, we would use the latest idToken from the native side
+          // For now, we trigger a refresh which should pull from the native persistence layer
           await refreshUser();
         }
+      } else if (user && !user.uid.startsWith('bypass')) {
+        // Native layer says no user, but JS layer thinks there is one
+        // This is an inconsistent state, but we prioritize the native session in WebViews
+        console.warn('[SessionPersistence] Native layer session missing. JS layer may be stale.');
       }
     } catch (error) {
-      console.error('[SessionPersistence] Sync Error:', error);
+      console.error('[SessionPersistence] Synchronization failed:', error);
+    } finally {
+      syncInProgress.current = false;
     }
-  }, [user, loading, refreshUser]);
+  }, [user, refreshUser]);
 
   // Handle route change synchronization
   useEffect(() => {
     if (lastPathRef.current === pathname) return;
     lastPathRef.current = pathname;
     
-    // Only verify session if we appear unauthenticated in the web layer
+    // Only verify session if we are in a native platform and appear unauthenticated
     if (!loading && !user) {
       checkSession();
     }
@@ -58,7 +67,7 @@ export function SessionPersistence() {
   useEffect(() => {
     const timer = setTimeout(() => {
       checkSession();
-    }, 1200); // Allow bridge initialization time
+    }, 1500); // Allow additional time for bridge hydration
     
     return () => clearTimeout(timer);
   }, [checkSession]);

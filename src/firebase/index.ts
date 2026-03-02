@@ -1,7 +1,15 @@
 'use client';
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence, Auth, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { 
+  getAuth, 
+  setPersistence, 
+  browserLocalPersistence, 
+  indexedDBLocalPersistence,
+  Auth, 
+  GoogleAuthProvider, 
+  signInWithCredential 
+} from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
@@ -31,19 +39,13 @@ if (getApps().length === 0) {
   firestore = getFirestore(firebaseApp);
   
   // Set persistence for both web and WebView environments
-  // This ensures session is maintained across route changes
-  if (!isCapacitorNative || isWebView) {
-    setPersistence(auth, browserLocalPersistence).catch(console.error);
-  }
+  // We prefer indexedDB for WebView stability
+  const persistence = isWebView ? indexedDBLocalPersistence : browserLocalPersistence;
+  setPersistence(auth, persistence).catch(console.error);
 } else {
   firebaseApp = getApp();
   auth = getAuth(firebaseApp);
   firestore = getFirestore(firebaseApp);
-  
-  // Also set persistence if not already set
-  if (!isCapacitorNative || isWebView) {
-    setPersistence(auth, browserLocalPersistence).catch(console.error);
-  }
 }
 
 export function initializeFirebase() {
@@ -53,11 +55,9 @@ export function initializeFirebase() {
 /**
  * Google Login handler that works on both web and native platforms
  * On mobile (Capacitor), uses the native Google sign-in bridge
- * On web, uses the standard Firebase popup
  */
 export async function signInWithGoogle(): Promise<{ user: import('firebase/auth').User | null; error: Error | null }> {
   try {
-    // If on a phone, use the NATIVE bridge
     if (Capacitor.isNativePlatform()) {
       const result = await FirebaseAuthentication.signInWithGoogle();
       
@@ -68,9 +68,7 @@ export async function signInWithGoogle(): Promise<{ user: import('firebase/auth'
       }
       
       return { user: null, error: new Error('No credential returned from native sign-in') };
-    } 
-    // If on a computer (browser), use the STANDARD web login
-    else {
+    } else {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       const { signInWithPopup } = await import('firebase/auth');
