@@ -209,7 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     photoURL: 'https://picsum.photos/seed/tester/200/200',
     onboardingComplete: true,
     credits: 100,
-    xp: 15000,
+    xp: 5000,
     lastRewardedRank: 1,
     isPro: true,
     streakCount: 14,
@@ -262,7 +262,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const virtualUid = `bypass_${Math.random().toString(36).substring(2, 9)}`;
       localStorage.setItem('virtual_educator_uid', virtualUid);
       await handleVirtualSession(virtualUid);
-      toast({ variant: "reward", title: "Virtual Trace Active", description: "Standard Auth restricted. Using local persistence." });
+      toast({ variant: "reward", title: "Virtual Trace Active", description: "Using persistent local trace." });
     } finally {
       setLoading(false);
     }
