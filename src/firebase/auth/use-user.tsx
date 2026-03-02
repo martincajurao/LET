@@ -14,7 +14,6 @@ import { doc, onSnapshot, setDoc, getDoc, serverTimestamp, updateDoc, increment 
 import { auth, firestore } from '../index';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { nativeAuth } from '@/lib/native-auth';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
@@ -72,7 +71,7 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<void>;
   loginWithFacebook: () => Promise<void>;
   loginAnonymously: () => Promise<void>;
-  bypassLogin: () => void;
+  bypassLogin: () => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   addXp: (amount: number) => Promise<void>;
@@ -85,7 +84,7 @@ const AuthContext = createContext<AuthContextType>({
   loginWithGoogle: async () => {},
   loginWithFacebook: async () => {},
   loginAnonymously: async () => {},
-  bypassLogin: () => {},
+  bypassLogin: async () => {},
   logout: async () => {},
   updateProfile: async () => {},
   addXp: async () => {},
@@ -138,7 +137,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const userRef = useRef<UserProfile | null>(null);
-  const isResettingRef = useRef(false);
 
   useEffect(() => { userRef.current = user; }, [user]);
 
@@ -157,6 +155,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const scrubbed = scrubUserData(snap.data(), userRef.current);
             setUser({ ...scrubbed, uid: firebaseUser.uid });
           } else {
+            // For standard logins, initialize standard profile
+            // Bypass login handles its own initialization
             createUserProfileInFirestore(firebaseUser).then(setUser);
           }
           setLoading(false);
@@ -165,10 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false);
         });
       } else {
-        // Hold user state if it's a bypass user OR if we might be in a route transition
-        if (!userRef.current?.uid.startsWith('bypass')) {
-          setUser(null);
-        }
+        setUser(null);
         setLoading(false);
       }
     });
@@ -249,35 +246,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const bypassLogin = () => {
+  const bypassLogin = async () => {
     setLoading(true);
-    const mockUser: UserProfile = {
-      uid: 'bypass-' + Math.random().toString(36).substring(7),
-      displayName: 'Premium Tester',
-      email: 'tester@letprep.app',
-      photoURL: 'https://picsum.photos/seed/tester/200/200',
-      onboardingComplete: true,
-      credits: 100,
-      xp: 15000,
-      isPro: true,
-      streakCount: 14,
-      majorship: 'Mathematics',
-      lastRewardedRank: 1,
-      dailyAdCount: 0,
-      dailyQuestionsAnswered: 0,
-      dailyTestsFinished: 0,
-      dailyCreditEarned: 0,
-      lastTaskReset: Date.now(),
-      referralCode: 'TESTER',
-      taskLoginClaimed: false,
-      taskQuestionsClaimed: false,
-      taskMockClaimed: false,
-      taskMistakesClaimed: false,
-      unlockedTracks: ['General Education', 'Professional Education', 'Specialization', 'all']
-    };
-    setUser(mockUser);
-    setLoading(false);
-    toast({ variant: "reward", title: "Bypass Mode Active", description: "Test environment established." });
+    try {
+      if (!auth || !firestore) return;
+      
+      const cred = await signInAnonymously(auth);
+      const userDocRef = doc(firestore, 'users', cred.user.uid);
+      const snap = await getDoc(userDocRef);
+      
+      if (!snap.exists()) {
+        const testProfile: UserProfile = {
+          uid: cred.user.uid,
+          displayName: 'Premium Tester (' + cred.user.uid.substring(0, 4) + ')',
+          email: 'anonymous@tester.app',
+          photoURL: 'https://picsum.photos/seed/tester/200/200',
+          onboardingComplete: true,
+          credits: 100,
+          xp: 15000,
+          isPro: true,
+          streakCount: 14,
+          majorship: 'Mathematics',
+          lastRewardedRank: 1,
+          dailyAdCount: 0,
+          dailyQuestionsAnswered: 0,
+          dailyTestsFinished: 0,
+          dailyCreditEarned: 0,
+          lastTaskReset: Date.now(),
+          referralCode: 'TESTER-' + cred.user.uid.substring(0, 4).toUpperCase(),
+          taskLoginClaimed: false,
+          taskQuestionsClaimed: false,
+          taskMockClaimed: false,
+          taskMistakesClaimed: false,
+          unlockedTracks: ['General Education', 'Professional Education', 'Specialization', 'all']
+        };
+        await setDoc(userDocRef, testProfile);
+        setUser(testProfile);
+      } else {
+        const existingData = snap.data() as UserProfile;
+        setUser({ ...existingData, uid: cred.user.uid });
+      }
+      
+      toast({ 
+        variant: "reward", 
+        title: "Test Session Active", 
+        description: "Actual user account established in Firestore." 
+      });
+    } catch (e) {
+      console.error('Bypass login error:', e);
+      toast({ 
+        variant: "destructive", 
+        title: "Bypass Failed", 
+        description: "Could not establish an actual test account." 
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = async () => {
@@ -289,16 +313,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = async (data: Partial<UserProfile>) => {
     if (!firestore || !user?.uid) return;
-    if (user.uid.startsWith('bypass')) {
-      setUser(prev => prev ? ({ ...prev, ...data }) : null);
-      return;
-    }
     const userDocRef = doc(firestore, 'users', user.uid);
     try { await updateDoc(userDocRef, data); } catch (e) { await setDoc(userDocRef, data, { merge: true }); }
   };
 
   const refreshUser = async () => {
-    if (!firestore || !user?.uid || user.uid.startsWith('bypass')) return;
+    if (!firestore || !user?.uid) return;
     const snap = await getDoc(doc(firestore, 'users', user.uid));
     if (snap.exists()) setUser({ ...scrubUserData(snap.data(), user), uid: user.uid });
   };
@@ -309,10 +329,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loginAnonymously: async () => { if (auth) await signInAnonymously(auth); }, 
       bypassLogin, logout, updateProfile, 
       addXp: async (amt) => { 
-        if (user && firestore && !user.uid.startsWith('bypass')) {
+        if (user && firestore) {
           await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(amt) });
-        } else if (user?.uid.startsWith('bypass')) {
-          setUser(prev => prev ? ({ ...prev, xp: (prev.xp || 0) + amt }) : null);
         }
       },
       refreshUser 

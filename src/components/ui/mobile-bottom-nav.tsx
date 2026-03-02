@@ -117,15 +117,22 @@ function NavContent() {
       setVerifyingAd(true);
       setTimeout(async () => {
         try {
-          if (!user.uid.startsWith('bypass')) {
-            const userDocRef = doc(firestore, 'users', user.uid);
-            await updateDoc(userDocRef, { credits: increment(5), xp: increment(XP_REWARDS.AD_WATCH_XP), lastAdXpTimestamp: Date.now(), dailyAdCount: increment(1) });
-          }
+          const userDocRef = doc(firestore, 'users', user.uid);
+          await updateDoc(userDocRef, { 
+            credits: increment(5), 
+            xp: increment(XP_REWARDS.AD_WATCH_XP), 
+            lastAdXpTimestamp: Date.now(), 
+            dailyAdCount: increment(1) 
+          });
           await refreshUser();
-          toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added.` });
+          toast({ variant: "reward", title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added.` });
           setIsAlertsOpen(false);
-        } catch (e) { toast({ variant: "destructive", title: "Sync Failed", description: "Could not grant reward." }); } 
-        finally { setWatchingAd(false); setVerifyingAd(false); }
+        } catch (e) { 
+          toast({ variant: "destructive", title: "Sync Failed", description: "Could not grant reward." }); 
+        } finally { 
+          setWatchingAd(false); 
+          setVerifyingAd(false); 
+        }
       }, 1500);
     }, 3500);
   };
