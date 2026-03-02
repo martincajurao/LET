@@ -226,14 +226,14 @@ function LetsPrepContent() {
       const now = Date.now();
       const lastQf = Number(user.lastQuickFireTimestamp) || 0;
       if (lastQf + COOLDOWNS.QUICK_FIRE > now) {
-        toast({ variant: "destructive", title: "Teaser Cooling Down", description: "Brain Teaser will be ready soon." });
+        toast({ variant: "destructive", title: "Locked", description: "This exam mode is cooling down." });
         isStartingRef.current = false;
         return;
       }
     }
 
     setIsCalibrating(true);
-    setLoadingMessage("Syncing Analytical Path...");
+    setLoadingMessage("Syncing Exam Path...");
     try {
       const questionPool = await fetchQuestionsFromFirestore(firestore);
       let finalQuestions: Question[] = [];
@@ -267,7 +267,7 @@ function LetsPrepContent() {
         finalQuestions = shuffleArray(pool).slice(0, targetLimit);
       }
       
-      if (finalQuestions.length === 0) throw new Error(`Insufficient trace data.`);
+      if (finalQuestions.length === 0) throw new Error(`Insufficient exam items.`);
       
       setCurrentQuestions(finalQuestions);
       setActiveSimCategory(category);
@@ -278,7 +278,7 @@ function LetsPrepContent() {
         isStartingRef.current = false;
       }, 300);
     } catch (e: any) { 
-      toast({ variant: "destructive", title: "Trace Initialization Failed", description: e.message }); 
+      toast({ variant: "destructive", title: "Failed to Start", description: e.message }); 
       setIsCalibrating(false); 
       isStartingRef.current = false;
     }
@@ -289,7 +289,7 @@ function LetsPrepContent() {
     
     const cost = lockedTrackInfo.cost;
     if ((user.credits || 0) < cost) {
-      toast({ variant: "destructive", title: "Vault Restricted", description: `Requires ${cost} AI Credits to bypass rank requirements.` });
+      toast({ variant: "destructive", title: "Vault Restricted", description: `Requires ${cost} AI Credits to unlock.` });
       return;
     }
 
@@ -303,7 +303,7 @@ function LetsPrepContent() {
       toast({ variant: "reward", title: "Sector Unlocked!", description: `${lockedTrackInfo.name} is now accessible.` });
       setLockedTrackInfo(null);
     } catch (e) {
-      toast({ variant: "destructive", title: "Sync Failed", description: "Could not record unlock trace." });
+      toast({ variant: "destructive", title: "Sync Failed", description: "Could not record unlock." });
     } finally {
       setIsUnlockingEarly(false);
     }
@@ -393,9 +393,9 @@ function LetsPrepContent() {
       setIsRefreshing(true);
       try {
         await refreshUser();
-        toast({ title: "Synchronized", description: "Latest educator metadata loaded." });
+        toast({ title: "Synchronized", description: "Latest educator data loaded." });
       } catch (e) {
-        toast({ variant: "destructive", title: "Sync Failed", description: "Could not refresh character." });
+        toast({ variant: "destructive", title: "Sync Failed", description: "Could not refresh profile." });
       } finally {
         setIsRefreshing(false);
         setIsPulling(false);
@@ -414,7 +414,7 @@ function LetsPrepContent() {
     const now = Date.now();
 
     if (isQuickFireMode && timeSpent < MIN_QUICK_FIRE_TIME) {
-      toast({ variant: "destructive", title: "Trace Incomplete", description: "Engagement too rapid for reward calibration." });
+      toast({ variant: "destructive", title: "Exam Incomplete", description: "Engagement too rapid for reward calibration." });
       setState('dashboard');
       return;
     }
@@ -422,7 +422,7 @@ function LetsPrepContent() {
     setExamAnswers(answers);
     setExamTime(timeSpent);
     setIsCalibrating(true);
-    setLoadingMessage("Synchronizing Trace...");
+    setLoadingMessage("Synchronizing Exam...");
 
     const results = currentQuestions.map(q => {
       const isCorrect = answers[q.id] === q.correctAnswer;
@@ -508,11 +508,11 @@ function LetsPrepContent() {
           timestamp: serverTimestamp()
         });
       }
-      toast({ variant: "reward", title: "Trace Recorded!", description: "Thank you for contributing to our vault." });
+      toast({ variant: "reward", title: "Trace Recorded!", description: "Thank you for contributing to our platform." });
       setFeedbackText("");
       setShowFeedbackModal(false);
     } catch (e) {
-      toast({ variant: "destructive", title: "Sync Failed", description: "Could not record professional insight." });
+      toast({ variant: "destructive", title: "Sync Failed", description: "Could not record professional feedback." });
     } finally {
       setIsSubmittingFeedback(false);
     }
@@ -597,7 +597,7 @@ function LetsPrepContent() {
           <div className="p-8 space-y-6">
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Your Suggestions</Label>
-              <Textarea value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} placeholder="Improve the simulation experience..." className="rounded-2xl min-h-[120px] border-2 p-4 text-sm font-medium resize-none focus:border-primary transition-all" />
+              <Textarea value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} placeholder="Improve the exam experience..." className="rounded-2xl min-h-[120px] border-2 p-4 text-sm font-medium resize-none focus:border-primary transition-all" />
             </div>
             <DialogFooter className="sm:flex-col gap-3">
               <Button onClick={handleFeedbackSubmit} disabled={isSubmittingFeedback || !feedbackText.trim()} className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-primary/30 active:scale-95 transition-all">
@@ -638,7 +638,7 @@ function LetsPrepContent() {
               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-1">Sector Restricted</span>
               <DialogTitle className="text-3xl font-black tracking-tighter text-foreground">{lockedTrackInfo?.name}</DialogTitle>
               <DialogDescription className="text-muted-foreground font-medium text-sm leading-relaxed px-2">
-                This academic sector requires <span className="text-foreground font-black">Rank {lockedTrackInfo?.reqRank}</span> ({getCareerRankTitle(lockedTrackInfo?.reqRank)}). Complete other tracks to ascend.
+                This sector requires <span className="text-foreground font-black">Rank {lockedTrackInfo?.reqRank}</span> ({getCareerRankTitle(lockedTrackInfo?.reqRank)}). Complete other exams to ascend.
               </DialogDescription>
             </div>
             <div className="grid gap-3">
@@ -689,7 +689,7 @@ function LetsPrepContent() {
                         <Badge variant="outline" className="font-black text-[10px] uppercase px-3 py-1 bg-white/10 text-primary-foreground border-primary/20 mix-blend-difference">ALPHA V2.5</Badge>
                       </div>
                       <div className="space-y-4">
-                        <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95] text-foreground">Elite Board <br /><span className="text-primary italic">Simulations.</span></h1>
+                        <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95] text-foreground">Elite Board <br /><span className="text-primary italic">Exams.</span></h1>
                         <p className="text-muted-foreground font-medium text-lg md:text-2xl max-w-xl leading-relaxed">Sharpen your professional reasoning with AI-driven analysis built for the Filipino educator.</p>
                       </div>
                       <div className="flex flex-wrap gap-4 pt-2">
@@ -726,7 +726,7 @@ function LetsPrepContent() {
 
                 <div className="space-y-6">
                   <div className="flex items-center justify-between px-4">
-                    <h3 className="text-xl font-black tracking-tight flex items-center gap-3"><div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shadow-inner"><Target className="w-5 h-5 text-primary" /></div>Sector Maps</h3>
+                    <h3 className="text-xl font-black tracking-tight flex items-center gap-3"><div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shadow-inner"><Target className="w-5 h-5 text-primary" /></div>Exam Maps</h3>
                     <Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest text-muted-foreground opacity-60">Eligibility Controlled</Badge>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-1">
@@ -760,7 +760,7 @@ function LetsPrepContent() {
                     <motion.div variants={itemVariants} whileTap={{ scale: 0.98 }}>
                       <Card onClick={() => setShowFeedbackModal(true)} className="android-surface cursor-pointer rounded-[2rem] p-6 flex items-center gap-5 border-none shadow-md3-1">
                         <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner"><MessageSquare className="text-primary w-7 h-7" /></div>
-                        <div><h4 className="font-black text-lg">Send Feedback</h4><p className="text-[10px] font-bold text-muted-foreground uppercase">Improve the simulation</p></div>
+                        <div><h4 className="font-black text-lg">Send Feedback</h4><p className="text-[10px] font-bold text-muted-foreground uppercase">Improve the platform</p></div>
                       </Card>
                     </motion.div>
                     <motion.div variants={itemVariants} whileTap={{ scale: 0.98 }}>
@@ -782,13 +782,13 @@ function LetsPrepContent() {
                         <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center shadow-inner"><Download className="w-7 h-7 text-emerald-600" /></div>
                         <Badge variant="outline" className="font-black text-[9px] border-emerald-500/30 text-emerald-600 bg-emerald-500/5 uppercase">{isApkLoading ? '---' : `v${apkInfo?.version}`}</Badge>
                       </div>
-                      <div><h3 className="text-2xl font-black tracking-tight leading-none mb-2">Native Client</h3><p className="text-xs font-medium opacity-60 leading-relaxed">Install the high-fidelity Android trace for seamless offline preparation.</p></div>
+                      <div><h3 className="text-2xl font-black tracking-tight leading-none mb-2">Native Client</h3><p className="text-xs font-medium opacity-60 leading-relaxed">Install the high-fidelity Android exam for seamless offline preparation.</p></div>
                       <div className="flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 border-dashed border-emerald-500/20 relative min-h-[180px] shadow-inner">
                         <AnimatePresence mode="wait">
                           {isApkLoading ? (
                             <motion.div key="apk-loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-2">
                               <Loader2 className="animate-spin text-emerald-500 w-8 h-8" />
-                              <span className="text-[8px] font-black uppercase text-emerald-600/60 tracking-[0.3em]">Syncing Trace...</span>
+                              <span className="text-[8px] font-black uppercase text-emerald-600/60 tracking-[0.3em]">Syncing Exam...</span>
                             </motion.div>
                           ) : qrCodeUrl ? (
                             <motion.div key="apk-qr" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="space-y-4 flex flex-col items-center">

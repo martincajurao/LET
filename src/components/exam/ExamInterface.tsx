@@ -260,12 +260,10 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                     </motion.div>
                   )}
                 </AnimatePresence>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <button 
                   onClick={toggleConfidence}
                   className={cn(
-                    "h-8 rounded-lg gap-1.5 transition-all border px-2",
+                    "h-8 flex items-center justify-center rounded-lg gap-1.5 transition-all border px-2 active:scale-95",
                     confidentAnswers[currentQuestion.id] 
                       ? "bg-emerald-500 border-emerald-600 text-white shadow-lg" 
                       : "bg-background border-border text-muted-foreground"
@@ -275,7 +273,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   <span className="text-[8px] font-black uppercase tracking-tighter">
                     {confidentAnswers[currentQuestion.id] ? "Fixed" : "Calib"}
                   </span>
-                </Button>
+                </button>
               </>
             )}
           </div>
@@ -298,7 +296,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                     <ShieldCheck className="w-8 h-8 text-primary" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black tracking-tight text-foreground">Simulation Briefing</h2>
+                    <h2 className="text-2xl font-black tracking-tight text-foreground">Exam Briefing</h2>
                     <p className="text-muted-foreground font-medium text-[10px] uppercase tracking-widest">Strategy Guard Parameters</p>
                   </div>
                 </div>
@@ -334,7 +332,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                     onClick={() => { setShowBriefing(false); setStartTime(Date.now()); }}
                     className="w-full h-16 rounded-[1.75rem] font-black text-lg uppercase tracking-widest gap-3 shadow-2xl shadow-primary/30 active:scale-95 transition-all"
                   >
-                    Initialize Trace
+                    Initialize Exam
                     <ArrowRight className="w-6 h-6" />
                   </Button>
                 </div>
@@ -357,7 +355,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   </motion.div>
                   
                   <div className="mt-4 text-center relative z-10">
-                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-primary mb-1">Elapsed Trace Time</span>
+                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-primary mb-1">Elapsed Exam Time</span>
                     <div className="text-3xl font-black font-mono tracking-tighter text-foreground tabular-nums animate-pulse">
                       {formatTime(elapsedTime)}
                     </div>
@@ -404,7 +402,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                     onClick={handleContinuePhase}
                     className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-all group"
                   >
-                    Resume Analytical Trace
+                    Resume Exam
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </div>
@@ -430,7 +428,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                         exit={{ opacity: 0, scale: 1.5 }}
                         className="text-emerald-500 font-black text-xs uppercase italic tracking-tighter"
                       >
-                        Perfect Trace!
+                        Perfect!
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -498,7 +496,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
               <div className="flex flex-col items-end">
                 <span className="text-[9px] font-black text-foreground tabular-nums">{answeredCount}/{questions.length} Solved</span>
-                <p className="text-[7px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">Overall Trace</p>
+                <p className="text-[7px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">Overall Exam</p>
               </div>
             </>
           )}
@@ -519,7 +517,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
             <div className="space-y-1">
               <DialogTitle className="text-xl font-black tracking-tight">Sync Simulation?</DialogTitle>
               <DialogDescription className="text-muted-foreground font-bold text-[8px] uppercase tracking-widest leading-relaxed">
-                Calibration complete. <br />Commit trace to professional vault?
+                Calibration complete. <br />Commit exam to professional vault?
               </DialogDescription>
             </div>
             <div className="grid gap-2 pt-1">
@@ -541,7 +539,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
               <AlertTriangle className="w-7 h-7 text-rose-600" />
             </div>
             <div className="space-y-1">
-              <DialogTitle className="text-xl font-black tracking-tight text-rose-600">Abort Trace?</DialogTitle>
+              <DialogTitle className="text-xl font-black tracking-tight text-rose-600">Abort Exam?</DialogTitle>
               <DialogDescription className="text-muted-foreground font-bold text-[8px] uppercase tracking-widest leading-relaxed">
                 Active pedagogical data <br />will be purged immediately.
               </DialogDescription>

@@ -305,8 +305,8 @@ export function ResultsOverview({
     <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500 pb-32">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-6 rounded-[2rem] shadow-sm border border-border/50">
         <div className="space-y-1">
-          <Badge className="bg-primary/10 text-primary border-primary/20 px-3 py-0.5 text-[9px] font-black uppercase tracking-[0.2em] mb-1">Calibration Trace</Badge>
-          <h1 className="text-2xl font-black tracking-tight text-foreground">Simulation Result</h1>
+          <Badge className="bg-primary/10 text-primary border-primary/20 px-3 py-0.5 text-[9px] font-black uppercase tracking-[0.2em] mb-1">Calibration Exam</Badge>
+          <h1 className="text-2xl font-black tracking-tight text-foreground">Exam Result</h1>
           <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">{questions.length} Items Calibrated</p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
@@ -354,7 +354,7 @@ export function ResultsOverview({
                   <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={8} dataKey="value" stroke="none">{pieData.map((e, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} />))}</Pie></PieChart></ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center"><span className="text-3xl font-black text-foreground">{stats.overallScore}%</span><span className="text-[8px] text-muted-foreground font-black uppercase tracking-widest mt-0.5">Accuracy</span></div>
                 </div>
-                <Badge variant={stats.isPassed ? "secondary" : "destructive"} className="px-6 py-1 text-[10px] font-black uppercase tracking-[0.2em] shadow-md mb-6 rounded-full border-none">{stats.isPassed ? "Simulation Passed" : "Retake Suggested"}</Badge>
+                <Badge variant={stats.isPassed ? "secondary" : "destructive"} className="px-6 py-1 text-[10px] font-black uppercase tracking-[0.2em] shadow-md mb-6 rounded-full border-none">{stats.isPassed ? "Exam Passed" : "Retake Suggested"}</Badge>
                 <div className="w-full grid grid-cols-2 gap-3">
                   <div className="p-4 bg-card rounded-[1.5rem] border shadow-sm text-center"><p className="text-[8px] font-black uppercase tracking-widest text-emerald-600">Correct</p><p className="text-xl font-black text-foreground">{stats.correct}</p></div>
                   <div className="p-4 bg-card rounded-[1.5rem] border shadow-sm text-center"><p className="text-[8px] font-black uppercase tracking-widest text-destructive">Missed</p><p className="text-xl font-black text-foreground">{stats.total - stats.correct}</p></div>
@@ -368,7 +368,7 @@ export function ResultsOverview({
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <Card className="lg:col-span-2 border-none shadow-xl bg-card overflow-hidden rounded-[2.5rem]">
-                <CardHeader className="flex flex-row items-center gap-4 p-8 pb-3"><div className="p-3 bg-primary/10 rounded-2xl shadow-inner"><Trophy className="w-6 h-6 text-primary" /></div><div><CardTitle className="text-xl font-black tracking-tight">AI Result Insight</CardTitle><p className="text-[9px] font-black uppercase text-primary tracking-[0.2em] mt-0.5">Pedagogical Analysis Roadmap</p></div></CardHeader>
+                <CardHeader className="flex flex-row items-center gap-4 p-8 pb-3"><div className="p-3 bg-primary/10 rounded-2xl shadow-inner"><Trophy className="w-6 h-6 text-primary" /></div><div><CardTitle className="text-xl font-black tracking-tight">AI Exam Insight</CardTitle><p className="text-[9px] font-black uppercase text-primary tracking-[0.2em] mt-0.5">Pedagogical Analysis Roadmap</p></div></CardHeader>
                 <CardContent className="p-8 pt-2 space-y-6">
                   {aiSummary ? (
                     <>
@@ -379,14 +379,14 @@ export function ResultsOverview({
                       </div>
                     </>
                   ) : (
-                    <div className="flex flex-col items-center justify-center py-8 space-y-3 opacity-40"><BrainCircuit className="w-10 h-10 text-muted-foreground animate-pulse" /><p className="text-[10px] font-black uppercase tracking-widest">Generating Insight Trace...</p></div>
+                    <div className="flex flex-col items-center justify-center py-8 space-y-3 opacity-40"><BrainCircuit className="w-10 h-10 text-muted-foreground animate-pulse" /><p className="text-[10px] font-black uppercase tracking-widest">Generating Insight Exam...</p></div>
                   )}
                 </CardContent>
               </Card>
               <Card className="lg:col-span-1 border-none shadow-xl bg-foreground rounded-[2.5rem] p-8 text-background relative overflow-hidden flex flex-col justify-center text-center space-y-4">
                 <div className="absolute top-0 right-0 p-6 opacity-10"><Zap className="w-24 h-24 fill-current" /></div>
                 <CardHeader className="p-0"><CardTitle className="text-[9px] font-black uppercase tracking-[0.3em] text-primary">Strategic Action</CardTitle></CardHeader>
-                <CardContent className="p-0 text-lg font-bold leading-snug px-2">{aiSummary ? <TypewriterText text={aiSummary.recommendations} /> : "Analyzing character metadata..."}</CardContent>
+                <CardContent className="p-0 text-lg font-bold leading-snug px-2">{aiSummary ? <TypewriterText text={aiSummary.recommendations} /> : "Analyzing character profile..."}</CardContent>
                 <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 rounded-xl h-12 font-black uppercase tracking-[0.1em] text-[10px]">Access Detailed Guide</Button>
               </Card>
             </div>
@@ -495,7 +495,7 @@ export function ResultsOverview({
                                       </div>
                                       <div>
                                         <p className="text-[9px] font-black uppercase tracking-widest text-primary leading-none">Pedagogical Insight</p>
-                                        <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-0.5">Analytical Reasoning Trace</p>
+                                        <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-0.5">Analytical Reasoning Exam</p>
                                       </div>
                                     </div>
                                     <div className="text-sm leading-relaxed font-medium text-foreground p-4 bg-card rounded-lg border border-border/30 shadow-sm">

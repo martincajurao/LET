@@ -269,7 +269,7 @@ function ProfilePageContent() {
         <Tabs defaultValue={activeTab} className="space-y-8">
           <TabsList className="bg-muted/30 p-1.5 rounded-[2rem] w-full grid grid-cols-2 h-16 shadow-inner border border-border/50">
             <TabsTrigger value="history" className="font-black text-[10px] uppercase tracking-[0.25em] rounded-[1.5rem] gap-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl transition-all duration-300">
-              <History className="w-4 h-4" /> Simulation Vault
+              <History className="w-4 h-4" /> Exam Vault
             </TabsTrigger>
             <TabsTrigger value="settings" className="font-black text-[10px] uppercase tracking-[0.25em] rounded-[1.5rem] gap-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl transition-all duration-300">
               <Settings className="w-4 h-4" /> Calibration
@@ -280,15 +280,15 @@ function ProfilePageContent() {
             {loadingRecords ? (
               <div className="flex flex-col items-center justify-center py-24 bg-card rounded-[3.5rem] border-4 border-dashed border-border/50 shadow-inner">
                 <Loader2 className="w-12 h-12 animate-spin text-primary mb-6" />
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground animate-pulse">Syncing Academic Vault...</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground animate-pulse">Syncing Exam Vault...</p>
               </div>
             ) : records.length === 0 ? (
               <div className="text-center py-24 bg-card rounded-[3.5rem] border shadow-2xl relative overflow-hidden group">
                 <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <ClipboardList className="w-20 h-20 text-muted-foreground/20 mx-auto mb-6 animate-levitate" />
                 <h3 className="text-3xl font-black mb-2">Vault is Sealed</h3>
-                <p className="text-muted-foreground font-medium text-lg mb-10 max-w-sm mx-auto leading-relaxed">Commit your first analytical simulation to generate professional insights.</p>
-                <Link href="/"><Button className="rounded-2xl font-black h-16 px-12 shadow-2xl shadow-primary/30 text-lg gap-3"><Zap className="w-6 h-6 fill-current" /> Launch Initial Simulation</Button></Link>
+                <p className="text-muted-foreground font-medium text-lg mb-10 max-w-sm mx-auto leading-relaxed">Commit your first simulation to generate professional insights.</p>
+                <Link href="/"><Button className="rounded-2xl font-black h-16 px-12 shadow-2xl shadow-primary/30 text-lg gap-3"><Zap className="w-6 h-6 fill-current" /> Launch Initial Exam</Button></Link>
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -311,7 +311,7 @@ function ProfilePageContent() {
                           <span className="text-[8px] uppercase tracking-[0.2em] mt-1 opacity-60">Board</span>
                         </div>
                         <div className="space-y-1">
-                          <p className="font-black text-xl tracking-tight">Trace #{(records.length - i).toString().padStart(3, '0')}</p>
+                          <p className="font-black text-xl tracking-tight">Exam #{(records.length - i).toString().padStart(3, '0')}</p>
                           <div className="flex flex-col gap-1.5">
                             <div className="flex items-center gap-2 text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] opacity-60">
                               <Calendar className="w-3 h-3" /> {format(record.timestamp, 'MMM dd, yyyy')}
@@ -330,13 +330,12 @@ function ProfilePageContent() {
                         )}>
                           {record.overallScore >= 75 ? 'Qualified' : 'Retake'}
                         </Badge>
-                        <Button 
+                        <button 
                           onClick={() => handleViewDetails(record)}
-                          variant="secondary" 
-                          className="flex-1 sm:flex-none h-14 px-8 rounded-2xl font-black text-[10px] uppercase tracking-[0.25em] gap-3 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all shadow-md group-hover:shadow-primary/20"
+                          className="flex-1 sm:flex-none h-14 px-8 rounded-2xl font-black text-[10px] uppercase tracking-[0.25em] gap-3 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all shadow-md group-hover:shadow-primary/20 flex items-center justify-center"
                         >
-                          Analyze Trace <Sparkles className="w-4 h-4 fill-current animate-sparkle" />
-                        </Button>
+                          Analyze Exam <Sparkles className="w-4 h-4 fill-current animate-sparkle" />
+                        </button>
                       </div>
                       
                       <div className="absolute top-0 right-0 p-8 opacity-5 text-primary pointer-events-none group-hover:rotate-12 transition-transform">
@@ -446,7 +445,7 @@ function ProfilePageContent() {
                     </div>
                     <div className="text-center sm:text-left">
                       <h3 className="text-2xl font-black tracking-tight text-foreground">Cloud Data Sync</h3>
-                      <p className="text-sm text-muted-foreground font-medium">Refresh your character metadata from vault</p>
+                      <p className="text-sm text-muted-foreground font-medium">Refresh your character profile from vault</p>
                     </div>
                   </div>
                   <Button 
@@ -476,7 +475,7 @@ function ProfilePageContent() {
               <div>
                 <DialogTitle className="text-3xl font-black tracking-tighter">Session Deep Dive</DialogTitle>
                 <DialogDescription className="text-[10px] font-black uppercase tracking-[0.35em] text-muted-foreground flex items-center gap-2">
-                  Trace ID: <span className="text-primary">#{selectedRecord?.timestamp ? format(selectedRecord.timestamp, 'yyMMdd-HHmm') : '0000'}</span>
+                  Exam ID: <span className="text-primary">#{selectedRecord?.timestamp ? format(selectedRecord.timestamp, 'yyMMdd-HHmm') : '0000'}</span>
                 </DialogDescription>
               </div>
             </div>
@@ -491,7 +490,7 @@ function ProfilePageContent() {
                 questions={(selectedRecord.results || []).map(r => ({
                   ...r,
                   id: r.questionId || r.id,
-                  text: r.text || "Question content unavailable in legacy record.",
+                  text: r.text || "Question content unavailable.",
                   options: r.options || ["A", "B", "C", "D"],
                   correctAnswer: r.correctAnswer || "",
                   subject: r.subject || "General",
