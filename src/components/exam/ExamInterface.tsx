@@ -27,9 +27,6 @@ import {
   BrainCircuit,
   CheckCircle2,
   Info,
-  Target,
-  TrendingUp,
-  Activity,
   ChevronRight
 } from "lucide-react";
 import { Question } from "@/app/lib/mock-data";
@@ -85,7 +82,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     return p;
   }, [questions]);
 
-  // Disable phases for small question sets (<= 10 items)
+  // Disable phases for small question sets (<= 10 items) or single track simulations
   const isContinuous = useMemo(() => phases.length <= 1 || questions.length <= 10, [phases, questions.length]);
 
   const currentPhaseIndex = useMemo(() => {
@@ -114,7 +111,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       }
     }
 
-    // 2. If sequential list is done, look for flagged items in this phase that still need answers
+    // 2. If sequential list is done, look for flagged items in THIS phase that still need answers
     if (nextIdx === -1) {
       for (let i = phase.startIndex; i <= phaseEndIndex; i++) {
         if (!currentAnswers[questions[i].id]) {
@@ -132,6 +129,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
           setShowSubmitConfirm(true);
         }
       } else {
+        // Phase is complete and not the last one -> Trigger Rest Phase
         setIsResting(true);
       }
     } else {
@@ -484,7 +482,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </div>
       </footer>
 
-      {/* Phase Calibration Dialog - Persistent */}
+      {/* Phase Calibration Dialog - Strictly Persistent */}
       <Dialog open={isResting} onOpenChange={() => {}}>
         <DialogContent 
           className="rounded-[3rem] bg-card border-none shadow-[0_40px_120px_rgba(0,0,0,0.5)] p-0 max-w-[400px] overflow-hidden outline-none z-[2100]" 
