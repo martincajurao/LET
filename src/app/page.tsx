@@ -47,7 +47,9 @@ import {
   Download,
   QrCode,
   AlertCircle,
-  FlaskConical
+  FlaskConical,
+  TrendingUp,
+  BrainCircuit
 } from "lucide-react";
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
@@ -229,7 +231,6 @@ function LetsPrepContent() {
     if (user && startParam && !isCalibrating && state === 'dashboard' && processedParamRef.current !== startParam) {
       processedParamRef.current = startParam;
       startExam(startParam);
-      // Clean URL without losing state
       const newUrl = window.location.pathname;
       window.history.replaceState({}, '', newUrl);
     }
@@ -396,19 +397,27 @@ function LetsPrepContent() {
 
   const currentRankData = user ? getRankData(user.xp || 0) : null;
   const displayStats = user ? [
-    { icon: <Sparkles className="w-4 h-4 text-yellow-500" />, label: 'Credits', value: user.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
+    { icon: <Sparkles className="w-4 h-4 text-yellow-500 animate-sparkle" />, label: 'Credits', value: user.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
     { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Arena', value: userRank, color: 'text-primary bg-primary/10' },
-    { icon: <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user.isPro ? 'Platinum' : 'FREE', color: 'text-blue-500 bg-blue-500/10' },
-    { icon: <Flame className="w-4 h-4 text-orange-500" />, label: 'Streak', value: user.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' }
+    { icon: user.isPro ? <Crown className="w-4 h-4 text-yellow-600 fill-current" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user.isPro ? 'Platinum' : 'FREE', color: 'text-blue-500 bg-blue-500/10' },
+    { icon: <Flame className="w-4 h-4 text-orange-500 fill-current animate-pulse" />, label: 'Streak', value: user.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' }
   ] : [
     { icon: <Users className="w-4 h-4 text-blue-500" />, label: 'Community', value: '1.7K+', color: 'text-blue-500 bg-blue-500/5' },
-    { icon: <Sparkles className="w-4 h-4 text-purple-500" />, label: 'AI Solved', value: '8.2K+', color: 'text-purple-500 bg-purple-500/5' },
+    { icon: <Sparkles className="w-4 h-4 text-purple-500 animate-sparkle" />, label: 'AI Solved', value: '8.2K+', color: 'text-purple-500 bg-purple-500/5' },
     { icon: <Star className="w-4 h-4 text-pink-500" />, label: 'Items', value: '3.5K+', color: 'text-pink-500 bg-pink-500/5' },
     { icon: <Trophy className="w-4 h-4 text-yellow-500" />, label: 'Readiness', value: '82%', color: 'text-yellow-500 bg-yellow-500/5' }
   ];
 
   const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
-  const itemVariants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
+  const itemVariants = { 
+    hidden: { opacity: 0, y: 20, scale: 0.95 }, 
+    show: { 
+      opacity: 1, 
+      y: 0, 
+      scale: 1,
+      transition: { type: "spring", stiffness: 100, damping: 12 }
+    } 
+  };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-background text-foreground font-body" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined }}>
@@ -430,12 +439,15 @@ function LetsPrepContent() {
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-sm outline-none overflow-hidden">
           <div className="bg-emerald-500/10 p-10 flex flex-col items-center text-center">
-            <div className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-xl mb-4"><ShieldCheck className="w-10 h-10 text-emerald-500" /></div>
-            <DialogTitle className="text-2xl font-black">Verified Access</DialogTitle>
+            <div className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-xl mb-4 border-2 border-emerald-500/20">
+              <ShieldCheck className="w-10 h-10 text-emerald-500" />
+            </div>
+            <DialogTitle className="text-2xl font-black tracking-tight">Verified Access</DialogTitle>
+            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-1">Credentials Required</p>
           </div>
           <div className="p-8 space-y-4">
-            <Button onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} className="w-full h-14 rounded-2xl font-black gap-3 bg-white text-black border border-border transition-all active:scale-95"><GoogleIcon /> Continue with Google</Button>
-            <Button onClick={async () => { await loginWithFacebook(); setShowAuthModal(false); }} className="w-full h-14 rounded-2xl font-black gap-3 bg-[#1877F2] text-white transition-all active:scale-95"><Facebook className="w-5 h-5 fill-current" /> Continue with Facebook</Button>
+            <Button onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} className="w-full h-14 rounded-2xl font-black gap-3 bg-white text-black border border-border shadow-md hover:bg-muted active:scale-95 transition-all"><GoogleIcon /> Continue with Google</Button>
+            <Button onClick={async () => { await loginWithFacebook(); setShowAuthModal(false); }} className="w-full h-14 rounded-2xl font-black gap-3 bg-[#1877F2] text-white shadow-md hover:bg-[#1877F2]/90 active:scale-95 transition-all"><Facebook className="w-5 h-5 fill-current" /> Continue with Facebook</Button>
             
             <div className="pt-4 border-t border-border/50">
               <Button 
@@ -460,10 +472,10 @@ function LetsPrepContent() {
           <div className="p-8 space-y-6">
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Your Suggestions</Label>
-              <Textarea value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} placeholder="Improve the simulation..." className="rounded-2xl min-h-[120px] border-2 p-4 text-sm font-medium resize-none" />
+              <Textarea value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} placeholder="Improve the simulation..." className="rounded-2xl min-h-[120px] border-2 p-4 text-sm font-medium resize-none focus:border-primary transition-all" />
             </div>
             <DialogFooter className="sm:flex-col gap-3">
-              <Button onClick={handleFeedbackSubmit} disabled={isSubmittingFeedback || !feedbackText.trim()} className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-primary/30">
+              <Button onClick={handleFeedbackSubmit} disabled={isSubmittingFeedback || !feedbackText.trim()} className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-primary/30 active:scale-95 transition-all">
                 {isSubmittingFeedback ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Transmit Insight
               </Button>
               <Button variant="ghost" onClick={() => setShowFeedbackModal(false)} className="w-full font-bold text-muted-foreground">Discard</Button>
@@ -486,73 +498,132 @@ function LetsPrepContent() {
             <QuickFireResults questions={currentQuestions} answers={examAnswers} timeSpent={examTime} xpEarned={lastXpEarned} onRestart={() => setState('dashboard')} />
           </motion.div>
         ) : (
-          <motion.div key="dashboard" variants={containerVariants} initial="hidden" animate="show" className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6">
+          <motion.div key="dashboard" variants={containerVariants} initial="hidden" animate="show" className="max-w-7xl mx-auto px-4 pt-4 pb-8 space-y-6 pt-safe">
             <motion.div variants={containerVariants} className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {displayStats.map((stat, i) => (
-                <motion.div key={i} variants={itemVariants} className="android-surface rounded-2xl p-3 flex items-center gap-3">
-                  <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0", stat.color)}>{stat.icon}</div>
-                  <div><p className="text-[10px] font-bold text-muted-foreground uppercase">{stat.label}</p><p className="text-lg font-black text-foreground">{stat.value}</p></div>
+                <motion.div 
+                  key={i} 
+                  variants={itemVariants} 
+                  whileTap={{ scale: 0.95 }}
+                  className="android-surface rounded-2xl p-4 flex items-center gap-4 border-none shadow-md3-1"
+                >
+                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner", stat.color)}>{stat.icon}</div>
+                  <div>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider mb-0.5">{stat.label}</p>
+                    <p className="text-xl font-black text-foreground leading-none">{stat.value}</p>
+                  </div>
                 </motion.div>
               ))}
             </motion.div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-8 space-y-6">
-                <motion.div variants={itemVariants}>
-                  <Card className="overflow-hidden border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-primary/20 via-card to-background p-8 md:p-12 relative group">
-                    <div className="relative z-10 space-y-6">
-                      <Badge variant="secondary" className="font-bold text-[10px] uppercase px-4 py-1 bg-primary/20 text-primary border-none">Free Practice Access</Badge>
-                      <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] text-foreground">Prepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
-                      {user ? (
-                        <Button size="lg" disabled={isCalibrating} onClick={() => startExam('all')} className="h-14 md:h-16 px-8 md:px-12 rounded-2xl font-black text-base md:text-lg gap-3 shadow-2xl shadow-primary/30 active:scale-95 group">
-                          {isCalibrating ? <Loader2 className="animate-spin" /> : <Zap className="w-6 h-6 fill-current" />} <span>Launch Full Battle</span> <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                        </Button>
-                      ) : (
-                        <motion.div 
-                          className="w-fit"
-                          animate={{ scale: [1, 1.02, 1] }}
-                          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                        >
+                <motion.div variants={itemVariants} whileHover={{ y: -4 }}>
+                  <Card className="overflow-hidden border-none shadow-2xl rounded-[3rem] bg-gradient-to-br from-primary/30 via-card to-background p-8 md:p-14 relative group">
+                    <div className="relative z-10 space-y-8">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="font-black text-[10px] uppercase px-4 py-1.5 bg-primary/20 text-primary border-none rounded-lg shadow-sm">Verified Learning Path</Badge>
+                        <Badge variant="outline" className="font-black text-[10px] uppercase px-3 py-1 bg-white/10 text-primary-foreground border-primary/20 mix-blend-difference">Alpha v2.1</Badge>
+                      </div>
+                      <div className="space-y-4">
+                        <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95] text-foreground">
+                          Elite Board <br /><span className="text-primary italic">Simulations.</span>
+                        </h1>
+                        <p className="text-muted-foreground font-medium text-lg md:text-2xl max-w-xl leading-relaxed">
+                          Sharpen your professional reasoning with AI-driven analysis built for the Filipino educator.
+                        </p>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-4 pt-2">
+                        {user ? (
                           <Button 
                             size="lg" 
-                            onClick={() => setShowAuthModal(true)} 
-                            className="h-16 md:h-20 px-10 md:px-14 rounded-[2rem] font-black text-lg md:text-xl gap-6 shadow-2xl shadow-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-all group relative overflow-hidden"
+                            disabled={isCalibrating} 
+                            onClick={() => startExam('all')} 
+                            className="h-16 md:h-20 px-10 md:px-14 rounded-2xl font-black text-lg md:text-xl gap-4 shadow-2xl shadow-primary/40 active:scale-95 transition-all group relative overflow-hidden bg-primary text-primary-foreground hover:bg-primary/90"
                           >
                             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                            <div className="flex items-center gap-3 shrink-0 bg-background/20 p-2 rounded-2xl shadow-inner border border-white/10">
-                              <GoogleIcon />
-                              <div className="w-7 h-7 bg-[#1877F2] rounded-full flex items-center justify-center shadow-md border border-white/20">
-                                <Facebook className="w-4 h-4 fill-current text-white" />
-                              </div>
-                            </div>
-                            <div className="flex flex-col items-start leading-none text-left">
-                              <span className="uppercase tracking-tighter">Sign In to Launch</span>
-                              <span className="text-[10px] font-bold opacity-70 mt-1 uppercase tracking-[0.2em]">Secure Educator Entry</span>
-                            </div>
-                            <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" />
+                            {isCalibrating ? <Loader2 className="animate-spin w-7 h-7" /> : <Zap className="w-7 h-7 fill-current" />} 
+                            <span>Launch Full Battle</span> 
+                            <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
                           </Button>
-                        </motion.div>
-                      )}
+                        ) : (
+                          <motion.div 
+                            className="w-full sm:w-fit"
+                            animate={{ scale: [1, 1.02, 1] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                          >
+                            <Button 
+                              size="lg" 
+                              onClick={() => setShowAuthModal(true)} 
+                              className="w-full h-16 md:h-20 px-10 md:px-14 rounded-3xl font-black text-xl gap-6 shadow-2xl shadow-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-all group relative overflow-hidden"
+                            >
+                              <div className="flex items-center gap-3 shrink-0 bg-background/20 p-2 rounded-2xl shadow-inner border border-white/10">
+                                <GoogleIcon />
+                                <div className="w-7 h-7 bg-[#1877F2] rounded-full flex items-center justify-center shadow-md border border-white/20">
+                                  <Facebook className="w-4 h-4 fill-current text-white" />
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-start leading-none text-left">
+                                <span className="uppercase tracking-tighter">Sign In to Launch</span>
+                                <span className="text-[10px] font-bold opacity-70 mt-1 uppercase tracking-[0.2em]">Secure Educator Entry</span>
+                              </div>
+                              <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" />
+                            </Button>
+                          </motion.div>
+                        )}
+                      </div>
                     </div>
+                    {/* Background Visual Juice */}
+                    <motion.div 
+                      animate={{ 
+                        scale: [1, 1.1, 1],
+                        opacity: [0.05, 0.1, 0.05],
+                        rotate: [0, 10, 0]
+                      }} 
+                      transition={{ duration: 15, repeat: Infinity }} 
+                      className="absolute -top-20 -right-20 w-96 h-96 bg-primary/20 rounded-full blur-[80px]" 
+                    />
                   </Card>
                 </motion.div>
 
-                <div className="space-y-4">
-                  <h3 className="text-xl font-black tracking-tight flex items-center gap-2"><Target className="w-5 h-5 text-primary" /> Training Zones</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between px-4">
+                    <h3 className="text-xl font-black tracking-tight flex items-center gap-3">
+                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shadow-inner">
+                        <Target className="w-5 h-5 text-primary" />
+                      </div>
+                      Sector Maps
+                    </h3>
+                    <Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest text-muted-foreground opacity-60">Quest Selection</Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-1">
                     {[
-                      { id: 'General Education', name: 'Gen Ed', icon: <Languages />, rnk: UNLOCK_RANKS.GENERAL_ED },
-                      { id: 'Professional Education', name: 'Prof Ed', icon: <BookOpen />, rnk: UNLOCK_RANKS.PROFESSIONAL_ED },
-                      { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star />, rnk: UNLOCK_RANKS.SPECIALIZATION }
+                      { id: 'General Education', name: 'Gen Ed', icon: <Languages />, rnk: UNLOCK_RANKS.GENERAL_ED, bg: 'from-blue-500/10' },
+                      { id: 'Professional Education', name: 'Prof Ed', icon: <BookOpen />, rnk: UNLOCK_RANKS.PROFESSIONAL_ED, bg: 'from-purple-500/10' },
+                      { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star />, rnk: UNLOCK_RANKS.SPECIALIZATION, bg: 'from-emerald-500/10' }
                     ].map((track, i) => {
                       const isLocked = user && !isTrackUnlocked(currentRankData?.rank || 1, track.id, user.unlockedTracks);
                       return (
-                        <motion.div key={i} variants={itemVariants}>
-                          <Card onClick={() => !isLocked && startExam(track.id)} className={cn("cursor-pointer border-2 rounded-[2rem] bg-card overflow-hidden active:scale-95 transition-all relative h-full", isLocked ? "opacity-60 grayscale" : "hover:border-primary shadow-sm")}>
-                            <CardContent className="p-6 space-y-4 text-center">
-                              <div className="w-12 h-12 bg-muted rounded-2xl mx-auto flex items-center justify-center">{track.icon}</div>
-                              <h4 className="font-black text-lg">{track.name}</h4>
-                              {isLocked && <Badge className="absolute top-2 right-2 bg-muted text-muted-foreground text-[8px] uppercase">Rank {track.rnk}</Badge>}
+                        <motion.div key={i} variants={itemVariants} whileTap={{ scale: 0.97 }}>
+                          <Card 
+                            onClick={() => !isLocked && startExam(track.id)} 
+                            className={cn(
+                              "cursor-pointer border-2 rounded-[2.5rem] bg-card overflow-hidden active:scale-95 transition-all relative h-full group hover:shadow-xl", 
+                              isLocked ? "opacity-60 grayscale border-muted" : "hover:border-primary border-border/50 bg-gradient-to-br via-card to-card " + track.bg
+                            )}
+                          >
+                            <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
+                              <div className="relative">
+                                <div className="w-16 h-16 bg-muted rounded-[1.5rem] flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-500">{track.icon}</div>
+                                {isLocked && <div className="absolute -top-2 -right-2 w-8 h-8 bg-background border-2 border-muted rounded-full flex items-center justify-center shadow-sm"><Lock className="w-3.5 h-3.5 text-muted-foreground" /></div>}
+                              </div>
+                              <div>
+                                <h4 className="font-black text-xl text-foreground">{track.name}</h4>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{isLocked ? `Unlock at Rank ${track.rnk}` : "Ready for Trace"}</p>
+                              </div>
+                              {!isLocked && <div className="pt-2 opacity-0 group-hover:opacity-100 transition-opacity"><ChevronRight className="w-5 h-5 text-primary" /></div>}
                             </CardContent>
                           </Card>
                         </motion.div>
@@ -562,58 +633,108 @@ function LetsPrepContent() {
                 </div>
 
                 <div className="space-y-4 pt-4">
-                  <h3 className="text-xl font-black tracking-tight flex items-center gap-2"><Users className="w-5 h-5 text-primary" /> Support & Community</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card onClick={() => setShowFeedbackModal(true)} className="android-surface cursor-pointer rounded-[2rem] p-6 flex items-center gap-5">
-                      <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center"><MessageSquare className="text-primary w-7 h-7" /></div>
-                      <div><h4 className="font-black text-lg">Send Feedback</h4><p className="text-[10px] font-bold text-muted-foreground uppercase">Suggest improvements</p></div>
-                    </Card>
-                    <Card onClick={() => window.location.href = 'mailto:support@letprep.app'} className="android-surface cursor-pointer rounded-[2rem] p-6 flex items-center gap-5">
-                      <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center"><Mail className="text-emerald-600 w-7 h-7" /></div>
-                      <div><h4 className="font-black text-lg">Contact Us</h4><p className="text-[10px] font-bold text-muted-foreground uppercase">Technical support</p></div>
-                    </Card>
+                  <h3 className="text-xl font-black tracking-tight flex items-center gap-3 px-4">
+                    <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center shadow-inner">
+                      <Users className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    Lounge & Support
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-1">
+                    <motion.div variants={itemVariants} whileTap={{ scale: 0.98 }}>
+                      <Card onClick={() => setShowFeedbackModal(true)} className="android-surface cursor-pointer rounded-[2rem] p-6 flex items-center gap-5 border-none shadow-md3-1">
+                        <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner"><MessageSquare className="text-primary w-7 h-7" /></div>
+                        <div><h4 className="font-black text-lg">Send Feedback</h4><p className="text-[10px] font-bold text-muted-foreground uppercase">Improve the simulation</p></div>
+                      </Card>
+                    </motion.div>
+                    <motion.div variants={itemVariants} whileTap={{ scale: 0.98 }}>
+                      <Card onClick={() => window.location.href = 'mailto:support@letprep.app'} className="android-surface cursor-pointer rounded-[2rem] p-6 flex items-center gap-5 border-none shadow-md3-1">
+                        <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center shadow-inner"><Mail className="text-emerald-600 w-7 h-7" /></div>
+                        <div><h4 className="font-black text-lg">Contact Us</h4><p className="text-[10px] font-bold text-muted-foreground uppercase">Technical support</p></div>
+                      </Card>
+                    </motion.div>
                   </div>
                 </div>
               </div>
 
               <div className="lg:col-span-4 space-y-6">
-                <Card className="android-surface border-none shadow-xl rounded-[2.25rem] bg-gradient-to-br from-emerald-500/20 via-card to-background p-6 overflow-hidden">
-                  <div className="space-y-5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center shadow-inner"><Smartphone className="text-emerald-600 w-6 h-6" /></div>
-                        <div><h3 className="font-black text-lg text-foreground leading-tight">Get Mobile App</h3><p className="text-[10px] opacity-60 uppercase font-bold tracking-widest">Study Anywhere</p></div>
+                <motion.div variants={itemVariants}>
+                  <Card className="android-surface border-none shadow-2xl rounded-[2.5rem] bg-foreground text-background p-8 overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:rotate-12 transition-transform duration-700">
+                      <Smartphone className="w-24 h-24" />
+                    </div>
+                    <div className="relative z-10 space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div className="w-14 h-14 bg-primary/20 rounded-2xl flex items-center justify-center shadow-inner">
+                          <Download className="w-7 h-7 text-primary" />
+                        </div>
+                        <Badge variant="outline" className="font-black text-[9px] border-primary/30 text-primary bg-primary/5 uppercase">{isApkLoading ? '---' : `v${apkInfo?.version}`}</Badge>
                       </div>
-                      <Badge variant="outline" className="text-[9px] uppercase font-black">{isApkLoading ? '---' : `v${apkInfo?.version}`}</Badge>
-                    </div>
-                    
-                    <div className="flex flex-col items-center justify-center p-5 bg-card rounded-[2rem] border-2 border-dashed border-emerald-500/20 relative min-h-[160px]">
-                      <AnimatePresence mode="wait">
-                        {isApkLoading ? (
-                          <motion.div key="apk-loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-2">
-                            <Loader2 className="animate-spin text-emerald-300 w-8 h-8" />
-                            <span className="text-[8px] font-black uppercase text-muted-foreground">Fetching trace...</span>
-                          </motion.div>
-                        ) : qrCodeUrl ? (
-                          <motion.div key="apk-qr" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="space-y-3 flex flex-col items-center">
-                            <div className="w-32 h-32 bg-white p-1 rounded-xl shadow-md border border-emerald-100 overflow-hidden">
-                              <img src={qrCodeUrl} alt="QR Code" className="w-full h-full object-contain" />
-                            </div>
-                            <p className="text-[9px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-1"><QrCode className="w-3 h-3" /> Scan to Install</p>
-                          </motion.div>
-                        ) : (
-                          <motion.p key="apk-error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-muted-foreground text-center">Unable to generate QR code.</motion.p>
-                        )}
-                      </AnimatePresence>
-                    </div>
+                      <div>
+                        <h3 className="text-2xl font-black tracking-tight leading-none mb-2">Native Client</h3>
+                        <p className="text-xs font-medium opacity-60 leading-relaxed">Install the high-fidelity Android trace for seamless offline preparation.</p>
+                      </div>
+                      
+                      <div className="flex flex-col items-center justify-center p-6 bg-background rounded-3xl border-2 border-dashed border-white/10 relative min-h-[180px] shadow-inner">
+                        <AnimatePresence mode="wait">
+                          {isApkLoading ? (
+                            <motion.div key="apk-loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-2">
+                              <Loader2 className="animate-spin text-primary w-8 h-8" />
+                              <span className="text-[8px] font-black uppercase text-primary/60 tracking-[0.3em]">Syncing Trace...</span>
+                            </motion.div>
+                          ) : qrCodeUrl ? (
+                            <motion.div key="apk-qr" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="space-y-4 flex flex-col items-center">
+                              <div className="w-32 h-32 bg-white p-1.5 rounded-2xl shadow-xl border-4 border-white/5 overflow-hidden">
+                                <img src={qrCodeUrl} alt="QR Code" className="w-full h-full object-contain" />
+                              </div>
+                              <p className="text-[9px] font-black uppercase text-primary tracking-widest flex items-center gap-2"><QrCode className="w-3 h-3" /> Scan to Sideload</p>
+                            </motion.div>
+                          ) : (
+                            <motion.p key="apk-error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-muted-foreground text-center">Unable to generate QR code.</motion.p>
+                          )}
+                        </AnimatePresence>
+                      </div>
 
-                    <Button onClick={() => window.location.href = apkInfo?.downloadUrl || GITHUB_APK_URL} disabled={isApkLoading} className="w-full h-14 rounded-2xl font-black gap-3 bg-emerald-500 text-white shadow-xl shadow-emerald-500/30 hover:bg-emerald-600 active:scale-95 transition-all">
-                      {isApkLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <Download className="w-5 h-5" />} Direct Download
-                    </Button>
-                  </div>
-                </Card>
+                      <Button onClick={() => window.location.href = apkInfo?.downloadUrl || GITHUB_APK_URL} disabled={isApkLoading} className="w-full h-16 rounded-[1.75rem] font-black gap-3 bg-primary text-primary-foreground shadow-2xl shadow-primary/30 active:scale-95 transition-all">
+                        {isApkLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <Download className="w-5 h-5" />} Direct Install
+                      </Button>
+                    </div>
+                  </Card>
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                  <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-8 flex flex-col items-center text-center space-y-6">
+                    <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner">
+                      <BrainCircuit className="w-8 h-8 text-primary" />
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="text-xl font-black">Strategic Core</h4>
+                      <p className="text-xs text-muted-foreground font-medium px-4">Over 3.5K+ curated items analyzed by professional pedagogical engines.</p>
+                    </div>
+                    <div className="w-full grid grid-cols-2 gap-3 pt-2">
+                      <div className="p-4 bg-muted/30 rounded-2xl border border-border/50">
+                        <p className="text-2xl font-black text-primary leading-none">82%</p>
+                        <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mt-1">Readiness</p>
+                      </div>
+                      <div className="p-4 bg-muted/30 rounded-2xl border border-border/50">
+                        <p className="text-2xl font-black text-emerald-600 leading-none">100%</p>
+                        <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mt-1">Access</p>
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
               </div>
             </div>
+
+            <motion.div variants={itemVariants} className="pt-8 text-center pb-12">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="h-[1px] w-16 bg-border" />
+                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }}>
+                  <Heart className="w-5 h-5 text-rose-500 fill-current" />
+                </motion.div>
+                <div className="h-[1px] w-16 bg-border" />
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-muted-foreground opacity-40">Dedicated to the Filipino Educator</p>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
