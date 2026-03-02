@@ -84,7 +84,8 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     return p;
   }, [questions]);
 
-  const isContinuous = useMemo(() => phases.length <= 1, [phases]);
+  // Disable phases for small question sets or non-full simulations
+  const isContinuous = useMemo(() => phases.length <= 1 || questions.length <= 10, [phases, questions.length]);
 
   const currentPhaseIndex = useMemo(() => {
     return phases.findIndex(p => 
@@ -298,7 +299,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
                   <div className="p-5 bg-muted/20 rounded-[2rem] border-2 border-dashed border-border/50">
                     <div className="flex items-start gap-3">
-                      <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                      <div className="mt-0.5 shrink-0"><Info className="w-4 h-4 text-primary" /></div>
                       <p className="text-[11px] font-medium text-muted-foreground leading-relaxed">
                         Use the <span className="text-foreground font-black">Shield Icon</span> during the exam to toggle your certainty. Correct answers with high confidence yield premium XP, but incorrect guesses will incur a penalty.
                       </p>
@@ -457,7 +458,9 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                         <span className="text-sm font-bold text-foreground leading-tight flex-1 pr-4 pointer-events-none">{opt}</span>
                         
                         {selectedOption === opt && (
-                          <Sparkles className="w-3.5 h-3.5 text-primary animate-sparkle absolute right-3 pointer-events-none" />
+                          <div className="absolute right-3 pointer-events-none">
+                            <Sparkles className="w-3.5 h-3.5 text-primary animate-sparkle" />
+                          </div>
                         )}
                       </button>
                     </motion.div>

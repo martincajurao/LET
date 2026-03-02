@@ -58,6 +58,7 @@ import {
 } from "lucide-react";
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
+import { QuickFireInterface } from "@/components/exam/QuickFireInterface";
 import { ResultsOverview } from "@/components/exam/ResultsOverview";
 import { QuickFireResults } from "@/components/exam/QuickFireResults";
 import { ResultUnlockDialog } from "@/components/exam/ResultUnlockDialog";
@@ -81,7 +82,7 @@ const GoogleIcon = () => (
   </svg>
 );
 
-type AppState = 'dashboard' | 'exam' | 'results' | 'quickfire_results';
+type AppState = 'dashboard' | 'exam' | 'quickfire_quiz' | 'results' | 'quickfire_results';
 
 const GITHUB_APK_URL = "https://github.com/martincajurao/LET/releases/download/V2.1.0/let.apk";
 
@@ -272,7 +273,7 @@ function LetsPrepContent() {
       setActiveSimCategory(category);
       setIsResultsUnlocked(false);
       setTimeout(() => { 
-        setState('exam'); 
+        setState(category === 'quickfire' ? 'quickfire_quiz' : 'exam'); 
         setIsCalibrating(false); 
         isStartingRef.current = false;
       }, 300);
@@ -407,7 +408,7 @@ function LetsPrepContent() {
     pullStartY.current = null;
   };
 
-  const handleExamComplete = async (answers: Record<string, string>, timeSpent: number, confidentAnswers: Record<string, boolean>) => {
+  const handleExamComplete = async (answers: Record<string, string>, timeSpent: number, confidentAnswers?: Record<string, boolean>) => {
     if (!user || !firestore) return;
     const isQuickFireMode = activeSimCategory === 'quickfire';
     const now = Date.now();
@@ -425,7 +426,7 @@ function LetsPrepContent() {
 
     const results = currentQuestions.map(q => {
       const isCorrect = answers[q.id] === q.correctAnswer;
-      const isConfident = confidentAnswers[q.id] || false;
+      const isConfident = confidentAnswers ? (confidentAnswers[q.id] || false) : false;
       return { ...q, questionId: q.id, userAnswer: answers[q.id], isCorrect, isConfident };
     });
     
@@ -655,6 +656,10 @@ function LetsPrepContent() {
           <motion.div key="exam" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
             <ExamInterface questions={currentQuestions} timePerQuestion={timePerQuestion} onComplete={handleExamComplete} />
           </motion.div>
+        ) : state === 'quickfire_quiz' ? (
+          <motion.div key="quickfire_quiz" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
+            <QuickFireInterface questions={currentQuestions} onComplete={(ans, time) => handleExamComplete(ans, time)} onExit={() => setState('dashboard')} />
+          </motion.div>
         ) : state === 'results' ? (
           <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">
             <ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} resultId={newResultId} onRestart={() => setState('dashboard')} initialUnlocked={isResultsUnlocked} />
@@ -780,7 +785,21 @@ function LetsPrepContent() {
                       <div><h3 className="text-2xl font-black tracking-tight leading-none mb-2">Native Client</h3><p className="text-xs font-medium opacity-60 leading-relaxed">Install the high-fidelity Android trace for seamless offline preparation.</p></div>
                       <div className="flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 border-dashed border-emerald-500/20 relative min-h-[180px] shadow-inner">
                         <AnimatePresence mode="wait">
-                          {isApkLoading ? (<motion.div key="apk-loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-2"><Loader2 className="animate-spin text-emerald-500 w-8 h-8" /><span className="text-[8px] font-black uppercase text-emerald-600/60 tracking-[0.3em]">Syncing Trace...</span></motion.div>) : qrCodeUrl ? (<motion.div key="apk-qr" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="space-y-4 flex flex-col items-center"><div className="w-32 h-32 bg-white p-1.5 rounded-2xl shadow-xl border-4 border-emerald-50 overflow-hidden"><img src={qrCodeUrl} alt="QR Code" className="w-full h-full object-contain" /></div><p className="text-[9px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-2"><QrCode className="w-3 h-3" /> Scan to Sideload</p></motion.div>) : (<motion.p key="apk-error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-muted-foreground text-center">Unable to generate QR code.</motion.p>)}
+                          {isApkLoading ? (
+                            <motion.div key="apk-loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-2">
+                              <Loader2 className="animate-spin text-emerald-500 w-8 h-8" />
+                              <span className="text-[8px] font-black uppercase text-emerald-600/60 tracking-[0.3em]">Syncing Trace...</span>
+                            </motion.div>
+                          ) : qrCodeUrl ? (
+                            <motion.div key="apk-qr" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="space-y-4 flex flex-col items-center">
+                              <div className="w-32 h-32 bg-white p-1.5 rounded-2xl shadow-xl border-4 border-emerald-50 overflow-hidden">
+                                <img src={qrCodeUrl} alt="QR Code" className="w-full h-full object-contain" />
+                              </div>
+                              <p className="text-[9px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-2"><QrCode className="w-3 h-3" /> Scan to Sideload</p>
+                            </motion.div>
+                          ) : (
+                            <motion.p key="apk-error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-muted-foreground text-center">Unable to generate QR code.</motion.p>
+                          )}
                         </AnimatePresence>
                       </div>
                       <Button onClick={() => window.location.href = apkInfo?.downloadUrl || GITHUB_APK_URL} disabled={isApkLoading} className="w-full h-16 rounded-[1.75rem] font-black gap-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-2xl shadow-emerald-500/30 active:scale-95 transition-all text-[10px] uppercase tracking-widest">{isApkLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <Download className="w-5 h-5" />} Direct Install</Button>
