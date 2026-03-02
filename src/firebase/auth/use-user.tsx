@@ -156,7 +156,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser({ ...scrubbed, uid: firebaseUser.uid });
           } else {
             // For standard logins, initialize standard profile
-            // Bypass login handles its own initialization
             createUserProfileInFirestore(firebaseUser).then(setUser);
           }
           setLoading(false);
