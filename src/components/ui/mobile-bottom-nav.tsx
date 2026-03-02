@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, Suspense, useMemo, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
@@ -33,11 +33,13 @@ function NavContent() {
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
   const [watchingAd, setWatchingAd] = useState(false);
   const [verifyingAd, setVerifyingAd] = useState(false);
-  const [availableTasksCount, setAvailableTasksCount] = useState(0);
-  const [claimableTasksCount, setClaimableTasksCount] = useState(0);
+  const [currentTime, setCurrentTime] = useState(Date.now());
 
-  const userRef = useRef(user);
-  useEffect(() => { userRef.current = user; }, [user]);
+  // Real-time ticker for cooldowns
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!firestore) return;
@@ -55,33 +57,29 @@ function NavContent() {
     return () => unsub();
   }, [firestore]);
 
-  const calculateAvailable = useCallback(() => {
-    const currentUser = userRef.current;
-    if (!currentUser) {
-      setAvailableTasksCount(0);
-      setClaimableTasksCount(0);
-      return;
-    }
+  // INSTANT REACTIVE COUNTS: Derived directly from user state
+  const { availableTasksCount, claimableTasksCount } = useMemo(() => {
+    if (!user) return { availableTasksCount: 0, claimableTasksCount: 0 };
 
-    const now = Date.now();
-    const adAvailable = (Number(currentUser.lastAdXpTimestamp) || 0) + COOLDOWNS.AD_XP <= now && (currentUser.dailyAdCount || 0) < DAILY_AD_LIMIT;
-    const qfAvailable = (Number(currentUser.lastQuickFireTimestamp) || 0) + COOLDOWNS.QUICK_FIRE <= now;
-    setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
+    const lastAd = Number(user.lastAdXpTimestamp) || 0;
+    const lastQf = Number(user.lastQuickFireTimestamp) || 0;
+    
+    const adAvailable = lastAd + COOLDOWNS.AD_XP <= currentTime && (user.dailyAdCount || 0) < DAILY_AD_LIMIT;
+    const qfAvailable = lastQf + COOLDOWNS.QUICK_FIRE <= currentTime;
+    
+    let claimable = 0;
+    const userTier = user.userTier || 'Bronze';
+    const qGoal = userTier === 'Platinum' ? 35 : 20;
+    if (!user.taskLoginClaimed) claimable++;
+    if ((user.dailyQuestionsAnswered || 0) >= qGoal && !user.taskQuestionsClaimed) claimable++;
+    if ((user.dailyTestsFinished || 0) >= 1 && !user.taskMockClaimed) claimable++;
+    if ((user.mistakesReviewed || 0) >= 10 && !user.taskMistakesClaimed) claimable++;
 
-    let claimableCount = 0;
-    const qGoal = currentUser.userTier === 'Platinum' ? 35 : 20;
-    if (!currentUser.taskLoginClaimed) claimableCount++;
-    if ((currentUser.dailyQuestionsAnswered || 0) >= qGoal && !currentUser.taskQuestionsClaimed) claimableCount++;
-    if ((currentUser.dailyTestsFinished || 0) >= 1 && !currentUser.taskMockClaimed) claimableCount++;
-    if ((currentUser.mistakesReviewed || 0) >= 10 && !currentUser.taskMistakesClaimed) claimableCount++;
-    setClaimableTasksCount(claimableCount);
-  }, []);
-
-  useEffect(() => {
-    calculateAvailable();
-    const interval = setInterval(calculateAvailable, 10000);
-    return () => clearInterval(interval);
-  }, [calculateAvailable]);
+    return {
+      availableTasksCount: (adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0),
+      claimableTasksCount: claimable
+    };
+  }, [user, currentTime]);
 
   useEffect(() => {
     const handleScroll = () => {

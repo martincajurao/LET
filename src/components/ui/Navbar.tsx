@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useUser, useFirestore } from '@/firebase/index';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Link from 'next/link';
@@ -62,46 +62,37 @@ export function Navbar() {
   const [showAlertsModal, setShowAlertsModal] = useState(false);
   const [watchingAd, setWatchingAd] = useState(false);
   const [verifyingAd, setVerifyingAd] = useState(false);
-  const [availableTasksCount, setAvailableTasksCount] = useState(0);
-  const [claimableTasksCount, setClaimableTasksCount] = useState(0);
+  const [currentTime, setCurrentTime] = useState(Date.now());
 
-  const userRef = useRef(user);
-  
-  useEffect(() => { 
-    userRef.current = user; 
-  }, [user]);
-
-  const calculateCounts = useCallback(() => {
-    const currentUser = userRef.current;
-    if (!currentUser) {
-      setAvailableTasksCount(0);
-      setClaimableTasksCount(0);
-      return;
-    }
-
-    const now = Date.now();
-    const lastAd = Number(currentUser.lastAdXpTimestamp) || 0;
-    const lastQf = Number(currentUser.lastQuickFireTimestamp) || 0;
-    
-    const adAvailable = lastAd + COOLDOWNS.AD_XP <= now && (currentUser.dailyAdCount || 0) < DAILY_AD_LIMIT;
-    const qfAvailable = lastQf + COOLDOWNS.QUICK_FIRE <= now;
-    setAvailableTasksCount((adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0));
-
-    let claimableCount = 0;
-    const userTier = currentUser.userTier || 'Bronze';
-    const qGoal = userTier === 'Platinum' ? 35 : 20;
-    if (!currentUser.taskLoginClaimed) claimableCount++;
-    if ((currentUser.dailyQuestionsAnswered || 0) >= qGoal && !currentUser.taskQuestionsClaimed) claimableCount++;
-    if ((currentUser.dailyTestsFinished || 0) >= 1 && !currentUser.taskMockClaimed) claimableCount++;
-    if ((currentUser.mistakesReviewed || 0) >= 10 && !currentUser.taskMistakesClaimed) claimableCount++;
-    setClaimableTasksCount(claimableCount);
+  // Real-time ticker for cooldowns
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    calculateCounts();
-    const interval = setInterval(calculateCounts, 5000);
-    return () => clearInterval(interval);
-  }, [calculateCounts]);
+  // INSTANT REACTIVE COUNTS: Derived directly from user state
+  const { availableTasksCount, claimableTasksCount } = useMemo(() => {
+    if (!user) return { availableTasksCount: 0, claimableTasksCount: 0 };
+
+    const lastAd = Number(user.lastAdXpTimestamp) || 0;
+    const lastQf = Number(user.lastQuickFireTimestamp) || 0;
+    
+    const adAvailable = lastAd + COOLDOWNS.AD_XP <= currentTime && (user.dailyAdCount || 0) < DAILY_AD_LIMIT;
+    const qfAvailable = lastQf + COOLDOWNS.QUICK_FIRE <= currentTime;
+    
+    let claimable = 0;
+    const userTier = user.userTier || 'Bronze';
+    const qGoal = userTier === 'Platinum' ? 35 : 20;
+    if (!user.taskLoginClaimed) claimable++;
+    if ((user.dailyQuestionsAnswered || 0) >= qGoal && !user.taskQuestionsClaimed) claimable++;
+    if ((user.dailyTestsFinished || 0) >= 1 && !user.taskMockClaimed) claimable++;
+    if ((user.mistakesReviewed || 0) >= 10 && !user.taskMistakesClaimed) claimable++;
+
+    return {
+      availableTasksCount: (adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0),
+      claimableTasksCount: claimable
+    };
+  }, [user, currentTime]);
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
@@ -141,7 +132,6 @@ export function Navbar() {
 
   const handleWatchAd = async () => {
     if (!user || !firestore || watchingAd) return;
-    
     if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
       toast({ title: "Allowance Reached", description: "Daily limit reached.", variant: "destructive" });
       return;
@@ -162,7 +152,7 @@ export function Navbar() {
             dailyAdCount: increment(1)
           });
           await refreshUser();
-          toast({ variant: "reward", title: "Growth Boost Received!", description: `+${XP_REWARDS.AD_WATCH_XP} XP earned.` });
+          toast({ variant: "reward", title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP earned.` });
           setShowAdModal(false);
           setShowAlertsModal(false);
         } catch (e) {
@@ -175,6 +165,7 @@ export function Navbar() {
     }, 3500);
   };
 
+  // Stability: Keep the nav mounted but hide content if no user
   if (!user) return null;
 
   return (
