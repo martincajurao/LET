@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
@@ -10,7 +10,8 @@ import {
   Zap,
   Target,
   Bell,
-  Loader2
+  Loader2,
+  ShieldCheck
 } from 'lucide-react';
 import { PracticeModal } from './practice-modal';
 import { NotificationsModal } from './notifications-modal';
