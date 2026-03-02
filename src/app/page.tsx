@@ -427,6 +427,7 @@ function LetsPrepContent() {
         setState('quickfire_results');
       } else {
         // Universal Gate: Unlock screen for GenEd, ProfEd, Spec, and Full Simulations
+        setState('results');
         if (!user.isPro) {
           setIsResultsUnlocked(false);
           setExamStatsForUnlock({
@@ -437,7 +438,6 @@ function LetsPrepContent() {
           setShowResultUnlock(true);
         } else {
           setIsResultsUnlocked(true);
-          setState('results');
         }
       }
     }
@@ -562,7 +562,6 @@ function LetsPrepContent() {
         onUnlock={() => { 
           setIsResultsUnlocked(true);
           setShowResultUnlock(false);
-          setState('results'); 
         }}
         questionsCount={examStatsForUnlock.questionsCount}
         correctAnswers={examStatsForUnlock.correctAnswers}

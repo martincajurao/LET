@@ -68,13 +68,12 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     };
   }, []);
 
-  // Professional Phase Grouping: Restore the multi-segment structure for Full Simulations
+  // Professional Phase Grouping: Groups questions by subject to create segments
   const phases = useMemo(() => {
     const p: Phase[] = [];
     let currentPhase: Phase | null = null;
 
     questions.forEach((q, idx) => {
-      // Group by subject to create distinct segments (Gen Ed, Prof Ed, Spec)
       if (!currentPhase || currentPhase.name !== q.subject) {
         currentPhase = { name: q.subject, questions: [], startIndex: idx };
         p.push(currentPhase);
@@ -343,7 +342,8 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                     <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest border-primary/20 text-primary">Simulation Roadmap</Badge>
                   </div>
                   {phases.map((p, idx) => {
-                    const isCompleted = idx < currentPhaseIndex + 1;
+                    const isCompleted = idx < currentPhaseIndex;
+                    const isActive = idx === currentPhaseIndex;
                     const isNext = idx === currentPhaseIndex + 1;
                     
                     return (
@@ -353,6 +353,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                         className={cn(
                           "flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-500",
                           isCompleted ? "bg-emerald-500/5 border-emerald-500/20" : 
+                          isActive ? "bg-muted/40 border-border opacity-60" :
                           isNext ? "bg-primary/5 border-primary shadow-lg scale-[1.02] ring-4 ring-primary/5 cursor-pointer active:scale-95" : 
                           "bg-muted/20 border-transparent opacity-40"
                         )}
@@ -372,7 +373,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                               isNext ? "text-primary" : "text-foreground"
                             )}>{p.name}</span>
                             <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
-                              {isCompleted ? "Calibration Secure" : isNext ? "Tap to Launch Trace" : "Encrypted Track"}
+                              {isCompleted ? "Calibration Secure" : isNext ? "Tap to Launch Trace" : isActive ? "Currently Paused" : "Encrypted Track"}
                             </span>
                           </div>
                         </div>
