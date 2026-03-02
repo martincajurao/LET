@@ -25,7 +25,11 @@ import {
   Coffee,
   ArrowRight,
   BrainCircuit,
-  CheckCircle2
+  CheckCircle2,
+  Info,
+  Shield,
+  Target,
+  TrendingUp
 } from "lucide-react";
 import { Question } from "@/app/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -44,11 +48,12 @@ type Phase = {
 };
 
 export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: ExamInterfaceProps) {
+  const [showBriefing, setShowBriefing] = useState(true);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [confidentAnswers, setConfidentAnswers] = useState<Record<string, boolean>>({});
   const [timeLeft, setTimeLeft] = useState(questions.length * timePerQuestion);
-  const [startTime] = useState(Date.now());
+  const [startTime, setStartTime] = useState(Date.now());
   const [correctStreak, setCorrectStreak] = useState(0);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -89,6 +94,11 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     );
   }, [phases, currentIdx]);
 
+  const handleStartExam = () => {
+    setShowBriefing(false);
+    setStartTime(Date.now());
+  };
+
   const handleContinue = useCallback(() => {
     setIsResting(false);
     setCurrentIdx(prev => prev + 1);
@@ -100,13 +110,14 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   }, [answers, startTime, confidentAnswers, onComplete]);
 
   useEffect(() => {
+    if (showBriefing) return;
     if (timeLeft <= 0) {
       handleSubmit();
       return;
     }
     const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
     return () => clearInterval(timer);
-  }, [timeLeft, handleSubmit]);
+  }, [timeLeft, handleSubmit, showBriefing]);
 
   useEffect(() => {
     setSelectedOption(answers[questions[currentIdx]?.id] || null);
@@ -181,58 +192,131 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
             >
               <X className="w-4 h-4" />
             </Button>
-            <div className={cn(
-              "flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-all",
-              timeLeft < 60 ? "bg-rose-500/10 border-rose-500 text-rose-600 animate-pulse" : "bg-muted border-border/50 text-muted-foreground"
-            )}>
-              <Timer className="w-3.5 h-3.5" />
-              <span className="text-xs font-black font-mono tracking-tighter">{formatTime(timeLeft)}</span>
-            </div>
+            {!showBriefing && (
+              <div className={cn(
+                "flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-all",
+                timeLeft < 60 ? "bg-rose-500/10 border-rose-500 text-rose-600 animate-pulse" : "bg-muted border-border/50 text-muted-foreground"
+              )}>
+                <Timer className="w-3.5 h-3.5" />
+                <span className="text-xs font-black font-mono tracking-tighter">{formatTime(timeLeft)}</span>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col items-center flex-1 mx-4 max-w-[140px]">
-            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60 mb-1">Items: {currentIdx + 1}/{questions.length}</span>
-            <Progress value={progress} className="h-1 rounded-full bg-muted shadow-inner" />
+            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60 mb-1">
+              {showBriefing ? "Initialization" : `Items: ${currentIdx + 1}/${questions.length}`}
+            </span>
+            <Progress value={showBriefing ? 0 : progress} className="h-1 rounded-full bg-muted shadow-inner" />
           </div>
 
           <div className="flex items-center gap-2">
-            <AnimatePresence>
-              {correctStreak >= 3 && (
-                <motion.div 
-                  initial={{ scale: 0.5, opacity: 0, x: 20 }}
-                  animate={{ scale: 1, opacity: 1, x: 0 }}
-                  exit={{ scale: 0.5, opacity: 0 }}
-                  className="flex items-center gap-1 px-2 py-0.5 bg-orange-500 text-white rounded-full shadow-lg"
+            {!showBriefing && (
+              <>
+                <AnimatePresence>
+                  {correctStreak >= 3 && (
+                    <motion.div 
+                      initial={{ scale: 0.5, opacity: 0, x: 20 }}
+                      animate={{ scale: 1, opacity: 1, x: 0 }}
+                      exit={{ scale: 0.5, opacity: 0 }}
+                      className="flex items-center gap-1 px-2 py-0.5 bg-orange-500 text-white rounded-full shadow-lg"
+                    >
+                      <Flame className="w-3 h-3 fill-current" />
+                      <span className="text-[8px] font-black uppercase">{correctStreak}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={toggleConfidence}
+                  className={cn(
+                    "h-8 rounded-lg gap-1.5 transition-all border px-2",
+                    confidentAnswers[currentQuestion.id] 
+                      ? "bg-emerald-500 border-emerald-600 text-white shadow-lg shadow-emerald-500/20" 
+                      : "bg-background border-border text-muted-foreground"
+                  )}
                 >
-                  <Flame className="w-3 h-3 fill-current" />
-                  <span className="text-[8px] font-black uppercase">{correctStreak}</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={toggleConfidence}
-              className={cn(
-                "h-8 rounded-lg gap-1.5 transition-all border px-2",
-                confidentAnswers[currentQuestion.id] 
-                  ? "bg-emerald-500 border-emerald-600 text-white shadow-lg shadow-emerald-500/20" 
-                  : "bg-background border-border text-muted-foreground"
-              )}
-            >
-              {confidentAnswers[currentQuestion.id] ? <ShieldCheck className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
-              <span className="text-[8px] font-black uppercase tracking-tighter">
-                {confidentAnswers[currentQuestion.id] ? "Fixed" : "Calib"}
-              </span>
-            </Button>
+                  {confidentAnswers[currentQuestion.id] ? <ShieldCheck className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
+                  <span className="text-[8px] font-black uppercase tracking-tighter">
+                    {confidentAnswers[currentQuestion.id] ? "Fixed" : "Calib"}
+                  </span>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
 
       <main className="flex-1 overflow-y-auto px-4 py-4 md:p-12 no-scrollbar bg-background relative">
-        <div className="max-w-xl mx-auto w-full">
+        <div className="max-w-xl mx-auto w-full h-full">
           <AnimatePresence mode="wait">
-            {isResting ? (
+            {showBriefing ? (
+              <motion.div
+                key="briefing"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="flex flex-col h-full space-y-6 pt-4 pb-10"
+              >
+                <div className="text-center space-y-3">
+                  <div className="w-16 h-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center mx-auto border-2 border-primary/20 shadow-xl">
+                    <ShieldCheck className="w-8 h-8 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black tracking-tight text-foreground">Simulation Briefing</h2>
+                    <p className="text-muted-foreground font-medium text-[10px] uppercase tracking-widest">Calibration Parameters</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="p-5 bg-card rounded-[2rem] border-2 border-border/50 shadow-sm space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                        <TrendingUp className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-black leading-none">Confidence Mechanic</p>
+                        <p className="text-[10px] text-muted-foreground font-medium mt-1 uppercase tracking-tight">Active Skill Expression</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      <div className="p-3 bg-muted/30 rounded-xl border border-border/50 flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-foreground">Correct + High Confidence</span>
+                        <Badge className="bg-emerald-500 text-white font-black text-[9px] border-none">+25 XP</Badge>
+                      </div>
+                      <div className="p-3 bg-muted/30 rounded-xl border border-border/50 flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-foreground">Correct + Standard</span>
+                        <Badge className="bg-primary text-primary-foreground font-black text-[9px] border-none">+15 XP</Badge>
+                      </div>
+                      <div className="p-3 bg-rose-500/5 rounded-xl border border-rose-500/20 flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-rose-700">Wrong + High Confidence</span>
+                        <Badge className="bg-rose-500 text-white font-black text-[9px] border-none">-5 XP</Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-5 bg-muted/20 rounded-[2rem] border-2 border-dashed border-border/50">
+                    <div className="flex items-start gap-3">
+                      <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                      <p className="text-[11px] font-medium text-muted-foreground leading-relaxed">
+                        Use the <span className="text-foreground font-black">Shield Icon</span> during the exam to toggle your certainty. Correct answers with high confidence yield premium XP, but incorrect guesses will incur a penalty.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-auto">
+                  <Button 
+                    onClick={handleStartExam}
+                    className="w-full h-16 rounded-[1.75rem] font-black text-lg uppercase tracking-widest gap-3 shadow-2xl shadow-primary/30 active:scale-95 transition-all"
+                  >
+                    Initialize Trace
+                    <ArrowRight className="w-6 h-6" />
+                  </Button>
+                </div>
+              </motion.div>
+            ) : isResting ? (
               <motion.div
                 key="rest-phase"
                 initial={{ scale: 0.95, opacity: 0 }}
@@ -373,38 +457,48 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
       <footer className="shrink-0 border-t bg-card/95 backdrop-blur-xl px-4 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         <div className="h-14 flex items-center justify-between w-full max-xl mx-auto">
-          <Button 
-            variant="ghost" 
-            onClick={handleBack} 
-            disabled={currentIdx === 0 || isResting}
-            className="rounded-xl px-4 h-9 font-black text-[9px] uppercase tracking-widest hover:bg-muted active:scale-90 disabled:opacity-20 transition-all"
-          >
-            <ChevronLeft className="w-3.5 h-3.5 mr-1" />
-            Prev
-          </Button>
-
-          <AnimatePresence>
-            {isComplete && !isResting && (
-              <motion.div
-                initial={{ y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 10, opacity: 0 }}
+          {!showBriefing && (
+            <>
+              <Button 
+                variant="ghost" 
+                onClick={handleBack} 
+                disabled={currentIdx === 0 || isResting}
+                className="rounded-xl px-4 h-9 font-black text-[9px] uppercase tracking-widest hover:bg-muted active:scale-90 disabled:opacity-20 transition-all"
               >
-                <Button 
-                  onClick={() => setShowSubmitConfirm(true)}
-                  className="rounded-xl px-6 h-10 font-black text-[9px] uppercase tracking-widest shadow-lg bg-primary text-primary-foreground active:scale-95"
-                >
-                  <Send className="w-3 h-3 mr-2" />
-                  Commit
-                </Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <ChevronLeft className="w-3.5 h-3.5 mr-1" />
+                Prev
+              </Button>
 
-          {!isComplete && !isResting && (
-            <div className="flex flex-col items-end">
-              <span className="text-[9px] font-black text-foreground tabular-nums">{answeredCount}/{questions.length} Solved</span>
-              <p className="text-[7px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">Progress</p>
+              <AnimatePresence>
+                {isComplete && !isResting && (
+                  <motion.div
+                    initial={{ y: 10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 10, opacity: 0 }}
+                  >
+                    <Button 
+                      onClick={() => setShowSubmitConfirm(true)}
+                      className="rounded-xl px-6 h-10 font-black text-[9px] uppercase tracking-widest shadow-lg bg-primary text-primary-foreground active:scale-95"
+                    >
+                      <Send className="w-3 h-3 mr-2" />
+                      Commit
+                    </Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {!isComplete && !isResting && (
+                <div className="flex flex-col items-end">
+                  <span className="text-[9px] font-black text-foreground tabular-nums">{answeredCount}/{questions.length} Solved</span>
+                  <p className="text-[7px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">Progress</p>
+                </div>
+              )}
+            </>
+          )}
+          {showBriefing && (
+            <div className="w-full flex items-center justify-center gap-2 text-muted-foreground/40">
+              <Zap className="w-3 h-3" />
+              <span className="text-[8px] font-black uppercase tracking-[0.3em]">Strategic Engine v2.5</span>
             </div>
           )}
         </div>
