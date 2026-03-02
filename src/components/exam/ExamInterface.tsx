@@ -66,7 +66,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     };
   }, []);
 
-  // Organize questions into pedagogical phases
   const phases = useMemo(() => {
     const p: Phase[] = [];
     let currentPhase: Phase | null = null;
@@ -81,19 +80,11 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     return p;
   }, [questions]);
 
-  // Disable phases for short simulations
-  const isContinuous = useMemo(() => phases.length <= 1 || questions.length <= 10, [phases, questions.length]);
-
   const currentPhaseIndex = useMemo(() => {
     return phases.findIndex(p => 
       currentIdx >= p.startIndex && currentIdx < p.startIndex + p.questions.length
     );
   }, [phases, currentIdx]);
-
-  const handleStartExam = () => {
-    setShowBriefing(false);
-    setStartTime(Date.now());
-  };
 
   const moveToNext = useCallback((currentAnswers: Record<string, string>) => {
     const phase = phases[currentPhaseIndex];
@@ -102,7 +93,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     const phaseEndIndex = phase.startIndex + phase.questions.length - 1;
     let nextIdx = -1;
 
-    // 1. Try to find the next sequential unanswered question in the current phase
+    // 1. Find next sequential unanswered question in current phase
     for (let i = currentIdx + 1; i <= phaseEndIndex; i++) {
       if (!currentAnswers[questions[i].id]) {
         nextIdx = i;
@@ -110,7 +101,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       }
     }
 
-    // 2. If sequential end reached, return to any previously flagged (unanswered) items in this phase
+    // 2. Wrap around to flagged/skipped items in current phase
     if (nextIdx === -1) {
       for (let i = phase.startIndex; i <= phaseEndIndex; i++) {
         if (!currentAnswers[questions[i].id]) {
@@ -120,21 +111,19 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       }
     }
 
-    // 3. Phase Completion Logic
+    // 3. Handle completion or phase transition
     if (nextIdx === -1) {
-      if (currentPhaseIndex === phases.length - 1 || isContinuous) {
-        // End of entire simulation
+      const isLastPhase = currentPhaseIndex === phases.length - 1;
+      if (isLastPhase) {
         setShowSubmitConfirm(true);
       } else {
-        // Pedagogical sector resolved -> Show Inline Calibration Screen
         setIsResting(true);
       }
     } else {
-      // Proceed to next item
       setSelectedOption(null);
       setCurrentIdx(nextIdx);
     }
-  }, [currentIdx, phases, currentPhaseIndex, questions, isContinuous]);
+  }, [currentIdx, phases, currentPhaseIndex, questions]);
 
   const handleAnswer = (val: string) => {
     if (isResting) return;
@@ -146,7 +135,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     setAnswers(newAnswers);
     setSelectedOption(val);
     
-    // Clear flag if answered
     if (flaggedIndices.has(currentIdx)) {
       const nextFlags = new Set(flaggedIndices);
       nextFlags.delete(currentIdx);
@@ -220,7 +208,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
   return (
     <div className="fixed inset-0 z-[2000] bg-background flex flex-col overflow-hidden animate-in fade-in duration-300 font-body">
-      {/* Dynamic Header */}
       <header className="pt-safe border-b bg-card shrink-0 shadow-sm relative z-10">
         <div className="h-14 flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
@@ -286,7 +273,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </div>
       </header>
 
-      {/* Main Simulation Flow */}
       <main className="flex-1 overflow-y-auto px-4 py-4 md:p-12 no-scrollbar bg-background relative">
         <div className="max-w-xl mx-auto w-full h-full flex flex-col items-center justify-center">
           <AnimatePresence mode="wait">
@@ -336,7 +322,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
 
                 <div className="pt-4">
                   <Button 
-                    onClick={handleStartExam}
+                    onClick={() => { setShowBriefing(false); setStartTime(Date.now()); }}
                     className="w-full h-16 rounded-[1.75rem] font-black text-lg uppercase tracking-widest gap-3 shadow-2xl shadow-primary/30 active:scale-95 transition-all"
                   >
                     Initialize Trace
@@ -479,7 +465,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </div>
       </main>
 
-      {/* Persistent Footer */}
       <footer className="shrink-0 border-t bg-card/95 backdrop-blur-xl px-4 pb-safe z-50">
         <div className="h-14 flex items-center justify-between w-full max-xl mx-auto">
           {!showBriefing && !isResting && (
@@ -508,9 +493,8 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
         </div>
       </footer>
 
-      {/* Confirmation Modals (Dialogs remain high z-index) */}
       <Dialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
-        <DialogContent className="rounded-[2rem] bg-card border-none shadow-2xl p-6 max-w-xs z-[5100] outline-none">
+        <DialogContent className="rounded-[2rem] bg-card border-none shadow-2xl p-6 max-w-[320px] z-[5100] outline-none" persistent={true}>
           <div className="text-center space-y-5">
             <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto border-2 border-primary/20 shadow-lg">
               <Zap className="w-7 h-7 text-primary fill-current" />
@@ -534,7 +518,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       </Dialog>
 
       <Dialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-6 max-w-xs z-[5100] outline-none">
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-6 max-w-[340px] z-[5100] outline-none">
           <div className="text-center space-y-5">
             <div className="w-14 h-14 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto border-2 border-rose-500/20 shadow-lg">
               <AlertTriangle className="w-7 h-7 text-rose-600" />
@@ -546,7 +530,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
               </DialogDescription>
             </div>
             <div className="grid gap-2 pt-1">
-              <Button variant="destructive" onClick={() => window.location.reload()} className="h-12 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all">
+              <Button variant="destructive" onClick={() => window.location.reload()} className="h-12 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all">
                 Terminate
               </Button>
               <Button variant="ghost" onClick={() => setShowExitConfirm(false)} className="h-9 rounded-xl font-bold text-[9px] uppercase tracking-widest text-muted-foreground">
