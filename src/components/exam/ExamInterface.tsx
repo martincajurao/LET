@@ -86,6 +86,11 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     );
   }, [phases, currentIdx]);
 
+  const handleContinue = useCallback(() => {
+    setIsResting(false);
+    setCurrentIdx(prev => prev + 1);
+  }, []);
+
   const handleSubmit = useCallback(() => {
     const timeSpent = Math.floor((Date.now() - startTime) / 1000);
     onComplete(answers, timeSpent, confidentAnswers);
@@ -228,20 +233,20 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 1.05, opacity: 0 }}
-                className="flex flex-col items-center justify-center space-y-8 pt-4 pb-10"
+                className="flex flex-col items-center justify-center space-y-6 pt-2 pb-10"
               >
-                <div className="text-center space-y-4">
-                  <div className="w-16 h-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center mx-auto border-4 border-primary/20 shadow-xl animate-levitate">
-                    <Coffee className="w-8 h-8 text-primary" />
+                <div className="text-center space-y-3">
+                  <div className="w-14 h-14 bg-primary/10 rounded-[1.25rem] flex items-center justify-center mx-auto border-4 border-primary/20 shadow-xl animate-levitate">
+                    <Coffee className="w-7 h-7 text-primary" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black tracking-tight text-foreground">Phase Calibration</h2>
-                    <p className="text-muted-foreground font-medium text-xs">A professional breather before the next track.</p>
+                    <h2 className="text-xl font-black tracking-tight text-foreground">Phase Calibration</h2>
+                    <p className="text-muted-foreground font-medium text-[10px] uppercase tracking-widest">A professional breather before the next track.</p>
                   </div>
                 </div>
 
-                <div className="w-full space-y-3 px-2">
-                  <div className="flex items-center gap-2 mb-2 px-2">
+                <div className="w-full space-y-2.5 px-2">
+                  <div className="flex items-center gap-2 mb-1 px-2">
                     <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest border-primary/20 text-primary">Simulation Roadmap</Badge>
                   </div>
                   {phases.map((p, idx) => {
@@ -249,12 +254,16 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                     const isNext = idx === currentPhaseIndex + 1;
                     
                     return (
-                      <div key={idx} className={cn(
-                        "flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-500",
-                        isCompleted ? "bg-emerald-500/5 border-emerald-500/20" : 
-                        isNext ? "bg-primary/5 border-primary shadow-lg scale-[1.02] ring-4 ring-primary/5" : 
-                        "bg-muted/20 border-transparent opacity-40"
-                      )}>
+                      <div 
+                        key={idx} 
+                        onClick={() => isNext && handleContinue()}
+                        className={cn(
+                          "flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-500",
+                          isCompleted ? "bg-emerald-500/5 border-emerald-500/20" : 
+                          isNext ? "bg-primary/5 border-primary shadow-lg scale-[1.02] ring-4 ring-primary/5 cursor-pointer active:scale-95" : 
+                          "bg-muted/20 border-transparent opacity-40"
+                        )}
+                      >
                         <div className="flex items-center gap-4">
                           <div className={cn(
                             "w-9 h-9 rounded-xl flex items-center justify-center border-2 transition-all",
@@ -270,7 +279,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                               isNext ? "text-primary" : "text-foreground"
                             )}>{p.name}</span>
                             <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
-                              {isCompleted ? "Calibration Secure" : isNext ? "Synchronizing..." : "Encrypted Track"}
+                              {isCompleted ? "Calibration Secure" : isNext ? "Tap to Launch Trace" : "Encrypted Track"}
                             </span>
                           </div>
                         </div>
@@ -280,20 +289,17 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                   })}
                 </div>
                 
-                <div className="flex flex-col items-center gap-1.5 p-6 bg-card rounded-[2rem] border shadow-inner w-full mx-2">
+                <div className="flex flex-col items-center gap-1 p-5 bg-card rounded-[2rem] border shadow-inner w-full mx-2">
                   <div className="flex items-center gap-3 text-primary">
-                    <Timer className="w-6 h-6 animate-pulse" />
-                    <span className="text-5xl font-black font-mono tracking-tighter tabular-nums">{formatTime(timeLeft)}</span>
+                    <Timer className="w-5 h-5 animate-pulse" />
+                    <span className="text-4xl font-black font-mono tracking-tighter tabular-nums">{formatTime(timeLeft)}</span>
                   </div>
-                  <p className="text-[9px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-40">Running Simulation Clock</p>
+                  <p className="text-[8px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-40">Global Simulation Clock</p>
                 </div>
 
-                <div className="w-full px-2 pt-2">
+                <div className="w-full px-2 pt-1">
                   <Button 
-                    onClick={() => {
-                      setIsResting(false);
-                      setCurrentIdx(prev => prev + 1);
-                    }}
+                    onClick={handleContinue}
                     className="w-full h-16 rounded-[1.75rem] font-black text-base uppercase tracking-widest gap-3 shadow-2xl shadow-primary/30 bg-primary text-primary-foreground active:scale-95 transition-all group"
                   >
                     Continue Trace
