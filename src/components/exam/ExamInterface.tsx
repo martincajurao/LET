@@ -82,7 +82,6 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     return p;
   }, [questions]);
 
-  // Disable phases for small question sets (<= 10 items) or single track simulations
   const isContinuous = useMemo(() => phases.length <= 1 || questions.length <= 10, [phases, questions.length]);
 
   const currentPhaseIndex = useMemo(() => {
@@ -96,13 +95,13 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     setStartTime(Date.now());
   };
 
-  const moveToNext = useCallback((currentAnswers: Record<string, string>) => {
+  const moveToNext = useCallback((currentAnswers: Record<string, string>, skipIdx?: number) => {
     const phase = phases[currentPhaseIndex];
     if (!phase) return;
 
     const phaseEndIndex = phase.startIndex + phase.questions.length - 1;
     
-    // 1. Look for next unanswered question in the sequential list of the current phase
+    // 1. Try to find the next sequential unanswered question in the current phase
     let nextIdx = -1;
     for (let i = currentIdx + 1; i <= phaseEndIndex; i++) {
       if (!currentAnswers[questions[i].id]) {
@@ -111,28 +110,30 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       }
     }
 
-    // 2. If sequential list is done, look for flagged items in THIS phase that still need answers
+    // 2. If sequence finished, return to any previously flagged (unanswered) items in this phase
     if (nextIdx === -1) {
       for (let i = phase.startIndex; i <= phaseEndIndex; i++) {
         if (!currentAnswers[questions[i].id]) {
+          // If we just flagged this item and it's the only one left, it will stay here
           nextIdx = i;
           break;
         }
       }
     }
 
-    // 3. If everything in phase is answered
+    // 3. Logic for phase completion or end of simulation
     if (nextIdx === -1) {
       if (currentPhaseIndex === phases.length - 1 || isContinuous) {
-        // Last phase or continuous mode: No rest, stay on last item or wait for submit
+        // Last phase or continuous track: Check for global completion
         if (Object.keys(currentAnswers).length === questions.length) {
           setShowSubmitConfirm(true);
         }
       } else {
-        // Phase is complete and not the last one -> Trigger Rest Phase
+        // Pedagogical sector complete -> Trigger Mandatory Phase Calibration
         setIsResting(true);
       }
     } else {
+      // Transition to next item in the intra-phase queue
       setSelectedOption(null);
       setCurrentIdx(nextIdx);
     }
@@ -148,7 +149,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     setAnswers(newAnswers);
     setSelectedOption(val);
     
-    // Remove from flagged if it was flagged
+    // Auto-resolve flag status on answer commit
     if (flaggedIndices.has(currentIdx)) {
       const nextFlags = new Set(flaggedIndices);
       nextFlags.delete(currentIdx);
@@ -173,7 +174,8 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
     if (isResting || answers[questions[currentIdx].id]) return;
     
     setFlaggedIndices(prev => new Set(prev).add(currentIdx));
-    moveToNext(answers);
+    // Move forward without answering, the engine will loop back to this later in the phase
+    moveToNext(answers, currentIdx);
   };
 
   const toggleConfidence = () => {
@@ -218,7 +220,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
   const currentQuestion = questions[currentIdx];
   const answeredCount = Object.keys(answers).length;
   const isComplete = answeredCount === questions.length;
-  const progress = ((answeredCount) / questions.length) * 100;
+  const progress = (answeredCount / questions.length) * 100;
 
   if (!currentQuestion) return null;
 
