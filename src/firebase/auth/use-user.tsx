@@ -230,13 +230,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           errorEmitter.emit('permission-error', new FirestorePermissionError({ path: userDocRef.path, operation: 'get' }));
           setLoading(false);
         });
-      } else { setUser(null); setLoading(false); }
+      } else { 
+        // If we have a bypass user, don't clear it
+        if (!userRef.current?.uid.startsWith('bypass')) {
+          setUser(null); 
+        }
+        setLoading(false); 
+      }
     });
     return () => { unsubFromAuth(); if (unsubFromProfile) unsubFromProfile(); };
   }, [toast, firestore, auth]);
 
   useEffect(() => {
-    if (user?.uid && user.uid !== 'bypass-user' && firestore && !isResettingRef.current) {
+    if (user?.uid && !user.uid.startsWith('bypass') && firestore && !isResettingRef.current) {
       const now = new Date();
       const lastReset = user.lastTaskReset || 0;
       if (lastReset !== 0 && new Date(lastReset).toDateString() !== now.toDateString()) {
@@ -329,6 +335,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     finally { setLoading(false); }
   };
 
+  const bypassLogin = () => {
+    setLoading(true);
+    const mockUser: UserProfile = {
+      uid: 'bypass-' + Math.random().toString(36).substring(7),
+      displayName: 'Premium Tester',
+      email: 'tester@letprep.app',
+      photoURL: 'https://picsum.photos/seed/tester/200/200',
+      onboardingComplete: true,
+      credits: 100,
+      xp: 15000,
+      level: 30,
+      isPro: true,
+      streakCount: 14,
+      majorship: 'Mathematics',
+      lastRewardedRank: 1,
+      dailyAdCount: 0,
+      dailyQuestionsAnswered: 0,
+      dailyTestsFinished: 0,
+      dailyCreditEarned: 0,
+      lastTaskReset: Date.now(),
+      referralCode: 'TESTER',
+      taskLoginClaimed: false,
+      taskQuestionsClaimed: false,
+      taskMockClaimed: false,
+      taskMistakesClaimed: false,
+      unlockedTracks: ['General Education', 'Professional Education', 'Specialization', 'all']
+    };
+    setUser(mockUser);
+    setLoading(false);
+    toast({ variant: "reward", title: "Bypass Mode Active", description: "Running in testing environment." });
+  };
+
   const logout = async () => {
     if (Capacitor.isNativePlatform()) await nativeAuth.signOut();
     if (auth) await signOut(auth);
@@ -338,13 +376,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = async (data: Partial<UserProfile>) => {
     if (!firestore || !user?.uid) return;
+    if (user.uid.startsWith('bypass')) {
+      setUser(prev => prev ? ({ ...prev, ...data }) : null);
+      return;
+    }
     const cleaned = cleanFirestoreData(data);
     const userDocRef = doc(firestore, 'users', user.uid);
     try { await updateDoc(userDocRef, cleaned); } catch (e) { await setDoc(userDocRef, cleaned, { merge: true }); }
   };
 
   const refreshUser = async () => {
-    if (!firestore || !user?.uid) return;
+    if (!firestore || !user?.uid || user.uid.startsWith('bypass')) return;
     const snap = await getDoc(doc(firestore, 'users', user.uid));
     if (snap.exists()) setUser({ ...scrubUserData(snap.data(), user), uid: user.uid });
   };
@@ -353,8 +395,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{ 
       user, loading, loginWithGoogle, loginWithFacebook, 
       loginAnonymously: async () => { if (auth) await signInAnonymously(auth); }, 
-      bypassLogin: () => {}, logout, updateProfile, 
-      addXp: async (amt) => { if (user && firestore) await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(amt) }); },
+      bypassLogin, logout, updateProfile, 
+      addXp: async (amt) => { 
+        if (user && firestore && !user.uid.startsWith('bypass')) {
+          await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(amt) });
+        } else if (user?.uid.startsWith('bypass')) {
+          setUser(prev => prev ? ({ ...prev, xp: (prev.xp || 0) + amt }) : null);
+        }
+      },
       refreshUser 
     }}>
       {children}

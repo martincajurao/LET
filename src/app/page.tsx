@@ -46,7 +46,8 @@ import {
   Smartphone,
   Download,
   QrCode,
-  AlertCircle
+  AlertCircle,
+  FlaskConical
 } from "lucide-react";
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
@@ -129,7 +130,7 @@ const EducationalLoader = ({ message }: { message?: string }) => (
 );
 
 function LetsPrepContent() {
-  const { user, loading: authLoading, loginWithGoogle, loginWithFacebook, refreshUser } = useUser();
+  const { user, loading: authLoading, loginWithGoogle, loginWithFacebook, bypassLogin, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -344,14 +345,18 @@ function LetsPrepContent() {
     const resultsData = sanitizeData({ userId: user.uid, displayName: user.displayName || 'Guest Educator', timestamp: now, overallScore, timeSpent, xpEarned, results, lastActiveDate: serverTimestamp() });
 
     try {
-      const docRef = await addDoc(collection(firestore, "exam_results"), resultsData);
-      setNewResultId(docRef.id);
-      await updateDoc(doc(firestore, 'users', user.uid), { 
-        dailyQuestionsAnswered: increment(currentQuestions.length), 
-        xp: increment(xpEarned), 
-        lastActiveDate: serverTimestamp() 
-      });
-      await refreshUser();
+      if (!user.uid.startsWith('bypass')) {
+        const docRef = await addDoc(collection(firestore, "exam_results"), resultsData);
+        setNewResultId(docRef.id);
+        await updateDoc(doc(firestore, 'users', user.uid), { 
+          dailyQuestionsAnswered: increment(currentQuestions.length), 
+          xp: increment(xpEarned), 
+          lastActiveDate: serverTimestamp() 
+        });
+      } else {
+        // Just update local bypass user for stats
+        await refreshUser();
+      }
     } catch (e) {
       console.error("Result sync error:", e);
     } finally {
@@ -365,12 +370,14 @@ function LetsPrepContent() {
     if (!feedbackText.trim() || !firestore || !user) return;
     setIsSubmittingFeedback(true);
     try {
-      await addDoc(collection(firestore, 'feedback'), {
-        userId: user.uid,
-        userName: user.displayName,
-        text: feedbackText,
-        timestamp: serverTimestamp()
-      });
+      if (!user.uid.startsWith('bypass')) {
+        await addDoc(collection(firestore, 'feedback'), {
+          userId: user.uid,
+          userName: user.displayName,
+          text: feedbackText,
+          timestamp: serverTimestamp()
+        });
+      }
       toast({ variant: "reward", title: "Trace Recorded!", description: "Feedback saved." });
       setFeedbackText("");
       setShowFeedbackModal(false);
@@ -425,6 +432,17 @@ function LetsPrepContent() {
           <div className="p-8 space-y-4">
             <Button onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} className="w-full h-14 rounded-2xl font-black gap-3 bg-white text-black border border-border transition-all active:scale-95"><GoogleIcon /> Continue with Google</Button>
             <Button onClick={async () => { await loginWithFacebook(); setShowAuthModal(false); }} className="w-full h-14 rounded-2xl font-black gap-3 bg-[#1877F2] text-white transition-all active:scale-95"><Facebook className="w-5 h-5 fill-current" /> Continue with Facebook</Button>
+            
+            <div className="pt-4 border-t border-border/50">
+              <Button 
+                variant="ghost" 
+                onClick={() => { bypassLogin(); setShowAuthModal(false); }} 
+                className="w-full h-12 rounded-xl font-bold text-xs gap-2 text-muted-foreground hover:bg-muted active:scale-95 transition-all"
+              >
+                <FlaskConical className="w-4 h-4" />
+                Launch Test Environment
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

@@ -116,8 +116,10 @@ function NavContent() {
       setVerifyingAd(true);
       setTimeout(async () => {
         try {
-          const userDocRef = doc(firestore, 'users', user.uid);
-          await updateDoc(userDocRef, { credits: increment(5), xp: increment(XP_REWARDS.AD_WATCH_XP), lastAdXpTimestamp: Date.now(), dailyAdCount: increment(1) });
+          if (!user.uid.startsWith('bypass')) {
+            const userDocRef = doc(firestore, 'users', user.uid);
+            await updateDoc(userDocRef, { credits: increment(5), xp: increment(XP_REWARDS.AD_WATCH_XP), lastAdXpTimestamp: Date.now(), dailyAdCount: increment(1) });
+          }
           await refreshUser();
           toast({ title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added.` });
           setIsAlertsOpen(false);
@@ -159,13 +161,11 @@ function NavContent() {
     }
   ], [claimableTasksCount, availableTasksCount]);
 
-  if (!user) return null;
-
   return (
     <>
       <div className={cn("md:hidden fixed bottom-0 left-0 right-0 z-[60] px-4 pb-safe pt-2 transition-all duration-500 ease-in-out transform", isVisible ? "translate-y-0 opacity-100" : "translate-y-32 opacity-0")}>
         <div className="mx-auto max-w-lg bg-card/95 backdrop-blur-2xl border border-border/40 rounded-[2.25rem] shadow-[0_12px_40px_rgba(0,0,0,0.15)] flex items-center justify-between px-2 h-16 mb-6 transition-colors ring-1 ring-inset ring-white/10">
-          {navItems.map((item) => {
+          {user ? navItems.map((item) => {
             const active = pathname === item.href || (item.id === 'notifications' && isAlertsOpen);
             const isCenter = item.id === 'practice';
             if (isCenter) return (
@@ -180,11 +180,19 @@ function NavContent() {
                 <span className={cn("text-[10px] font-bold uppercase tracking-tighter transition-opacity duration-300", active ? "opacity-100 scale-105" : "opacity-60")}>{item.label}</span>
               </button>
             );
-          })}
+          }) : (
+            <div className="flex-1 flex items-center justify-center text-muted-foreground text-[10px] font-black uppercase tracking-widest opacity-40">
+              <ShieldCheck className="w-4 h-4 mr-2" /> Educator Trace Required
+            </div>
+          )}
         </div>
       </div>
-      <PracticeModal isOpen={isPracticeOpen} onClose={() => setIsPracticeOpen(false)} onStartExam={(cat) => router.push(`/?start=${cat}`)} limits={limits} />
-      <NotificationsModal isOpen={isAlertsOpen} onClose={() => !watchingAd && setIsAlertsOpen(false)} onStartQuickFire={() => router.push('/?start=quickfire')} onWatchAd={handleWatchAd} isWatchingAd={watchingAd} isVerifyingAd={verifyingAd} />
+      {user && (
+        <>
+          <PracticeModal isOpen={isPracticeOpen} onClose={() => setIsPracticeOpen(false)} onStartExam={(cat) => router.push(`/?start=${cat}`)} limits={limits} />
+          <NotificationsModal isOpen={isAlertsOpen} onClose={() => !watchingAd && setIsAlertsOpen(false)} onStartQuickFire={() => router.push('/?start=quickfire')} onWatchAd={handleWatchAd} isWatchingAd={watchingAd} isVerifyingAd={verifyingAd} />
+        </>
+      )}
     </>
   );
 }
