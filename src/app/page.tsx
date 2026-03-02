@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
@@ -426,7 +427,6 @@ function LetsPrepContent() {
       if (isQuickFireMode) {
         setState('quickfire_results');
       } else {
-        // ALWAYS use ResultsOverview (gated) for categorized and full simulations
         setState('results');
         if (user && !user.isPro) {
           setIsResultsUnlocked(false);
@@ -558,7 +558,12 @@ function LetsPrepContent() {
 
       <ResultUnlockDialog 
         open={showResultUnlock}
-        onClose={() => { setShowResultUnlock(false); setState('dashboard'); }}
+        onClose={() => { 
+          if (!isResultsUnlocked) {
+            setShowResultUnlock(false); 
+            setState('dashboard'); 
+          }
+        }}
         onUnlock={() => { 
           setIsResultsUnlocked(true);
           setShowResultUnlock(false);

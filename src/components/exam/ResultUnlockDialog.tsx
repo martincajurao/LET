@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -185,19 +186,18 @@ export function ResultUnlockDialog({
     setShowSuccess(true);
     setTimeout(() => {
       onUnlock();
-      onClose();
+      // REMOVED: redundant onClose() call that triggered dashboard redirect
     }, 2000);
   };
 
   if (isPro) {
-    return null; // Pro users don't see unlock screen
+    return null;
   }
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="rounded-[2.5rem] bg-gradient-to-b from-foreground to-foreground/95 text-background border-none shadow-2xl p-0 max-w-[400px] overflow-hidden outline-none z-[1100]">
-          {/* Header Section */}
+      <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+        <DialogContent className="rounded-[2.5rem] bg-gradient-to-b from-foreground to-foreground/95 text-background border-none shadow-2xl p-0 max-w-[400px] overflow-hidden outline-none z-[1100]" hideCloseButton={unlocking}>
           <div className="relative p-8 pb-6 text-center">
             <div className="absolute top-0 right-0 p-8 opacity-10">
               {verifying ? (
@@ -227,7 +227,6 @@ export function ResultUnlockDialog({
               </DialogDescription>
             </motion.div>
 
-            {/* Performance Summary */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -249,7 +248,6 @@ export function ResultUnlockDialog({
             </motion.div>
           </div>
 
-          {/* Unlock Options */}
           <AnimatePresence mode="wait">
             {!showSuccess && (
               <motion.div
@@ -259,7 +257,6 @@ export function ResultUnlockDialog({
                 exit={{ opacity: 0 }}
                 className="px-8 pb-8 space-y-4"
               >
-                {/* Ad Option */}
                 <Button
                   onClick={handleUnlockWithAd}
                   disabled={unlocking || !canWatchAd}
@@ -303,7 +300,6 @@ export function ResultUnlockDialog({
                     </Badge>
                   </div>
                   
-                  {/* Progress bar for ad */}
                   {unlocking && unlockMethod === 'ad' && (
                     <motion.div
                       initial={{ width: 0 }}
@@ -321,7 +317,6 @@ export function ResultUnlockDialog({
                   )}
                 </Button>
 
-                {/* Credits Option */}
                 <Button
                   onClick={handleUnlockWithCredits}
                   disabled={unlocking}
@@ -363,7 +358,6 @@ export function ResultUnlockDialog({
                     </Badge>
                   </div>
                   
-                  {/* Progress bar for credits */}
                   {unlocking && unlockMethod === 'credits' && (
                     <motion.div
                       initial={{ width: 0 }}
@@ -381,7 +375,6 @@ export function ResultUnlockDialog({
                   )}
                 </Button>
 
-                {/* Info Text */}
                 <div className="text-center">
                   <p className="text-[10px] font-medium text-muted-foreground">
                     Premium members get unlimited access to all features
@@ -390,7 +383,6 @@ export function ResultUnlockDialog({
               </motion.div>
             )}
 
-            {/* Success State */}
             {showSuccess && (
               <motion.div
                 key="success"
@@ -426,7 +418,6 @@ export function ResultUnlockDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Insufficient Credits Dialog */}
       <Dialog open={!!creditError} onOpenChange={() => setCreditError(null)}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-[360px] overflow-hidden outline-none z-[1200]" hideCloseButton={watchingAdForRefill}>
           <div className="bg-amber-500/10 p-10 flex flex-col items-center justify-center relative overflow-hidden">
