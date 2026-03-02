@@ -36,7 +36,9 @@ import {
   Database,
   History,
   ShieldAlert,
-  ArrowUpCircle
+  ArrowUpCircle,
+  Info,
+  Timer
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -97,6 +99,7 @@ import { cn } from '@/lib/utils';
 import { getRankData } from '@/lib/xp-system';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { motion } from "framer-motion";
 
 export default function AdminDashboard() {
   const firestore = useFirestore();
@@ -165,7 +168,7 @@ export default function AdminDashboard() {
         userCount: userCount.data().count,
         questionCount: qSnap.size,
         resultCount: resultCount.data().count,
-        activeQuests: 4 // Hardcoded for now based on current logic
+        activeQuests: 4 
       });
 
       // Global Config Fetch
@@ -345,7 +348,7 @@ export default function AdminDashboard() {
                 { label: 'Total Educators', value: stats.userCount, icon: <Users className="w-5 h-5 text-blue-500" />, color: 'bg-blue-500/10' },
                 { label: 'Vault Items', value: stats.questionCount, icon: <Brain className="w-5 h-5 text-purple-500" />, color: 'bg-purple-500/10' },
                 { label: 'Simulations Run', value: stats.resultCount, icon: <History className="w-5 h-5 text-emerald-500" />, color: 'bg-emerald-500/10' },
-                { label: 'Active Quests', value: stats.activeQuests, icon: <Compass className="w-5 h-5 text-amber-500" />, color: 'bg-amber-500/10' }
+                { label: 'Active Quests', value: stats.activeQuests, icon: <CompassIcon className="w-5 h-5 text-amber-500" />, color: 'bg-amber-500/10' }
               ].map((stat, i) => (
                 <Card key={i} className="android-surface border-none shadow-lg rounded-[2rem] p-6 text-center transition-all hover:shadow-xl group">
                   <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner group-hover:scale-110 transition-transform", stat.color)}>
@@ -980,7 +983,7 @@ function Minus({ className }: { className?: string }) {
   );
 }
 
-function Compass({ className }: { className?: string }) {
+function CompassIcon({ className }: { className?: string }) {
   return (
     <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" />
