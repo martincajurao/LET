@@ -13,6 +13,7 @@ import {
   Moon,
   Sun,
   Crown,
+  Shield,
   Sparkles,
   Lock,
   Award,
