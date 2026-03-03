@@ -39,7 +39,7 @@ import {
   UserMinus,
   LogOut,
   Trash2,
-  Crown
+  Award
 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
@@ -262,45 +262,6 @@ export function SquadHub() {
     );
   }
 
-  if (!squad) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in duration-500">
-        <Card className="android-surface border-none shadow-xl rounded-[2.5rem] p-10 flex flex-col justify-between bg-card group overflow-hidden">
-          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-transform duration-700"><Sword className="w-32 h-32" /></div>
-          <div className="space-y-6 relative z-10">
-            <div className="w-16 h-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center shadow-inner"><Plus className="w-8 h-8 text-primary" /></div>
-            <div className="space-y-2">
-              <h3 className="text-3xl font-black tracking-tighter leading-none text-foreground">Found a Guild</h3>
-              <p className="text-sm text-muted-foreground font-medium leading-relaxed">Establish a new study squad and invite fellow aspirants to climb the ranks together.</p>
-            </div>
-            <div className="space-y-3">
-              <Input placeholder="Guild Name" value={newSquadName} onChange={(e) => setNewSquadName(e.target.value)} className="h-14 rounded-2xl border-2 font-bold px-6 focus:border-primary transition-all" />
-              <Button onClick={handleCreateSquad} disabled={isCreating || !newSquadName.trim()} className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-xl">
-                {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />} Found Squad
-              </Button>
-            </div>
-          </div>
-        </Card>
-        <Card className="android-surface border-none shadow-xl rounded-[2.5rem] p-10 flex flex-col justify-between bg-foreground text-background group overflow-hidden">
-          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform duration-700"><Hash className="w-32 h-32" /></div>
-          <div className="space-y-6 relative z-10">
-            <div className="w-16 h-16 bg-primary/20 rounded-[1.5rem] flex items-center justify-center shadow-inner"><Target className="w-8 h-8 text-primary" /></div>
-            <div className="space-y-2">
-              <h3 className="text-3xl font-black tracking-tighter leading-none text-white">Enlist in Guild</h3>
-              <p className="text-sm text-white/60 font-medium leading-relaxed">Have a recruitment key? Enter it below to join an active professional trace.</p>
-            </div>
-            <div className="space-y-3">
-              <Input placeholder="Invite Code" value={joinCode} onChange={(e) => setJoinCode(e.target.value.toUpperCase())} className="h-14 rounded-2xl border-2 border-white/10 bg-white/5 text-white font-black tracking-widest text-center text-lg focus:border-primary transition-all" />
-              <Button onClick={handleJoinSquad} disabled={isJoining || !joinCode.trim()} className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-xl bg-primary text-primary-foreground">
-                {isJoining ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />} Enlist Now
-              </Button>
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
   const squadLevelProgress = (squad.totalXp % 10000) / 100;
 
   return (
@@ -372,7 +333,7 @@ export function SquadHub() {
                 </div>
               </Card>
               <div className="p-6 bg-primary/5 rounded-[2.5rem] border-2 border-dashed border-primary/20 space-y-4">
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                   <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shadow-inner"><Info className="w-5 h-5 text-primary" /></div>
                   <h4 className="font-black text-sm uppercase tracking-tight">Guild Sovereignty</h4>
                 </div>

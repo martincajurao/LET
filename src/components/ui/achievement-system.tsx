@@ -17,9 +17,9 @@ import {
   Clock,
   TrendingUp,
   Calendar,
-  Crown,
   Medal,
-  Shield
+  Shield,
+  ShieldCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { XP_REWARDS } from "@/lib/xp-system";
@@ -40,7 +40,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'streak_3', name: 'Getting Started', description: 'Maintain a 3-day study streak', icon: <Flame className="w-6 h-6" />, requirement: 3, type: 'streak', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK, rarity: 'common', category: 'Streak' },
   { id: 'streak_7', name: 'Week Warrior', description: 'Maintain a 7-day study streak', icon: <Flame className="w-6 h-6 text-orange-500" />, requirement: 7, type: 'streak', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK, rarity: 'rare', category: 'Streak' },
   { id: 'streak_30', name: 'Monthly Master', description: 'Maintain a 30-day study streak', icon: <Flame className="w-6 h-6 text-red-500" />, requirement: 30, type: 'streak', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK, rarity: 'epic', category: 'Streak' },
-  { id: 'streak_100', name: 'Century Scholar', description: 'Maintain a 100-day study streak', icon: <Crown className="w-6 h-6 text-yellow-500" />, requirement: 100, type: 'streak', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK * 2, rarity: 'legendary', category: 'Streak' },
+  { id: 'streak_100', name: 'Century Scholar', description: 'Maintain a 100-day study streak', icon: <ShieldCheck className="w-6 h-6 text-yellow-500" />, requirement: 100, type: 'streak', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK * 2, rarity: 'legendary', category: 'Streak' },
   { id: 'questions_50', name: 'Question Collector', description: 'Answer 50 questions', icon: <BookOpen className="w-6 h-6 text-blue-500" />, requirement: 50, type: 'questions', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK, rarity: 'common', category: 'Progress' },
   { id: 'questions_200', name: 'Quiz Enthusiast', description: 'Answer 200 questions', icon: <BookOpen className="w-6 h-6 text-purple-500" />, requirement: 200, type: 'questions', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK, rarity: 'rare', category: 'Progress' },
   { id: 'questions_500', name: 'Knowledge Seeker', description: 'Answer 500 questions', icon: <GraduationCap className="w-6 h-6 text-emerald-500" />, requirement: 500, type: 'questions', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK, rarity: 'epic', category: 'Progress' },

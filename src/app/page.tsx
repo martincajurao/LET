@@ -27,7 +27,6 @@ import {
   BookOpen,
   ShieldCheck,
   Languages,
-  Shield,
   Sparkles,
   Lock,
   Play,
@@ -43,17 +42,10 @@ import {
   Smartphone,
   Download,
   QrCode,
-  AlertCircle,
   FlaskConical,
-  TrendingUp,
-  BrainCircuit,
-  History,
-  Activity,
   Award,
   Unlock,
-  Compass,
-  ArrowRight,
-  ChevronDown
+  BrainCircuit
 } from "lucide-react";
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
@@ -373,7 +365,7 @@ function LetsPrepContent() {
   const displayStats = user ? [
     { icon: <Sparkles className="w-4 h-4 text-yellow-500 animate-sparkle" />, label: 'Credits', value: user.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
     { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Arena', value: userRank || '---', color: 'text-primary bg-primary/10' },
-    { icon: <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user.isPro ? 'Platinum' : 'FREE', color: user.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
+    { icon: <ShieldCheck className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user.isPro ? 'Platinum' : 'FREE', color: user.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
     { icon: <Flame className="w-4 h-4 text-orange-500 fill-current animate-pulse" />, label: 'Streak', value: user.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' }
   ] : [
     { icon: <Users className="w-4 h-4 text-blue-500" />, label: 'Community', value: '1.7K+', color: 'text-blue-500 bg-blue-500/5' },

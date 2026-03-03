@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Flame, Zap, Clock, Users, Loader2, Crown, Star, Lock, Play, ExternalLink, Sparkles } from "lucide-react";
+import { Trophy, Flame, Zap, Clock, Users, Loader2, Star, Lock, Play, ExternalLink, Sparkles, ShieldCheck } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore } from '@/firebase';
@@ -137,7 +137,7 @@ export function EventCompetition({ onJoinEvent }: EventCompetitionProps) {
       case 'daily':
         return <Flame className="w-5 h-5 text-orange-500" />;
       case 'monthly':
-        return <Crown className="w-5 h-5 text-purple-500" />;
+        return <Trophy className="w-5 h-5 text-purple-500" />;
       default:
         return <Star className="w-5 h-5 text-primary" />;
     }
@@ -161,28 +161,6 @@ export function EventCompetition({ onJoinEvent }: EventCompetitionProps) {
       <Card className="border-none shadow-lg rounded-2xl bg-white overflow-hidden">
         <CardContent className="p-8 flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (events.length === 0) {
-    return (
-      <Card className="border-none shadow-lg rounded-2xl bg-white overflow-hidden">
-        <CardHeader className="bg-slate-50/50 p-4 md:p-6 border-b">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
-              <Trophy className="w-5 h-5 text-primary" />
-            </div>
-            <div className="space-y-0.5 min-w-0">
-              <CardTitle className="text-lg font-black tracking-tight">Competitions</CardTitle>
-              <CardDescription className="text-xs">Earn rewards in events</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-8 text-center">
-          <Trophy className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-          <p className="text-slate-400 font-medium text-sm">No active competitions</p>
         </CardContent>
       </Card>
     );
@@ -257,7 +235,7 @@ export function EventCompetition({ onJoinEvent }: EventCompetitionProps) {
                     <Loader2 className="w-3 h-3 animate-spin" />
                   ) : user?.isPro ? (
                     <>
-                      <Crown className="w-3.5 h-3.5" />
+                      <ShieldCheck className="w-3.5 h-3.5" />
                       Free Entry
                     </>
                   ) : (
@@ -277,7 +255,7 @@ export function EventCompetition({ onJoinEvent }: EventCompetitionProps) {
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-400 font-bold">Platinum = Unlimited Arena Entry!</span>
               <Button variant="ghost" size="sm" className="text-primary font-black text-xs h-8">
-                Upgrade <Crown className="w-3 h-3 ml-1" />
+                Upgrade <ShieldCheck className="w-3 h-3 ml-1" />
               </Button>
             </div>
           </div>

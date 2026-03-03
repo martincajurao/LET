@@ -21,7 +21,8 @@ import {
   UserPlus, 
   ShieldCheck,
   Zap,
-  Ticket
+  Ticket,
+  Award
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
@@ -130,7 +131,7 @@ export function ReferralSystem() {
   const milestones = [
     { count: 5, reward: `+${REFERRAL_REWARDS.MILESTONE_5} Bonus`, label: 'Squad Leader', icon: <UserPlus className="w-5 h-5" /> },
     { count: 10, reward: `+${REFERRAL_REWARDS.MILESTONE_10} Bonus`, label: 'Guild Mentor', icon: <Trophy className="w-5 h-5" /> },
-    { count: 25, reward: `+${REFERRAL_REWARDS.MILESTONE_25} Bonus`, label: 'Master Recruiter', icon: <Crown className="w-5 h-5" /> }
+    { count: 25, reward: `+${REFERRAL_REWARDS.MILESTONE_25} Bonus`, label: 'Master Recruiter', icon: <Award className="w-5 h-5" /> }
   ];
 
   if (!user) return null;
