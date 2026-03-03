@@ -156,7 +156,7 @@ export default function CommunityPage() {
 
   useEffect(() => {
     fetchActivity(true);
-  }, [firestore]);
+  }, [firestore, fetchActivity]);
 
   // Fetch top teachers based on rank/xp from live data
   useEffect(() => {

@@ -168,7 +168,6 @@ function LetsPrepContent() {
   const [feedbackText, setFeedbackText] = useState("");
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
-  const startParam = searchParams.get('start');
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
   const getTrackConfig = (category: string, major: string) => {
@@ -240,7 +239,12 @@ function LetsPrepContent() {
       setActiveSimCategory(category);
       setIsResultsUnlocked(false);
       
-      // Atomic state transition
+      // Clear URL param quietly to prevent loop/reset
+      const url = new URL(window.location.href);
+      url.searchParams.delete('start');
+      window.history.replaceState({}, '', url.toString());
+      
+      // Direct state transition
       setState(category === 'quickfire' ? 'quickfire_quiz' : 'exam'); 
       setIsCalibrating(false); 
       isStartingRef.current = false;
@@ -251,18 +255,14 @@ function LetsPrepContent() {
     }
   }, [user, firestore, limits, toast, rankData]);
 
+  // Consuming start param once per mount/session change
   useEffect(() => {
-    if (startParam && user && state === 'dashboard' && startParam !== lastConsumedParam.current) {
-      lastConsumedParam.current = startParam;
-      
-      // Quietly clear param to prevent loops
-      const url = new URL(window.location.href);
-      url.searchParams.delete('start');
-      window.history.replaceState({}, '', url.toString());
-      
-      startExam(startParam);
+    const start = searchParams.get('start');
+    if (start && user && state === 'dashboard' && start !== lastConsumedParam.current) {
+      lastConsumedParam.current = start;
+      startExam(start);
     }
-  }, [startParam, user, state, startExam]);
+  }, [searchParams, user, state, startExam]);
 
   useEffect(() => {
     const fetchLatestApk = async () => {
@@ -477,7 +477,7 @@ function LetsPrepContent() {
                                 <span>Sign In with</span>
                                 <div className="flex items-center gap-3">
                                   <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg border border-white/20"><GoogleIcon /></div>
-                                  <div className="w-10 h-10 bg-[#1877F2] rounded-xl flex items-center justify-center shadow-lg border border-white/20"><Facebook className="w-6 h-6 fill-current text-white" /></div>
+                                  <div className="w-10 h-10 bg-[#1877F2] rounded-xl flex items-center justify-center shadow-lg border border-white/20"><Facebook className="w-6 h-6 fill-current" /></div>
                                 </div>
                               </div>
                               <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300 relative z-10" />
