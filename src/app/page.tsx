@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
@@ -27,8 +28,6 @@ import {
   BookOpen,
   ShieldCheck,
   Languages,
-  Moon,
-  Sun,
   Crown,
   Shield,
   Sparkles,
@@ -55,8 +54,8 @@ import {
   Award,
   Unlock,
   Compass,
-  Map as MapIcon,
-  ArrowRight
+  ArrowRight,
+  ChevronDown
 } from "lucide-react";
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
@@ -84,8 +83,6 @@ const GoogleIcon = () => (
   </svg>
 );
 
-type AppState = 'dashboard' | 'exam' | 'quickfire_quiz' | 'results' | 'quickfire_results';
-
 const GITHUB_APK_URL = "https://github.com/martincajurao/LET/releases/download/V2.1.0/let.apk";
 
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -96,19 +93,6 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   }
   return shuffled;
 };
-
-function sanitizeData(data: any): any {
-  if (data === undefined) return null;
-  if (data === null || typeof data !== 'object') return data;
-  if (data.constructor?.name === 'FieldValue' || (data._methodName && data._methodName.startsWith('FieldValue.'))) return data;
-  if (Array.isArray(data)) return data.map(sanitizeData);
-  const sanitized: any = {};
-  for (const key in data) {
-    const val = sanitizeData(data[key]);
-    if (val !== undefined) sanitized[key] = val;
-  }
-  return sanitized;
-}
 
 const EducationalLoader = ({ message }: { message?: string }) => (
   <div className="flex flex-col items-center justify-center gap-8 animate-in fade-in duration-1000">
@@ -174,7 +158,6 @@ function LetsPrepContent() {
 
   const [userRank, setUserRank] = useState<string | number>('---');
   const [adCooldown, setAdCooldown] = useState(0);
-  const [quickFireCooldown, setQuickFireCooldown] = useState(0);
   
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
@@ -192,7 +175,6 @@ function LetsPrepContent() {
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   const startParam = searchParams.get('start');
-
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
   const getTrackConfig = (category: string, major: string) => {
@@ -206,11 +188,7 @@ function LetsPrepContent() {
   };
 
   const startExam = useCallback(async (category: string) => {
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
-    
+    if (!user) { setShowAuthModal(true); return; }
     if (!firestore || isStartingRef.current) return;
     isStartingRef.current = true;
 
@@ -220,16 +198,6 @@ function LetsPrepContent() {
       setLockedTrackInfo(modeConfig);
       isStartingRef.current = false;
       return;
-    }
-
-    if (category === 'quickfire') {
-      const now = Date.now();
-      const lastQf = Number(user.lastQuickFireTimestamp) || 0;
-      if (lastQf + COOLDOWNS.QUICK_FIRE > now) {
-        toast({ variant: "destructive", title: "Locked", description: "This exam mode is cooling down." });
-        isStartingRef.current = false;
-        return;
-      }
     }
 
     setIsCalibrating(true);
@@ -248,19 +216,15 @@ function LetsPrepContent() {
         const genEdPool = questionPool.filter(q => q.subject === 'General Education');
         const profEdPool = questionPool.filter(q => q.subject === 'Professional Education');
         const specPool = questionPool.filter(q => q.subject === 'Specialization');
-        
         if (genEdPool.length > 0) selection.push(shuffleArray(genEdPool)[0]);
         if (profEdPool.length > 0) selection.push(shuffleArray(profEdPool)[0]);
         if (specPool.length > 0) selection.push(shuffleArray(specPool)[0]);
-        
         const remaining = questionPool.filter(q => !selection.some(s => s.id === q.id));
         finalQuestions = shuffleArray([...selection, ...shuffleArray(remaining).slice(0, 5 - selection.length)]);
       } else {
         const target = category === 'Major' || category === 'Specialization' ? 'Specialization' : category;
         const pool = questionPool.filter(q => {
-          if (target === 'Specialization') {
-            return q.subject === 'Specialization' && q.subCategory === (user?.majorship || 'English');
-          }
+          if (target === 'Specialization') return q.subject === 'Specialization' && q.subCategory === (user?.majorship || 'English');
           return q.subject === target;
         });
         const targetLimit = target === 'General Education' ? limits.limitGenEd : target === 'Professional Education' ? limits.limitProfEd : limits.limitSpec;
@@ -268,7 +232,6 @@ function LetsPrepContent() {
       }
       
       if (finalQuestions.length === 0) throw new Error(`Insufficient exam items.`);
-      
       setCurrentQuestions(finalQuestions);
       setActiveSimCategory(category);
       setIsResultsUnlocked(false);
@@ -284,38 +247,12 @@ function LetsPrepContent() {
     }
   }, [user, firestore, limits, toast, rankData]);
 
-  const handleUnlockEarly = async () => {
-    if (!user || !lockedTrackInfo || isUnlockingEarly) return;
-    
-    const cost = lockedTrackInfo.cost;
-    if ((user.credits || 0) < cost) {
-      toast({ variant: "destructive", title: "Vault Restricted", description: `Requires ${cost} AI Credits to unlock.` });
-      return;
-    }
-
-    setIsUnlockingEarly(true);
-    try {
-      await updateProfile({
-        credits: increment(-cost),
-        unlockedTracks: arrayUnion(lockedTrackInfo.id) as any
-      });
-      await refreshUser();
-      toast({ variant: "reward", title: "Sector Unlocked!", description: `${lockedTrackInfo.name} is now accessible.` });
-      setLockedTrackInfo(null);
-    } catch (e) {
-      toast({ variant: "destructive", title: "Sync Failed", description: "Could not record unlock." });
-    } finally {
-      setIsUnlockingEarly(false);
-    }
-  };
-
   useEffect(() => {
     if (startParam && user && state === 'dashboard' && !isCalibrating) {
       startExam(startParam);
       const params = new URLSearchParams(window.location.search);
       params.delete('start');
-      const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : '');
-      window.history.replaceState({}, '', newUrl);
+      window.history.replaceState({}, '', window.location.pathname + (params.toString() ? `?${params.toString()}` : ''));
     }
   }, [startParam, user, state, isCalibrating, startExam]);
 
@@ -329,82 +266,29 @@ function LetsPrepContent() {
         if (response.ok) {
           const data = await response.json();
           const apkAsset = data.assets?.find((a: any) => a.name.endsWith('.apk'));
-          if (apkAsset) {
-            downloadUrl = apkAsset.browser_download_url;
-            version = data.tag_name.replace(/^V/, '');
-          }
+          if (apkAsset) { downloadUrl = apkAsset.browser_download_url; version = data.tag_name.replace(/^V/, ''); }
         }
         setApkInfo({ version, downloadUrl });
         const qr = await QRCode.toDataURL(downloadUrl, { width: 256, margin: 2, color: { dark: '#10b981', light: '#ffffff' } });
         setQrCodeUrl(qr);
-      } catch (e) {
-        setApkInfo({ version: "2.1.0", downloadUrl: GITHUB_APK_URL });
-      } finally {
-        setIsApkLoading(false);
-      }
+      } catch (e) { setApkInfo({ version: "2.1.0", downloadUrl: GITHUB_APK_URL }); } finally { setIsApkLoading(false); }
     };
     fetchLatestApk();
   }, []);
 
-  useEffect(() => {
-    if (!firestore) return;
-    const configDocRef = doc(firestore, "system_configs", "global");
-    const unsub = onSnapshot(configDocRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setTimePerQuestion(data.timePerQuestion || 60);
-        setLimits({ limitGenEd: data.limitGenEd || 10, limitProfEd: data.limitProfEd || 10, limitSpec: data.limitSpec || 10 });
-      }
-    });
-    return () => unsub();
-  }, [firestore]);
-
-  useEffect(() => {
-    if (!user) return;
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const lastAd = Number(user.lastAdXpTimestamp) || 0;
-      const lastQf = Number(user.lastQuickFireTimestamp) || 0;
-      setAdCooldown(Math.max(0, lastAd + COOLDOWNS.AD_XP - now));
-      setQuickFireCooldown(Math.max(0, lastQf + COOLDOWNS.QUICK_FIRE - now));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [user]);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (window.scrollY <= 10) {
-      pullStartY.current = e.touches[0].clientY;
-      setIsPulling(true);
-    }
-  };
-
+  const handleTouchStart = (e: React.TouchEvent) => { if (window.scrollY <= 10) { pullStartY.current = e.touches[0].clientY; setIsPulling(true); } };
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isPulling || pullStartY.current === null) return;
-    const currentY = e.touches[0].clientY;
-    const diff = currentY - pullStartY.current;
-    if (diff > 0) {
-      setPullDistance(Math.min(diff * 0.5, 100));
-      if (diff > 10) e.preventDefault();
-    }
+    const diff = e.touches[0].clientY - pullStartY.current;
+    if (diff > 0) { setPullDistance(Math.min(diff * 0.5, 100)); if (diff > 10) e.preventDefault(); }
   };
-
   const handleTouchEnd = async () => {
     if (pullDistance > 50 && !isRefreshing) {
       setIsRefreshing(true);
-      try {
-        await refreshUser();
-        toast({ title: "Synchronized", description: "Latest educator data loaded." });
-      } catch (e) {
-        toast({ variant: "destructive", title: "Sync Failed", description: "Could not refresh profile." });
-      } finally {
-        setIsRefreshing(false);
-        setIsPulling(false);
-        setPullDistance(0);
-      }
-    } else {
-      setPullDistance(0);
-      setIsPulling(false);
-    }
+      try { await refreshUser(); toast({ title: "Synchronized", description: "Latest educator data loaded." }); } 
+      catch (e) { toast({ variant: "destructive", title: "Sync Failed", description: "Could not refresh profile." }); } 
+      finally { setIsRefreshing(false); setIsPulling(false); setPullDistance(0); }
+    } else { setPullDistance(0); setIsPulling(false); }
     pullStartY.current = null;
   };
 
@@ -412,115 +296,37 @@ function LetsPrepContent() {
     if (!user || !firestore) return;
     const isQuickFireMode = activeSimCategory === 'quickfire';
     const now = Date.now();
-
-    if (isQuickFireMode && timeSpent < MIN_QUICK_FIRE_TIME) {
-      toast({ variant: "destructive", title: "Exam Incomplete", description: "Engagement too rapid for reward calibration." });
-      setState('dashboard');
-      return;
-    }
-
-    setExamAnswers(answers);
-    setExamTime(timeSpent);
-    setIsCalibrating(true);
-    setLoadingMessage("Synchronizing Exam...");
-
+    if (isQuickFireMode && timeSpent < MIN_QUICK_FIRE_TIME) { toast({ variant: "destructive", title: "Exam Incomplete", description: "Engagement too rapid for reward calibration." }); setState('dashboard'); return; }
+    setExamAnswers(answers); setExamTime(timeSpent); setIsCalibrating(true); setLoadingMessage("Synchronizing Exam...");
     const results = currentQuestions.map(q => {
       const isCorrect = answers[q.id] === q.correctAnswer;
       const isConfident = confidentAnswers ? (confidentAnswers[q.id] || false) : false;
       return { ...q, questionId: q.id, userAnswer: answers[q.id], isCorrect, isConfident };
     });
-    
     const correctCount = results.filter(h => h.isCorrect).length;
     const overallScore = Math.round((correctCount / (currentQuestions.length || 1)) * 100);
-    
     let xpEarned = correctCount * XP_REWARDS.CORRECT_ANSWER;
-    results.forEach(r => {
-      if (r.isConfident) {
-        if (r.isCorrect) xpEarned += XP_REWARDS.CONFIDENT_CORRECT_BONUS;
-        else xpEarned += XP_REWARDS.CONFIDENT_WRONG_PENALTY;
-      }
-    });
-
-    if (isQuickFireMode) {
-      xpEarned += Math.round((correctCount / 5) * XP_REWARDS.QUICK_FIRE_COMPLETE);
-    } else {
-      xpEarned += (currentQuestions.length >= 50 ? XP_REWARDS.FINISH_FULL_SIM : XP_REWARDS.FINISH_TRACK);
-    }
-
+    results.forEach(r => { if (r.isConfident) { if (r.isCorrect) xpEarned += XP_REWARDS.CONFIDENT_CORRECT_BONUS; else xpEarned += XP_REWARDS.CONFIDENT_WRONG_PENALTY; } });
+    if (isQuickFireMode) xpEarned += Math.round((correctCount / 5) * XP_REWARDS.QUICK_FIRE_COMPLETE); else xpEarned += (currentQuestions.length >= 50 ? XP_REWARDS.FINISH_FULL_SIM : XP_REWARDS.FINISH_TRACK);
     setLastXpEarned(xpEarned);
-    const resultsData = sanitizeData({ 
-      userId: user.uid, 
-      displayName: user.displayName || 'Guest Educator', 
-      timestamp: now, 
-      overallScore, 
-      timeSpent, 
-      xpEarned, 
-      results, 
-      lastActiveDate: serverTimestamp() 
-    });
-
     try {
       if (!user.uid.startsWith('bypass')) {
-        const docRef = await addDoc(collection(firestore, "exam_results"), resultsData);
+        const docRef = await addDoc(collection(firestore, "exam_results"), { userId: user.uid, displayName: user.displayName || 'Guest Educator', timestamp: now, overallScore, timeSpent, xpEarned, results, lastActiveDate: serverTimestamp() });
         setNewResultId(docRef.id);
-        const updatePayload: any = { 
-          dailyQuestionsAnswered: increment(currentQuestions.length), 
-          dailyTestsFinished: increment(!isQuickFireMode ? 1 : 0),
-          xp: increment(xpEarned), 
-          lastActiveDate: serverTimestamp() 
-        };
+        const updatePayload: any = { dailyQuestionsAnswered: increment(currentQuestions.length), dailyTestsFinished: increment(!isQuickFireMode ? 1 : 0), xp: increment(xpEarned), lastActiveDate: serverTimestamp() };
         if (isQuickFireMode) updatePayload.lastQuickFireTimestamp = now;
         await updateDoc(doc(firestore, 'users', user.uid), updatePayload);
       }
       await refreshUser();
-    } catch (e) {
-      console.error("Result sync error:", e);
     } finally {
       setIsCalibrating(false);
-      if (isQuickFireMode) {
-        setState('quickfire_results');
-      } else {
-        setState('results');
-        if (user && !user.isPro) {
-          setIsResultsUnlocked(false);
-          setExamStatsForUnlock({
-            questionsCount: currentQuestions.length,
-            correctAnswers: correctCount,
-            timeSpent: timeSpent
-          });
-          setShowResultUnlock(true);
-        } else {
-          setIsResultsUnlocked(true);
-        }
-      }
-    }
-  };
-
-  const handleFeedbackSubmit = async () => {
-    if (!feedbackText.trim() || !firestore || !user) return;
-    setIsSubmittingFeedback(true);
-    try {
-      if (!user.uid.startsWith('bypass')) {
-        await addDoc(collection(firestore, 'feedback'), {
-          userId: user.uid,
-          userName: user.displayName,
-          text: feedbackText,
-          timestamp: serverTimestamp()
-        });
-      }
-      toast({ variant: "reward", title: "Trace Recorded!", description: "Thank you for contributing to our platform." });
-      setFeedbackText("");
-      setShowFeedbackModal(false);
-    } catch (e) {
-      toast({ variant: "destructive", title: "Sync Failed", description: "Could not record professional feedback." });
-    } finally {
-      setIsSubmittingFeedback(false);
+      if (isQuickFireMode) setState('quickfire_results');
+      else { setState('results'); if (user && !user.isPro) { setIsResultsUnlocked(false); setExamStatsForUnlock({ questionsCount: currentQuestions.length, correctAnswers: correctCount, timeSpent: timeSpent }); setShowResultUnlock(true); } else setIsResultsUnlocked(true); }
     }
   };
 
   if (authLoading) return <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-background"><EducationalLoader message="Synchronizing Session" /></div>;
 
-  const currentRankData = user ? getRankData(user.xp || 0) : null;
   const displayStats = user ? [
     { icon: <Sparkles className="w-4 h-4 text-yellow-500 animate-sparkle" />, label: 'Credits', value: user.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
     { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Arena', value: userRank || '---', color: 'text-primary bg-primary/10' },
@@ -534,122 +340,12 @@ function LetsPrepContent() {
   ];
 
   const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
-  const itemVariants = { 
-    hidden: { opacity: 0, y: 20, scale: 0.95 }, 
-    show: { 
-      opacity: 1, 
-      y: 0, 
-      scale: 1,
-      transition: { type: "spring", stiffness: 100, damping: 12 }
-    } 
-  };
+  const itemVariants = { hidden: { opacity: 0, y: 20, scale: 0.95 }, show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 100, damping: 12 } } };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-background text-foreground font-body" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined }}>
       <Toaster />
-      
-      <AnimatePresence>
-        {isCalibrating && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-md"
-          >
-            <EducationalLoader message={loadingMessage} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-sm outline-none overflow-hidden">
-          <div className="bg-emerald-500/10 p-10 flex flex-col items-center text-center">
-            <div className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-xl mb-4 border-2 border-emerald-500/20">
-              <ShieldCheck className="w-10 h-10 text-emerald-500" />
-            </div>
-            <DialogTitle className="text-2xl font-black tracking-tight">Verified Access</DialogTitle>
-            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-1">Credentials Required</p>
-          </div>
-          <div className="p-8 space-y-4">
-            <Button onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} className="w-full h-14 rounded-2xl font-black gap-3 bg-white text-black border border-border shadow-md hover:bg-muted active:scale-95 transition-all"><GoogleIcon /> Continue with Google</Button>
-            <Button onClick={async () => { await loginWithFacebook(); setShowAuthModal(false); }} className="w-full h-14 rounded-2xl font-black gap-3 bg-[#1877F2] text-white shadow-md hover:bg-[#1877F2]/90 active:scale-95 transition-all"><Facebook className="w-5 h-5 fill-current" /> Continue with Facebook</Button>
-            
-            <div className="pt-4 border-t border-border/50">
-              <Button 
-                variant="ghost" 
-                onClick={async () => { await bypassLogin(); setShowAuthModal(false); }} 
-                className="w-full h-12 rounded-xl font-bold text-xs gap-2 text-muted-foreground hover:bg-muted active:scale-95 transition-all"
-              >
-                <FlaskConical className="w-4 h-4" />
-                Launch Test Environment
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-md outline-none overflow-hidden">
-          <div className="bg-primary/10 p-10 flex flex-col items-center justify-center text-center">
-            <div className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center shadow-lg mb-4"><MessageSquare className="w-8 h-8 text-primary" /></div>
-            <DialogTitle className="text-2xl font-black">Feedback Vault</DialogTitle>
-          </div>
-          <div className="p-8 space-y-6">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Your Suggestions</Label>
-              <Textarea value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} placeholder="Improve the exam experience..." className="rounded-2xl min-h-[120px] border-2 p-4 text-sm font-medium resize-none focus:border-primary transition-all" />
-            </div>
-            <DialogFooter className="sm:flex-col gap-3">
-              <Button onClick={handleFeedbackSubmit} disabled={isSubmittingFeedback || !feedbackText.trim()} className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-primary/30 active:scale-95 transition-all">
-                {isSubmittingFeedback ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Transmit Insight
-              </Button>
-              <Button variant="ghost" onClick={() => setShowFeedbackModal(false)} className="w-full font-bold text-muted-foreground">Discard</Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <ResultUnlockDialog 
-        open={showResultUnlock}
-        onClose={() => { if (isResultsUnlocked) setShowResultUnlock(false); }}
-        onUnlock={() => { setIsResultsUnlocked(true); setShowResultUnlock(false); }}
-        questionsCount={examStatsForUnlock.questionsCount}
-        correctAnswers={examStatsForUnlock.correctAnswers}
-        timeSpent={examStatsForUnlock.timeSpent}
-      />
-
-      <Dialog open={!!lockedTrackInfo} onOpenChange={(open) => !open && setLockedTrackInfo(null)}>
-        <DialogContent className="rounded-[3rem] bg-card border-none shadow-2xl p-0 max-w-[380px] overflow-hidden outline-none z-[1100]">
-          <div className="bg-primary/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
-            <motion.div 
-              initial={{ scale: 0.8, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
-              className="w-24 h-24 bg-card rounded-[2.5rem] flex items-center justify-center shadow-2xl relative z-10 border-2 border-primary/20"
-            >
-              {lockedTrackInfo?.icon}
-              <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary rounded-full flex items-center justify-center border-4 border-card shadow-lg">
-                <Lock className="w-4 h-4 text-primary-foreground" />
-              </div>
-            </motion.div>
-            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 4, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent z-0" />
-          </div>
-          <div className="p-8 text-center space-y-8">
-            <div className="space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-1">Sector Restricted</span>
-              <DialogTitle className="text-3xl font-black tracking-tighter text-foreground">{lockedTrackInfo?.name}</DialogTitle>
-              <DialogDescription className="text-muted-foreground font-medium text-sm leading-relaxed px-2">
-                This sector requires <span className="text-foreground font-black">Rank {lockedTrackInfo?.reqRank}</span> ({getCareerRankTitle(lockedTrackInfo?.reqRank)}). Complete other exams to ascend.
-              </DialogDescription>
-            </div>
-            <div className="grid gap-3">
-              <button onClick={handleUnlockEarly} disabled={isUnlockingEarly} className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 shadow-xl bg-primary text-primary-foreground active:scale-95 transition-all group flex items-center justify-center">
-                {isUnlockingEarly ? <Loader2 className="w-5 h-5 animate-spin" /> : <Unlock className="w-5 h-5" />} {isUnlockingEarly ? "UNLOCKING..." : `Unlock Early (${lockedTrackInfo?.cost}c)`}
-              </button>
-              <Button variant="ghost" onClick={() => setLockedTrackInfo(null)} className="w-full h-12 rounded-xl font-bold text-[10px] uppercase tracking-widest text-muted-foreground hover:bg-muted">Return to Ground</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <AnimatePresence>{isCalibrating && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[5100] flex items-center justify-center bg-background/80 backdrop-blur-md"><EducationalLoader message={loadingMessage} /></motion.div>)}</AnimatePresence>
 
       <AnimatePresence mode="wait">
         {state === 'exam' ? (
@@ -669,7 +365,8 @@ function LetsPrepContent() {
             <QuickFireResults questions={currentQuestions} answers={examAnswers} timeSpent={examTime} xpEarned={lastXpEarned} onRestart={() => setState('dashboard')} />
           </motion.div>
         ) : (
-          <motion.div key="dashboard" variants={containerVariants} initial="hidden" animate="show" className="max-w-7xl mx-auto px-4 pb-8 space-y-6">
+          <motion.div key="dashboard" variants={containerVariants} initial="hidden" animate="show" className="max-w-7xl mx-auto px-4 pb-8 space-y-6 pt-4">
+            {/* Player Attributes Bar */}
             <motion.div variants={containerVariants} className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {displayStats.map((stat, i) => (
                 <motion.div key={i} variants={itemVariants} whileTap={{ scale: 0.95 }} className="android-surface rounded-2xl p-4 flex items-center gap-4 border-none shadow-md3-1">
@@ -681,31 +378,36 @@ function LetsPrepContent() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-8 space-y-6">
+                {/* Simulation Command Center (Hero) */}
                 <motion.div variants={itemVariants} whileHover={{ y: -4 }}>
-                  <Card className="overflow-hidden border-none shadow-2xl rounded-[3rem] bg-gradient-to-br from-primary/30 via-card to-background p-8 md:p-14 relative group">
+                  <Card className="overflow-hidden border-none shadow-2xl rounded-[3rem] bg-gradient-to-br from-primary/30 via-card to-background p-8 md:p-14 relative group active:scale-[0.99] transition-all">
                     <div className="relative z-10 space-y-8">
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="font-black text-[10px] uppercase px-4 py-1.5 bg-primary/20 text-primary border-none rounded-lg shadow-sm">Verified Learning Path</Badge>
-                        <Badge variant="outline" className="font-black text-[9px] uppercase px-3 py-1 bg-white/10 text-primary-foreground border-primary/20 mix-blend-difference">ALPHA V2.5</Badge>
+                        <Badge variant="secondary" className="font-black text-[10px] uppercase px-4 py-1.5 bg-primary/20 text-primary border-none rounded-lg shadow-sm">Protocol: Board Simulator</Badge>
+                        {user && <Badge variant="outline" className="font-black text-[9px] uppercase px-3 py-1 bg-white/10 text-primary-foreground border-primary/20 mix-blend-difference">Rank {rankData?.rank}</Badge>}
                       </div>
                       <div className="space-y-4">
-                        <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95] text-foreground">Elite Board <br /><span className="text-primary italic">Exams.</span></h1>
-                        <p className="text-muted-foreground font-medium text-lg md:text-2xl max-w-xl leading-relaxed">Sharpen your professional reasoning with AI-driven analysis built for the Filipino educator.</p>
+                        <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95] text-foreground">Prepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
+                        <p className="text-muted-foreground font-medium text-lg md:text-2xl max-w-xl leading-relaxed">High-fidelity situational simulations with AI analysis built for Filipino educators.</p>
                       </div>
-                      <div className="flex flex-wrap gap-4 pt-2">
+                      
+                      <div className="flex flex-col sm:flex-row gap-4 pt-2">
                         {user ? (
-                          <div className="space-y-4 w-full sm:w-auto">
+                          <div className="space-y-6 w-full sm:w-auto">
                             <button disabled={isCalibrating} onClick={() => startExam('all')} className="h-16 md:h-20 px-10 md:px-14 rounded-2xl font-black text-lg md:text-xl gap-4 shadow-2xl shadow-primary/40 active:scale-95 transition-all group relative overflow-hidden bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center">
                               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                              {isCalibrating ? <Loader2 className="animate-spin w-7 h-7" /> : <Zap className="w-7 h-7 fill-current" />} <span>Launch Full Battle</span> <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                              {isCalibrating ? <Loader2 className="animate-spin w-7 h-7" /> : <Zap className="w-7 h-7 fill-current" />} 
+                              <span>Launch Full Exam</span> 
+                              <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
                             </button>
+                            
                             {rankData && (
-                              <div className="flex items-center gap-3 bg-card/50 backdrop-blur-md p-3 rounded-2xl border border-border/50 shadow-sm animate-in slide-in-from-left duration-700">
-                                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shrink-0"><TrendingUp className="w-4 h-4 text-primary" /></div>
-                                <div className="flex-1 space-y-1">
-                                  <div className="flex justify-between text-[8px] font-black uppercase text-muted-foreground tracking-widest"><span>Next Title: {getCareerRankTitle(rankData.rank + 1)}</span><span>{Math.round(rankData.progress)}%</span></div>
-                                  <Progress value={rankData.progress} className="h-1" />
+                              <div className="flex flex-col gap-2 bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border/50 shadow-sm min-w-[280px]">
+                                <div className="flex items-center justify-between text-[9px] font-black uppercase text-muted-foreground tracking-widest">
+                                  <span className="flex items-center gap-1.5"><Award className="w-3 h-3 text-primary" /> Next: {getCareerRankTitle(rankData.rank + 1)}</span>
+                                  <span className="text-primary">{Math.round(rankData.progress)}% XP</span>
                                 </div>
+                                <Progress value={rankData.progress} className="h-1.5 rounded-full" />
                               </div>
                             )}
                           </div>
@@ -713,58 +415,56 @@ function LetsPrepContent() {
                           <motion.div className="w-full sm:w-fit" animate={{ scale: [1, 1.02, 1] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
                             <button 
                               onClick={() => setShowAuthModal(true)} 
-                              className="w-full h-16 md:h-20 px-6 md:px-10 rounded-[1.5rem] font-black text-lg md:text-xl gap-4 shadow-xl shadow-primary/30 bg-primary text-primary-foreground hover:bg-primary/95 active:scale-[0.97] transition-all group relative overflow-hidden flex items-center justify-between"
+                              className="w-full h-16 md:h-20 px-8 md:px-12 rounded-[1.75rem] font-black text-lg md:text-xl gap-6 shadow-xl shadow-primary/30 bg-primary text-primary-foreground hover:bg-primary/95 active:scale-[0.97] transition-all group relative overflow-hidden flex items-center justify-center"
                             >
-                              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                               <div className="flex items-center gap-4 relative z-10">
-                                <div className="w-12 h-12 bg-background/20 rounded-2xl flex items-center justify-center shadow-inner border border-white/10 shrink-0">
-                                  <ShieldCheck className="w-7 h-7" />
-                                </div>
-                                <div className="flex flex-col items-start leading-none text-left">
-                                  <span className="uppercase tracking-tight leading-none">Sign In to Launch</span>
-                                  <span className="text-[10px] font-bold opacity-70 mt-1.5 uppercase tracking-[0.15em]">Verified Entry</span>
+                                <span>Sign In with</span>
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg border border-white/20"><GoogleIcon /></div>
+                                  <div className="w-10 h-10 bg-[#1877F2] rounded-xl flex items-center justify-center shadow-lg border border-white/20"><Facebook className="w-6 h-6 fill-current text-white" /></div>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-3 relative z-10">
-                                <div className="hidden sm:flex flex-col items-end opacity-60">
-                                  <span className="text-[8px] font-black uppercase tracking-widest">Protocol</span>
-                                  <span className="text-[8px] font-black uppercase tracking-widest">Secure</span>
-                                </div>
-                                <div className="w-10 h-10 rounded-full bg-background/10 flex items-center justify-center group-hover:translate-x-1 transition-transform border border-white/5">
-                                  <ChevronRight className="w-5 h-5" />
-                                </div>
-                              </div>
+                              <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300 relative z-10" />
                             </button>
                           </motion.div>
                         )}
                       </div>
                     </div>
-                    <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.05, 0.1, 0.05], rotate: [0, 10, 0] }} transition={{ duration: 15, repeat: Infinity }} className="absolute -top-20 -right-20 w-96 h-96 bg-primary/20 rounded-full blur-[80px]" />
+                    <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.05, 0.1, 0.05], rotate: [0, 5, 0] }} transition={{ duration: 15, repeat: Infinity }} className="absolute -top-20 -right-20 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[100px]" />
                   </Card>
                 </motion.div>
 
+                {/* Training Zones */}
                 <div className="space-y-6">
                   <div className="flex items-center justify-between px-4">
-                    <h3 className="text-xl font-black tracking-tight flex items-center gap-3"><div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shadow-inner"><Target className="w-5 h-5 text-primary" /></div>Exam Maps</h3>
-                    <Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest text-muted-foreground opacity-60">Eligibility Controlled</Badge>
+                    <h3 className="text-xl font-black tracking-tight flex items-center gap-3">
+                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shadow-inner"><Target className="w-5 h-5 text-primary" /></div>
+                      Training Zones
+                    </h3>
+                    <Badge variant="outline" className="font-black text-[9px] uppercase tracking-[0.2em] text-muted-foreground opacity-60">Professional Tracks</Badge>
                   </div>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-1">
                     {[
                       { id: 'General Education', name: 'Gen Ed', icon: <Languages />, rnk: UNLOCK_RANKS.GENERAL_ED, bg: 'from-blue-500/10' },
                       { id: 'Professional Education', name: 'Prof Ed', icon: <BookOpen />, rnk: UNLOCK_RANKS.PROFESSIONAL_ED, bg: 'from-purple-500/10' },
                       { id: 'Specialization', name: user?.majorship || 'Major', icon: <Star />, rnk: UNLOCK_RANKS.SPECIALIZATION, bg: 'from-emerald-500/10' }
                     ].map((track, i) => {
-                      const isLocked = user && !isTrackUnlocked(currentRankData?.rank || 1, track.id, user.unlockedTracks);
+                      const isLocked = user && !isTrackUnlocked(rankData?.rank || 1, track.id, user.unlockedTracks);
                       return (
                         <motion.div key={i} variants={itemVariants} whileTap={{ scale: 0.97 }}>
-                          <Card onClick={() => startExam(track.id)} className={cn("cursor-pointer border-2 rounded-[2.5rem] bg-card overflow-hidden active:scale-95 transition-all relative h-full group hover:shadow-xl", isLocked ? "border-muted/50 bg-muted/5" : "hover:border-primary border-border/50 bg-gradient-to-br via-card to-card " + track.bg)}>
+                          <Card onClick={() => startExam(track.id)} className={cn("cursor-pointer border-2 rounded-[2.5rem] bg-card overflow-hidden active:scale-95 transition-all relative h-full group hover:shadow-2xl", isLocked ? "border-muted/50 bg-muted/5 opacity-80" : "hover:border-primary border-border/50 bg-gradient-to-br via-card to-card " + track.bg)}>
                             <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
                               <div className={cn("relative transition-transform duration-500", !isLocked && "group-hover:scale-110")}>
-                                <div className={cn("w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-inner transition-colors", isLocked ? "bg-muted text-muted-foreground opacity-40" : "bg-card text-foreground")}>{track.icon}</div>
-                                {isLocked && <div className="absolute -top-2 -right-2 w-8 h-8 bg-card border-2 border-muted rounded-full flex items-center justify-center shadow-sm"><Lock className="w-3.5 h-3.5 text-muted-foreground" /></div>}
+                                <div className={cn("w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-inner transition-colors", isLocked ? "bg-muted/50 text-muted-foreground" : "bg-card text-foreground")}>{track.icon}</div>
+                                {isLocked && <div className="absolute -top-2 -right-2 w-8 h-8 bg-card border-2 border-muted rounded-full flex items-center justify-center shadow-md"><Lock className="w-3.5 h-3.5 text-muted-foreground" /></div>}
                               </div>
-                              <div><h4 className="font-black text-xl text-foreground">{track.name}</h4><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{isLocked ? `Locked: Rank ${track.rnk}` : "Accessible"}</p></div>
-                              {!isLocked && <div className="pt-2 opacity-0 group-hover:opacity-100 transition-opacity"><ChevronRight className="w-5 h-5 text-primary" /></div>}
+                              <div className="space-y-1">
+                                <h4 className="font-black text-xl text-foreground leading-none">{track.name}</h4>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{isLocked ? `Unlock: Rank ${track.rnk}` : "Accessible"}</p>
+                              </div>
+                              {!isLocked && <ChevronRight className="w-5 h-5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />}
                             </CardContent>
                           </Card>
                         </motion.div>
@@ -773,25 +473,30 @@ function LetsPrepContent() {
                   </div>
                 </div>
 
+                {/* Community & Intelligence Lounge */}
                 <div className="space-y-4 pt-4">
-                  <h3 className="text-xl font-black tracking-tight flex items-center gap-3 px-4"><div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center shadow-inner"><Users className="w-5 h-5 text-emerald-600" /></div>Lounge & Support</h3>
+                  <h3 className="text-xl font-black tracking-tight flex items-center gap-3 px-4">
+                    <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center shadow-inner"><Users className="w-5 h-5 text-emerald-600" /></div>
+                    Intelligence Lounge
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-1">
                     <motion.div variants={itemVariants} whileTap={{ scale: 0.98 }}>
-                      <Card onClick={() => setShowFeedbackModal(true)} className="android-surface cursor-pointer rounded-[2rem] p-6 flex items-center gap-5 border-none shadow-md3-1">
-                        <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner"><MessageSquare className="text-primary w-7 h-7" /></div>
-                        <div><h4 className="font-black text-lg">Send Feedback</h4><p className="text-[10px] font-bold text-muted-foreground uppercase">Improve the platform</p></div>
+                      <Card onClick={() => setShowFeedbackModal(true)} className="android-surface cursor-pointer rounded-[2.25rem] p-6 flex items-center gap-5 border-none shadow-md3-1 bg-card group">
+                        <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500"><MessageSquare className="w-7 h-7" /></div>
+                        <div><h4 className="font-black text-lg">Send Feedback</h4><p className="text-[10px] font-bold text-muted-foreground uppercase">Refine simulations</p></div>
                       </Card>
                     </motion.div>
                     <motion.div variants={itemVariants} whileTap={{ scale: 0.98 }}>
-                      <Card onClick={() => window.location.href = 'mailto:support@letprep.app'} className="android-surface cursor-pointer rounded-[2rem] p-6 flex items-center gap-5 border-none shadow-md3-1">
-                        <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center shadow-inner"><Mail className="text-emerald-600 w-7 h-7" /></div>
-                        <div><h4 className="font-black text-lg">Contact Us</h4><p className="text-[10px] font-bold text-muted-foreground uppercase">Technical support</p></div>
+                      <Card onClick={() => window.location.href = 'mailto:support@letprep.app'} className="android-surface cursor-pointer rounded-[2.25rem] p-6 flex items-center gap-5 border-none shadow-md3-1 bg-card group">
+                        <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-emerald-500 group-hover:text-white transition-all duration-500"><Mail className="w-7 h-7" /></div>
+                        <div><h4 className="font-black text-lg">Contact Us</h4><p className="text-[10px] font-bold text-muted-foreground uppercase">System support</p></div>
                       </Card>
                     </motion.div>
                   </div>
                 </div>
               </div>
 
+              {/* Native Binary Sidebar */}
               <div className="lg:col-span-4 space-y-6">
                 <motion.div variants={itemVariants}>
                   <Card className="android-surface border-none shadow-2xl rounded-[2.5rem] bg-gradient-to-br from-emerald-500/20 via-card to-background p-8 overflow-hidden group">
@@ -801,27 +506,25 @@ function LetsPrepContent() {
                         <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center shadow-inner"><Download className="w-7 h-7 text-emerald-600" /></div>
                         <Badge variant="outline" className="font-black text-[9px] border-emerald-500/30 text-emerald-600 bg-emerald-500/5 uppercase">{isApkLoading ? '---' : `v${apkInfo?.version}`}</Badge>
                       </div>
-                      <div><h3 className="text-2xl font-black tracking-tight leading-none mb-2">Native Client</h3><p className="text-xs font-medium opacity-60 leading-relaxed">Install the high-fidelity Android exam for seamless offline preparation.</p></div>
+                      <div className="space-y-2">
+                        <h3 className="text-2xl font-black tracking-tight leading-none">Native Client</h3>
+                        <p className="text-xs font-medium opacity-60 leading-relaxed">High-fidelity Android wrapper for professional offline preparation.</p>
+                      </div>
                       <div className="flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 border-dashed border-emerald-500/20 relative min-h-[180px] shadow-inner">
                         <AnimatePresence mode="wait">
                           {isApkLoading ? (
                             <motion.div key="apk-loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-2">
-                              <Loader2 className="animate-spin text-emerald-500 w-8 h-8" />
-                              <span className="text-[8px] font-black uppercase text-emerald-600/60 tracking-[0.3em]">Syncing Exam...</span>
+                              <Loader2 className="animate-spin text-emerald-500 w-8 h-8" /><span className="text-[8px] font-black uppercase text-emerald-600/60 tracking-[0.3em]">Syncing Binary...</span>
                             </motion.div>
                           ) : qrCodeUrl ? (
                             <motion.div key="apk-qr" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="space-y-4 flex flex-col items-center">
-                              <div className="w-32 h-32 bg-white p-1.5 rounded-2xl shadow-xl border-4 border-emerald-50 overflow-hidden">
-                                <img src={qrCodeUrl} alt="QR Code" className="w-full h-full object-contain" />
-                              </div>
+                              <div className="w-32 h-32 bg-white p-1.5 rounded-2xl shadow-xl border-4 border-emerald-50 overflow-hidden"><img src={qrCodeUrl} alt="QR Code" className="w-full h-full object-contain" /></div>
                               <p className="text-[9px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-2"><QrCode className="w-3 h-3" /> Scan to Sideload</p>
                             </motion.div>
-                          ) : (
-                            <motion.p key="apk-error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-muted-foreground text-center">Unable to generate QR code.</motion.p>
-                          )}
+                          ) : <p className="text-[10px] text-muted-foreground text-center">Unable to generate QR code.</p>}
                         </AnimatePresence>
                       </div>
-                      <Button onClick={() => window.location.href = apkInfo?.downloadUrl || GITHUB_APK_URL} disabled={isApkLoading} className="w-full h-16 rounded-[1.75rem] font-black gap-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-2xl shadow-emerald-500/30 active:scale-95 transition-all text-[10px] uppercase tracking-widest">{isApkLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <Download className="w-5 h-5" />} Direct Install</Button>
+                      <Button onClick={() => window.location.href = apkInfo?.downloadUrl || GITHUB_APK_URL} disabled={isApkLoading} className="w-full h-16 rounded-[1.75rem] font-black gap-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-2xl shadow-emerald-500/30 active:scale-95 transition-all text-[10px] uppercase tracking-widest">Direct Install</Button>
                     </div>
                   </Card>
                 </motion.div>
@@ -846,6 +549,31 @@ function LetsPrepContent() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Auth & Feedback Dialogs */}
+      <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-sm outline-none overflow-hidden">
+          <div className="bg-emerald-500/10 p-10 flex flex-col items-center text-center"><div className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-xl mb-4 border-2 border-emerald-500/20"><ShieldCheck className="w-10 h-10 text-emerald-500" /></div><DialogTitle className="text-2xl font-black tracking-tight">Verified Access</DialogTitle><p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-1">Credentials Required</p></div>
+          <div className="p-8 space-y-4">
+            <Button onClick={async () => { await loginWithGoogle(); setShowAuthModal(false); }} className="w-full h-14 rounded-2xl font-black gap-3 bg-white text-black border border-border shadow-md hover:bg-muted active:scale-95 transition-all"><GoogleIcon /> Continue with Google</Button>
+            <Button onClick={async () => { await loginWithFacebook(); setShowAuthModal(false); }} className="w-full h-14 rounded-2xl font-black gap-3 bg-[#1877F2] text-white shadow-md hover:bg-[#1877F2]/90 active:scale-95 transition-all"><Facebook className="w-5 h-5 fill-current" /> Continue with Facebook</Button>
+            <div className="pt-4 border-t border-border/50"><Button variant="ghost" onClick={async () => { await bypassLogin(); setShowAuthModal(false); }} className="w-full h-12 rounded-xl font-bold text-xs gap-2 text-muted-foreground hover:bg-muted active:scale-95 transition-all"><FlaskConical className="w-4 h-4" /> Launch Test Environment</Button></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-md outline-none overflow-hidden">
+          <div className="bg-primary/10 p-10 flex flex-col items-center justify-center text-center"><div className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center shadow-lg mb-4"><MessageSquare className="w-8 h-8 text-primary" /></div><DialogTitle className="text-2xl font-black">Feedback Vault</DialogTitle></div>
+          <div className="p-8 space-y-6">
+            <div className="space-y-2"><Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Your Suggestions</Label><Textarea value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} placeholder="Improve the exam experience..." className="rounded-2xl min-h-[120px] border-2 p-4 text-sm font-medium resize-none focus:border-primary transition-all" /></div>
+            <DialogFooter className="sm:flex-col gap-3"><Button onClick={handleFeedbackSubmit} disabled={isSubmittingFeedback || !feedbackText.trim()} className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-primary/30 active:scale-95 transition-all">{isSubmittingFeedback ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Transmit Insight</Button><Button variant="ghost" onClick={() => setShowFeedbackModal(false)} className="w-full font-bold text-muted-foreground">Discard</Button></DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <ResultUnlockDialog open={showResultUnlock} onClose={() => { if (isResultsUnlocked) setShowResultUnlock(false); }} onUnlock={() => { setIsResultsUnlocked(true); setShowResultUnlock(false); }} questionsCount={examStatsForUnlock.questionsCount} correctAnswers={examStatsForUnlock.correctAnswers} timeSpent={examStatsForUnlock.timeSpent} />
+      <Dialog open={!!lockedTrackInfo} onOpenChange={(open) => !open && setLockedTrackInfo(null)}><DialogContent className="rounded-[3rem] bg-card border-none shadow-2xl p-0 max-w-[380px] overflow-hidden outline-none z-[5100]"><div className="bg-primary/10 p-12 flex flex-col items-center justify-center relative overflow-hidden"><motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-24 h-24 bg-card rounded-[2.5rem] flex items-center justify-center shadow-2xl relative z-10 border-2 border-primary/20">{lockedTrackInfo?.icon}<div className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary rounded-full flex items-center justify-center border-4 border-card shadow-lg"><Lock className="w-4 h-4 text-primary-foreground" /></div></motion.div><motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 4, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent z-0" /></div><div className="p-8 text-center space-y-8"><div className="space-y-2"><span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-1">Sector Restricted</span><DialogTitle className="text-3xl font-black tracking-tighter text-foreground">{lockedTrackInfo?.name}</DialogTitle><DialogDescription className="text-muted-foreground font-medium text-sm leading-relaxed px-2">This sector requires <span className="text-foreground font-black">Rank {lockedTrackInfo?.reqRank}</span> ({getCareerRankTitle(lockedTrackInfo?.reqRank)}). Complete other exams to ascend.</DialogDescription></div><div className="grid gap-3"><button onClick={async () => { if (!user || isUnlockingEarly) return; const cost = lockedTrackInfo.cost; if ((user.credits || 0) < cost) { toast({ variant: "destructive", title: "Vault Restricted", description: `Requires ${cost} AI Credits.` }); return; } setIsUnlockingEarly(true); try { await updateProfile({ credits: increment(-cost), unlockedTracks: arrayUnion(lockedTrackInfo.id) as any }); await refreshUser(); toast({ variant: "reward", title: "Sector Unlocked!", description: `${lockedTrackInfo.name} is now accessible.` }); setLockedTrackInfo(null); } finally { setIsUnlockingEarly(false); } }} disabled={isUnlockingEarly} className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 shadow-xl bg-primary text-primary-foreground active:scale-95 transition-all flex items-center justify-center">{isUnlockingEarly ? <Loader2 className="w-5 h-5 animate-spin" /> : <Unlock className="w-5 h-5" />} {isUnlockingEarly ? "UNLOCKING..." : `Unlock Early (${lockedTrackInfo?.cost}c)`}</button><Button variant="ghost" onClick={() => setLockedTrackInfo(null)} className="w-full h-12 rounded-xl font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Return to Ground</Button></div></div></DialogContent></Dialog>
     </motion.div>
   );
 }
