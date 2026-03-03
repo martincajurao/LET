@@ -312,7 +312,19 @@ function LetsPrepContent() {
     setLastXpEarned(xpEarned);
     try {
       if (!user.uid.startsWith('bypass')) {
-        const docRef = await addDoc(collection(firestore, "exam_results"), { userId: user.uid, displayName: user.displayName || 'Guest Teacher', timestamp: now, overallScore, timeSpent, xpEarned, results, lastActiveDate: serverTimestamp() });
+        const docRef = await addDoc(collection(firestore, "exam_results"), { 
+          userId: user.uid, 
+          displayName: user.displayName || 'Guest Teacher', 
+          timestamp: now, 
+          overallScore, 
+          timeSpent, 
+          xpEarned, 
+          results, 
+          lastActiveDate: serverTimestamp(),
+          subject: activeSimCategory,
+          locationCity: user.locationCity || 'International',
+          locationRegion: user.locationRegion || 'Global'
+        });
         setNewResultId(docRef.id);
         const updatePayload: any = { dailyQuestionsAnswered: increment(currentQuestions.length), dailyTestsFinished: increment(!isQuickFireMode ? 1 : 0), xp: increment(xpEarned), lastActiveDate: serverTimestamp() };
         if (isQuickFireMode) updatePayload.lastQuickFireTimestamp = now;
@@ -518,7 +530,7 @@ function LetsPrepContent() {
                     </motion.div>
                     <motion.div variants={itemVariants} whileTap={{ scale: 0.98 }}>
                       <Card onClick={() => window.location.href = 'mailto:support@letprep.app'} className="android-surface cursor-pointer rounded-[2.25rem] p-6 flex items-center gap-5 border-none shadow-md3-1 bg-card group">
-                        <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-emerald-500 group-hover:text-white transition-all duration-500"><Mail className="w-7 h-7" /></div>
+                        <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-emerald-500 group-hover:text-white transition-all duration-500"><Mail className="w-7 h-7 text-emerald-600 group-hover:text-white transition-all duration-500" /></div>
                         <div><h4 className="font-black text-lg">Contact Us</h4><p className="text-[10px] font-bold text-muted-foreground uppercase">System support</p></div>
                       </Card>
                     </motion.div>
