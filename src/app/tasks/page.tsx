@@ -223,7 +223,7 @@ export default function TasksPage() {
                   onClick={() => router.push('/?start=quickfire')}
                   className="w-full h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg active:scale-95 transition-all"
                 >
-                  {qfAvailable ? "Launch Simulation" : <span className="font-mono">Cooldown: {formatTime(qfTimeLeft)}</span>}
+                  {qfAvailable ? "Start Quiz" : <span className="font-mono">Cooldown: {formatTime(qfTimeLeft)}</span>}
                   <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Card>

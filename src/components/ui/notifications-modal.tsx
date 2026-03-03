@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -158,7 +157,7 @@ export function NotificationsModal({
               }}
               className="w-full h-12 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg active:scale-95 transition-all"
             >
-              {qfAvailable ? "Begin Challenge" : <span className="font-mono">Locked: {formatTime(qfTimeLeft)}</span>}
+              {qfAvailable ? "Start Quiz" : <span className="font-mono">Locked: {formatTime(qfTimeLeft)}</span>}
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
