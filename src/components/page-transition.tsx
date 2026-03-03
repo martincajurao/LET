@@ -6,13 +6,14 @@ import { ReactNode } from 'react';
 
 /**
  * PageTransition Orchestrator
- * Implements a strictly sequential "Exit-First" logic to eliminate content flashing.
- * By using mode="wait", the current page must complete its exit sequence 
- * before the incoming page is permitted to mount.
+ * 
+ * Implements a strictly sequential "Exit-First" logic using mode="wait".
+ * This ensures that when a user clicks a nav icon, the current pedagogical track
+ * performs a full "Deep Exit" before the new interface is revealed.
  *
- * Kinetic Portal Effect:
- * - Outgoing: Scale up slightly + Blur out + Fade. (Zooming into background)
- * - Incoming: Scale up from 97% + Blur in + Fade. (Focusing on the new track)
+ * Kinetic Portal Logic:
+ * - Outgoing: Scale up (zooming in closer) + Blur + Slide Left + Fade.
+ * - Incoming: Scale up from 96% (stepping into sector) + Blur in + Fade.
  */
 export function PageTransition({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -23,32 +24,32 @@ export function PageTransition({ children }: { children: ReactNode }) {
         key={pathname}
         initial={{ 
           opacity: 0, 
-          scale: 0.97, 
-          filter: "blur(12px)",
-          y: 10
+          scale: 0.96, 
+          filter: "blur(15px)",
+          x: 20
         }}
         animate={{ 
           opacity: 1, 
           scale: 1, 
           filter: "blur(0px)",
-          y: 0,
+          x: 0,
           transition: {
-            duration: 0.45,
+            duration: 0.5,
             ease: [0.22, 1, 0.36, 1], // Kinetic Portal Ease
             opacity: { duration: 0.3 }
           }
         }}
         exit={{ 
           opacity: 0, 
-          scale: 1.03, 
-          filter: "blur(15px)",
-          y: -10,
+          scale: 1.04, 
+          filter: "blur(20px)",
+          x: -20,
           transition: {
-            duration: 0.3,
+            duration: 0.35,
             ease: [0.22, 1, 0.36, 1]
           }
         }}
-        className="w-full min-h-screen bg-background origin-top"
+        className="w-full min-h-screen bg-background origin-center"
       >
         {children}
       </motion.div>

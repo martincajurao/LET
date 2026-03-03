@@ -151,9 +151,6 @@ function LetsPrepContent() {
 
   const [userRank, setUserRank] = useState<string | number>('---');
   
-  const [pullDistance, setPullDistance] = useState(0);
-  const [isPulling, setIsPulling] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const pullStartY = useRef<number | null>(null);
   const isStartingRef = useRef(false);
   const lastConsumedParam = useRef<string | null>(null);
@@ -238,12 +235,10 @@ function LetsPrepContent() {
       setActiveSimCategory(category);
       setIsResultsUnlocked(false);
       
-      // Clear URL param quietly to prevent loop/reset
       const url = new URL(window.location.href);
       url.searchParams.delete('start');
       window.history.replaceState({}, '', url.toString());
       
-      // Direct state transition
       setState(category === 'quickfire' ? 'quickfire_quiz' : 'exam'); 
       setIsCalibrating(false); 
       isStartingRef.current = false;
@@ -281,22 +276,6 @@ function LetsPrepContent() {
     };
     fetchLatestApk();
   }, []);
-
-  const handleTouchStart = (e: React.TouchEvent) => { if (window.scrollY <= 10) { pullStartY.current = e.touches[0].clientY; setIsPulling(true); } };
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isPulling || pullStartY.current === null) return;
-    const diff = e.touches[0].clientY - pullStartY.current;
-    if (diff > 0) { setPullDistance(Math.min(diff * 0.5, 100)); if (diff > 10) e.preventDefault(); }
-  };
-  const handleTouchEnd = async () => {
-    if (pullDistance > 50 && !isRefreshing) {
-      setIsRefreshing(true);
-      try { await refreshUser(); toast({ title: "Synchronized", description: "Latest teacher data loaded." }); } 
-      catch (e) { toast({ variant: "destructive", title: "Sync Failed", description: "Could not refresh profile." }); } 
-      finally { setIsRefreshing(false); setIsPulling(false); setPullDistance(0); }
-    } else { setPullDistance(0); setIsPulling(false); }
-    pullStartY.current = null;
-  };
 
   const handleExamComplete = async (answers: Record<string, string>, timeSpent: number, confidentAnswers?: Record<string, boolean>) => {
     if (!user || !firestore) return;
@@ -386,11 +365,8 @@ function LetsPrepContent() {
     { icon: <Trophy className="w-4 h-4 text-yellow-500" />, label: 'Readiness', value: '82%', color: 'text-yellow-500 bg-yellow-500/5' }
   ];
 
-  const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
-  const itemVariants = { hidden: { opacity: 0, y: 20, scale: 0.95 }, show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 100, damping: 12 } } };
-
   return (
-    <div className="min-h-screen bg-background text-foreground font-body" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined }}>
+    <div className="min-h-screen bg-background text-foreground font-body transition-colors duration-300">
       <Toaster />
       <AnimatePresence>{isCalibrating && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[5100] flex items-center justify-center bg-background/80 backdrop-blur-md"><EducationalLoader message={loadingMessage} /></motion.div>)}</AnimatePresence>
 
@@ -413,80 +389,76 @@ function LetsPrepContent() {
           </div>
         ) : (
           <div key="dashboard" className="max-w-7xl mx-auto px-4 pb-8 space-y-6 pt-4">
-            <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {displayStats.map((stat, i) => (
-                <motion.div key={i} variants={itemVariants} whileTap={{ scale: 0.95 }} className="android-surface rounded-2xl p-4 flex items-center gap-4 border-none shadow-md3-1">
+                <div key={i} className="android-surface rounded-2xl p-4 flex items-center gap-4 border-none shadow-md3-1">
                   <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner", stat.color)}>{stat.icon}</div>
                   <div><p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider mb-0.5">{stat.label}</p><p className="text-xl font-black text-foreground leading-none">{stat.value}</p></div>
-                </motion.div>
+                </div>
               ))}
-            </motion.div>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-8 space-y-6">
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} whileHover={{ y: -4 }}>
-                  <Card className="overflow-hidden border-none shadow-2xl rounded-[3rem] bg-gradient-to-br from-primary/30 via-card to-background p-8 md:p-14 relative group active:scale-[0.99] transition-all">
-                    <div className="relative z-10 space-y-8">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="font-black text-[10px] uppercase px-4 py-1.5 bg-primary/20 text-primary border-none rounded-lg shadow-sm">Protocol: Board Simulator</Badge>
-                        {user && (
-                          <div className="flex items-center gap-2 bg-card/50 backdrop-blur-sm px-3 py-1 rounded-lg border border-primary/20">
-                            <Avatar className="w-5 h-5">
-                              <AvatarImage src={user.photoURL || ""} />
-                              <AvatarFallback className="bg-primary/10 text-primary text-[8px] font-black">🎓</AvatarFallback>
-                            </Avatar>
-                            <span className="text-[9px] font-black uppercase text-primary tracking-widest">Rank {rankData?.rank}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="space-y-4">
-                        <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95] text-foreground">Prepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
-                        <p className="text-muted-foreground font-medium text-lg md:text-2xl max-w-xl leading-relaxed">High-fidelity situational simulations with AI analysis built for aspiring Filipino teachers.</p>
-                      </div>
-                      
-                      <div className="flex flex-col sm:flex-row gap-4 pt-2">
-                        {user ? (
-                          <div className="space-y-6 w-full sm:w-auto">
-                            <button disabled={isCalibrating} onClick={() => startExam('all')} className="h-16 md:h-20 px-10 md:px-14 rounded-2xl font-black text-lg md:text-xl gap-4 shadow-2xl shadow-primary/40 active:scale-95 transition-all group relative overflow-hidden bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center">
-                              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                              {isCalibrating ? <Loader2 className="animate-spin w-7 h-7" /> : <Zap className="w-7 h-7 fill-current" />} 
-                              <span>Launch Full Exam</span> 
-                              <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
-                            </button>
-                            
-                            {rankData && (
-                              <div className="flex flex-col gap-2 bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border/50 shadow-sm min-w-[280px]">
-                                <div className="flex items-center justify-between text-[9px] font-black uppercase text-muted-foreground tracking-widest">
-                                  <span className="flex items-center gap-1.5"><Award className="w-3 h-3 text-primary" /> Next: {getCareerRankTitle(rankData.rank + 1)}</span>
-                                  <span className="text-primary">{Math.round(rankData.progress)}% XP</span>
-                                </div>
-                                <Progress value={rankData.progress} className="h-1.5 rounded-full" />
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <motion.div className="w-full sm:w-fit" animate={{ scale: [1, 1.02, 1] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
-                            <button 
-                              onClick={() => setShowAuthModal(true)} 
-                              className="w-full h-16 md:h-20 px-8 md:px-12 rounded-[1.75rem] font-black text-lg md:text-xl gap-6 shadow-xl shadow-primary/30 bg-primary text-primary-foreground hover:bg-primary/95 active:scale-[0.97] transition-all group relative overflow-hidden flex items-center justify-center"
-                            >
-                              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                              <div className="flex items-center gap-4 relative z-10">
-                                <span>Sign In with</span>
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg border border-white/20"><GoogleIcon /></div>
-                                  <div className="w-10 h-10 bg-[#1877F2] rounded-xl flex items-center justify-center shadow-lg border border-white/20"><Facebook className="w-6 h-6 fill-current" /></div>
-                                </div>
-                              </div>
-                              <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300 relative z-10" />
-                            </button>
-                          </motion.div>
-                        )}
-                      </div>
+                <Card className="overflow-hidden border-none shadow-2xl rounded-[3rem] bg-gradient-to-br from-primary/30 via-card to-background p-8 md:p-14 relative group active:scale-[0.99] transition-all">
+                  <div className="relative z-10 space-y-8">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="font-black text-[10px] uppercase px-4 py-1.5 bg-primary/20 text-primary border-none rounded-lg shadow-sm">Protocol: Board Simulator</Badge>
+                      {user && (
+                        <div className="flex items-center gap-2 bg-card/50 backdrop-blur-sm px-3 py-1 rounded-lg border border-primary/20">
+                          <Avatar className="w-5 h-5">
+                            <AvatarImage src={user.photoURL || ""} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-[8px] font-black">🎓</AvatarFallback>
+                          </Avatar>
+                          <span className="text-[9px] font-black uppercase text-primary tracking-widest">Rank {rankData?.rank}</span>
+                        </div>
+                      )}
                     </div>
-                    <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.05, 0.1, 0.05], rotate: [0, 5, 0] }} transition={{ duration: 15, repeat: Infinity }} className="absolute -top-20 -right-20 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[100px]" />
-                  </Card>
-                </motion.div>
+                    <div className="space-y-4">
+                      <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95] text-foreground">Prepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
+                      <p className="text-muted-foreground font-medium text-lg md:text-2xl max-w-xl leading-relaxed">High-fidelity situational simulations with AI analysis built for aspiring Filipino teachers.</p>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                      {user ? (
+                        <div className="space-y-6 w-full sm:w-auto">
+                          <button disabled={isCalibrating} onClick={() => startExam('all')} className="h-16 md:h-20 px-10 md:px-14 rounded-2xl font-black text-lg md:text-xl gap-4 shadow-2xl shadow-primary/40 active:scale-95 transition-all group relative overflow-hidden bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center">
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                            {isCalibrating ? <Loader2 className="animate-spin w-7 h-7" /> : <Zap className="w-7 h-7 fill-current" />} 
+                            <span>Launch Full Exam</span> 
+                            <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                          </button>
+                          
+                          {rankData && (
+                            <div className="flex flex-col gap-2 bg-card/50 backdrop-blur-md p-4 rounded-2xl border border-border/50 shadow-sm min-w-[280px]">
+                              <div className="flex items-center justify-between text-[9px] font-black uppercase text-muted-foreground tracking-widest">
+                                <span className="flex items-center gap-1.5"><Award className="w-3 h-3 text-primary" /> Next: {getCareerRankTitle(rankData.rank + 1)}</span>
+                                <span className="text-primary">{Math.round(rankData.progress)}% XP</span>
+                              </div>
+                              <Progress value={rankData.progress} className="h-1.5 rounded-full" />
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <button 
+                          onClick={() => setShowAuthModal(true)} 
+                          className="w-full h-16 md:h-20 px-8 md:px-12 rounded-[1.75rem] font-black text-lg md:text-xl gap-6 shadow-xl shadow-primary/30 bg-primary text-primary-foreground hover:bg-primary/95 active:scale-[0.97] transition-all group relative overflow-hidden flex items-center justify-center"
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                          <div className="flex items-center gap-4 relative z-10">
+                            <span>Sign In with</span>
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg border border-white/20"><GoogleIcon /></div>
+                              <div className="w-10 h-10 bg-[#1877F2] rounded-xl flex items-center justify-center shadow-lg border border-white/20"><Facebook className="w-6 h-6 fill-current" /></div>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300 relative z-10" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="absolute -top-20 -right-20 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[100px]" />
+                </Card>
 
                 <div className="space-y-6">
                   <div className="flex items-center justify-between px-4">
@@ -505,21 +477,19 @@ function LetsPrepContent() {
                     ].map((track, i) => {
                       const isLocked = user && !isTrackUnlocked(rankData?.rank || 1, track.id, user.unlockedTracks);
                       return (
-                        <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} whileTap={{ scale: 0.97 }}>
-                          <Card onClick={() => startExam(track.id)} className={cn("cursor-pointer border-2 rounded-[2.5rem] bg-card overflow-hidden active:scale-95 transition-all relative h-full group hover:shadow-2xl", isLocked ? "border-muted/50 bg-muted/5 opacity-80" : "hover:border-primary border-border/50 bg-gradient-to-br via-card to-card " + track.bg)}>
-                            <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
-                              <div className={cn("relative transition-transform duration-500", !isLocked && "group-hover:scale-110")}>
-                                <div className={cn("w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-inner transition-colors", isLocked ? "bg-muted/50 text-muted-foreground" : "bg-card text-foreground")}>{track.icon}</div>
-                                {isLocked && <div className="absolute -top-2 -right-2 w-8 h-8 bg-card border-2 border-muted rounded-full flex items-center justify-center shadow-md"><Lock className="w-3.5 h-3.5 text-muted-foreground" /></div>}
-                              </div>
-                              <div className="space-y-1">
-                                <h4 className="font-black text-xl text-foreground leading-none">{track.name}</h4>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{isLocked ? `Unlock: Rank ${track.rnk}` : "Accessible"}</p>
-                              </div>
-                              {!isLocked && <ChevronRight className="w-5 h-5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />}
-                            </CardContent>
-                          </Card>
-                        </motion.div>
+                        <Card key={i} onClick={() => startExam(track.id)} className={cn("cursor-pointer border-2 rounded-[2.5rem] bg-card overflow-hidden active:scale-95 transition-all relative h-full group hover:shadow-2xl", isLocked ? "border-muted/50 bg-muted/5 opacity-80" : "hover:border-primary border-border/50 bg-gradient-to-br via-card to-card " + track.bg)}>
+                          <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
+                            <div className={cn("relative transition-transform duration-500", !isLocked && "group-hover:scale-110")}>
+                              <div className={cn("w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-inner transition-colors", isLocked ? "bg-muted/50 text-muted-foreground" : "bg-card text-foreground")}>{track.icon}</div>
+                              {isLocked && <div className="absolute -top-2 -right-2 w-8 h-8 bg-card border-2 border-muted rounded-full flex items-center justify-center shadow-md"><Lock className="w-3.5 h-3.5 text-muted-foreground" /></div>}
+                            </div>
+                            <div className="space-y-1">
+                              <h4 className="font-black text-xl text-foreground leading-none">{track.name}</h4>
+                              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{isLocked ? `Unlock: Rank ${track.rnk}` : "Accessible"}</p>
+                            </div>
+                            {!isLocked && <ChevronRight className="w-5 h-5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />}
+                          </CardContent>
+                        </Card>
                       );
                     })}
                   </div>
@@ -531,69 +501,61 @@ function LetsPrepContent() {
                     Intelligence Lounge
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-1">
-                    <motion.div whileTap={{ scale: 0.98 }}>
-                      <Card onClick={() => setShowFeedbackModal(true)} className="android-surface cursor-pointer rounded-[2.25rem] p-6 flex items-center gap-5 border-none shadow-md3-1 bg-card group">
-                        <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500"><MessageSquare className="w-7 h-7" /></div>
-                        <div><h4 className="font-black text-lg">Send Feedback</h4><p className="text-[10px] font-bold text-muted-foreground uppercase">Refine simulations</p></div>
-                      </Card>
-                    </motion.div>
-                    <motion.div whileTap={{ scale: 0.98 }}>
-                      <Card onClick={() => window.location.href = 'mailto:support@letprep.app'} className="android-surface cursor-pointer rounded-[2.25rem] p-6 flex items-center gap-5 border-none shadow-md3-1 bg-card group">
-                        <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-emerald-500 group-hover:text-white transition-all duration-500"><Mail className="w-7 h-7 text-emerald-600 group-hover:text-white transition-all duration-500" /></div>
-                        <div><h4 className="font-black text-lg">Contact Us</h4><p className="text-[10px] font-bold text-muted-foreground uppercase">System support</p></div>
-                      </Card>
-                    </motion.div>
+                    <Card onClick={() => setShowFeedbackModal(true)} className="android-surface cursor-pointer rounded-[2.25rem] p-6 flex items-center gap-5 border-none shadow-md3-1 bg-card group">
+                      <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500"><MessageSquare className="w-7 h-7" /></div>
+                      <div><h4 className="font-black text-lg">Send Feedback</h4><p className="text-[10px] font-bold text-muted-foreground uppercase">Refine simulations</p></div>
+                    </Card>
+                    <Card onClick={() => window.location.href = 'mailto:support@letprep.app'} className="android-surface cursor-pointer rounded-[2.25rem] p-6 flex items-center gap-5 border-none shadow-md3-1 bg-card group">
+                      <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-emerald-500 group-hover:text-white transition-all duration-500"><Mail className="w-7 h-7 text-emerald-600 group-hover:text-white transition-all duration-500" /></div>
+                      <div><h4 className="font-black text-lg">Contact Us</h4><p className="text-[10px] font-bold text-muted-foreground uppercase">System support</p></div>
+                    </Card>
                   </div>
                 </div>
               </div>
 
               <div className="lg:col-span-4 space-y-6">
-                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-                  <Card className="android-surface border-none shadow-2xl rounded-[2.5rem] bg-gradient-to-br from-emerald-500/20 via-card to-background p-8 overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:rotate-12 transition-transform duration-700"><Smartphone className="w-24 h-24 text-emerald-600" /></div>
-                    <div className="relative z-10 space-y-6">
-                      <div className="flex items-center justify-between">
-                        <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center shadow-inner"><Download className="w-7 h-7 text-emerald-600" /></div>
-                        <Badge variant="outline" className="font-black text-[9px] border-emerald-500/30 text-emerald-600 bg-emerald-500/5 uppercase">{isApkLoading ? '---' : `v${apkInfo?.version}`}</Badge>
-                      </div>
-                      <div className="space-y-2">
-                        <h3 className="text-2xl font-black tracking-tight leading-none">Native Client</h3>
-                        <p className="text-xs font-medium opacity-60 leading-relaxed">High-fidelity Android wrapper for professional offline preparation.</p>
-                      </div>
-                      <div className="flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 border-dashed border-emerald-500/20 relative min-h-[180px] shadow-inner">
-                        <AnimatePresence mode="wait">
-                          {isApkLoading ? (
-                            <motion.div key="apk-loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-2">
-                              <Loader2 className="animate-spin text-emerald-500 w-8 h-8" /><span className="text-[8px] font-black uppercase text-emerald-600/60 tracking-[0.3em]">Syncing Binary...</span>
-                            </motion.div>
-                          ) : qrCodeUrl ? (
-                            <motion.div key="apk-qr" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="space-y-4 flex flex-col items-center">
-                              <div className="w-32 h-32 bg-white p-1.5 rounded-2xl shadow-xl border-4 border-emerald-50 overflow-hidden"><img src={qrCodeUrl} alt="QR Code" className="w-full h-full object-contain" /></div>
-                              <p className="text-[9px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-2"><QrCode className="w-3 h-3" /> Scan to Sideload</p>
-                            </motion.div>
-                          ) : <p className="text-[10px] text-muted-foreground text-center">Unable to generate QR code.</p>}
-                        </AnimatePresence>
-                      </div>
-                      <Button onClick={() => window.location.href = apkInfo?.downloadUrl || GITHUB_APK_URL} disabled={isApkLoading} className="w-full h-16 rounded-[1.75rem] font-black gap-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-2xl shadow-emerald-500/30 active:scale-95 transition-all text-[10px] uppercase tracking-widest">Direct Install</Button>
+                <Card className="android-surface border-none shadow-2xl rounded-[2.5rem] bg-gradient-to-br from-emerald-500/20 via-card to-background p-8 overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:rotate-12 transition-transform duration-700"><Smartphone className="w-24 h-24 text-emerald-600" /></div>
+                  <div className="relative z-10 space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center shadow-inner"><Download className="w-7 h-7 text-emerald-600" /></div>
+                      <Badge variant="outline" className="font-black text-[9px] border-emerald-500/30 text-emerald-600 bg-emerald-500/5 uppercase">{isApkLoading ? '---' : `v${apkInfo?.version}`}</Badge>
                     </div>
-                  </Card>
-                </motion.div>
+                    <div className="space-y-2">
+                      <h3 className="text-2xl font-black tracking-tight leading-none">Native Client</h3>
+                      <p className="text-xs font-medium opacity-60 leading-relaxed">High-fidelity Android wrapper for professional offline preparation.</p>
+                    </div>
+                    <div className="flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 border-dashed border-emerald-500/20 relative min-h-[180px] shadow-inner">
+                      <AnimatePresence mode="wait">
+                        {isApkLoading ? (
+                          <div key="apk-loader" className="flex flex-col items-center gap-2">
+                            <Loader2 className="animate-spin text-emerald-500 w-8 h-8" /><span className="text-[8px] font-black uppercase text-emerald-600/60 tracking-[0.3em]">Syncing Binary...</span>
+                          </div>
+                        ) : qrCodeUrl ? (
+                          <div key="apk-qr" className="space-y-4 flex flex-col items-center">
+                            <div className="w-32 h-32 bg-white p-1.5 rounded-2xl shadow-xl border-4 border-emerald-50 overflow-hidden"><img src={qrCodeUrl} alt="QR Code" className="w-full h-full object-contain" /></div>
+                            <p className="text-[9px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-2"><QrCode className="w-3 h-3" /> Scan to Sideload</p>
+                          </div>
+                        ) : <p className="text-[10px] text-muted-foreground text-center">Unable to generate QR code.</p>}
+                      </AnimatePresence>
+                    </div>
+                    <Button onClick={() => window.location.href = apkInfo?.downloadUrl || GITHUB_APK_URL} disabled={isApkLoading} className="w-full h-16 rounded-[1.75rem] font-black gap-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-2xl shadow-emerald-500/30 active:scale-95 transition-all text-[10px] uppercase tracking-widest">Direct Install</Button>
+                  </div>
+                </Card>
 
-                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-                  <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-8 flex flex-col items-center text-center space-y-6">
-                    <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner"><BrainCircuit className="w-8 h-8 text-primary" /></div>
-                    <div className="space-y-2"><h4 className="text-xl font-black">Strategic Core</h4><p className="text-xs text-muted-foreground font-medium px-4">Over 3.5K+ curated items analyzed by professional pedagogical engines.</p></div>
-                    <div className="w-full grid grid-cols-2 gap-3 pt-2">
-                      <div className="p-4 bg-muted/30 rounded-2xl border border-border/50"><p className="text-2xl font-black text-primary leading-none">82%</p><p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mt-1">Readiness</p></div>
-                      <div className="p-4 bg-muted/30 rounded-2xl border border-border/50"><p className="text-2xl font-black text-emerald-600 leading-none">100%</p><p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mt-1">Access</p></div>
-                    </div>
-                  </Card>
-                </motion.div>
+                <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-8 flex flex-col items-center text-center space-y-6">
+                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner"><BrainCircuit className="w-8 h-8 text-primary" /></div>
+                  <div className="space-y-2"><h4 className="text-xl font-black">Strategic Core</h4><p className="text-xs text-muted-foreground font-medium px-4">Over 3.5K+ curated items analyzed by professional pedagogical engines.</p></div>
+                  <div className="w-full grid grid-cols-2 gap-3 pt-2">
+                    <div className="p-4 bg-muted/30 rounded-2xl border border-border/50"><p className="text-2xl font-black text-primary leading-none">82%</p><p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mt-1">Readiness</p></div>
+                    <div className="p-4 bg-muted/30 rounded-2xl border border-border/50"><p className="text-2xl font-black text-emerald-600 leading-none">100%</p><p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mt-1">Access</p></div>
+                  </div>
+                </Card>
               </div>
             </div>
 
             <div className="pt-8 text-center pb-12">
-              <div className="flex items-center justify-center gap-3 mb-4"><div className="h-[1px] w-16 bg-border" /><motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }}><Heart className="w-5 h-5 text-rose-500 fill-current" /></motion.div><div className="h-[1px] w-16 bg-border" /></div>
+              <div className="flex items-center justify-center gap-3 mb-4"><div className="h-[1px] w-16 bg-border" /><Heart className="w-5 h-5 text-rose-500 fill-current" /><div className="h-[1px] w-16 bg-border" /></div>
               <p className="text-[10px] font-black uppercase tracking-[0.5em] text-muted-foreground opacity-40">Dedicated to the Aspiring Filipino Teacher</p>
             </div>
           </div>
@@ -626,13 +588,13 @@ function LetsPrepContent() {
       <Dialog open={!!lockedTrackInfo} onOpenChange={(open) => !open && setLockedTrackInfo(null)}>
         <DialogContent className="rounded-[3rem] bg-card border-none shadow-2xl p-0 max-w-[380px] overflow-hidden outline-none">
           <div className="bg-primary/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
-            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-24 h-24 bg-card rounded-[2.5rem] flex items-center justify-center shadow-2xl relative z-10 border-2 border-primary/20">
+            <div className="w-24 h-24 bg-card rounded-[2.5rem] flex items-center justify-center shadow-2xl relative z-10 border-2 border-primary/20">
               {lockedTrackInfo?.icon}
               <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary rounded-full flex items-center justify-center border-4 border-card shadow-lg">
                 <Lock className="w-4 h-4 text-primary-foreground" />
               </div>
-            </motion.div>
-            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 4, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent z-0" />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent z-0" />
           </div>
           <div className="p-8 text-center space-y-8">
             <div className="space-y-2">
