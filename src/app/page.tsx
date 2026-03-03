@@ -686,7 +686,7 @@ function LetsPrepContent() {
                     <div className="relative z-10 space-y-8">
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary" className="font-black text-[10px] uppercase px-4 py-1.5 bg-primary/20 text-primary border-none rounded-lg shadow-sm">Verified Learning Path</Badge>
-                        <Badge variant="outline" className="font-black text-[10px] uppercase px-3 py-1 bg-white/10 text-primary-foreground border-primary/20 mix-blend-difference">ALPHA V2.5</Badge>
+                        <Badge variant="outline" className="font-black text-[9px] uppercase px-3 py-1 bg-white/10 text-primary-foreground border-primary/20 mix-blend-difference">ALPHA V2.5</Badge>
                       </div>
                       <div className="space-y-4">
                         <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95] text-foreground">Elite Board <br /><span className="text-primary italic">Exams.</span></h1>
@@ -711,10 +711,29 @@ function LetsPrepContent() {
                           </div>
                         ) : (
                           <motion.div className="w-full sm:w-fit" animate={{ scale: [1, 1.02, 1] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
-                            <button onClick={() => setShowAuthModal(true)} className="w-full h-16 md:h-20 px-10 md:px-14 rounded-3xl font-black text-xl gap-6 shadow-2xl shadow-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-all group relative overflow-hidden flex items-center justify-center">
-                              <div className="flex items-center gap-3 shrink-0 bg-background/20 p-2 rounded-2xl shadow-inner border border-white/10"><GoogleIcon /><div className="w-7 h-7 bg-[#1877F2] rounded-full flex items-center justify-center shadow-md border border-white/20"><Facebook className="w-4 h-4 fill-current text-white" /></div></div>
-                              <div className="flex flex-col items-start leading-none text-left"><span className="uppercase tracking-tighter">Sign In to Launch</span><span className="text-[10px] font-bold opacity-70 mt-1 uppercase tracking-[0.2em]">Secure Educator Entry</span></div>
-                              <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" />
+                            <button 
+                              onClick={() => setShowAuthModal(true)} 
+                              className="w-full h-16 md:h-20 px-6 md:px-10 rounded-[1.5rem] font-black text-lg md:text-xl gap-4 shadow-xl shadow-primary/30 bg-primary text-primary-foreground hover:bg-primary/95 active:scale-[0.97] transition-all group relative overflow-hidden flex items-center justify-between"
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                              <div className="flex items-center gap-4 relative z-10">
+                                <div className="w-12 h-12 bg-background/20 rounded-2xl flex items-center justify-center shadow-inner border border-white/10 shrink-0">
+                                  <ShieldCheck className="w-7 h-7" />
+                                </div>
+                                <div className="flex flex-col items-start leading-none text-left">
+                                  <span className="uppercase tracking-tight leading-none">Sign In to Launch</span>
+                                  <span className="text-[10px] font-bold opacity-70 mt-1.5 uppercase tracking-[0.15em]">Verified Entry</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3 relative z-10">
+                                <div className="hidden sm:flex flex-col items-end opacity-60">
+                                  <span className="text-[8px] font-black uppercase tracking-widest">Protocol</span>
+                                  <span className="text-[8px] font-black uppercase tracking-widest">Secure</span>
+                                </div>
+                                <div className="w-10 h-10 rounded-full bg-background/10 flex items-center justify-center group-hover:translate-x-1 transition-transform border border-white/5">
+                                  <ChevronRight className="w-5 h-5" />
+                                </div>
+                              </div>
                             </button>
                           </motion.div>
                         )}
