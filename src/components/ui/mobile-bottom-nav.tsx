@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
@@ -10,7 +9,6 @@ import {
   Zap,
   Target,
   Users,
-  Loader2,
   ShieldCheck,
   Compass
 } from 'lucide-react';
@@ -63,9 +61,10 @@ function NavContent() {
     return () => unsub();
   }, [firestore]);
 
-  const { claimableTasksCount } = useMemo(() => {
-    if (!user) return { claimableTasksCount: 0 };
+  const { totalBadgeCount } = useMemo(() => {
+    if (!user) return { totalBadgeCount: 0 };
     
+    // Daily Quest Claims
     let claimable = 0;
     const userTier = user.userTier || 'Bronze';
     const qGoal = userTier === 'Platinum' ? 35 : 20;
@@ -75,8 +74,14 @@ function NavContent() {
     if ((user.dailyTestsFinished || 0) >= 1 && !user.taskMockClaimed) claimable++;
     if ((user.mistakesReviewed || 0) >= 10 && !user.taskMistakesClaimed) claimable++;
 
-    return { claimableTasksCount: claimable };
-  }, [user]);
+    // Buff Availability (Ads & QuickFire)
+    const lastAd = Number(user.lastAdXpTimestamp) || 0;
+    const lastQf = Number(user.lastQuickFireTimestamp) || 0;
+    const adAvailable = lastAd + COOLDOWNS.AD_XP <= currentTime && (user.dailyAdCount || 0) < DAILY_AD_LIMIT;
+    const qfAvailable = lastQf + COOLDOWNS.QUICK_FIRE <= currentTime;
+
+    return { totalBadgeCount: claimable + (adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0) };
+  }, [user, currentTime]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -95,24 +100,24 @@ function NavContent() {
   };
 
   const navItems = useMemo(() => [
-    { id: 'home', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, href: '/dashboard' },
+    { id: 'home', label: 'Hub', icon: <LayoutDashboard className="w-5 h-5" />, href: '/dashboard' },
     { 
       id: 'tasks', 
       label: 'Quests', 
       icon: (
         <div className="relative">
           <Compass className="w-5 h-5" />
-          {claimableTasksCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-[9px] font-black rounded-full flex items-center justify-center border-2 border-card shadow-sm animate-bounce">{claimableTasksCount}</span>
+          {totalBadgeCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-[9px] font-black rounded-full flex items-center justify-center border-2 border-card shadow-sm animate-bounce">{totalBadgeCount}</span>
           )}
         </div>
       ), 
       href: '/tasks' 
     },
-    { id: 'practice', label: 'Practice', icon: <Target className="w-6 h-6" />, href: '#' },
+    { id: 'practice', label: 'Simulation', icon: <Target className="w-6 h-6" />, href: '#' },
     { id: 'events', label: 'Arena', icon: <Trophy className="w-5 h-5" />, href: '/events' },
     { id: 'community', label: 'Network', icon: <Users className="w-5 h-5" />, href: '/community' }
-  ], [claimableTasksCount]);
+  ], [totalBadgeCount]);
 
   if (isImmersive) return null;
 
