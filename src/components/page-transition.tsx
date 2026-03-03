@@ -9,32 +9,36 @@ interface PageTransitionProps {
 }
 
 /**
- * PageTransition orchestrates high-fidelity route animations.
- * It uses 'mode="wait"' to ensure the outgoing page completes its exit
- * animation (blur/fade) before the incoming page is allowed to mount,
- * eliminating flickering and content flashing.
+ * PageTransition Orchestrator
+ * Implements a strictly sequential "Exit-First" logic to eliminate content flashing.
+ * By using mode="wait", the current page must complete its exit sequence 
+ * before the incoming page is permitted to mount.
  */
 export function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname();
-  const [isMounted, setIsMounted] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    setIsClient(true);
   }, []);
 
-  // During initial hydration, we render a static container to prevent layout shifts.
-  // Once mounted, AnimatePresence takes over the lifecycle.
-  if (!isMounted) {
-    return <div className="w-full min-h-screen bg-background">{children}</div>;
+  // On first hydration, we render a stable container to prevent layout shifts.
+  // Subsequent client-side navigations will trigger the high-fidelity portal sequence.
+  if (!isClient) {
+    return (
+      <div className="w-full min-h-screen bg-background">
+        {children}
+      </div>
+    );
   }
 
   return (
-    <AnimatePresence mode="wait" initial={true}>
+    <AnimatePresence mode="wait">
       <motion.div
         key={pathname}
         initial={{ 
           opacity: 0, 
-          scale: 0.96, 
+          scale: 0.98, 
           filter: "blur(12px)",
           y: 10
         }}
@@ -44,8 +48,8 @@ export function PageTransition({ children }: PageTransitionProps) {
           filter: "blur(0px)",
           y: 0,
           transition: {
-            duration: 0.5,
-            ease: [0.22, 1, 0.36, 1], // Kinetic cubic-bezier for native feel
+            duration: 0.4,
+            ease: [0.22, 1, 0.36, 1], // Kinetic ease for professional feel
             opacity: { duration: 0.3 }
           }
         }}
@@ -55,12 +59,11 @@ export function PageTransition({ children }: PageTransitionProps) {
           filter: "blur(12px)",
           y: -10,
           transition: {
-            duration: 0.3,
+            duration: 0.25,
             ease: [0.22, 1, 0.36, 1]
           }
         }}
-        className="w-full min-h-screen bg-background"
-        style={{ originY: 0 }}
+        className="w-full min-h-screen bg-background origin-top"
       >
         {children}
       </motion.div>

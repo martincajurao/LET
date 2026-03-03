@@ -254,7 +254,6 @@ function LetsPrepContent() {
     }
   }, [user, firestore, limits, toast, rankData]);
 
-  // Consuming start param once per mount/session change
   useEffect(() => {
     const start = searchParams.get('start');
     if (start && user && state === 'dashboard' && start !== lastConsumedParam.current) {
@@ -397,21 +396,21 @@ function LetsPrepContent() {
 
       <AnimatePresence mode="wait">
         {state === 'exam' ? (
-          <motion.div key="exam" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
+          <div key="exam" className="h-full">
             <ExamInterface questions={currentQuestions} timePerQuestion={timePerQuestion} onComplete={handleExamComplete} />
-          </motion.div>
+          </div>
         ) : state === 'quickfire_quiz' ? (
-          <motion.div key="quickfire_quiz" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
+          <div key="quickfire_quiz" className="h-full">
             <QuickFireInterface questions={currentQuestions} onComplete={(ans, time) => handleExamComplete(ans, time)} onExit={() => setState('dashboard')} />
-          </motion.div>
+          </div>
         ) : state === 'results' ? (
-          <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">
+          <div key="results" className="h-full p-4">
             <ResultsOverview questions={currentQuestions} answers={examAnswers} timeSpent={examTime} resultId={newResultId} onRestart={() => setState('dashboard')} initialUnlocked={isResultsUnlocked} />
-          </motion.div>
+          </div>
         ) : state === 'quickfire_results' ? (
-          <motion.div key="quickfire_results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">
+          <div key="quickfire_results" className="h-full p-4">
             <QuickFireResults questions={currentQuestions} answers={examAnswers} timeSpent={examTime} xpEarned={lastXpEarned} onRestart={() => setState('dashboard')} />
-          </motion.div>
+          </div>
         ) : (
           <div key="dashboard" className="max-w-7xl mx-auto px-4 pb-8 space-y-6 pt-4">
             <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -668,7 +667,7 @@ function LetsPrepContent() {
                 disabled={isUnlockingEarly} 
                 className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 shadow-xl bg-primary text-primary-foreground active:scale-95 transition-all flex items-center justify-center"
               >
-                {isUnlockingEarly ? <Loader2 className="w-5 h-5 animate-spin" /> : <Unlock className="w-5 h-5" />} 
+                {isUnlockingEarly ? <Loader2 className="w-5 h-5 animate-spin" /> : <Unlock className="w-4 h-4" />} 
                 {isUnlockingEarly ? "UNLOCKING..." : `Unlock Early (${lockedTrackInfo?.cost}c)`}
               </button>
               <Button variant="ghost" onClick={() => setLockedTrackInfo(null)} className="w-full h-12 rounded-xl font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Return to Ground</Button>
