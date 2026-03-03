@@ -159,13 +159,13 @@ function LetsPrepContent() {
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
 
   const [userRank, setUserRank] = useState<string | number>('---');
-  const [adCooldown, setAdCooldown] = useState(0);
   
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const pullStartY = useRef<number | null>(null);
   const isStartingRef = useRef(false);
+  const lastConsumedParam = useRef<string | null>(null);
   
   const [newResultId, setNewResultId] = useState<string | undefined>(undefined);
   const [apkInfo, setApkInfo] = useState<{ version: string; downloadUrl: string } | null>(null);
@@ -193,7 +193,6 @@ function LetsPrepContent() {
     if (!user) { setShowAuthModal(true); return; }
     if (!firestore || isStartingRef.current) return;
 
-    // Check lock status immediately before any async work or ref setting
     const isLocked = !isTrackUnlocked(rankData?.rank || 1, category, user.unlockedTracks);
     if (isLocked && category !== 'quickfire') {
       const modeConfig = getTrackConfig(category, user?.majorship || 'Major');
@@ -203,7 +202,7 @@ function LetsPrepContent() {
 
     isStartingRef.current = true;
     setIsCalibrating(true);
-    setLoadingMessage("Syncing Exam Path...");
+    setLoadingMessage("Synchronizing Simulation...");
     
     try {
       const questionPool = await fetchQuestionsFromFirestore(firestore);
@@ -240,31 +239,28 @@ function LetsPrepContent() {
       setActiveSimCategory(category);
       setIsResultsUnlocked(false);
       
-      // Perform state switch after a minimal settling delay to ensure questions are loaded
-      setTimeout(() => { 
-        setState(category === 'quickfire' ? 'quickfire_quiz' : 'exam'); 
-        setIsCalibrating(false); 
-        isStartingRef.current = false;
-      }, 150);
+      // Perform atomic state switch
+      setState(category === 'quickfire' ? 'quickfire_quiz' : 'exam'); 
+      setIsCalibrating(false); 
+      isStartingRef.current = false;
     } catch (e: any) { 
-      toast({ variant: "destructive", title: "Failed to Start", description: e.message }); 
+      toast({ variant: "destructive", title: "Activation Failed", description: e.message }); 
       setIsCalibrating(false); 
       isStartingRef.current = false;
     }
   }, [user, firestore, limits, toast, rankData]);
 
-  // Consumes the startParam from the URL and clears it immediately to prevent re-triggering
   useEffect(() => {
-    if (startParam && user && state === 'dashboard' && !isStartingRef.current) {
-      const targetMode = startParam;
+    if (startParam && user && state === 'dashboard' && startParam !== lastConsumedParam.current) {
+      lastConsumedParam.current = startParam;
       
-      // Clear URL param immediately
+      // Atomic URL consumption
       const params = new URLSearchParams(window.location.search);
       params.delete('start');
       const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : '');
       window.history.replaceState({}, '', newUrl);
       
-      startExam(targetMode);
+      startExam(startParam);
     }
   }, [startParam, user, state, startExam]);
 
@@ -419,7 +415,6 @@ function LetsPrepContent() {
           </motion.div>
         ) : (
           <motion.div key="dashboard" variants={containerVariants} initial="hidden" animate="show" className="max-w-7xl mx-auto px-4 pb-8 space-y-6 pt-4">
-            {/* Player Attributes Bar */}
             <motion.div variants={containerVariants} className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {displayStats.map((stat, i) => (
                 <motion.div key={i} variants={itemVariants} whileTap={{ scale: 0.95 }} className="android-surface rounded-2xl p-4 flex items-center gap-4 border-none shadow-md3-1">
@@ -431,7 +426,6 @@ function LetsPrepContent() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-8 space-y-6">
-                {/* Simulation Command Center (Hero) */}
                 <motion.div variants={itemVariants} whileHover={{ y: -4 }}>
                   <Card className="overflow-hidden border-none shadow-2xl rounded-[3rem] bg-gradient-to-br from-primary/30 via-card to-background p-8 md:p-14 relative group active:scale-[0.99] transition-all">
                     <div className="relative z-10 space-y-8">
@@ -488,7 +482,6 @@ function LetsPrepContent() {
                   </Card>
                 </motion.div>
 
-                {/* Training Zones */}
                 <div className="space-y-6">
                   <div className="flex items-center justify-between px-4">
                     <h3 className="text-xl font-black tracking-tight flex items-center gap-3">
@@ -526,7 +519,6 @@ function LetsPrepContent() {
                   </div>
                 </div>
 
-                {/* Community & Intelligence Lounge */}
                 <div className="space-y-4 pt-4">
                   <h3 className="text-xl font-black tracking-tight flex items-center gap-3 px-4">
                     <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center shadow-inner"><Users className="w-5 h-5 text-emerald-600" /></div>
@@ -549,7 +541,6 @@ function LetsPrepContent() {
                 </div>
               </div>
 
-              {/* Native Binary Sidebar */}
               <div className="lg:col-span-4 space-y-6">
                 <motion.div variants={itemVariants}>
                   <Card className="android-surface border-none shadow-2xl rounded-[2.5rem] bg-gradient-to-br from-emerald-500/20 via-card to-background p-8 overflow-hidden group">
@@ -603,7 +594,6 @@ function LetsPrepContent() {
         )}
       </AnimatePresence>
 
-      {/* Auth & Feedback Dialogs */}
       <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-sm outline-none overflow-hidden">
           <div className="bg-emerald-500/10 p-10 flex flex-col items-center text-center"><div className="w-20 h-20 bg-card rounded-[2rem] flex items-center justify-center shadow-xl mb-4 border-2 border-emerald-500/20"><ShieldCheck className="w-10 h-10 text-emerald-500" /></div><DialogTitle className="text-2xl font-black tracking-tight">Verified Access</DialogTitle><p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-1">Credentials Required</p></div>
