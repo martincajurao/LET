@@ -6,21 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { 
   Zap,
   Trophy,
   Flame,
   Moon,
   Sun,
-  Crown,
-  Shield,
   Sparkles,
   Lock,
   Award,
   MapPin,
   CheckCircle2,
   Sword,
-  TrendingUp
+  TrendingUp,
+  Settings,
+  ChevronRight
 } from "lucide-react";
 import { AchievementSystem } from '@/components/ui/achievement-system';
 import { ReferralSystem } from '@/components/ui/referral-system';
@@ -30,6 +31,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { getRankData, CAREER_TIERS } from '@/lib/xp-system';
+import Link from 'next/link';
 
 export default function DashboardPage() {
   const { user } = useUser();
@@ -41,15 +43,28 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background font-body">
       <div className="max-w-7xl mx-auto px-4 pt-6 pb-24 space-y-8">
-        {/* Dashboard Header */}
-        <div className="flex items-center justify-between px-2">
-          <div>
-            <h1 className="text-3xl font-black tracking-tight">Command Center</h1>
-            <p className="text-sm text-muted-foreground font-medium uppercase tracking-widest opacity-60">Career Progression & Elite Status</p>
+        {/* Dashboard Header with Profile Photo */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-2">
+          <div className="flex items-center gap-5">
+            <Avatar className="w-16 h-16 border-4 border-card shadow-xl rounded-2xl">
+              <AvatarImage src={user?.photoURL || ""} />
+              <AvatarFallback className="bg-primary/10 text-primary text-3xl font-black">🎓</AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-3xl font-black tracking-tight leading-none">{user?.displayName || 'Teacher'}</h1>
+              <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest opacity-60 mt-1">{rankData?.title || 'Candidate'}</p>
+            </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="rounded-2xl h-12 w-12 bg-card shadow-sm border active:scale-90 transition-all">
-            {isDark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-primary" />}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Link href="/profile?tab=settings">
+              <Button variant="ghost" size="icon" className="rounded-2xl h-12 w-12 bg-card shadow-sm border active:scale-90 transition-all">
+                <Settings className="w-5 h-5 text-muted-foreground" />
+              </Button>
+            </Link>
+            <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="rounded-2xl h-12 w-12 bg-card shadow-sm border active:scale-90 transition-all">
+              {isDark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-primary" />}
+            </Button>
+          </div>
         </div>
 
         {/* Quick Stats Grid */}
@@ -87,9 +102,7 @@ export default function DashboardPage() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Main Progression Column */}
           <div className="lg:col-span-8 space-y-8">
-            {/* Career Roadmap */}
             <Card className="border-none shadow-xl rounded-[3rem] bg-card overflow-hidden border border-border/50">
               <CardHeader className="p-8 pb-4">
                 <div className="flex items-center justify-between">
@@ -184,7 +197,6 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* Engagement Sidebar */}
           <div className="lg:col-span-4 space-y-8">
             <Card className="border-none shadow-2xl rounded-[2.5rem] bg-foreground text-background p-8 relative overflow-hidden group active:scale-[0.98] transition-all">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-700" />
@@ -193,7 +205,7 @@ export default function DashboardPage() {
                   <Sword className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black tracking-tight">Active Saga</h3>
+                  <h3 className="text-xl font-black tracking-tight text-white">Active Saga</h3>
                   <p className="text-sm text-muted-foreground font-medium opacity-80 mt-1">Complete professional quests to scale your rewards.</p>
                 </div>
                 <Button 

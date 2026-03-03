@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { 
   collection, 
@@ -12,7 +12,9 @@ import {
   doc, 
   getDoc, 
   setDoc, 
-  serverTimestamp 
+  serverTimestamp,
+  startAfter,
+  getDocs
 } from 'firebase/firestore';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,9 +42,9 @@ import {
   Building2,
   Map as MapIcon,
   Award,
-  Crown
+  ArrowDown
 } from "lucide-react";
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getRankData } from '@/lib/xp-system';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -71,6 +73,9 @@ export default function CommunityPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [recentActivity, setRecentActivity] = useState<ActivityFeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [lastVisibleDoc, setLastVisibleDoc] = useState<any>(null);
+  const [hasMore, setHasMore] = useState(true);
   const [topTeachers, setTopTeachers] = useState<any[]>([]);
   const [isSendingRequest, setIsSendingRequest] = useState<string | null>(null);
   
@@ -95,22 +100,53 @@ export default function CommunityPage() {
     return map;
   }, [userFriendships, user]);
 
-  // Fetch live activity feed from Firestore
-  useEffect(() => {
+  // Fetch live activity feed with lazy loading
+  const fetchActivity = useCallback(async (isInitial = true) => {
     if (!firestore) return;
-    setLoading(true);
     
-    // We fetch global recent activity, and handle filtering in the UI layer for Spark plan stability
-    const activityQuery = query(collection(firestore, "exam_results"), orderBy("timestamp", "desc"), limit(20));
-    const unsub = onSnapshot(activityQuery, (snap) => {
-      setRecentActivity(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityFeedItem)));
+    if (isInitial) setLoading(true);
+    else setLoadingMore(true);
+
+    try {
+      let activityQuery = query(
+        collection(firestore, "exam_results"), 
+        orderBy("timestamp", "desc"), 
+        limit(10)
+      );
+
+      if (!isInitial && lastVisibleDoc) {
+        activityQuery = query(
+          collection(firestore, "exam_results"),
+          orderBy("timestamp", "desc"),
+          startAfter(lastVisibleDoc),
+          limit(10)
+        );
+      }
+
+      const snap = await getDocs(activityQuery);
+      
+      if (snap.empty) {
+        setHasMore(false);
+      } else {
+        const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityFeedItem));
+        setLastVisibleDoc(snap.docs[snap.docs.length - 1]);
+        
+        if (isInitial) setRecentActivity(items);
+        else setRecentActivity(prev => [...prev, ...items]);
+        
+        if (snap.docs.length < 10) setHasMore(false);
+      }
+    } catch (error) {
+      console.error("Activity feed fetch failed:", error);
+    } finally {
       setLoading(false);
-    }, (error) => {
-      console.error("Activity feed sync failed:", error);
-      setLoading(false);
-    });
-    return () => unsub();
-  }, [firestore]);
+      setLoadingMore(false);
+    }
+  }, [firestore, lastVisibleDoc]);
+
+  useEffect(() => {
+    fetchActivity();
+  }, [firestore]); // Run once on firestore ready
 
   // Fetch top teachers based on rank/xp from live data
   useEffect(() => {
@@ -143,7 +179,6 @@ export default function CommunityPage() {
       setTopTeachers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     }, (err) => {
       console.warn("Location query restricted (check indexes):", err);
-      // Fallback to global if filter fails due to index or missing location
       if (filterLevel !== 'global') setFilterLevel('global');
     });
     return () => unsub();
@@ -328,7 +363,7 @@ export default function CommunityPage() {
                   ) : topTeachers.map((edu, idx) => {
                     const rankInfo = getRankData(edu.xp || 0);
                     return (
-                      <Card key={edu.id} className="android-surface border-none shadow-md3-1 rounded-1.75rem overflow-hidden group">
+                      <Card key={edu.id} className="android-surface border-none shadow-md3-1 rounded-[1.75rem] overflow-hidden group">
                         <CardContent className="p-5 flex items-center gap-5">
                           <Avatar className={cn(
                             "w-14 h-14 rounded-2xl shadow-xl relative overflow-hidden",
@@ -351,7 +386,6 @@ export default function CommunityPage() {
                               <p className="font-black text-base text-foreground truncate">{edu.displayName || 'Teacher'}</p>
                               <div className="flex gap-1">
                                 {renderFriendButton(edu)}
-                                {edu.isPro && <Crown className="w-3.5 h-3.5 text-yellow-500 fill-current animate-sparkle" />}
                               </div>
                             </div>
                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider opacity-60">{rankInfo.title}</p>
@@ -441,6 +475,20 @@ export default function CommunityPage() {
                         </CardContent>
                       </Card>
                     ))}
+                    
+                    {hasMore && (
+                      <div className="pt-8 flex justify-center">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => fetchActivity(false)} 
+                          disabled={loadingMore}
+                          className="h-14 px-12 rounded-2xl font-black text-xs uppercase tracking-widest border-2 gap-3 active:scale-95 transition-all shadow-lg"
+                        >
+                          {loadingMore ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowDown className="w-5 h-5" />}
+                          {loadingMore ? "Synchronizing..." : "Load More Traces"}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
