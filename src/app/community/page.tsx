@@ -372,7 +372,7 @@ export default function CommunityPage() {
                   ) : topTeachers.map((edu, idx) => {
                     const rankInfo = getRankData(edu.xp || 0);
                     return (
-                      <Card key={edu.id} className="android-surface border-none shadow-md3-1 rounded-[1.75rem] overflow-hidden group">
+                      <Card key={edu.id} className="android-surface border-none shadow-md3-1 rounded-2xl overflow-hidden group">
                         <CardContent className="p-5 flex items-center gap-5">
                           <Avatar className={cn(
                             "w-14 h-14 rounded-2xl shadow-xl relative overflow-hidden",

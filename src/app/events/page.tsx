@@ -10,7 +10,6 @@ import {
   Globe, 
   ArrowLeft, 
   Users, 
-  Crown, 
   Medal, 
   Timer, 
   Building2, 
@@ -127,7 +126,7 @@ export default function EventsPage() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-yellow-500/10 rounded-2xl flex items-center justify-center border-2 border-yellow-500/20 shadow-lg">
-                      <Crown className="w-6 h-6 text-yellow-600" />
+                      <Trophy className="w-6 h-6 text-yellow-600" />
                     </div>
                     <h2 className="text-3xl font-black tracking-tighter">Intelligence Records</h2>
                   </div>
