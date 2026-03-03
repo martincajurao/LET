@@ -22,7 +22,8 @@ import {
   TrendingUp,
   Settings,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  GraduationCap
 } from "lucide-react";
 import { AchievementSystem } from '@/components/ui/achievement-system';
 import { ReferralSystem } from '@/components/ui/referral-system';

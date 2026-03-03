@@ -229,6 +229,7 @@ function LetsPrepContent() {
       setActiveSimCategory(category);
       setIsResultsUnlocked(false);
       
+      // Quietly consume param and switch state
       setState(category === 'quickfire' ? 'quickfire_quiz' : 'exam'); 
       setIsCalibrating(false); 
       isStartingRef.current = false;
@@ -242,10 +243,12 @@ function LetsPrepContent() {
   useEffect(() => {
     if (startParam && user && state === 'dashboard' && startParam !== lastConsumedParam.current) {
       lastConsumedParam.current = startParam;
-      const params = new URLSearchParams(window.location.search);
-      params.delete('start');
-      const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : '');
-      window.history.replaceState({}, '', newUrl);
+      
+      // Clear param using history API to prevent double-navigation effects
+      const url = new URL(window.location.href);
+      url.searchParams.delete('start');
+      window.history.replaceState({}, '', url.toString());
+      
       startExam(startParam);
     }
   }, [startParam, user, state, startExam]);

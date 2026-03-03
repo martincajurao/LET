@@ -45,14 +45,12 @@ export default function TasksPage() {
   const [dailyQuestion, setDailyQuestion] = useState<Question | null>(null);
   const [loadingQotd, setLoadingQotd] = useState(true);
   
-  // Buff States (Moved from Notifications Modal)
   const [watchingAd, setWatchingAd] = useState(false);
   const [verifyingAd, setVerifyingAd] = useState(false);
   const [adTimeLeft, setAdTimeLeft] = useState(0);
   const [qfTimeLeft, setQfTimeLeft] = useState(0);
   const [currentTime, setCurrentTime] = useState(Date.now());
 
-  // Update timers every second
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
@@ -67,7 +65,6 @@ export default function TasksPage() {
     return () => clearInterval(interval);
   }, [user]);
 
-  // Fetch Daily Question
   useEffect(() => {
     async function fetchDailyInsight() {
       if (!firestore) return;
@@ -109,7 +106,6 @@ export default function TasksPage() {
     setWatchingAd(true);
     setVerifyingAd(false);
 
-    // Simulate ad watch time
     setTimeout(async () => {
       setVerifyingAd(true);
       setTimeout(async () => {
@@ -193,7 +189,6 @@ export default function TasksPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-8">
-          {/* Tactical Boosts Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Quick Fire Card */}
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
@@ -215,7 +210,7 @@ export default function TasksPage() {
                     </div>
                   </div>
                   {qfAvailable && (
-                    <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[9px] uppercase animate-pulse">Available</Badge>
+                    <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[9px] uppercase animate-pulse">Ready</Badge>
                   )}
                 </div>
                 <Button 
