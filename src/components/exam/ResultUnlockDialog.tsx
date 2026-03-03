@@ -202,7 +202,7 @@ export function ResultUnlockDialog({
     <>
       <Dialog open={open} onOpenChange={() => {}}>
         <DialogContent 
-          className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-[380px] overflow-hidden outline-none z-[5100]" 
+          className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-[380px] overflow-hidden outline-none" 
           persistent={true}
           hideCloseButton={true}
         >
@@ -369,7 +369,7 @@ export function ResultUnlockDialog({
 
       {/* Abort Confirmation Dialog */}
       <Dialog open={showAbortConfirm} onOpenChange={(open) => !open && setShowAbortConfirm(false)}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-[320px] overflow-hidden outline-none z-[5200]" persistent={true}>
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-[320px] overflow-hidden outline-none" persistent={true}>
           <div className="bg-rose-500/10 p-8 flex flex-col items-center justify-center relative overflow-hidden">
             <div className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center shadow-lg border-2 border-rose-500/20 relative z-10">
               <AlertTriangle className="w-8 h-8 text-rose-600" />
@@ -397,7 +397,7 @@ export function ResultUnlockDialog({
 
       {/* Credit Refill Dialog */}
       <Dialog open={!!creditError} onOpenChange={() => !watchingAdForRefill && setCreditError(null)}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-[340px] overflow-hidden outline-none z-[5300]" persistent={watchingAdForRefill}>
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-[340px] overflow-hidden outline-none" persistent={watchingAdForRefill}>
           <div className="bg-amber-500/10 p-8 flex flex-col items-center justify-center relative overflow-hidden">
             <motion.div 
               initial={{ scale: 0.8, opacity: 0 }}

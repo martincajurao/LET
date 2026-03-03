@@ -256,7 +256,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
                       className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full shadow-lg"
                     >
                       <Flame className="w-3.5 h-3.5 fill-current animate-pulse" />
-                      <span className="text-[10px] font-black uppercase tracking-tighter">{correctStreak} COMBO</span>
+                      <span className="text-10px font-black uppercase tracking-tighter">{correctStreak} COMBO</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -509,7 +509,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       </footer>
 
       <Dialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
-        <DialogContent className="rounded-[2rem] bg-card border-none shadow-2xl p-6 max-w-[320px] z-[5100] outline-none" persistent={true}>
+        <DialogContent className="rounded-[2rem] bg-card border-none shadow-2xl p-6 max-w-[320px] outline-none" persistent={true}>
           <div className="text-center space-y-5">
             <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto border-2 border-primary/20 shadow-lg">
               <Zap className="w-7 h-7 text-primary fill-current" />
@@ -533,7 +533,7 @@ export function ExamInterface({ questions, timePerQuestion = 60, onComplete }: E
       </Dialog>
 
       <Dialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-6 max-w-[340px] z-[5100] outline-none">
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-6 max-w-[340px] outline-none">
           <div className="text-center space-y-5">
             <div className="w-14 h-14 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto border-2 border-rose-500/20 shadow-lg">
               <AlertTriangle className="w-7 h-7 text-rose-600" />
