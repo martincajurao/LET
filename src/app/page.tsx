@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
@@ -229,7 +230,7 @@ function LetsPrepContent() {
       setActiveSimCategory(category);
       setIsResultsUnlocked(false);
       
-      // Quietly consume param and switch state
+      // Atomic state transition
       setState(category === 'quickfire' ? 'quickfire_quiz' : 'exam'); 
       setIsCalibrating(false); 
       isStartingRef.current = false;
@@ -244,7 +245,7 @@ function LetsPrepContent() {
     if (startParam && user && state === 'dashboard' && startParam !== lastConsumedParam.current) {
       lastConsumedParam.current = startParam;
       
-      // Clear param using history API to prevent double-navigation effects
+      // Quietly clear param to prevent loops
       const url = new URL(window.location.href);
       url.searchParams.delete('start');
       window.history.replaceState({}, '', url.toString());

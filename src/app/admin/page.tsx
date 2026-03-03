@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -47,6 +48,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { 
   Table, 
   TableBody, 
@@ -599,7 +601,7 @@ export default function AdminDashboard() {
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Academic Track</label>
                 <Select value={editingQuestion?.subject || ""} onValueChange={(val) => setEditingQuestion({...editingQuestion, subject: val})}>
-                  <SelectTrigger className="rounded-2xl h-14 font-black border-2 shadow-inner"><SelectValue placeholder="Select Track" /></SelectTrigger>
+                  <SelectTrigger className="rounded-2xl h-14 font-black border-2 shadow-inner"><SelectValue placeholder="Select Track" /></SelectValue></SelectTrigger>
                   <SelectContent className="rounded-2xl p-2">{SUBJECTS.map(s => <SelectItem key={s} value={s} className="font-bold py-3 rounded-xl">{s}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
