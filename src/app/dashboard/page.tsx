@@ -24,6 +24,7 @@ import {
   Settings,
   ChevronRight,
   ShieldCheck,
+  ShieldAlert,
   GraduationCap
 } from "lucide-react";
 import { AchievementSystem } from '@/components/ui/achievement-system';
