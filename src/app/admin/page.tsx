@@ -105,7 +105,6 @@ import { getRankData } from '@/lib/xp-system';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { motion } from "framer-motion";
-import { generateDailyQuestion } from '@/ai/flows/generate-qotd-flow';
 
 export default function AdminDashboard() {
   const firestore = useFirestore();
@@ -127,16 +126,6 @@ export default function AdminDashboard() {
   const [configNote, setConfigNote] = useState("");
   const [savingSettings, setSavingSettings] = useState(false);
   
-  const [dailyInsight, setDailyInsight] = useState<any>(null);
-  const [isRegeneratingQotd, setIsRegeneratingQotd] = useState(false);
-
-  const [versionInfo, setVersionInfo] = useState({
-    version: "1.0.0",
-    downloadURL: "",
-    releaseNotes: ""
-  });
-  const [savingVersion, setSavingVersion] = useState(false);
-
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Partial<Question> | null>(null);
   
@@ -182,17 +171,6 @@ export default function AdminDashboard() {
           limitSpec: data.limitSpec || 10 
         });
         setConfigNote(data.note || "");
-      }
-
-      const versionRef = doc(firestore, "app_config", "version");
-      const versionDoc = await getDoc(versionRef);
-      if (versionDoc.exists()) {
-        const data = versionDoc.data();
-        setVersionInfo({
-          version: data.version || "1.0.0",
-          downloadURL: data.downloadURL || "",
-          releaseNotes: data.releaseNotes || ""
-        });
       }
     } catch (error: any) {
       console.error("Admin data sync failed:", error);
@@ -304,15 +282,12 @@ export default function AdminDashboard() {
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-10">
         <Tabs defaultValue="overview" className="space-y-8">
-          <div className="overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
-            <TabsList className="bg-muted/30 p-1.5 rounded-[2rem] flex w-fit md:w-full lg:w-auto h-14 border border-border/50">
-              <TabsTrigger value="overview" className="font-black text-[10px] uppercase tracking-widest rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px] gap-2"><BarChart3 className="w-3.5 h-3.5" /> Overview</TabsTrigger>
-              <TabsTrigger value="questions" className="font-black text-[10px] uppercase tracking-widest rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px] gap-2"><Brain className="w-3.5 h-3.5" /> Item Vault</TabsTrigger>
-              <TabsTrigger value="users" className="font-black text-[10px] uppercase tracking-widest rounded-2xl flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px]"><Users className="w-3.5 h-3.5" /> Teacher Base</TabsTrigger>
-              <TabsTrigger value="config" className="font-black text-[10px] uppercase tracking-widest rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px] gap-2"><Database className="w-3.5 h-3.5" /> System Params</TabsTrigger>
-              <TabsTrigger value="updates" className="font-black text-[10px] uppercase tracking-widest rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px] gap-2"><ArrowUpCircle className="w-3.5 h-3.5" /> Versioning</TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="bg-muted/30 p-1.5 rounded-[2rem] flex w-fit h-14 border border-border/50 overflow-x-auto no-scrollbar">
+            <TabsTrigger value="overview" className="font-black text-[10px] uppercase tracking-widest rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px] gap-2"><BarChart3 className="w-3.5 h-3.5" /> Overview</TabsTrigger>
+            <TabsTrigger value="questions" className="font-black text-[10px] uppercase tracking-widest rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px] gap-2"><Brain className="w-3.5 h-3.5" /> Item Vault</TabsTrigger>
+            <TabsTrigger value="users" className="font-black text-[10px] uppercase tracking-widest rounded-2xl flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px]"><Users className="w-3.5 h-3.5" /> Teacher Base</TabsTrigger>
+            <TabsTrigger value="config" className="font-black text-[10px] uppercase tracking-widest rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px] gap-2"><Database className="w-3.5 h-3.5" /> System Params</TabsTrigger>
+          </TabsList>
 
           <TabsContent value="overview" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -403,29 +378,28 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredUsers.map(user => {
-                      const rank = getRankData(user.xp || 0);
-                      
+                    {filteredUsers.map(u => {
+                      const rank = getRankData(u.xp || 0);
                       return (
-                        <TableRow key={user.id} className="border-border/30 hover:bg-muted/10 transition-colors group">
+                        <TableRow key={u.id} className="border-border/30 hover:bg-muted/10 transition-colors group">
                           <TableCell className="pl-8">
                             <div className="flex items-center gap-4">
                               <Avatar className="w-11 h-11 rounded-2xl shadow-inner">
-                                <AvatarImage src={user.photoURL || ""} />
+                                <AvatarImage src={u.photoURL || ""} />
                                 <AvatarFallback className="bg-primary/10 text-primary text-sm font-black">🎓</AvatarFallback>
                               </Avatar>
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <p className="text-sm font-black truncate max-w-[140px]">{user.displayName || 'Anonymous Teacher'}</p>
-                                  {user.isPro && <ShieldCheck className="w-3.5 h-3.5 text-yellow-500" />}
-                                  {user.isBlocked && <Ban className="w-3.5 h-3.5 text-destructive shrink-0" />}
+                                  <p className="text-sm font-black truncate max-w-[140px]">{u.displayName || 'Anonymous Teacher'}</p>
+                                  {u.isPro && <ShieldCheck className="w-3.5 h-3.5 text-yellow-500" />}
+                                  {u.isBlocked && <Ban className="w-3.5 h-3.5 text-destructive shrink-0" />}
                                 </div>
-                                <p className="text-[10px] font-bold text-muted-foreground truncate max-w-[180px] opacity-60 uppercase tracking-tight">{user.email || 'Internal Auth Trace'}</p>
+                                <p className="text-[10px] font-bold text-muted-foreground truncate max-w-[180px] opacity-60 uppercase tracking-tight">{u.email || 'Internal Auth Trace'}</p>
                               </div>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="text-[9px] font-black bg-background border-border/50 uppercase tracking-widest px-3 py-1">{user.majorship || 'UNSET'}</Badge>
+                            <Badge variant="outline" className="text-[9px] font-black bg-background border-border/50 uppercase tracking-widest px-3 py-1">{u.majorship || 'UNSET'}</Badge>
                           </TableCell>
                           <TableCell className="text-center">
                             <div className="flex flex-col items-center">
@@ -435,11 +409,11 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell className="text-center">
                             <Badge variant="secondary" className="font-black gap-1.5 h-7 bg-yellow-500/10 text-yellow-700 border-none px-3">
-                              <Sparkles className="w-3.5 h-3.5 animate-sparkle fill-current" /> {Number(user.credits) || 0}
+                              <Sparkles className="w-3.5 h-3.5 animate-sparkle fill-current" /> {Number(u.credits) || 0}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right pr-8">
-                            <button className="h-10 w-10 rounded-xl opacity-40 group-hover:opacity-100 flex items-center justify-center hover:bg-muted" onClick={() => handleOpenUserManagement(user)}>
+                            <button className="h-10 w-10 rounded-xl opacity-40 group-hover:opacity-100 flex items-center justify-center hover:bg-muted" onClick={() => handleOpenUserManagement(u)}>
                               <ChevronRight className="w-5 h-5" />
                             </button>
                           </TableCell>
@@ -453,57 +427,48 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="config" className="space-y-8 animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <Card className="lg:col-span-2 android-surface border-none shadow-2xl rounded-[3rem] bg-card overflow-hidden">
-                <CardHeader className="p-10 border-b bg-muted/20">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-primary/10 rounded-[1.5rem] flex items-center justify-center shadow-inner">
-                      <Settings className="w-7 h-7 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-2xl font-black tracking-tighter">System Parameters</CardTitle>
-                      <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Global Simulation Calibration</CardDescription>
-                    </div>
+            <Card className="android-surface border-none shadow-2xl rounded-[3rem] bg-card overflow-hidden">
+              <CardHeader className="p-10 border-b bg-muted/20">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-primary/10 rounded-[1.5rem] flex items-center justify-center shadow-inner">
+                    <Settings className="w-7 h-7 text-primary" />
                   </div>
-                </CardHeader>
-                <CardContent className="p-10 space-y-10">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                    <div className="space-y-3">
-                      <label className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.3em] ml-1 flex items-center gap-2">
-                        <Timer className="w-3.5 h-3.5" /> Simulation Pacing (s/item)
-                      </label>
-                      <Input type="number" value={timePerQuestion} onChange={(e) => setTimePerQuestion(parseInt(e.target.value) || 60)} className="rounded-[1.25rem] h-14 font-black text-xl border-2 focus:border-primary shadow-inner" />
-                    </div>
+                  <div>
+                    <CardTitle className="text-2xl font-black tracking-tighter">System Parameters</CardTitle>
+                    <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Global Simulation Calibration</CardDescription>
                   </div>
-                  <Button 
-                    onClick={async () => { 
-                      if (!firestore) return;
-                      setSavingSettings(true); 
-                      const configRef = doc(firestore, "system_configs", "global");
-                      await setDoc(configRef, { 
-                        timePerQuestion, 
-                        limitGenEd: limits.limitGenEd, 
-                        limitProfEd: limits.limitProfEd, 
-                        limitSpec: limits.limitSpec, 
-                        note: configNote,
-                        updatedAt: serverTimestamp() 
-                      }, { merge: true });
-                      toast({ title: "Parameters Updated", description: "recibrated." });
-                      setSavingSettings(false);
-                    }} 
-                    disabled={savingSettings} 
-                    className="h-16 rounded-[1.5rem] font-black text-base px-14 shadow-2xl shadow-primary/30 w-full sm:w-auto active:scale-95 transition-all gap-3"
-                  >
-                    {savingSettings ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />} Commit Parameters
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-10 space-y-10">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.3em] ml-1 flex items-center gap-2">
+                    <Timer className="w-3.5 h-3.5" /> Simulation Pacing (s/item)
+                  </label>
+                  <Input type="number" value={timePerQuestion} onChange={(e) => setTimePerQuestion(parseInt(e.target.value) || 60)} className="rounded-[1.25rem] h-14 font-black text-xl border-2 focus:border-primary shadow-inner" />
+                </div>
+                <Button 
+                  onClick={async () => { 
+                    if (!firestore) return;
+                    setSavingSettings(true); 
+                    const configRef = doc(firestore, "system_configs", "global");
+                    await setDoc(configRef, { 
+                      timePerQuestion, 
+                      updatedAt: serverTimestamp() 
+                    }, { merge: true });
+                    toast({ title: "Parameters Updated", description: "System recalibrated." });
+                    setSavingSettings(false);
+                  }} 
+                  disabled={savingSettings} 
+                  className="h-16 rounded-[1.5rem] font-black text-base px-14 shadow-2xl shadow-primary/30 w-full sm:w-auto active:scale-95 transition-all gap-3"
+                >
+                  {savingSettings ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />} Commit Parameters
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </main>
 
-      {/* Item Vault Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl rounded-[3rem] p-0 border-none shadow-[0_40px_120px_rgba(0,0,0,0.5)] overflow-hidden outline-none z-[1100] flex flex-col max-h-[95vh]">
           <div className="bg-primary/10 p-8 border-b shrink-0 flex items-center justify-between">
@@ -519,21 +484,22 @@ export default function AdminDashboard() {
             </DialogClose>
           </div>
           <form onSubmit={handleSaveQuestion} className="flex-1 overflow-y-auto no-scrollbar p-8 space-y-8 bg-background">
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Academic Track</label>
-                <Select value={editingQuestion?.subject || ""} onValueChange={(val) => setEditingQuestion({...editingQuestion, subject: val})}>
-                  <SelectTrigger className="rounded-2xl h-14 font-black border-2 shadow-inner"><SelectValue placeholder="Select Track" /></SelectTrigger>
-                  <SelectContent className="rounded-2xl p-2">{SUBJECTS.map(s => <SelectItem key={s} value={s} className="font-bold py-3 rounded-xl">{s}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Academic Track</label>
+              <Select value={editingQuestion?.subject || ""} onValueChange={(val) => setEditingQuestion({...editingQuestion, subject: val})}>
+                <SelectTrigger className="rounded-2xl h-14 font-black border-2 shadow-inner">
+                  <SelectValue placeholder="Select Track" />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl p-2">
+                  {SUBJECTS.map(s => <SelectItem key={s} value={s} className="font-bold py-3 rounded-xl">{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <Button onClick={handleSaveQuestion} className="rounded-2xl font-black text-sm uppercase tracking-widest h-14 px-12 shadow-2xl shadow-primary/30 w-full active:scale-95 transition-all">Commit to Vault</Button>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* User Management Dialog */}
       <Dialog open={!!manageUser} onOpenChange={() => setManageUser(null)}>
         <DialogContent className="max-w-2xl rounded-[3rem] p-0 border-none shadow-[0_40px_120px_rgba(0,0,0,0.5)] overflow-hidden outline-none z-[1100] flex flex-col max-h-[95vh] bg-background">
           <div className="bg-foreground text-background p-8 flex flex-col sm:flex-row items-center gap-6 relative overflow-hidden shrink-0">
@@ -542,13 +508,7 @@ export default function AdminDashboard() {
               <AvatarFallback className="bg-primary text-primary-foreground font-black text-3xl">🎓</AvatarFallback>
             </Avatar>
             <div className="space-y-1 text-center sm:text-left relative z-10 flex-1">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                <DialogTitle className="text-3xl font-black tracking-tighter">{editUserForm.displayName || 'Teacher Profile'}</DialogTitle>
-                <div className="flex justify-center gap-2">
-                  {editUserForm.isPro && <Badge className="bg-yellow-500 text-yellow-900 font-black px-3 py-1 rounded-xl border-none text-[9px] shadow-lg">PLATINUM</Badge>}
-                  {editUserForm.isBlocked && <Badge className="bg-rose-500 text-white font-black px-3 py-1 rounded-xl border-none text-[9px] shadow-lg">BLOCKED</Badge>}
-                </div>
-              </div>
+              <DialogTitle className="text-3xl font-black tracking-tighter">{editUserForm.displayName || 'Teacher Profile'}</DialogTitle>
               <p className="text-muted-foreground font-black uppercase tracking-[0.3em] text-[10px] opacity-60">{manageUser?.email || 'Secure Trace'}</p>
             </div>
             <DialogClose className="absolute right-6 top-6 rounded-full h-10 w-10 bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center z-20 active:scale-90">

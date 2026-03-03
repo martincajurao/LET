@@ -184,6 +184,15 @@ function LetsPrepContent() {
     if (!user) { setShowAuthModal(true); return; }
     if (!firestore || isStartingRef.current) return;
 
+    if (category === 'quickfire') {
+      const now = Date.now();
+      const lastQf = Number(user.lastQuickFireTimestamp) || 0;
+      if (lastQf + COOLDOWNS.QUICK_FIRE > now) {
+        toast({ variant: "destructive", title: "Brain Teaser Locked", description: "This tactical quiz is still calibrating. Please return later." });
+        return;
+      }
+    }
+
     const isLocked = !isTrackUnlocked(rankData?.rank || 1, category, user.unlockedTracks);
     if (isLocked && category !== 'quickfire') {
       const modeConfig = getTrackConfig(category, user?.majorship || 'Major');
@@ -421,7 +430,15 @@ function LetsPrepContent() {
                     <div className="relative z-10 space-y-8">
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary" className="font-black text-[10px] uppercase px-4 py-1.5 bg-primary/20 text-primary border-none rounded-lg shadow-sm">Protocol: Board Simulator</Badge>
-                        {user && <Badge variant="outline" className="font-black text-[9px] uppercase px-3 py-1 bg-white/10 text-primary-foreground border-primary/20 mix-blend-difference">Rank {rankData?.rank}</Badge>}
+                        {user && (
+                          <div className="flex items-center gap-2 bg-card/50 backdrop-blur-sm px-3 py-1 rounded-lg border border-primary/20">
+                            <Avatar className="w-5 h-5">
+                              <AvatarImage src={user.photoURL || ""} />
+                              <AvatarFallback className="bg-primary/10 text-primary text-[8px] font-black">🎓</AvatarFallback>
+                            </Avatar>
+                            <span className="text-[9px] font-black uppercase text-primary tracking-widest">Rank {rankData?.rank}</span>
+                          </div>
+                        )}
                       </div>
                       <div className="space-y-4">
                         <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95] text-foreground">Prepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
