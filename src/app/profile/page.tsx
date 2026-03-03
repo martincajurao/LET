@@ -466,7 +466,7 @@ function ProfilePageContent() {
 
       {/* Detailed Result Modal - Full Screen Android Optimized */}
       <Dialog open={isDetailViewOpen} onOpenChange={setIsDetailViewOpen}>
-        <DialogContent className="max-w-5xl w-[95vw] h-[95vh] rounded-[3.5rem] p-0 border-none shadow-[0_40px_120px_rgba(0,0,0,0.5)] overflow-hidden outline-none z-[1100] flex flex-col bg-background">
+        <DialogContent className="max-w-5xl w-[95vw] h-[95vh] rounded-[3.5rem] p-0 border-none shadow-[0_40px_120px_rgba(0,0,0,0.5)] overflow-hidden outline-none z-[5001] flex flex-col bg-background">
           <DialogHeader className="p-8 border-b bg-card shrink-0 flex flex-row items-center justify-between space-y-0">
             <div className="flex items-center gap-5">
               <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner">

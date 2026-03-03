@@ -251,7 +251,7 @@ export function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-          ) : (<Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest border-primary/20 opacity-40">Guest Educator</Badge>)}
+          ) : (<Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest border-primary/20 opacity-40">Guest Teacher</Badge>)}
         </div>
       </nav>
 

@@ -194,7 +194,7 @@ function NavContent() {
                 <span className={cn("text-[10px] font-black uppercase tracking-tighter transition-opacity duration-300", active ? "opacity-100 scale-105" : "opacity-60")}>{item.label}</span>
               </button>
             );
-          }) : (<div className="flex-1 flex items-center justify-center text-muted-foreground text-[10px] font-black uppercase tracking-widest opacity-40"><ShieldCheck className="w-4 h-4 mr-2" /> Educator Trace Required</div>)}
+          }) : (<div className="flex-1 flex items-center justify-center text-muted-foreground text-[10px] font-black uppercase tracking-widest opacity-40"><ShieldCheck className="w-4 h-4 mr-2" /> Teacher Trace Required</div>)}
         </div>
       </div>
       {user && (

@@ -217,7 +217,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const createMockProfile = (uid: string): UserProfile => ({
     uid,
     displayName: `Tester_${uid.substring(0, 4)}`,
-    email: 'test@educator.app',
+    email: 'test@teacher.app',
     photoURL: 'https://picsum.photos/seed/tester/200/200',
     onboardingComplete: true,
     credits: 100,
@@ -235,8 +235,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const createUserProfileInFirestore = async (firebaseUser: any) => {
     const newUserProfile: UserProfile = {
       uid: firebaseUser.uid,
-      displayName: firebaseUser.displayName || 'Educator',
-      email: firebaseUser.email || 'educator@practice.app',
+      displayName: firebaseUser.displayName || 'Teacher',
+      email: firebaseUser.email || 'teacher@practice.app',
       photoURL: firebaseUser.photoURL || 'https://picsum.photos/seed/user/200/200',
       onboardingComplete: true,
       credits: 20,
@@ -317,7 +317,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      toast({ title: "Welcome back!", description: "Educator session synchronized." });
+      toast({ title: "Welcome back!", description: "Teacher session synchronized." });
     } catch (error: any) {
       console.error('Google Sign-In Error:', error);
       if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {

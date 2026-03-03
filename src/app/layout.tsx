@@ -15,7 +15,7 @@ import { Loader2 } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: "LET's Prep - Professional Teacher Practice",
-  description: 'Simulate the LET experience with Android-native fluidity and AI pedagogical analysis.',
+  description: 'Simulate the LET experience with Android-native fluidity and AI pedagogical analysis for aspiring Filipino teachers.',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',

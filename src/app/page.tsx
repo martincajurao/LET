@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
@@ -287,7 +286,7 @@ function LetsPrepContent() {
   const handleTouchEnd = async () => {
     if (pullDistance > 50 && !isRefreshing) {
       setIsRefreshing(true);
-      try { await refreshUser(); toast({ title: "Synchronized", description: "Latest educator data loaded." }); } 
+      try { await refreshUser(); toast({ title: "Synchronized", description: "Latest teacher data loaded." }); } 
       catch (e) { toast({ variant: "destructive", title: "Sync Failed", description: "Could not refresh profile." }); } 
       finally { setIsRefreshing(false); setIsPulling(false); setPullDistance(0); }
     } else { setPullDistance(0); setIsPulling(false); }
@@ -313,7 +312,7 @@ function LetsPrepContent() {
     setLastXpEarned(xpEarned);
     try {
       if (!user.uid.startsWith('bypass')) {
-        const docRef = await addDoc(collection(firestore, "exam_results"), { userId: user.uid, displayName: user.displayName || 'Guest Educator', timestamp: now, overallScore, timeSpent, xpEarned, results, lastActiveDate: serverTimestamp() });
+        const docRef = await addDoc(collection(firestore, "exam_results"), { userId: user.uid, displayName: user.displayName || 'Guest Teacher', timestamp: now, overallScore, timeSpent, xpEarned, results, lastActiveDate: serverTimestamp() });
         setNewResultId(docRef.id);
         const updatePayload: any = { dailyQuestionsAnswered: increment(currentQuestions.length), dailyTestsFinished: increment(!isQuickFireMode ? 1 : 0), xp: increment(xpEarned), lastActiveDate: serverTimestamp() };
         if (isQuickFireMode) updatePayload.lastQuickFireTimestamp = now;
@@ -356,7 +355,7 @@ function LetsPrepContent() {
     }
   };
 
-  if (authLoading) return <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-background"><EducationalLoader message="Synchronizing Session" /></div>;
+  if (authLoading) return <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-background"><EducationalLoader message="Synchronizing Teacher Session" /></div>;
 
   const displayStats = user ? [
     { icon: <Sparkles className="w-4 h-4 text-yellow-500 animate-sparkle" />, label: 'Credits', value: user.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
@@ -419,7 +418,7 @@ function LetsPrepContent() {
                       </div>
                       <div className="space-y-4">
                         <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95] text-foreground">Prepare for the <br /><span className="text-primary italic">Board Exam.</span></h1>
-                        <p className="text-muted-foreground font-medium text-lg md:text-2xl max-w-xl leading-relaxed">High-fidelity situational simulations with AI analysis built for Filipino educators.</p>
+                        <p className="text-muted-foreground font-medium text-lg md:text-2xl max-w-xl leading-relaxed">High-fidelity situational simulations with AI analysis built for aspiring Filipino teachers.</p>
                       </div>
                       
                       <div className="flex flex-col sm:flex-row gap-4 pt-2">
@@ -575,7 +574,7 @@ function LetsPrepContent() {
 
             <motion.div variants={itemVariants} className="pt-8 text-center pb-12">
               <div className="flex items-center justify-center gap-3 mb-4"><div className="h-[1px] w-16 bg-border" /><motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }}><Heart className="w-5 h-5 text-rose-500 fill-current" /></motion.div><div className="h-[1px] w-16 bg-border" /></div>
-              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-muted-foreground opacity-40">Dedicated to the Filipino Educator</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-muted-foreground opacity-40">Dedicated to the Aspiring Filipino Teacher</p>
             </motion.div>
           </motion.div>
         )}

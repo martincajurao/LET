@@ -256,7 +256,7 @@ export default function AdminDashboard() {
       
       toast({ 
         title: "Insight Regenerated", 
-        description: "Fresh pedagogical content deployed to all educators." 
+        description: "Fresh pedagogical content deployed to all aspiring teachers." 
       });
     } catch (e) {
       toast({ 
@@ -345,7 +345,7 @@ export default function AdminDashboard() {
 
     updateDoc(userRef, data)
       .then(() => {
-        toast({ title: "User Calibrated", description: `Metadata saved for ${editUserForm.displayName}` });
+        toast({ title: "Teacher Calibrated", description: `Metadata saved for ${editUserForm.displayName}` });
         fetchUsers();
         setManageUser(null);
       })
@@ -396,7 +396,7 @@ export default function AdminDashboard() {
       
       toast({ 
         title: "Global Reset Success", 
-        description: `Purged daily progress for ${users.length} loaded educators.` 
+        description: `Purged daily progress for ${users.length} loaded teachers.` 
       });
       fetchUsers();
     } catch (e: any) {
@@ -434,7 +434,7 @@ export default function AdminDashboard() {
             <TabsList className="bg-muted/30 p-1.5 rounded-[2rem] flex w-fit md:w-full lg:w-auto h-14 border border-border/50">
               <TabsTrigger value="overview" className="font-black text-[10px] uppercase tracking-widest rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px] gap-2"><BarChart3 className="w-3.5 h-3.5" /> Overview</TabsTrigger>
               <TabsTrigger value="questions" className="font-black text-[10px] uppercase tracking-widest rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px] gap-2"><Brain className="w-3.5 h-3.5" /> Item Vault</TabsTrigger>
-              <TabsTrigger value="users" className="font-black text-[10px] uppercase tracking-widest rounded-2xl flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px]"><Users className="w-3.5 h-3.5" /> Educator Base</TabsTrigger>
+              <TabsTrigger value="users" className="font-black text-[10px] uppercase tracking-widest rounded-2xl flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px]"><Users className="w-3.5 h-3.5" /> Teacher Base</TabsTrigger>
               <TabsTrigger value="config" className="font-black text-[10px] uppercase tracking-widest rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px] gap-2"><Database className="w-3.5 h-3.5" /> System Params</TabsTrigger>
               <TabsTrigger value="updates" className="font-black text-[10px] uppercase tracking-widest rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground min-w-[120px] gap-2"><ArrowUpCircle className="w-3.5 h-3.5" /> Versioning</TabsTrigger>
             </TabsList>
@@ -443,7 +443,7 @@ export default function AdminDashboard() {
           <TabsContent value="overview" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: 'Total Educators', value: stats.userCount, icon: <Users className="w-5 h-5 text-blue-500" />, color: 'bg-blue-500/10' },
+                { label: 'Total Teachers', value: stats.userCount, icon: <Users className="w-5 h-5 text-blue-500" />, color: 'bg-blue-500/10' },
                 { label: 'Vault Items', value: stats.questionCount, icon: <Brain className="w-5 h-5 text-purple-500" />, color: 'bg-purple-500/10' },
                 { label: 'Exams Run', value: stats.resultCount, icon: <History className="w-5 h-5 text-emerald-500" />, color: 'bg-emerald-500/10' },
                 { label: 'Active Quests', value: stats.activeQuests, icon: <CompassIcon className="w-5 h-5 text-amber-500" />, color: 'bg-amber-500/10' }
@@ -555,7 +555,7 @@ export default function AdminDashboard() {
             <div className="flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center px-2">
               <div className="relative w-full sm:max-w-sm">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground opacity-60" />
-                <Input placeholder="Search educator name or email..." className="pl-11 rounded-[1.25rem] h-12 shadow-sm font-medium" value={userSearchQuery} onChange={(e) => setUserSearchQuery(e.target.value)} />
+                <Input placeholder="Search teacher name or email..." className="pl-11 rounded-[1.25rem] h-12 shadow-sm font-medium" value={userSearchQuery} onChange={(e) => setUserSearchQuery(e.target.value)} />
               </div>
               <Button variant="outline" onClick={fetchUsers} className="w-full sm:w-auto rounded-[1.25rem] font-black h-12 border-2 active:scale-95 transition-all"><RefreshCw className="w-4 h-4 mr-2" /> Sync Base</Button>
             </div>
@@ -565,7 +565,7 @@ export default function AdminDashboard() {
                 <Table>
                   <TableHeader className="bg-muted/30">
                     <TableRow className="border-border/50">
-                      <TableHead className="font-black uppercase text-[10px] tracking-widest pl-8">Educator Profile</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest pl-8">Teacher Profile</TableHead>
                       <TableHead className="font-black uppercase text-[10px] tracking-widest">Specialization</TableHead>
                       <TableHead className="font-black uppercase text-[10px] tracking-widest text-center">Growth Rank</TableHead>
                       <TableHead className="font-black uppercase text-[10px] tracking-widest text-center">AI Credits</TableHead>
@@ -581,11 +581,11 @@ export default function AdminDashboard() {
                           <TableCell className="pl-8">
                             <div className="flex items-center gap-4">
                               <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center font-black text-primary text-sm shrink-0 shadow-inner">
-                                {user.displayName?.charAt(0) || 'E'}
+                                {user.displayName?.charAt(0) || 'T'}
                               </div>
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <p className="text-sm font-black truncate max-w-[140px]">{user.displayName || 'Anonymous Educator'}</p>
+                                  <p className="text-sm font-black truncate max-w-[140px]">{user.displayName || 'Anonymous Teacher'}</p>
                                   {user.isPro && <Crown className="w-3.5 h-3.5 text-yellow-500 fill-current animate-sparkle" />}
                                   {user.isBlocked && <Ban className="w-3.5 h-3.5 text-destructive shrink-0" />}
                                 </div>
@@ -783,7 +783,7 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <h4 className="font-black text-xl">Global Reset</h4>
-                    <p className="text-xs font-medium text-muted-foreground mt-1">Purge all daily progress for every educator in the system base.</p>
+                    <p className="text-xs font-medium text-muted-foreground mt-1">Purge all daily progress for every aspiring teacher in the system base.</p>
                   </div>
                   
                   <AlertDialog>
@@ -799,7 +799,7 @@ export default function AdminDashboard() {
                         </div>
                         <AlertDialogTitle className="text-2xl font-black text-center tracking-tighter">System Purge Protocol</AlertDialogTitle>
                         <AlertDialogDescription className="text-center text-sm font-medium leading-relaxed px-4">
-                          This will reset daily questions, mock tests, focus sessions, and reward claims for <strong>all loaded educators</strong>. This action is irreversible.
+                          This will reset daily questions, mock tests, focus sessions, and reward claims for <strong>all loaded teachers</strong>. This action is irreversible.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter className="sm:flex-col gap-3 mt-6">
@@ -866,7 +866,7 @@ export default function AdminDashboard() {
                   </Button>
                   <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center gap-3">
                     <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center shrink-0 shadow-sm"><Info className="w-4 h-4 text-emerald-600" /></div>
-                    <p className="text-[9px] font-bold text-emerald-800 uppercase tracking-widest text-left">AutoUpdateChecker will detect this version <br />immediately across all native educator clients.</p>
+                    <p className="text-[9px] font-bold text-emerald-800 uppercase tracking-widest text-left">AutoUpdateChecker will detect this version <br />immediately across all native teacher clients.</p>
                   </div>
                 </div>
               </CardContent>
@@ -952,11 +952,11 @@ export default function AdminDashboard() {
         <DialogContent className="max-w-2xl rounded-[3rem] p-0 border-none shadow-[0_40px_120px_rgba(0,0,0,0.5)] overflow-hidden outline-none z-[1100] flex flex-col max-h-[95vh] bg-background">
           <div className="bg-foreground text-background p-8 flex flex-col sm:flex-row items-center gap-6 relative overflow-hidden shrink-0">
             <div className="w-20 h-20 rounded-[1.75rem] bg-primary flex items-center justify-center text-primary-foreground font-black text-3xl shadow-2xl relative z-10 shrink-0">
-              {manageUser?.displayName?.charAt(0) || 'E'}
+              {manageUser?.displayName?.charAt(0) || 'T'}
             </div>
             <div className="space-y-1 text-center sm:text-left relative z-10 flex-1">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                <DialogTitle className="text-3xl font-black tracking-tighter">{editUserForm.displayName || 'Educator Profile'}</DialogTitle>
+                <DialogTitle className="text-3xl font-black tracking-tighter">{editUserForm.displayName || 'Teacher Profile'}</DialogTitle>
                 <div className="flex justify-center gap-2">
                   {editUserForm.isPro && <Badge className="bg-yellow-500 text-yellow-900 font-black px-3 py-1 rounded-xl border-none text-[9px] shadow-lg animate-sparkle">PLATINUM</Badge>}
                   {editUserForm.isBlocked && <Badge className="bg-rose-500 text-white font-black px-3 py-1 rounded-xl border-none text-[9px] shadow-lg">BLOCKED</Badge>}
@@ -1076,7 +1076,7 @@ export default function AdminDashboard() {
                       const userRef = doc(firestore, 'users', manageUser.id);
                       deleteDoc(userRef)
                         .then(() => {
-                          toast({ title: "Account Purged", description: "Educator record has been removed." });
+                          toast({ title: "Account Purged", description: "Teacher record has been removed." });
                           fetchUsers();
                           setManageUser(null);
                         })

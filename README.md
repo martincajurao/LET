@@ -1,6 +1,6 @@
 # LET's Prep - Professional Teacher Practice
 
-A gamified board exam simulation platform for Filipino educators, featuring high-fidelity simulations, AI pedagogical analysis, and native Android styling.
+A gamified board exam simulation platform for aspiring Filipino teachers, featuring high-fidelity simulations, AI pedagogical analysis, and native Android styling.
 
 ## Tech Stack
 - **Framework**: Next.js 15 (App Router)
