@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
@@ -28,7 +27,6 @@ import {
   BookOpen,
   ShieldCheck,
   Languages,
-  Crown,
   Shield,
   Sparkles,
   Lock,
@@ -239,7 +237,6 @@ function LetsPrepContent() {
       setActiveSimCategory(category);
       setIsResultsUnlocked(false);
       
-      // Perform atomic state switch
       setState(category === 'quickfire' ? 'quickfire_quiz' : 'exam'); 
       setIsCalibrating(false); 
       isStartingRef.current = false;
@@ -253,13 +250,10 @@ function LetsPrepContent() {
   useEffect(() => {
     if (startParam && user && state === 'dashboard' && startParam !== lastConsumedParam.current) {
       lastConsumedParam.current = startParam;
-      
-      // Atomic URL consumption
       const params = new URLSearchParams(window.location.search);
       params.delete('start');
       const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : '');
       window.history.replaceState({}, '', newUrl);
-      
       startExam(startParam);
     }
   }, [startParam, user, state, startExam]);
@@ -379,7 +373,7 @@ function LetsPrepContent() {
   const displayStats = user ? [
     { icon: <Sparkles className="w-4 h-4 text-yellow-500 animate-sparkle" />, label: 'Credits', value: user.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
     { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Arena', value: userRank || '---', color: 'text-primary bg-primary/10' },
-    { icon: user.isPro ? <Crown className="w-4 h-4 text-yellow-600 fill-current" /> : <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user.isPro ? 'Platinum' : 'FREE', color: user.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
+    { icon: <Shield className="w-4 h-4 text-blue-500" />, label: 'Tier', value: user.isPro ? 'Platinum' : 'FREE', color: user.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
     { icon: <Flame className="w-4 h-4 text-orange-500 fill-current animate-pulse" />, label: 'Streak', value: user.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' }
   ] : [
     { icon: <Users className="w-4 h-4 text-blue-500" />, label: 'Community', value: '1.7K+', color: 'text-blue-500 bg-blue-500/5' },

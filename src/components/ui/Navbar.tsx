@@ -15,7 +15,6 @@ import {
   Menu,
   LayoutDashboard,
   Trophy,
-  Crown,
   Sparkles,
   Smartphone,
   Compass,
@@ -120,7 +119,11 @@ export function Navbar() {
                     {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || "User"} />}
                     <AvatarFallback className="text-xs font-black bg-primary/10 text-primary uppercase">🎓</AvatarFallback>
                   </Avatar>
-                  {user.isPro && (<div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-0.5 shadow-sm border border-background"><Crown className="w-2.5 h-2.5 text-yellow-900" /></div>)}
+                  {user.isPro && (
+                    <div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-0.5 shadow-sm border border-background">
+                      <Sparkles className="w-2.5 h-2.5 text-yellow-900" />
+                    </div>
+                  )}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-64 mt-2 rounded-2xl border bg-card shadow-2xl p-2" align="end">

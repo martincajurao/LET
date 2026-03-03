@@ -21,7 +21,8 @@ import {
   Sword,
   TrendingUp,
   Settings,
-  ChevronRight
+  ChevronRight,
+  ShieldCheck
 } from "lucide-react";
 import { AchievementSystem } from '@/components/ui/achievement-system';
 import { ReferralSystem } from '@/components/ui/referral-system';
@@ -40,6 +41,13 @@ export default function DashboardPage() {
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
+  const displayStats = user ? [
+    { icon: <Sparkles className="w-4 h-4 text-yellow-500 fill-current animate-sparkle" />, label: 'Vault Units', value: user.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
+    { icon: <Trophy className="w-4 h-4 text-primary" />, label: 'Arena Rank', value: rankData?.rank || 1, color: 'text-primary bg-primary/10' },
+    { icon: <ShieldCheck className="w-4 h-4 text-blue-500" />, label: 'Member Tier', value: user?.isPro ? 'Platinum' : 'FREE', color: user?.isPro ? 'text-yellow-600 bg-yellow-500/10' : 'text-blue-500 bg-blue-500/10' },
+    { icon: <Flame className="w-4 h-4 text-orange-500 fill-current" />, label: 'Saga Streak', value: user.streakCount || 0, color: 'text-orange-500 bg-orange-500/10' }
+  ] : [];
+
   return (
     <div className="min-h-screen bg-background font-body">
       <div className="max-w-7xl mx-auto px-4 pt-6 pb-24 space-y-8">
@@ -51,7 +59,10 @@ export default function DashboardPage() {
               <AvatarFallback className="bg-primary/10 text-primary text-3xl font-black">🎓</AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-3xl font-black tracking-tight leading-none">{user?.displayName || 'Teacher'}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-3xl font-black tracking-tight leading-none">{user?.displayName || 'Teacher'}</h1>
+                {user?.isPro && <Badge className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20 font-black text-[8px] px-2 py-0">PLATINUM</Badge>}
+              </div>
               <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest opacity-60 mt-1">{rankData?.title || 'Candidate'}</p>
             </div>
           </div>
@@ -70,34 +81,15 @@ export default function DashboardPage() {
         {/* Quick Stats Grid */}
         {user && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Card className="android-surface border-none shadow-md3-1 rounded-[2rem] bg-card p-5 text-center transition-all hover:shadow-xl group active:scale-[0.98]">
-              <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner group-hover:rotate-12 transition-transform">
-                <Flame className="w-6 h-6 text-orange-500 fill-current" />
-              </div>
-              <p className="text-3xl font-black tracking-tight">{user.streakCount || 0}</p>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mt-1">Saga Streak</p>
-            </Card>
-            <Card className="android-surface border-none shadow-md3-1 rounded-[2rem] bg-card p-5 text-center transition-all hover:shadow-xl group active:scale-[0.98]">
-              <div className="w-12 h-12 bg-yellow-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner group-hover:rotate-12 transition-transform">
-                <Sparkles className="w-6 h-6 text-yellow-600 fill-current animate-sparkle" />
-              </div>
-              <p className="text-3xl font-black tracking-tight">{user.credits || 0}</p>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mt-1">Vault Units</p>
-            </Card>
-            <Card className="android-surface border-none shadow-md3-1 rounded-[2rem] bg-card p-5 text-center transition-all hover:shadow-xl group active:scale-[0.98]">
-              <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner group-hover:rotate-12 transition-transform">
-                <Trophy className="w-6 h-6 text-primary" />
-              </div>
-              <p className="text-2xl font-black tracking-tight truncate px-1">{rankData?.title || 'Candidate'}</p>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mt-1">Rank {rankData?.rank}</p>
-            </Card>
-            <Card className="android-surface border-none shadow-md3-1 rounded-[2rem] bg-card p-5 text-center transition-all hover:shadow-xl group active:scale-[0.98]">
-              <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner group-hover:rotate-12 transition-transform">
-                <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-              </div>
-              <p className="text-3xl font-black tracking-tight">{user.dailyQuestionsAnswered || 0}</p>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mt-1">Items Traced</p>
-            </Card>
+            {displayStats.map((stat, i) => (
+              <Card key={i} className="android-surface border-none shadow-md3-1 rounded-[2rem] bg-card p-5 text-center transition-all hover:shadow-xl group active:scale-[0.98]">
+                <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner group-hover:scale-110 transition-transform", stat.color)}>
+                  {stat.icon}
+                </div>
+                <p className="text-3xl font-black tracking-tight">{stat.value}</p>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mt-1">{stat.label}</p>
+              </Card>
+            ))}
           </div>
         )}
 

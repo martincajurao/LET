@@ -100,7 +100,7 @@ export default function CommunityPage() {
     return map;
   }, [userFriendships, user]);
 
-  // Fetch live activity feed with lazy loading
+  // Fetch live activity feed with batch-loading
   const fetchActivity = useCallback(async (isInitial = true) => {
     if (!firestore) return;
     
@@ -155,7 +155,7 @@ export default function CommunityPage() {
 
   useEffect(() => {
     fetchActivity(true);
-  }, [firestore]); // Run once on firestore ready
+  }, [firestore]);
 
   // Fetch top teachers based on rank/xp from live data
   useEffect(() => {
@@ -187,7 +187,7 @@ export default function CommunityPage() {
     const unsub = onSnapshot(topQuery, (snap) => {
       setTopTeachers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     }, (err) => {
-      console.warn("Location query restricted (check indexes):", err);
+      console.warn("Location query restricted:", err);
       if (filterLevel !== 'global') setFilterLevel('global');
     });
     return () => unsub();
