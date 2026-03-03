@@ -30,7 +30,9 @@ import {
   Info,
   ShieldCheck,
   Gift,
-  RotateCcw
+  RotateCcw,
+  Zap,
+  Star
 } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
@@ -72,10 +74,10 @@ export function DailyQuestDashboard() {
   const quests: Quest[] = useMemo(() => {
     const qGoal = user?.userTier === 'Platinum' ? 35 : 20;
     return [
+      { id: 'focus', title: 'Deep Focus', description: 'Complete a study session', reward: Math.round(10 * tierMultiplier), goal: 1, current: user?.dailyAiUsage || 0, isClaimed: !!user?.taskLoginClaimed, icon: <Timer className="w-5 h-5" />, color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' },
       { id: 'questions', title: 'Item Mastery', description: 'Complete board items', reward: Math.round(10 * tierMultiplier), goal: qGoal, current: user?.dailyQuestionsAnswered || 0, isClaimed: !!user?.taskQuestionsClaimed, icon: <Target className="w-5 h-5" />, color: 'text-blue-600', bgColor: 'bg-blue-500/10' },
       { id: 'mock', title: 'Full Simulation', description: 'Finish a timed mock test', reward: Math.round(15 * tierMultiplier), goal: 1, current: user?.dailyTestsFinished || 0, isClaimed: !!user?.taskMockClaimed, icon: <Trophy className="w-5 h-5" />, color: 'text-amber-600', bgColor: 'bg-amber-500/10' },
-      { id: 'mistakes', title: 'Review Insights', description: 'Analyze pedagogical mistakes', reward: Math.round(10 * tierMultiplier), goal: 10, current: user?.mistakesReviewed || 0, isClaimed: !!user?.taskMistakesClaimed, icon: <BookOpen className="w-5 h-5" />, color: 'text-rose-600', bgColor: 'bg-rose-500/10' },
-      { id: 'focus', title: 'Deep Focus', description: 'Complete a study session', reward: Math.round(10 * tierMultiplier), goal: 1, current: user?.dailyAiUsage || 0, isClaimed: !!user?.taskLoginClaimed, icon: <Timer className="w-5 h-5" />, color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' }
+      { id: 'mistakes', title: 'Review Insights', description: 'Analyze pedagogical mistakes', reward: Math.round(10 * tierMultiplier), goal: 10, current: user?.mistakesReviewed || 0, isClaimed: !!user?.taskMistakesClaimed, icon: <BookOpen className="w-5 h-5" />, color: 'text-rose-600', bgColor: 'bg-rose-500/10' }
     ];
   }, [user, tierMultiplier]);
 
@@ -143,38 +145,151 @@ export function DailyQuestDashboard() {
         <CardHeader className="bg-muted/30 p-6 md:p-8 border-b space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 shrink-0"><Compass className="w-6 h-6 text-primary-foreground" /></div>
-              <div><CardTitle className="text-xl md:text-2xl font-black tracking-tight">Daily Quests</CardTitle><div className="flex items-center gap-2 mt-0.5"><Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[8px] uppercase">{rankData?.title}</Badge><div className="flex items-center gap-1 text-[9px] font-black text-muted-foreground uppercase opacity-60 tracking-widest"><ShieldCheck className="w-3 h-3" /><span>Rate: {tierMultiplier}x</span></div></div></div>
+              <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
+                <Compass className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <div>
+                <CardTitle className="text-xl md:text-2xl font-black tracking-tight">Mission Log</CardTitle>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[8px] uppercase">{rankData?.title}</Badge>
+                  <div className="flex items-center gap-1 text-[9px] font-black text-muted-foreground uppercase opacity-60 tracking-widest">
+                    <Zap className="w-3 h-3" />
+                    <span>Buff: {tierMultiplier}x yield</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="flex flex-col items-end"><span className="text-[8px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-1">Career Streak</span><div className="flex items-center gap-2 bg-orange-500/10 px-4 py-1.5 rounded-2xl border-2 border-orange-500/20 shadow-sm relative group cursor-help"><Flame className="w-5 h-5 text-orange-500 fill-current animate-pulse group-hover:scale-125 transition-transform" /><span className="text-2xl font-black text-orange-600">{user?.streakCount || 0}</span>{user?.streakCount && user.streakCount >= 7 && (<motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} className="absolute inset-0 border-2 border-dashed border-orange-500/30 rounded-2xl" />)}</div></div>
+            <div className="flex flex-col items-end">
+              <span className="text-[8px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-1">Current Streak</span>
+              <div className="flex items-center gap-2 bg-orange-500/10 px-4 py-1.5 rounded-2xl border-2 border-orange-500/20 shadow-sm relative group">
+                <Flame className="w-5 h-5 text-orange-500 fill-current animate-pulse group-hover:scale-125 transition-transform" />
+                <span className="text-2xl font-black text-orange-600">{user?.streakCount || 0}</span>
+              </div>
+            </div>
           </div>
-          <div className="space-y-2"><div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-60"><span>Saga Progression</span><span>{Math.round(totalProgress)}%</span></div><Progress value={totalProgress} className="h-1.5 rounded-full bg-muted shadow-inner" /></div>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
+              <span>Today's Saga Progress</span>
+              <span>{Math.round(totalProgress)}%</span>
+            </div>
+            <Progress value={totalProgress} className="h-1.5 rounded-full bg-muted shadow-inner" />
+          </div>
         </CardHeader>
-        <CardContent className="p-4 md:p-8 space-y-4">
-          <div className="grid grid-cols-1 gap-2.5">
-            {quests.map((quest) => {
+        <CardContent className="p-4 md:p-8 space-y-2 relative">
+          {/* Vertical Roadmap Line */}
+          <div className="absolute left-[34px] top-8 bottom-32 w-[2px] bg-muted-foreground/10 z-0" />
+          
+          <div className="grid grid-cols-1 gap-4 relative z-10">
+            {quests.map((quest, idx) => {
               const isComplete = quest.current >= quest.goal;
+              const isReady = isComplete && !quest.isClaimed;
+              
               return (
-                <motion.div key={quest.id} whileHover={!quest.isClaimed ? { x: 4 } : {}} className={cn("android-surface p-4 rounded-2xl flex items-center justify-between border-2", quest.isClaimed ? "opacity-40 border-transparent grayscale bg-muted/20" : isComplete ? "bg-accent/5 border-primary/20 ring-4 ring-primary/5 shadow-lg" : "border-border/50")}>
-                  <div className="flex items-center gap-4"><div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shadow-inner shrink-0", quest.bgColor, quest.color)}>{quest.icon}</div><div className="min-w-0"><p className="text-sm font-black text-foreground leading-none mb-0.5 truncate">{quest.title}</p><p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate">{quest.description}</p></div></div>
-                  <div className="flex items-center gap-3"><div className={cn("flex items-center gap-1 px-2.5 py-1.5 rounded-xl border-2 transition-all shrink-0", isComplete && !quest.isClaimed ? "animate-breathing-gold border-yellow-500/30 bg-yellow-500/10" : "bg-muted/30 border-transparent")}><Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current animate-sparkle" /><span className="text-xs font-black text-yellow-700">+{quest.reward}</span></div><div className="min-w-[40px] flex justify-end">{quest.isClaimed ? <Badge variant="outline" className="text-[8px] font-black uppercase bg-emerald-500/5 text-emerald-600 border-emerald-500/20 px-1.5">Claimed</Badge> : isComplete ? <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-lg animate-victory"><CheckCircle2 className="w-4 h-4" /></div> : <span className="text-[9px] font-black text-muted-foreground opacity-60">{quest.current}/{quest.goal}</span>}</div></div>
+                <motion.div 
+                  key={quest.id} 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  whileHover={!quest.isClaimed ? { x: 4 } : {}} 
+                  className={cn(
+                    "android-surface p-4 rounded-2xl flex items-center justify-between border-2 transition-all",
+                    quest.isClaimed ? "opacity-40 border-transparent grayscale bg-muted/20" : 
+                    isReady ? "bg-primary/5 border-primary ring-4 ring-primary/5 shadow-lg animate-breathing-primary" : 
+                    "border-border/50 bg-card"
+                  )}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      "w-10 h-10 rounded-xl flex items-center justify-center shadow-inner shrink-0 z-10 transition-all",
+                      isReady ? "bg-primary text-primary-foreground scale-110" : 
+                      quest.isClaimed ? "bg-emerald-500 text-white" : 
+                      "bg-muted/50 text-muted-foreground"
+                    )}>
+                      {quest.isClaimed ? <CheckCircle2 className="w-5 h-5" /> : quest.icon}
+                    </div>
+                    <div className="min-w-0">
+                      <p className={cn(
+                        "text-sm font-black leading-none mb-0.5 truncate",
+                        isReady ? "text-primary" : "text-foreground"
+                      )}>{quest.title}</p>
+                      <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate">{quest.description}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "flex items-center gap-1 px-2.5 py-1.5 rounded-xl border-2 transition-all shrink-0",
+                      isReady ? "animate-breathing-gold border-yellow-500/30 bg-yellow-500/10" : "bg-muted/30 border-transparent"
+                    )}>
+                      <Sparkles className="w-3.5 h-3.5 text-yellow-600 fill-current animate-sparkle" />
+                      <span className="text-xs font-black text-yellow-700">+{quest.reward}</span>
+                    </div>
+                    
+                    {!quest.isClaimed && !isComplete && (
+                      <div className="w-12 text-right">
+                        <span className="text-[9px] font-black text-muted-foreground opacity-60 tabular-nums">
+                          {quest.current}/{quest.goal}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </motion.div>
               );
             })}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            <Button onClick={() => handleClaimReward()} disabled={!user || claiming || !canClaimAny} className={cn("h-16 rounded-2xl font-black text-base gap-3 shadow-xl group active:scale-95 transition-all relative overflow-hidden", canClaimAny ? "bg-primary text-primary-foreground shadow-primary/30 animate-focus-glow" : "bg-muted text-muted-foreground")}>{canClaimAny && <motion.div animate={{ x: [-100, 200] }} transition={{ duration: 2, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />}{claiming ? <Loader2 className="w-5 h-5 animate-spin" /> : canClaimAny ? <Gift className="w-5 h-5" /> : <Package className="w-5 h-5 opacity-40" />}{claiming ? 'SYNCING...' : canClaimAny ? `CLAIM ${estimatedReward} CREDITS` : 'QUESTS INCOMPLETE'}</Button>
-            <Button variant="outline" onClick={() => handleClaimReward(true)} disabled={recovering} className="h-16 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] gap-2 border-2 border-orange-500/20 text-orange-600 hover:bg-orange-50 active:scale-95 transition-all">{recovering ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}Streak Saver ({STREAK_RECOVERY_COST}c)</Button>
+
+          <div className="grid grid-cols-1 gap-3 pt-6">
+            <Button 
+              onClick={() => handleClaimReward()} 
+              disabled={!user || claiming || !canClaimAny} 
+              className={cn(
+                "h-16 rounded-[1.75rem] font-black text-base gap-3 shadow-xl group active:scale-95 transition-all relative overflow-hidden", 
+                canClaimAny ? "bg-primary text-primary-foreground shadow-primary/30" : "bg-muted text-muted-foreground"
+              )}
+            >
+              {canClaimAny && (
+                <motion.div 
+                  animate={{ x: [-100, 300] }} 
+                  transition={{ duration: 3, repeat: Infinity }} 
+                  className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 skew-x-12" 
+                />
+              )}
+              {claiming ? <Loader2 className="w-5 h-5 animate-spin" /> : canClaimAny ? <Gift className="w-5 h-5" /> : <Package className="w-5 h-5 opacity-40" />}
+              {claiming ? 'SYNCING VAULT...' : canClaimAny ? `SECURE ${estimatedReward} CREDITS` : 'LOGS INCOMPLETE'}
+            </Button>
+            
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => handleClaimReward(true)} 
+                disabled={recovering} 
+                className="flex-1 h-12 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] gap-2 border-2 border-orange-500/20 text-orange-600 hover:bg-orange-50 active:scale-95 transition-all"
+              >
+                {recovering ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                Streak Saver ({STREAK_RECOVERY_COST}c)
+              </Button>
+              <div className="flex items-center gap-2 px-4 py-2 bg-primary/5 rounded-xl border border-primary/10 flex-1">
+                <Info className="w-3.5 h-3.5 text-primary opacity-60" />
+                <p className="text-[8px] font-bold text-muted-foreground leading-tight uppercase tracking-tight">
+                  Streaks scale your <span className="text-primary font-black">yield</span>. Don't let your saga reset.
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="p-4 bg-primary/5 rounded-2xl border-2 border-dashed border-primary/10 flex items-start gap-3"><Info className="w-4 h-4 text-primary shrink-0 mt-0.5 opacity-60" /><p className="text-[9px] font-bold text-muted-foreground leading-relaxed uppercase tracking-wider"><span className="text-primary font-black">Success Tip:</span> Completing quests consistently scales your multiplier. Higher ranks yield greater legendary loot.</p></div>
         </CardContent>
       </Card>
+
       <AnimatePresence>
         {showSuccess && (
           <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
             <DialogContent className="rounded-[3rem] border-none shadow-md3-3 p-0 max-w-[320px] overflow-hidden outline-none">
               <div className="bg-primary/10 p-10 flex flex-col items-center justify-center relative overflow-hidden">
-                <motion.div initial={{ scale: 0.8, rotate: -45 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", damping: 12, stiffness: 200 }} className="w-20 h-20 bg-primary text-primary-foreground rounded-[1.75rem] flex items-center justify-center shadow-2xl relative z-10">
+                <motion.div 
+                  initial={{ scale: 0.8, rotate: -45 }} 
+                  animate={{ scale: 1, rotate: 0 }} 
+                  transition={{ type: "spring", damping: 12, stiffness: 200 }} 
+                  className="w-20 h-20 bg-primary text-primary-foreground rounded-[1.75rem] flex items-center justify-center shadow-2xl relative z-10"
+                >
                   <CheckCircle2 className="w-10 h-10" />
                 </motion.div>
                 <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 3, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent z-0" />
@@ -182,23 +297,24 @@ export function DailyQuestDashboard() {
               <div className="p-8 pt-4 text-center space-y-6">
                 <div className="space-y-1">
                   <DialogHeader>
-                    <DialogTitle className="text-2xl font-black tracking-tight text-foreground">Quest Success!</DialogTitle>
-                    <DialogDescription className="text-muted-foreground font-black text-[9px] uppercase tracking-widest">Vault Balance Increased</DialogDescription>
+                    <DialogTitle className="text-2xl font-black tracking-tight text-foreground">Mission Success!</DialogTitle>
+                    <DialogDescription className="text-muted-foreground font-black text-[9px] uppercase tracking-widest">Loot Synchronized to Vault</DialogDescription>
                   </DialogHeader>
                 </div>
                 <div className="bg-muted/30 rounded-2xl p-5 border-2 border-border/50 flex flex-col items-center gap-1.5">
-                  <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Loot Yield</span>
+                  <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Total Yield</span>
                   <div className="flex items-center gap-2 px-4 py-1.5 rounded-xl animate-breathing-gold border-2 border-yellow-500/20 bg-card shadow-sm">
                     <Sparkles className="w-6 h-6 text-yellow-600 fill-current animate-sparkle" />
                     <span className="text-4xl font-black text-yellow-700">+{claimedReward}</span>
                   </div>
                 </div>
-                <Button onClick={() => setShowSuccess(false)} className="w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest gap-2 shadow-xl shadow-primary/30 active:scale-95 transition-all">Proceed <ChevronRight className="w-4 h-4" /></Button>
+                <Button onClick={() => setShowSuccess(false)} className="w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest gap-2 shadow-xl shadow-primary/30 active:scale-95 transition-all">Continue Saga <ChevronRight className="w-4 h-4" /></Button>
               </div>
             </DialogContent>
           </Dialog>
         )}
       </AnimatePresence>
+
       <Dialog open={!!creditError} onOpenChange={() => setCreditError(null)}>
         <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-md3-3 p-0 max-w-[340px] overflow-hidden outline-none z-[1200]" hideCloseButton={watchingAdForRefill}>
           <div className="bg-amber-500/10 p-10 flex flex-col items-center justify-center relative overflow-hidden">
