@@ -202,7 +202,10 @@ function ProfilePageContent() {
             <div className="h-32 bg-gradient-to-br from-primary/30 via-primary/5 to-card" />
             <CardContent className="px-8 pb-8 -mt-16 relative">
               <div className="flex flex-col md:flex-row md:items-end gap-6 mb-8">
-                <Avatar className="w-32 h-32 border-[6px] border-card shadow-2xl rounded-[2.5rem]"><AvatarImage src={user.photoURL || ""} /><AvatarFallback className="text-4xl font-black bg-muted">{user.displayName?.charAt(0)}</AvatarFallback></Avatar>
+                <Avatar className="w-32 h-32 border-[6px] border-card shadow-2xl rounded-[2.5rem]">
+                  <AvatarImage src={user.photoURL || ""} />
+                  <AvatarFallback className="text-4xl font-black bg-muted">🧑‍🎓</AvatarFallback>
+                </Avatar>
                 <div className="flex-1 space-y-2 mb-2">
                   <div className="flex items-center gap-3">
                     <h1 className="text-3xl font-black tracking-tight">{user.displayName}</h1>

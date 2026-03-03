@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -200,8 +199,8 @@ export function PeerLinks() {
               <Card key={peer.id} className="android-surface border-none shadow-md3-1 rounded-2xl bg-card group overflow-hidden">
                 <CardContent className="p-4 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center font-black text-primary border border-primary/10 shadow-inner">
-                      {peer.displayName.charAt(0)}
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-2xl border border-primary/10 shadow-inner">
+                      🎓
                     </div>
                     <div className="min-w-0">
                       <p className="font-black text-sm text-foreground truncate">{peer.displayName}</p>
@@ -241,8 +240,8 @@ export function PeerLinks() {
                 <CardContent className="p-5 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="relative">
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center font-black text-primary border border-primary/10 shadow-inner group-hover:bg-primary group-hover:text-white transition-all duration-500">
-                        {peer.displayName.charAt(0)}
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-2xl border border-primary/10 shadow-inner group-hover:bg-primary group-hover:text-white transition-all duration-500">
+                        🎓
                       </div>
                       <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-card rounded-full shadow-sm" />
                     </div>
@@ -270,8 +269,8 @@ export function PeerLinks() {
             {sentRequests.map(peer => (
               <div key={peer.id} className="flex items-center justify-between p-4 bg-muted/10 rounded-2xl border border-border/50">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center font-bold text-muted-foreground border">
-                    {peer.displayName.charAt(0)}
+                  <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center text-xl font-bold text-muted-foreground border">
+                    🎓
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-black truncate">{peer.displayName}</p>
@@ -289,8 +288,8 @@ export function PeerLinks() {
         <DialogContent className="max-w-md w-full h-[85vh] sm:h-[600px] rounded-[2.5rem] p-0 border-none shadow-2xl overflow-hidden outline-none z-[1300] flex flex-col bg-background">
           <DialogHeader className="p-6 border-b bg-card shrink-0 flex flex-row items-center justify-between space-y-0">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center font-black text-primary shadow-inner">
-                {activeChatPeer?.displayName.charAt(0)}
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-xl shadow-inner">
+                🎓
               </div>
               <div className="text-left">
                 <DialogTitle className="text-lg font-black tracking-tight text-foreground">{activeChatPeer?.displayName}</DialogTitle>

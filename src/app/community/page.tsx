@@ -326,17 +326,21 @@ export default function CommunityPage() {
                   ) : topTeachers.map((edu, idx) => {
                     const rankInfo = getRankData(edu.xp || 0);
                     return (
-                      <Card key={edu.id} className="android-surface border-none shadow-md3-1 rounded-[1.75rem] overflow-hidden group">
+                      <Card key={edu.id} className="android-surface border-none shadow-md3-1 rounded-1.75rem overflow-hidden group">
                         <CardContent className="p-5 flex items-center gap-5">
                           <div className={cn(
-                            "w-14 h-14 rounded-2xl flex items-center justify-center font-black text-white shadow-xl relative",
+                            "w-14 h-14 rounded-2xl flex items-center justify-center font-black text-white shadow-xl relative overflow-hidden",
                             idx === 0 ? "bg-gradient-to-br from-yellow-400 to-yellow-600" : 
                             idx === 1 ? "bg-gradient-to-br from-slate-300 to-slate-500" : 
                             idx === 2 ? "bg-gradient-to-br from-orange-400 to-orange-600" : 
                             "bg-primary/20 text-primary"
                           )}>
-                            {idx < 3 ? <Award className="w-7 h-7" /> : idx + 1}
-                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-card border-2 border-current rounded-full flex items-center justify-center text-[8px]">{rankInfo.rank}</div>
+                            {edu.photoURL ? (
+                              <img src={edu.photoURL} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-2xl select-none">🧐🎓</span>
+                            )}
+                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-card border-2 border-current rounded-full flex items-center justify-center text-[8px] text-foreground">{rankInfo.rank}</div>
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
@@ -390,8 +394,8 @@ export default function CommunityPage() {
                         <div className="absolute left-0 top-0 bottom-0 w-2 bg-primary/20 group-hover:bg-primary transition-colors duration-500" />
                         <CardContent className="p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-8">
                           <div className="flex items-center gap-6">
-                            <div className="w-16 h-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center font-black text-primary text-2xl shadow-inner group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500">
-                              {activity.displayName?.charAt(0) || 'T'}
+                            <div className="w-16 h-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center font-black text-primary text-2xl shadow-inner group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 overflow-hidden">
+                              <span className="text-3xl select-none">🧑‍🎓</span>
                             </div>
                             <div className="space-y-1.5">
                               <div className="flex items-center gap-4">

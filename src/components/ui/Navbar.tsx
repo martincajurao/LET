@@ -118,7 +118,7 @@ export function Navbar() {
                 <button className="flex items-center gap-2 p-0.5 rounded-full hover:bg-muted transition-all outline-none focus:ring-2 focus:ring-primary/20 relative">
                   <Avatar className="w-9 h-9 border-2 border-background shadow-md">
                     {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || "User"} />}
-                    <AvatarFallback className="text-xs font-black bg-primary/10 text-primary uppercase">{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                    <AvatarFallback className="text-xs font-black bg-primary/10 text-primary uppercase">🎓</AvatarFallback>
                   </Avatar>
                   {user.isPro && (<div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-0.5 shadow-sm border border-background"><Crown className="w-2.5 h-2.5 text-yellow-900" /></div>)}
                 </button>

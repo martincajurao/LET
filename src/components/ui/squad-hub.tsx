@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -340,7 +339,9 @@ export function SquadHub() {
                   return (
                     <motion.div key={member.id} whileHover={{ x: 4 }} className="android-surface p-4 rounded-2xl flex items-center justify-between bg-card border-border/50 group">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center font-black text-primary border border-primary/10 shadow-inner group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500">{member.displayName?.charAt(0) || 'T'}</div>
+                        <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center text-xl border border-primary/10 shadow-inner group-hover:bg-primary transition-all duration-500">
+                          🎓
+                        </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="font-black text-sm text-foreground truncate">{member.displayName || 'Teacher'}</p>
@@ -369,7 +370,10 @@ export function SquadHub() {
                 </div>
               </Card>
               <div className="p-6 bg-primary/5 rounded-[2.5rem] border-2 border-dashed border-primary/20 space-y-4">
-                <div className="flex items-center gap-3"><div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shadow-inner"><Info className="w-5 h-5 text-primary" /></div><h4 className="font-black text-sm uppercase tracking-tight">Guild Sovereignty</h4></div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shadow-inner"><Info className="w-5 h-5 text-primary" /></div>
+                  <h4 className="font-black text-sm uppercase tracking-tight">Guild Sovereignty</h4>
+                </div>
                 <p className="text-[11px] font-medium text-muted-foreground leading-relaxed">Guild Level multipliers provide passive XP buffs to all active members during professional simulations.</p>
                 <div className="pt-2 border-t border-primary/10 flex gap-4">
                   {isLeader ? (
