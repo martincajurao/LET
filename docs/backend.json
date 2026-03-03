@@ -62,6 +62,27 @@
         "explanation": { "type": "string" }
       },
       "required": ["id", "text", "options", "correctAnswer", "subject", "difficulty"]
+    },
+    "Friendship": {
+      "title": "Peer Link",
+      "description": "A connection between two teachers.",
+      "type": "object",
+      "properties": {
+        "userIds": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["pending", "accepted"] },
+        "createdAt": { "type": "number" },
+        "initiatorId": { "type": "string" }
+      }
+    },
+    "ChatMessage": {
+      "title": "Comm Message",
+      "description": "A message sent between peers.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "number" }
+      }
     }
   },
   "auth": {
@@ -79,6 +100,14 @@
     "/questions/{questionId}": {
       "schema": "Question",
       "description": "Global pool of practice questions."
+    },
+    "/friendships/{friendshipId}": {
+      "schema": "Friendship",
+      "description": "Peer-to-peer connection management."
+    },
+    "/friendships/{friendshipId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Conversation logs for a specific peer link."
     }
   }
 }

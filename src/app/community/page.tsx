@@ -1,8 +1,9 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, query, orderBy, limit, onSnapshot, where, doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
+import { collection, query, orderBy, limit, onSnapshot, where, doc, getDoc, setDoc, updateDoc, increment, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,10 @@ import {
   CheckCircle2,
   Sword,
   Target,
-  Activity
+  Activity,
+  UserPlus,
+  MessageSquare,
+  Link as LinkIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRankData } from '@/lib/xp-system';
@@ -36,6 +40,7 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { SquadHub } from '@/components/ui/squad-hub';
+import { PeerLinks } from '@/components/ui/peer-links';
 
 interface ActivityFeedItem {
   id: string;
@@ -54,6 +59,7 @@ export default function CommunityPage() {
   const [recentActivity, setRecentActivity] = useState<ActivityFeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [topTeachers, setTopTeachers] = useState<any[]>([]);
+  const [isSendingRequest, setIsSendingRequest] = useState<string | null>(null);
 
   // Fetch recent activity
   useEffect(() => {
@@ -78,6 +84,39 @@ export default function CommunityPage() {
     });
     return () => unsub();
   }, [firestore]);
+
+  const handleAddFriend = async (targetUserId: string, targetName: string) => {
+    if (!user || !firestore || isSendingRequest) return;
+    if (targetUserId === user.uid) {
+      toast({ variant: "destructive", title: "Logic Error", description: "You cannot link with yourself." });
+      return;
+    }
+
+    setIsSendingRequest(targetUserId);
+    try {
+      const friendshipId = [user.uid, targetUserId].sort().join('_');
+      const friendRef = doc(firestore, 'friendships', friendshipId);
+      const snap = await getDoc(friendRef);
+
+      if (snap.exists()) {
+        toast({ title: "Link Exists", description: "A peer link already exists or is pending with this teacher." });
+        return;
+      }
+
+      await setDoc(friendRef, {
+        userIds: [user.uid, targetUserId],
+        status: 'pending',
+        initiatorId: user.uid,
+        createdAt: Date.now()
+      });
+
+      toast({ variant: "reward", title: "Request Transmitted", description: `Link request sent to ${targetName}.` });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Link Failed", description: "Could not establish peer trace." });
+    } finally {
+      setIsSendingRequest(null);
+    }
+  };
 
   const filteredActivity = useMemo(() => {
     if (!searchQuery) return recentActivity;
@@ -110,9 +149,12 @@ export default function CommunityPage() {
         </header>
 
         <Tabs defaultValue="feed" className="space-y-8">
-          <TabsList className="bg-muted/30 p-1.5 rounded-[2rem] h-16 w-full max-w-md mx-auto grid grid-cols-2 border border-border/50">
+          <TabsList className="bg-muted/30 p-1.5 rounded-[2rem] h-16 w-full max-w-2xl mx-auto grid grid-cols-3 border border-border/50">
             <TabsTrigger value="feed" className="rounded-2xl font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:shadow-lg gap-2">
               <Activity className="w-4 h-4" /> Global Feed
+            </TabsTrigger>
+            <TabsTrigger value="peers" className="rounded-2xl font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:shadow-lg gap-2">
+              <LinkIcon className="w-4 h-4" /> Peer Links
             </TabsTrigger>
             <TabsTrigger value="squad" className="rounded-2xl font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:shadow-lg gap-2">
               <Users className="w-4 h-4" /> Study Squad
@@ -140,7 +182,16 @@ export default function CommunityPage() {
                             {idx < 3 ? <Award className="w-6 h-6" /> : idx + 1}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="font-black text-sm text-foreground truncate">{edu.displayName || 'Teacher'}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-black text-sm text-foreground truncate">{edu.displayName || 'Teacher'}</p>
+                              <button 
+                                onClick={() => handleAddFriend(edu.id, edu.displayName || 'Teacher')}
+                                disabled={isSendingRequest === edu.id || edu.id === user?.uid}
+                                className="text-primary hover:text-primary/80 disabled:opacity-30 transition-all p-1"
+                              >
+                                {isSendingRequest === edu.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{rankInfo.title}</p>
                           </div>
                           <div className="text-right">
@@ -193,7 +244,13 @@ export default function CommunityPage() {
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
                                 <p className="font-black text-lg text-foreground">{activity.displayName || 'Teacher'}</p>
-                                <Badge variant="outline" className="text-[8px] font-black uppercase border-primary/20 text-primary bg-primary/5">Verified Trace</Badge>
+                                <button 
+                                  onClick={() => handleAddFriend(activity.userId, activity.displayName || 'Teacher')}
+                                  disabled={isSendingRequest === activity.userId || activity.userId === user?.uid}
+                                  className="bg-primary/10 text-primary p-1.5 rounded-lg hover:bg-primary hover:text-white transition-all active:scale-90"
+                                >
+                                  {isSendingRequest === activity.userId ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                                </button>
                               </div>
                               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                                 <Star className="w-3 h-3" /> Resolved simulation • {formatDistanceToNow(activity.timestamp)} ago
@@ -219,6 +276,10 @@ export default function CommunityPage() {
                 )}
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="peers" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <PeerLinks />
           </TabsContent>
 
           <TabsContent value="squad" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
