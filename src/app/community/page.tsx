@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -28,7 +27,8 @@ import {
   Share2,
   CheckCircle2,
   Sword,
-  Target
+  Target,
+  Activity
 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRankData } from '@/lib/xp-system';
@@ -61,6 +61,9 @@ export default function CommunityPage() {
     const activityQuery = query(collection(firestore, "exam_results"), orderBy("timestamp", "desc"), limit(10));
     const unsub = onSnapshot(activityQuery, (snap) => {
       setRecentActivity(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityFeedItem)));
+      setLoading(false);
+    }, (error) => {
+      console.error("Activity feed sync failed:", error);
       setLoading(false);
     });
     return () => unsub();
