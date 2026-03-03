@@ -43,7 +43,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background font-body">
       <div className="max-w-7xl mx-auto px-4 pt-6 pb-24 space-y-8">
-        {/* Dashboard Header with Profile Photo */}
+        {/* Dashboard Header with Profile Photo - Scholar Identity Pattern */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-2">
           <div className="flex items-center gap-5">
             <Avatar className="w-16 h-16 border-4 border-card shadow-xl rounded-2xl">

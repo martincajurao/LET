@@ -104,17 +104,24 @@ export default function CommunityPage() {
   const fetchActivity = useCallback(async (isInitial = true) => {
     if (!firestore) return;
     
-    if (isInitial) setLoading(true);
-    else setLoadingMore(true);
+    if (isInitial) {
+      setLoading(true);
+      setHasMore(true);
+      setLastVisibleDoc(null);
+    } else {
+      setLoadingMore(true);
+    }
 
     try {
-      let activityQuery = query(
-        collection(firestore, "exam_results"), 
-        orderBy("timestamp", "desc"), 
-        limit(10)
-      );
-
-      if (!isInitial && lastVisibleDoc) {
+      let activityQuery;
+      
+      if (isInitial) {
+        activityQuery = query(
+          collection(firestore, "exam_results"), 
+          orderBy("timestamp", "desc"), 
+          limit(10)
+        );
+      } else if (lastVisibleDoc) {
         activityQuery = query(
           collection(firestore, "exam_results"),
           orderBy("timestamp", "desc"),
@@ -123,18 +130,20 @@ export default function CommunityPage() {
         );
       }
 
-      const snap = await getDocs(activityQuery);
-      
-      if (snap.empty) {
-        setHasMore(false);
-      } else {
-        const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityFeedItem));
-        setLastVisibleDoc(snap.docs[snap.docs.length - 1]);
+      if (activityQuery) {
+        const snap = await getDocs(activityQuery);
         
-        if (isInitial) setRecentActivity(items);
-        else setRecentActivity(prev => [...prev, ...items]);
-        
-        if (snap.docs.length < 10) setHasMore(false);
+        if (snap.empty) {
+          setHasMore(false);
+        } else {
+          const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityFeedItem));
+          setLastVisibleDoc(snap.docs[snap.docs.length - 1]);
+          
+          if (isInitial) setRecentActivity(items);
+          else setRecentActivity(prev => [...prev, ...items]);
+          
+          if (snap.docs.length < 10) setHasMore(false);
+        }
       }
     } catch (error) {
       console.error("Activity feed fetch failed:", error);
@@ -145,7 +154,7 @@ export default function CommunityPage() {
   }, [firestore, lastVisibleDoc]);
 
   useEffect(() => {
-    fetchActivity();
+    fetchActivity(true);
   }, [firestore]); // Run once on firestore ready
 
   // Fetch top teachers based on rank/xp from live data
