@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
@@ -8,32 +9,26 @@ import {
   Trophy, 
   Zap,
   Target,
-  Bell,
+  Users,
   Loader2,
   ShieldCheck,
   Compass
 } from 'lucide-react';
 import { PracticeModal } from './practice-modal';
-import { NotificationsModal } from './notifications-modal';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
-import { useToast } from '@/hooks/use-toast';
-import { XP_REWARDS, COOLDOWNS, DAILY_AD_LIMIT } from '@/lib/xp-system';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { COOLDOWNS, DAILY_AD_LIMIT } from '@/lib/xp-system';
 
 function NavContent() {
   const pathname = usePathname();
   const router = useRouter();
   const firestore = useFirestore();
-  const { user, refreshUser } = useUser();
-  const { toast } = useToast();
+  const { user } = useUser();
   
   const [isPracticeOpen, setIsPracticeOpen] = useState(false);
-  const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
-  const [watchingAd, setWatchingAd] = useState(false);
-  const [verifyingAd, setVerifyingAd] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [isImmersive, setIsImmersive] = useState(false);
 
@@ -68,14 +63,8 @@ function NavContent() {
     return () => unsub();
   }, [firestore]);
 
-  const { availableTasksCount, claimableTasksCount } = useMemo(() => {
-    if (!user) return { availableTasksCount: 0, claimableTasksCount: 0 };
-
-    const lastAd = Number(user.lastAdXpTimestamp) || 0;
-    const lastQf = Number(user.lastQuickFireTimestamp) || 0;
-    
-    const adAvailable = lastAd + COOLDOWNS.AD_XP <= currentTime && (user.dailyAdCount || 0) < DAILY_AD_LIMIT;
-    const qfAvailable = lastQf + COOLDOWNS.QUICK_FIRE <= currentTime;
+  const { claimableTasksCount } = useMemo(() => {
+    if (!user) return { claimableTasksCount: 0 };
     
     let claimable = 0;
     const userTier = user.userTier || 'Bronze';
@@ -86,11 +75,8 @@ function NavContent() {
     if ((user.dailyTestsFinished || 0) >= 1 && !user.taskMockClaimed) claimable++;
     if ((user.mistakesReviewed || 0) >= 10 && !user.taskMistakesClaimed) claimable++;
 
-    return {
-      availableTasksCount: (adAvailable ? 1 : 0) + (qfAvailable ? 1 : 0),
-      claimableTasksCount: claimable
-    };
-  }, [user, currentTime]);
+    return { claimableTasksCount: claimable };
+  }, [user]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -105,40 +91,7 @@ function NavContent() {
 
   const handleNavClick = (item: any) => {
     if (item.id === 'practice') { setIsPracticeOpen(true); return; }
-    if (item.id === 'notifications') { setIsAlertsOpen(true); return; }
     router.push(item.href);
-  };
-
-  const handleWatchAd = async () => {
-    if (!user || !firestore) return;
-    if ((user.dailyAdCount || 0) >= DAILY_AD_LIMIT) {
-      toast({ title: "Allowance Reached", description: "Daily professional limit reached.", variant: "destructive" });
-      return;
-    }
-    setWatchingAd(true);
-    setVerifyingAd(false);
-    setTimeout(async () => {
-      setVerifyingAd(true);
-      setTimeout(async () => {
-        try {
-          const userDocRef = doc(firestore, 'users', user.uid);
-          await updateDoc(userDocRef, { 
-            credits: increment(5), 
-            xp: increment(XP_REWARDS.AD_WATCH_XP), 
-            lastAdXpTimestamp: Date.now(), 
-            dailyAdCount: increment(1) 
-          });
-          await refreshUser();
-          toast({ variant: "reward", title: "Growth Boost!", description: `+${XP_REWARDS.AD_WATCH_XP} XP and +5 Credits added.` });
-          setIsAlertsOpen(false);
-        } catch (e) { 
-          toast({ variant: "destructive", title: "Sync Failed", description: "Could not grant reward." }); 
-        } finally { 
-          setWatchingAd(false); 
-          setVerifyingAd(false); 
-        }
-      }, 1500);
-    }, 3500);
   };
 
   const navItems = useMemo(() => [
@@ -158,20 +111,8 @@ function NavContent() {
     },
     { id: 'practice', label: 'Practice', icon: <Target className="w-6 h-6" />, href: '#' },
     { id: 'events', label: 'Arena', icon: <Trophy className="w-5 h-5" />, href: '/events' },
-    { 
-      id: 'notifications', 
-      label: 'Alerts', 
-      icon: (
-        <div className="relative">
-          <Bell className="w-5 h-5" />
-          {availableTasksCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-[9px] font-black rounded-full flex items-center justify-center border-2 border-card shadow-sm animate-bounce">{availableTasksCount}</span>
-          )}
-        </div>
-      ), 
-      href: '#' 
-    }
-  ], [claimableTasksCount, availableTasksCount]);
+    { id: 'community', label: 'Network', icon: <Users className="w-5 h-5" />, href: '/community' }
+  ], [claimableTasksCount]);
 
   if (isImmersive) return null;
 
@@ -180,7 +121,7 @@ function NavContent() {
       <div className={cn("md:hidden fixed bottom-0 left-0 right-0 z-[60] pb-safe bg-card/95 backdrop-blur-2xl border-t border-border/40 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] transition-all duration-500 ease-in-out transform", isVisible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0")}>
         <div className="flex items-center justify-between px-2 h-16 w-full">
           {user ? navItems.map((item) => {
-            const active = pathname === item.href || (item.id === 'notifications' && isAlertsOpen);
+            const active = pathname === item.href;
             const isCenter = item.id === 'practice';
             if (isCenter) return (
               <button key={item.id} onClick={() => handleNavClick(item)} className="relative -top-4 active:scale-90 transition-transform duration-200 px-2">
@@ -198,10 +139,7 @@ function NavContent() {
         </div>
       </div>
       {user && (
-        <>
-          <PracticeModal isOpen={isPracticeOpen} onClose={() => setIsPracticeOpen(false)} onStartExam={(cat) => router.push(`/?start=${cat}`)} limits={limits} />
-          <NotificationsModal isOpen={isAlertsOpen} onClose={() => !watchingAd && setIsAlertsOpen(false)} onStartQuickFire={() => router.push('/?start=quickfire')} onWatchAd={handleWatchAd} isWatchingAd={watchingAd} isVerifyingAd={verifyingAd} />
-        </>
+        <PracticeModal isOpen={isPracticeOpen} onClose={() => setIsPracticeOpen(false)} onStartExam={(cat) => router.push(`/?start=${cat}`)} limits={limits} />
       )}
     </>
   );

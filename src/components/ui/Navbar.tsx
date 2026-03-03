@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -22,7 +23,8 @@ import {
   Sparkles,
   ShieldAlert,
   Smartphone,
-  Compass
+  Compass,
+  Users
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -122,6 +124,7 @@ export function Navbar() {
       ), 
       href: '/tasks' 
     },
+    { label: 'Network', icon: <Users className="w-4 h-4" />, href: '/community' },
     { label: 'Global Arena', icon: <Trophy className="w-4 h-4" />, href: '/events' },
     { 
       label: 'Notifications',
