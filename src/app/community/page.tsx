@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -42,7 +43,10 @@ import {
   MapPin,
   Filter,
   Building2,
-  Map as MapIcon
+  Map as MapIcon,
+  Crown,
+  Medal,
+  Timer
 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRankData } from '@/lib/xp-system';
@@ -61,6 +65,7 @@ interface ActivityFeedItem {
   subject?: string;
   locationRegion?: string;
   locationCity?: string;
+  timeSpent?: number;
 }
 
 type FilterLevel = 'global' | 'region' | 'city';
@@ -73,8 +78,9 @@ export default function CommunityPage() {
   const [recentActivity, setRecentActivity] = useState<ActivityFeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [topTeachers, setTopTeachers] = useState<any[]>([]);
+  const [worldRecords, setWorldRecords] = useState<ActivityFeedItem[]>([]);
+  const [loadingRecords, setLoadingRecords] = useState(true);
   const [isSendingRequest, setIsSendingRequest] = useState<string | null>(null);
-  const [isInvitingSquad, setIsInvitingSquad] = useState<string | null>(null);
   
   // Location Filter Level
   const [filterLevel, setFilterLevel] = useState<FilterLevel>('global');
@@ -111,6 +117,45 @@ export default function CommunityPage() {
     return () => unsub();
   }, [firestore]);
 
+  // Fetch World Records (Top 1 in categories)
+  useEffect(() => {
+    if (!firestore) return;
+    setLoadingRecords(true);
+    
+    const categories = ['all', 'General Education', 'Professional Education', 'Specialization'];
+    const records: ActivityFeedItem[] = [];
+    let completedCount = 0;
+
+    categories.forEach(cat => {
+      const recordQuery = query(
+        collection(firestore, "exam_results"),
+        where("subject", "==", cat === 'all' ? 'all' : cat), // Note: subject storage depends on how it's saved
+        orderBy("overallScore", "desc"),
+        orderBy("timestamp", "asc"), // Use oldest record if scores are tied for true "Record" status
+        limit(1)
+      );
+
+      // Fallback: If no category matches 'subject' specifically (older records), search overall
+      const unsub = onSnapshot(recordQuery, (snap) => {
+        if (!snap.empty) {
+          const data = { id: snap.docs[0].id, ...snap.docs[0].data() } as ActivityFeedItem;
+          // Avoid duplicates if multiple queries return same doc
+          if (!records.find(r => r.id === data.id)) {
+            records.push(data);
+          }
+        }
+        completedCount++;
+        if (completedCount === categories.length) {
+          setWorldRecords([...records].sort((a, b) => b.overallScore - a.overallScore));
+          setLoadingRecords(false);
+        }
+      }, (err) => {
+        completedCount++;
+        if (completedCount === categories.length) setLoadingRecords(false);
+      });
+    });
+  }, [firestore]);
+
   // Fetch top teachers based on filter level
   useEffect(() => {
     if (!firestore) return;
@@ -142,7 +187,6 @@ export default function CommunityPage() {
       setTopTeachers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     }, (err) => {
       console.warn("Location query failed (likely index missing):", err);
-      // Fallback to global if local filter fails
       setFilterLevel('global');
     });
     return () => unsub();
@@ -248,6 +292,13 @@ export default function CommunityPage() {
     );
   };
 
+  const formatTime = (seconds?: number) => {
+    if (!seconds) return '--:--';
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}m ${s}s`;
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8 pb-32 font-body">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -262,16 +313,7 @@ export default function CommunityPage() {
             <div className="flex flex-wrap items-center gap-2 text-muted-foreground font-bold uppercase tracking-widest text-[10px] ml-1">
               <span>Connect with Aspiring Filipino Teachers</span>
               {user?.locationCity && (
-                <>
-                  <div className="w-1 h-1 bg-muted-foreground/30 rounded-full" />
-                  <span className="text-primary flex items-center gap-1"><Building2 className="w-3 h-3" /> {user.locationCity}</span>
-                </>
-              )}
-              {user?.locationRegion && (
-                <>
-                  <div className="w-1 h-1 bg-muted-foreground/30 rounded-full" />
-                  <span className="text-primary flex items-center gap-1"><MapPin className="w-3 h-3" /> {user.locationRegion}</span>
-                </>
+                <span className="text-primary flex items-center gap-1"><Building2 className="w-3 h-3" /> {user.locationCity}</span>
               )}
             </div>
           </div>
@@ -283,40 +325,38 @@ export default function CommunityPage() {
                 placeholder="Search teachers..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-14 pl-11 rounded-2xl border-2 bg-card shadow-sm focus:border-primary transition-all font-bold"
+                className="h-14 pl-11 rounded-2xl border-2 bg-card shadow-sm font-bold"
               />
             </div>
             <Button 
               onClick={cycleFilter} 
               variant={filterLevel !== 'global' ? "default" : "outline"}
-              className={cn(
-                "h-14 px-4 rounded-2xl border-2 shrink-0 flex items-center gap-2 transition-all active:scale-95",
-                filterLevel === 'city' ? "bg-emerald-600 hover:bg-emerald-700 border-emerald-500 shadow-emerald-500/20" : 
-                filterLevel === 'region' ? "bg-primary text-primary-foreground border-primary shadow-primary/20" : ""
-              )}
+              className="h-14 px-4 rounded-2xl border-2 shrink-0 flex items-center gap-2 active:scale-95 transition-all"
             >
               {filterLevel === 'global' ? <Globe className="w-5 h-5" /> : 
                filterLevel === 'region' ? <MapIcon className="w-5 h-5" /> : 
                <Building2 className="w-5 h-5" />}
-              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">
-                {filterLevel === 'global' ? "Global" : filterLevel === 'region' ? "Region" : "City"}
-              </span>
             </Button>
           </div>
         </header>
 
         <Tabs defaultValue="feed" className="space-y-8">
-          <TabsList className="bg-muted/30 p-1.5 rounded-[2rem] h-16 w-full max-w-2xl mx-auto grid grid-cols-3 border border-border/50">
-            <TabsTrigger value="feed" className="rounded-2xl font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:shadow-lg gap-2">
-              <Activity className="w-4 h-4" /> Global Feed
-            </TabsTrigger>
-            <TabsTrigger value="peers" className="rounded-2xl font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:shadow-lg gap-2">
-              <LinkIcon className="w-4 h-4" /> Peer Links
-            </TabsTrigger>
-            <TabsTrigger value="squad" className="rounded-2xl font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:shadow-lg gap-2">
-              <Users className="w-4 h-4" /> Study Squad
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto no-scrollbar -mx-4 px-4">
+            <TabsList className="bg-muted/30 p-1.5 rounded-[2rem] h-16 min-w-[500px] grid grid-cols-4 border border-border/50">
+              <TabsTrigger value="feed" className="rounded-2xl font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:shadow-lg gap-2">
+                <Activity className="w-4 h-4" /> Global Feed
+              </TabsTrigger>
+              <TabsTrigger value="records" className="rounded-2xl font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:shadow-lg gap-2">
+                <Crown className="w-4 h-4 text-yellow-500" /> Hall of Fame
+              </TabsTrigger>
+              <TabsTrigger value="peers" className="rounded-2xl font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:shadow-lg gap-2">
+                <LinkIcon className="w-4 h-4" /> Peer Links
+              </TabsTrigger>
+              <TabsTrigger value="squad" className="rounded-2xl font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:shadow-lg gap-2">
+                <Users className="w-4 h-4" /> Study Squad
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="feed" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -326,15 +366,8 @@ export default function CommunityPage() {
                     <Trophy className="w-4 h-4 text-yellow-500" />
                     Elite Vanguard
                   </h3>
-                  <Badge variant="outline" className={cn(
-                    "text-[8px] font-black uppercase border-none px-3",
-                    filterLevel === 'city' ? "bg-emerald-500/10 text-emerald-600" :
-                    filterLevel === 'region' ? "bg-primary/10 text-primary" :
-                    "bg-muted/20 text-muted-foreground"
-                  )}>
-                    {filterLevel === 'city' ? `Local: ${user?.locationCity}` : 
-                     filterLevel === 'region' ? `Regional: ${user?.locationRegion}` : 
-                     "Global"}
+                  <Badge variant="outline" className="text-[8px] font-black uppercase border-none px-3 bg-muted/20 text-muted-foreground">
+                    {filterLevel === 'city' ? `City: ${user?.locationCity}` : filterLevel === 'region' ? `Region: ${user?.locationRegion}` : "Global"}
                   </Badge>
                 </div>
                 <div className="space-y-3">
@@ -356,15 +389,7 @@ export default function CommunityPage() {
                                 {renderFriendButton(edu)}
                               </div>
                             </div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{rankInfo.title}</p>
-                              {edu.locationCity && (
-                                <>
-                                  <div className="w-0.5 h-0.5 bg-muted-foreground rounded-full" />
-                                  <span className="text-[8px] font-black text-emerald-600 uppercase flex items-center gap-0.5"><Building2 className="w-2 h-2" /> {edu.locationCity}</span>
-                                </>
-                              )}
-                            </div>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{rankInfo.title}</p>
                           </div>
                           <div className="text-right">
                             <p className="text-xs font-black text-primary">Rank {rankInfo.rank}</p>
@@ -386,33 +411,21 @@ export default function CommunityPage() {
                     <Compass className="w-4 h-4 text-primary" />
                     Live Trace
                   </h3>
-                  <div className="flex items-center gap-3">
-                    {filterLevel === 'city' && user?.locationCity && (
-                      <Badge className="bg-emerald-500/10 text-emerald-600 border-none text-[8px] uppercase gap-1">
-                        <Building2 className="w-2.5 h-2.5" /> {user.locationCity}
-                      </Badge>
-                    )}
-                    {filterLevel === 'region' && user?.locationRegion && (
-                      <Badge className="bg-primary/10 text-primary border-none text-[8px] uppercase gap-1">
-                        <MapPin className="w-2.5 h-2.5" /> {user.locationRegion}
-                      </Badge>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                      <span className="text-[10px] font-black uppercase text-emerald-600 tracking-widest">Live</span>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                    <span className="text-[10px] font-black uppercase text-emerald-600 tracking-widest">Live Activity</span>
                   </div>
                 </div>
 
                 {loading ? (
                   <div className="flex flex-col items-center justify-center py-32 bg-card rounded-[3rem] border-2 border-dashed border-border/50">
                     <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Calibrating Network...</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Syncing Network...</p>
                   </div>
                 ) : filteredActivity.length === 0 ? (
                   <div className="text-center py-24 bg-card rounded-[3rem] border shadow-inner">
                     <Globe className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
-                    <p className="text-muted-foreground font-bold text-sm">No activity detected {filterLevel === 'city' ? `in ${user?.locationCity}` : filterLevel === 'region' ? `in ${user?.locationRegion}` : ""}.</p>
+                    <p className="text-muted-foreground font-bold text-sm">No activity detected here.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-4">
@@ -440,11 +453,6 @@ export default function CommunityPage() {
                                     <Building2 className="w-2.5 h-2.5 mr-1" /> {activity.locationCity}
                                   </Badge>
                                 )}
-                                {activity.locationRegion && !activity.locationCity && (
-                                  <Badge variant="outline" className="h-5 px-2 bg-muted/20 border-border/50 text-[8px] font-black uppercase text-muted-foreground">
-                                    <MapPin className="w-2.5 h-2.5 mr-1" /> {activity.locationRegion}
-                                  </Badge>
-                                )}
                               </div>
                             </div>
                           </div>
@@ -465,6 +473,79 @@ export default function CommunityPage() {
                   </div>
                 )}
               </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="records" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-8">
+              <div className="text-center space-y-3">
+                <div className="w-20 h-20 bg-yellow-500/10 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-xl border-4 border-yellow-500/20">
+                  <Crown className="w-10 h-10 text-yellow-600 animate-victory" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-black tracking-tighter">Global Intelligence Records</h2>
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-60">Guinness-Standard Pedagogical Vault</p>
+                </div>
+              </div>
+
+              {loadingRecords ? (
+                <div className="flex flex-col items-center justify-center py-24 bg-card rounded-[3rem] border-2 border-dashed border-border/50">
+                  <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Decrypting World Records...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {worldRecords.length === 0 ? (
+                    <div className="col-span-full py-24 text-center">
+                      <ShieldCheck className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
+                      <p className="text-muted-foreground font-bold">No world records established yet.</p>
+                    </div>
+                  ) : (
+                    worldRecords.map((record, idx) => (
+                      <Card key={record.id} className="android-surface border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-yellow-500/10 via-card to-card border-2 border-yellow-500/20 overflow-hidden group">
+                        <CardContent className="p-8 relative">
+                          <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:rotate-12 transition-transform duration-700">
+                            <Medal className="w-24 h-24 text-yellow-600" />
+                          </div>
+                          
+                          <div className="flex items-start justify-between mb-8 relative z-10">
+                            <div className="space-y-1">
+                              <Badge className="bg-yellow-500 text-yellow-900 font-black text-[8px] uppercase tracking-widest rounded-lg px-3 mb-2 border-none">World Record</Badge>
+                              <h3 className="text-2xl font-black tracking-tighter leading-none">{record.subject === 'all' ? 'The Perfect Simulation' : record.subject}</h3>
+                              <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Absolute Global Peak</p>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-4xl font-black text-yellow-600 tracking-tighter">{record.overallScore}%</div>
+                              <span className="text-[8px] font-black uppercase text-muted-foreground opacity-40">Precision</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-5 p-5 bg-card rounded-[2rem] border-2 border-yellow-500/10 shadow-sm relative z-10">
+                            <div className="w-14 h-14 bg-yellow-500/20 rounded-2xl flex items-center justify-center font-black text-yellow-700 text-xl shadow-inner">
+                              {record.displayName?.charAt(0) || 'T'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-black text-lg text-foreground truncate">{record.displayName}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <Badge variant="outline" className="h-5 px-2 bg-emerald-500/5 border-emerald-500/20 text-[8px] font-black uppercase text-emerald-600">
+                                  <Building2 className="w-2.5 h-2.5 mr-1" /> {record.locationCity || 'International'}
+                                </Badge>
+                                <div className="flex items-center gap-1 text-[8px] font-black text-muted-foreground opacity-60 uppercase">
+                                  <Timer className="w-2.5 h-2.5" />
+                                  {formatTime(record.timeSpent)}
+                                </div>
+                              </div>
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-yellow-500/10 hover:text-yellow-600">
+                              <ChevronRight className="w-5 h-5" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           </TabsContent>
 
