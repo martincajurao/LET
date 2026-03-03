@@ -632,7 +632,7 @@ function LetsPrepContent() {
                 {isUnlockingEarly ? <Loader2 className="w-5 h-5 animate-spin" /> : <Unlock className="w-4 h-4" />} 
                 {isUnlockingEarly ? "UNLOCKING..." : `Unlock Early (${lockedTrackInfo?.cost}c)`}
               </button>
-              <Button variant="ghost" onClick={() => setLockedTrackInfo(null)} className="w-full h-12 rounded-xl font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Return to Ground</Button>
+              <Button variant="ghost" onClick={setLockedTrackInfo.bind(null, null)} className="w-full h-12 rounded-xl font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Return to Ground</Button>
             </div>
           </div>
         </DialogContent>
