@@ -37,7 +37,8 @@ import {
   UserPlus,
   UserMinus,
   LogOut,
-  Trash2
+  Trash2,
+  Crown
 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
@@ -142,7 +143,6 @@ export function SquadHub() {
       const squadsRef = collection(firestore, 'squads');
       const q = query(squadsRef, where('inviteCode', '==', joinCode.toUpperCase()));
       
-      // We use onSnapshot for a single-time query get here by unsubscribing immediately
       const unsub = onSnapshot(q, async (s) => {
         unsub();
         if (s.empty) {

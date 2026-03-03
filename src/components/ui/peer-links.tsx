@@ -236,7 +236,7 @@ export function PeerLinks() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {acceptedPeers.map(peer => (
-              <Card key={peer.id} className="android-surface border-none shadow-md3-1 rounded-2xl bg-card hover:shadow-xl transition-all group cursor-pointer" onClick={() => setActiveChatChatPeer(peer)}>
+              <Card key={peer.id} className="android-surface border-none shadow-md3-1 rounded-2xl bg-card hover:shadow-xl group cursor-pointer" onClick={() => setActiveChatChatPeer(peer)}>
                 <CardContent className="p-5 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="relative">

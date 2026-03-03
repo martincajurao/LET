@@ -38,7 +38,8 @@ import {
   Clock,
   Building2,
   Map as MapIcon,
-  Award
+  Award,
+  Crown
 } from "lucide-react";
 import { motion } from 'framer-motion';
 import { getRankData } from '@/lib/xp-system';
@@ -338,7 +339,7 @@ export default function CommunityPage() {
                             {edu.photoURL ? (
                               <img src={edu.photoURL} alt="" className="w-full h-full object-cover" />
                             ) : (
-                              <span className="text-2xl select-none">🧐🎓</span>
+                              <span className="text-2xl select-none">🎓</span>
                             )}
                             <div className="absolute -top-1 -right-1 w-5 h-5 bg-card border-2 border-current rounded-full flex items-center justify-center text-[8px] text-foreground">{rankInfo.rank}</div>
                           </div>
@@ -347,6 +348,7 @@ export default function CommunityPage() {
                               <p className="font-black text-base text-foreground truncate">{edu.displayName || 'Teacher'}</p>
                               <div className="flex gap-1">
                                 {renderFriendButton(edu)}
+                                {edu.isPro && <Crown className="w-3.5 h-3.5 text-yellow-500 fill-current animate-sparkle" />}
                               </div>
                             </div>
                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider opacity-60">{rankInfo.title}</p>
@@ -395,7 +397,7 @@ export default function CommunityPage() {
                         <CardContent className="p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-8">
                           <div className="flex items-center gap-6">
                             <div className="w-16 h-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center font-black text-primary text-2xl shadow-inner group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 overflow-hidden">
-                              <span className="text-3xl select-none">🧑‍🎓</span>
+                              <span className="text-3xl select-none">🎓</span>
                             </div>
                             <div className="space-y-1.5">
                               <div className="flex items-center gap-4">
