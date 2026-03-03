@@ -144,9 +144,6 @@ export default function AdminDashboard() {
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [manageUser, setManageUser] = useState<any | null>(null);
   const [isUpdatingUser, setIsUpdatingUser] = useState(false);
-  const [isResettingTasks, setIsResettingTasks] = useState(false);
-  const [isDeletingUser, setIsDeletingUser] = useState(false);
-  const [isResettingGlobal, setIsResettingGlobal] = useState(false);
   const [editUserForm, setEditUserForm] = useState({
     displayName: "",
     majorship: "",
@@ -187,12 +184,6 @@ export default function AdminDashboard() {
         setConfigNote(data.note || "");
       }
 
-      const insightRef = doc(firestore, "system_configs", "daily_insight");
-      const insightDoc = await getDoc(insightRef);
-      if (insightDoc.exists()) {
-        setDailyInsight(insightDoc.data());
-      }
-
       const versionRef = doc(firestore, "app_config", "version");
       const versionDoc = await getDoc(versionRef);
       if (versionDoc.exists()) {
@@ -228,30 +219,6 @@ export default function AdminDashboard() {
 
   useEffect(() => { if (firestore) { fetchData(); fetchUsers(); } }, [firestore]);
 
-  const handleRegenerateQotd = async () => {
-    if (!firestore) return;
-    setIsRegeneratingQotd(true);
-    try {
-      const freshQuestion = await generateDailyQuestion();
-      const today = new Date().toISOString().split('T')[0];
-      const qotdData = {
-        ...freshQuestion,
-        dateGenerated: today,
-        timestamp: Date.now()
-      };
-      
-      const docRef = doc(firestore, 'system_configs', 'daily_insight');
-      await setDoc(docRef, qotdData);
-      setDailyInsight(qotdData);
-      
-      toast({ title: "Insight Regenerated", description: "Fresh content deployed." });
-    } catch (e) {
-      toast({ variant: "destructive", title: "Regeneration Failed", description: "AI engine could not commit fresh insight." });
-    } finally {
-      setIsRegeneratingQotd(false);
-    }
-  };
-
   const filteredUsers = useMemo(() => users.filter(u => 
     (u.email?.toLowerCase() || "").includes(userSearchQuery.toLowerCase()) || 
     (u.displayName?.toLowerCase() || "").includes(userSearchQuery.toLowerCase())
@@ -278,21 +245,6 @@ export default function AdminDashboard() {
           operation: 'write'
         }));
       });
-  };
-
-  const handleSaveVersion = async () => {
-    if (!firestore) return;
-    setSavingVersion(true);
-    const versionRef = doc(firestore, "app_config", "version");
-    
-    setDoc(versionRef, {
-      ...versionInfo,
-      updatedAt: serverTimestamp()
-    })
-    .then(() => {
-      toast({ title: "Version Updated", description: "Self-update path updated." });
-    })
-    .finally(() => setSavingVersion(false));
   };
 
   const handleOpenUserManagement = (user: any) => {
@@ -331,36 +283,6 @@ export default function AdminDashboard() {
       .finally(() => {
         setIsUpdatingUser(false);
       });
-  };
-
-  const handleGlobalReset = async () => {
-    if (!firestore || users.length === 0) return;
-    setIsResettingGlobal(true);
-    
-    try {
-      const batch = writeBatch(firestore);
-      users.forEach(u => {
-        const uRef = doc(firestore, 'users', u.id);
-        batch.update(uRef, {
-          dailyQuestionsAnswered: 0,
-          dailyTestsFinished: 0,
-          dailyAiUsage: 0,
-          dailyCreditEarned: 0,
-          dailyAdCount: 0,
-          taskLoginClaimed: false,
-          taskQuestionsClaimed: false,
-          taskMockClaimed: false,
-          taskMistakesClaimed: false,
-          mistakesReviewed: 0,
-          lastTaskReset: serverTimestamp()
-        });
-      });
-      await batch.commit();
-      toast({ title: "Global Reset Success", description: `Purged daily progress for ${users.length} teachers.` });
-      fetchUsers();
-    } finally {
-      setIsResettingGlobal(false);
-    }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><EducationalLoader message="Syncing Dashboard..." /></div>;
@@ -495,7 +417,7 @@ export default function AdminDashboard() {
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                   <p className="text-sm font-black truncate max-w-[140px]">{user.displayName || 'Anonymous Teacher'}</p>
-                                  {user.isPro && <ShieldCheck className="w-3.5 h-3.5 text-yellow-500 fill-current" />}
+                                  {user.isPro && <ShieldCheck className="w-3.5 h-3.5 text-yellow-500" />}
                                   {user.isBlocked && <Ban className="w-3.5 h-3.5 text-destructive shrink-0" />}
                                 </div>
                                 <p className="text-[10px] font-bold text-muted-foreground truncate max-w-[180px] opacity-60 uppercase tracking-tight">{user.email || 'Internal Auth Trace'}</p>
@@ -601,7 +523,7 @@ export default function AdminDashboard() {
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">Academic Track</label>
                 <Select value={editingQuestion?.subject || ""} onValueChange={(val) => setEditingQuestion({...editingQuestion, subject: val})}>
-                  <SelectTrigger className="rounded-2xl h-14 font-black border-2 shadow-inner"><SelectValue placeholder="Select Track" /></SelectValue></SelectTrigger>
+                  <SelectTrigger className="rounded-2xl h-14 font-black border-2 shadow-inner"><SelectValue placeholder="Select Track" /></SelectTrigger>
                   <SelectContent className="rounded-2xl p-2">{SUBJECTS.map(s => <SelectItem key={s} value={s} className="font-bold py-3 rounded-xl">{s}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
@@ -623,7 +545,7 @@ export default function AdminDashboard() {
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <DialogTitle className="text-3xl font-black tracking-tighter">{editUserForm.displayName || 'Teacher Profile'}</DialogTitle>
                 <div className="flex justify-center gap-2">
-                  {editUserForm.isPro && <Badge className="bg-yellow-500 text-yellow-900 font-black px-3 py-1 rounded-xl border-none text-[9px] shadow-lg animate-sparkle">PLATINUM</Badge>}
+                  {editUserForm.isPro && <Badge className="bg-yellow-500 text-yellow-900 font-black px-3 py-1 rounded-xl border-none text-[9px] shadow-lg">PLATINUM</Badge>}
                   {editUserForm.isBlocked && <Badge className="bg-rose-500 text-white font-black px-3 py-1 rounded-xl border-none text-[9px] shadow-lg">BLOCKED</Badge>}
                 </div>
               </div>

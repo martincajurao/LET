@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -16,7 +17,8 @@ import {
   ChevronRight, 
   Loader2,
   Sparkles,
-  MapPin
+  MapPin,
+  ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -100,8 +102,8 @@ export default function EventsPage() {
           </Link>
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="font-black text-[9px] uppercase tracking-widest bg-emerald-500/5 text-emerald-600 border-emerald-500/20 px-3 h-7">Arena Status: Operational</Badge>
-            <div className="w-10 h-10 bg-yellow-500/10 rounded-xl flex items-center justify-center shadow-inner">
-              <Trophy className="w-5 h-5 text-yellow-600" />
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shadow-inner">
+              <ShieldCheck className="w-5 h-5 text-primary" />
             </div>
           </div>
         </div>
@@ -174,7 +176,7 @@ export default function EventsPage() {
 
                         <div className="flex items-center gap-5 p-5 bg-card rounded-[2.25rem] border-2 border-yellow-500/10 shadow-sm relative z-10 transition-all hover:bg-muted/5">
                           <div className="w-14 h-14 bg-yellow-500/20 rounded-2xl flex items-center justify-center font-black text-yellow-700 text-xl shadow-inner group-hover:scale-110 transition-transform">
-                            {record.displayName?.charAt(0) || 'T'}
+                            {record.displayName?.charAt(0) || '🎓'}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-black text-lg text-foreground truncate">{record.displayName}</p>

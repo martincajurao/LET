@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -18,7 +19,8 @@ import {
   Sparkles,
   Smartphone,
   Compass,
-  Users
+  Users,
+  ShieldCheck
 } from 'lucide-react';
 import { 
   DropdownMenu, 
