@@ -116,3 +116,70 @@ export function isTrackUnlocked(rank: number, track: string, unlockedTracks: str
   if (track === 'all') return rank >= UNLOCK_RANKS.FULL_SIMULATION;
   return true;
 }
+
+/**
+ * RANK-BASED QUESTION LIMITS CONFIGURATION
+ * Allows dynamic question limits based on user rank.
+ * Full LET: 150 questions per category, 450 total for full simulation.
+ */
+export const QUESTION_LIMITS_BY_RANK: Record<number, { limitGenEd: number; limitProfEd: number; limitSpec: number; total: number }> = {
+  // Rank 1-2: Novice
+  1: { limitGenEd: 10, limitProfEd: 10, limitSpec: 10, total: 30 },
+  // Rank 3-4: Junior Intern
+  3: { limitGenEd: 25, limitProfEd: 25, limitSpec: 25, total: 75 },
+  // Rank 5-6: Aspiring Professional
+  5: { limitGenEd: 50, limitProfEd: 50, limitSpec: 50, total: 150 },
+  // Rank 7-8: Qualified Educator
+  7: { limitGenEd: 75, limitProfEd: 75, limitSpec: 75, total: 225 },
+  // Rank 9: Subject Specialist
+  9: { limitGenEd: 100, limitProfEd: 100, limitSpec: 100, total: 300 },
+  // Rank 10+: Master Candidate (Full LET)
+  10: { limitGenEd: 150, limitProfEd: 150, limitSpec: 150, total: 450 },
+};
+
+/**
+ * Get question limits based on user rank
+ * @param rank - User's current rank
+ * @param customLimits - Optional custom limits from Firestore config
+ * @returns Question limits for each category
+ */
+export function getQuestionLimitsByRank(
+  rank: number, 
+  customLimits?: { genEd?: number; profEd?: number; spec?: number }
+): { limitGenEd: number; limitProfEd: number; limitSpec: number; total: number } {
+  // Use custom limits from Firestore if provided
+  if (customLimits) {
+    const limitGenEd = customLimits.genEd || 10;
+    const limitProfEd = customLimits.profEd || 10;
+    const limitSpec = customLimits.spec || 10;
+    return {
+      limitGenEd,
+      limitProfEd,
+      limitSpec,
+      total: limitGenEd + limitProfEd + limitSpec
+    };
+  }
+
+  // Find the appropriate tier based on rank
+  const tiers = [10, 9, 7, 5, 3, 1];
+  for (const tier of tiers) {
+    if (rank >= tier) {
+      return QUESTION_LIMITS_BY_RANK[tier];
+    }
+  }
+  
+  // Default to rank 1 limits
+  return QUESTION_LIMITS_BY_RANK[1];
+}
+
+/**
+ * Get the rank tier name for display
+ */
+export function getRankTierName(rank: number): string {
+  if (rank >= 10) return "Master Candidate (Full LET)";
+  if (rank >= 9) return "Subject Specialist";
+  if (rank >= 7) return "Qualified Educator";
+  if (rank >= 5) return "Aspiring Professional";
+  if (rank >= 3) return "Junior Intern";
+  return "Novice Candidate";
+}

@@ -56,14 +56,14 @@ import { QuickFireResults } from "@/components/exam/QuickFireResults";
 import { ResultUnlockDialog } from "@/components/exam/ResultUnlockDialog";
 import { Question } from "@/app/lib/mock-data";
 import { useUser, useFirestore } from "@/firebase";
-import { collection, addDoc, doc, onSnapshot, updateDoc, increment, serverTimestamp, query, where, limit, arrayUnion } from "firebase/firestore";
+import { collection, addDoc, doc, getDoc, onSnapshot, updateDoc, increment, serverTimestamp, query, where, limit, arrayUnion } from "firebase/firestore";
 import { fetchQuestionsFromFirestore } from "@/lib/db-seed";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, DAILY_AD_LIMIT, MIN_QUICK_FIRE_TIME, getCareerRankTitle } from '@/lib/xp-system';
+import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, DAILY_AD_LIMIT, MIN_QUICK_FIRE_TIME, getCareerRankTitle, getQuestionLimitsByRank, QUESTION_LIMITS_BY_RANK } from '@/lib/xp-system';
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
@@ -164,7 +164,46 @@ function LetsPrepContent() {
   const [feedbackText, setFeedbackText] = useState("");
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
+  // Define rankData BEFORE using it in useEffect
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
+
+  // Fetch system config from Firestore and apply rank-based limits
+  useEffect(() => {
+    const fetchSystemConfig = async () => {
+      if (!firestore) return;
+      try {
+        const configRef = doc(firestore, "system_configs", "global");
+        const configDoc = await getDoc(configRef);
+        if (configDoc.exists()) {
+          const data = configDoc.data();
+          setTimePerQuestion(data.timePerQuestion || 60);
+          
+          // Get user's rank-based limits
+          const currentRank = rankData?.rank || 1;
+          const customRankLimits = data.rankLimits;
+          
+          // Use getQuestionLimitsByRank to calculate limits based on rank
+          const rankBasedLimits = getQuestionLimitsByRank(currentRank, customRankLimits);
+          setLimits({
+            limitGenEd: rankBasedLimits.limitGenEd,
+            limitProfEd: rankBasedLimits.limitProfEd,
+            limitSpec: rankBasedLimits.limitSpec
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch system config:", error);
+        // Use default rank-based limits
+        const defaultLimits = getQuestionLimitsByRank(1);
+        setLimits({
+          limitGenEd: defaultLimits.limitGenEd,
+          limitProfEd: defaultLimits.limitProfEd,
+          limitSpec: defaultLimits.limitSpec
+        });
+      }
+    };
+    
+    fetchSystemConfig();
+  }, [firestore, rankData?.rank]);
 
   const getTrackConfig = (category: string, major: string) => {
     switch (category) {

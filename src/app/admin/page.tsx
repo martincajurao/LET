@@ -105,6 +105,8 @@ import { getRankData } from '@/lib/xp-system';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { motion } from "framer-motion";
+import { RankTierInput } from '@/components/ui/rank-tier-config';
+import { QUESTION_LIMITS_BY_RANK } from '@/lib/xp-system';
 
 export default function AdminDashboard() {
   const firestore = useFirestore();
@@ -125,6 +127,9 @@ export default function AdminDashboard() {
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
   const [configNote, setConfigNote] = useState("");
   const [savingSettings, setSavingSettings] = useState(false);
+  
+  // Rank-based question limits
+  const [rankLimits, setRankLimits] = useState<Record<number, { genEd: number; profEd: number; spec: number }>>({});
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Partial<Question> | null>(null);
