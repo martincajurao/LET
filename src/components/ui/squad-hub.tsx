@@ -3,14 +3,24 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, query, where, onSnapshot, doc, getDoc, setDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
+import { 
+  collection, 
+  query, 
+  where, 
+  onSnapshot, 
+  doc, 
+  setDoc, 
+  updateDoc, 
+  increment, 
+  writeBatch,
+  getDoc
+} from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
   Users, 
-  Trophy, 
   Zap, 
   Loader2, 
   ShieldCheck,
@@ -24,7 +34,11 @@ import {
   Sparkles,
   Flame,
   X,
-  Info
+  Info,
+  UserPlus,
+  UserMinus,
+  LogOut,
+  Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
@@ -43,7 +57,7 @@ interface Squad {
 }
 
 export function SquadHub() {
-  const { user, refreshUser, updateProfile } = useUser();
+  const { user, refreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   
@@ -52,8 +66,11 @@ export function SquadHub() {
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState<string | null>(null);
   const [newSquadName, setNewSquadName] = useState("");
   const [joinCode, setJoinCode] = useState("");
+
+  const isLeader = useMemo(() => user?.uid === squad?.creatorId, [user?.uid, squad?.creatorId]);
 
   useEffect(() => {
     if (!user?.squadId || !firestore) {
@@ -69,6 +86,9 @@ export function SquadHub() {
       } else {
         setSquad(null);
       }
+      setLoading(false);
+    }, (err) => {
+      console.error("Squad sync error:", err);
       setLoading(false);
     });
 
@@ -100,8 +120,11 @@ export function SquadHub() {
         createdAt: Date.now()
       };
 
-      await setDoc(doc(firestore, 'squads', squadId), squadData);
-      await updateDoc(doc(firestore, 'users', user.uid), { squadId });
+      const batch = writeBatch(firestore);
+      batch.set(doc(firestore, 'squads', squadId), squadData);
+      batch.update(doc(firestore, 'users', user.uid), { squadId });
+      
+      await batch.commit();
       await refreshUser();
       toast({ variant: "reward", title: "Guild Founded!", description: `${newSquadName} is now active in the network.` });
     } catch (e) {
@@ -117,16 +140,34 @@ export function SquadHub() {
     try {
       const squadsRef = collection(firestore, 'squads');
       const q = query(squadsRef, where('inviteCode', '==', joinCode.toUpperCase()));
-      const snap = await onSnapshot(q, async (snapshot) => {
+      
+      // Real-time snapshot not ideal for one-time join, but using it for consistency with current patterns
+      const unsub = onSnapshot(q, async (snapshot) => {
+        unsub(); // Clean up immediately
         if (snapshot.empty) {
           toast({ variant: "destructive", title: "Trace Not Found", description: "Invalid recruitment code." });
           setIsJoining(false);
           return;
         }
+        
         const squadDoc = snapshot.docs[0];
         const squadId = squadDoc.id;
-        await updateDoc(doc(firestore, 'squads', squadId), { memberCount: increment(1), totalXp: increment(user.xp || 0) });
-        await updateDoc(doc(firestore, 'users', user.uid), { squadId });
+        const squadData = squadDoc.data();
+
+        if (squadData.memberCount >= 10) {
+          toast({ variant: "destructive", title: "Guild Full", description: "This squad has reached the maximum roster limit." });
+          setIsJoining(false);
+          return;
+        }
+
+        const batch = writeBatch(firestore);
+        batch.update(doc(firestore, 'squads', squadId), { 
+          memberCount: increment(1), 
+          totalXp: increment(user.xp || 0) 
+        });
+        batch.update(doc(firestore, 'users', user.uid), { squadId });
+        
+        await batch.commit();
         await refreshUser();
         toast({ variant: "reward", title: "Guild Joined!", description: "You have been recruited to the squad." });
         setIsJoining(false);
@@ -134,6 +175,86 @@ export function SquadHub() {
     } catch (e) {
       toast({ variant: "destructive", title: "Recruitment Failed", description: "Could not verify invite code." });
       setIsJoining(false);
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string, memberName: string) => {
+    if (!squad || !firestore || !isLeader || isActionLoading) return;
+    setIsActionLoading(memberId);
+    try {
+      const batch = writeBatch(firestore);
+      batch.update(doc(firestore, 'users', memberId), { squadId: null });
+      batch.update(doc(firestore, 'squads', squad.id), { memberCount: increment(-1) });
+      
+      await batch.commit();
+      toast({ title: "Member Removed", description: `${memberName} has been purged from the roster.` });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Action Failed", description: "Could not update guild roster." });
+    } finally {
+      setIsActionLoading(null);
+    }
+  };
+
+  const handleLeaveSquad = async () => {
+    if (!user || !squad || !firestore || isActionLoading) return;
+    setIsActionLoading('leaving');
+    try {
+      const batch = writeBatch(firestore);
+      batch.update(doc(firestore, 'users', user.uid), { squadId: null });
+      batch.update(doc(firestore, 'squads', squad.id), { memberCount: increment(-1) });
+      
+      await batch.commit();
+      await refreshUser();
+      toast({ title: "Exited Guild", description: "You have abandoned your current squad trace." });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Exit Failed", description: "Could not sync leave request." });
+    } finally {
+      setIsActionLoading(null);
+    }
+  };
+
+  const handleDisbandSquad = async () => {
+    if (!squad || !firestore || !isLeader || isActionLoading) return;
+    setIsActionLoading('disbanding');
+    try {
+      const batch = writeBatch(firestore);
+      
+      // Update all members currently in the roster
+      members.forEach(m => {
+        batch.update(doc(firestore, 'users', m.id), { squadId: null });
+      });
+      
+      // Note: We don't delete the squad doc immediately to preserve historical stats if needed, 
+      // but we effectively "close" it by removing everyone.
+      batch.update(doc(firestore, 'squads', squad.id), { memberCount: 0, isActive: false });
+      
+      await batch.commit();
+      await refreshUser();
+      toast({ title: "Guild Disbanded", description: "The squad has been formally dissolved." });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Disband Failed", description: "Could not dissolve guild." });
+    } finally {
+      setIsActionLoading(null);
+    }
+  };
+
+  const handleShareInvite = async () => {
+    if (!squad) return;
+    const inviteText = `Join my professional Study Squad on LET's Prep! Recruitment Key: ${squad.inviteCode}`;
+    
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Study Squad: ${squad.name}`,
+          text: inviteText,
+          url: window.location.origin + '/community?tab=squad'
+        });
+      } else {
+        await navigator.clipboard.writeText(squad.inviteCode);
+        toast({ title: "Key Copied", description: "Recruitment key saved to clipboard." });
+      }
+    } catch (e) {
+      console.log('Share failed', e);
     }
   };
 
@@ -206,7 +327,7 @@ export function SquadHub() {
     );
   }
 
-  const squadLevelProgress = (squad.totalXp % 10000) / 10;
+  const squadLevelProgress = (squad.totalXp % 10000) / 100; // Simplified leveling visualization
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -223,7 +344,12 @@ export function SquadHub() {
               <h2 className="text-4xl font-black tracking-tighter text-foreground leading-none">{squad.name}</h2>
               <div className="flex items-center gap-3">
                 <Badge variant="outline" className="bg-card border-border font-black text-[9px] uppercase tracking-widest px-3 py-1">Guild ID: {squad.inviteCode}</Badge>
-                <button onClick={() => { navigator.clipboard.writeText(squad.inviteCode); toast({ title: "Code Copied", description: "Invite your squad-mates!" }); }} className="text-primary hover:text-primary/80 transition-colors p-1"><Share2 className="w-4 h-4" /></button>
+                <button 
+                  onClick={handleShareInvite}
+                  className="text-primary hover:text-primary/80 transition-colors p-1"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
@@ -246,12 +372,24 @@ export function SquadHub() {
                   <Sword className="w-4 h-4 text-primary" />
                   Active Roster ({members.length}/10)
                 </h3>
-                <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[8px] uppercase">Synced</Badge>
+                {isLeader && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleShareInvite}
+                    className="rounded-xl font-black text-[9px] uppercase tracking-widest h-8 gap-2"
+                  >
+                    <UserPlus className="w-3 h-3" /> Recruit
+                  </Button>
+                )}
               </div>
               
               <div className="grid grid-cols-1 gap-3">
                 {members.map((member) => {
                   const mRank = getRankData(member.xp || 0);
+                  const isSelf = member.id === user?.uid;
+                  const isMemberLeader = member.id === squad.creatorId;
+                  
                   return (
                     <motion.div key={member.id} whileHover={{ x: 4 }} className="android-surface p-4 rounded-2xl flex items-center justify-between bg-card border-border/50 group">
                       <div className="flex items-center gap-4">
@@ -261,23 +399,39 @@ export function SquadHub() {
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="font-black text-sm text-foreground truncate">{member.displayName || 'Teacher'}</p>
-                            {member.uid === squad.creatorId && <Badge className="bg-yellow-500/10 text-yellow-700 border-none text-[7px] font-black uppercase rounded-sm px-1.5 h-4">Leader</Badge>}
+                            {isMemberLeader && <Badge className="bg-yellow-500/10 text-yellow-700 border-none text-[7px] font-black uppercase rounded-sm px-1.5 h-4">Leader</Badge>}
+                            {isSelf && <Badge variant="outline" className="text-[7px] font-black uppercase h-4 px-1.5 border-primary/20 text-primary">You</Badge>}
                           </div>
                           <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate">{mRank.title} • Rank {mRank.rank}</p>
                         </div>
                       </div>
+                      
                       <div className="flex items-center gap-4">
-                        <div className="text-right">
+                        <div className="text-right hidden sm:block">
                           <div className="flex items-center justify-end gap-1 text-orange-500">
                             <Flame className="w-3 h-3 fill-current" />
                             <span className="text-[10px] font-black">{member.streakCount || 0}</span>
                           </div>
-                          <p className="text-[7px] font-black uppercase text-muted-foreground opacity-40">Saga Streak</p>
+                          <p className="text-[7px] font-black uppercase text-muted-foreground opacity-40">Streak</p>
                         </div>
+                        
                         <div className="h-8 w-[1px] bg-border mx-1" />
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 shadow-sm">
-                          <CheckCircle2 className="w-4 h-4" />
-                        </div>
+                        
+                        {isLeader && !isMemberLeader ? (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            disabled={isActionLoading === member.id}
+                            onClick={() => handleRemoveMember(member.id, member.displayName)}
+                            className="w-10 h-10 rounded-xl text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 transition-all active:scale-90"
+                          >
+                            {isActionLoading === member.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserMinus className="w-5 h-5" />}
+                          </Button>
+                        ) : (
+                          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 shadow-sm">
+                            <CheckCircle2 className="w-4 h-4" />
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   );
@@ -324,10 +478,26 @@ export function SquadHub() {
                 <p className="text-[11px] font-medium text-muted-foreground leading-relaxed">
                   Squad XP is calculated as the sum of all members' professional traces. Guild Level multipliers provide passive XP buffs to all active members during simulations.
                 </p>
-                <div className="pt-2 border-t border-primary/10">
-                  <button onClick={async () => { if (!user || !firestore) return; await updateDoc(doc(firestore, 'users', user.uid), { squadId: null }); await refreshUser(); toast({ title: "Exited Guild", description: "You have abandoned your current squad." }); }} className="text-[9px] font-black uppercase tracking-[0.3em] text-rose-500 hover:text-rose-600 transition-colors flex items-center gap-2">
-                    <X className="w-3 h-3" /> Abandon Trace
-                  </button>
+                <div className="pt-2 border-t border-primary/10 flex gap-4">
+                  {isLeader ? (
+                    <button 
+                      onClick={handleDisbandSquad} 
+                      disabled={isActionLoading === 'disbanding'}
+                      className="text-[9px] font-black uppercase tracking-[0.3em] text-rose-500 hover:text-rose-600 transition-colors flex items-center gap-2"
+                    >
+                      {isActionLoading === 'disbanding' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />} 
+                      Disband Guild
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={handleLeaveSquad} 
+                      disabled={isActionLoading === 'leaving'}
+                      className="text-[9px] font-black uppercase tracking-[0.3em] text-rose-500 hover:text-rose-600 transition-colors flex items-center gap-2"
+                    >
+                      {isActionLoading === 'leaving' ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogOut className="w-3 h-3" />} 
+                      Abandon Trace
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
