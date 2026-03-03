@@ -29,6 +29,14 @@ export const XP_REWARDS = {
   CONFIDENT_WRONG_PENALTY: -10, // High risk for overconfidence
 };
 
+export const REFERRAL_REWARDS = {
+  REFERRER_CREDITS: 15, // Credits for the person who invited
+  REFEREE_CREDITS: 5,   // Credits for the new person signing up
+  MILESTONE_5: 50,      // Bonus credits at 5 referrals
+  MILESTONE_10: 150,    // Bonus credits at 10 referrals
+  MILESTONE_25: 500,    // Bonus credits at 25 referrals
+};
+
 export const COOLDOWNS = {
   AD_XP: 30 * 60 * 1000, // 30 minutes
   QUICK_FIRE: 60 * 60 * 1000 // 1 hour
