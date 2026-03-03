@@ -9,15 +9,15 @@ import {
   where, 
   onSnapshot, 
   doc, 
-  setDoc, 
   updateDoc, 
   deleteDoc,
   getDoc,
   orderBy,
   limit,
-  addDoc
+  addDoc,
+  serverTimestamp
 } from 'firebase/firestore';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,17 +25,11 @@ import {
   Users, 
   MessageSquare, 
   UserPlus, 
-  UserCheck, 
-  UserX, 
   Loader2, 
   Send, 
   ShieldCheck,
-  Search,
   ChevronRight,
-  MoreVertical,
-  ArrowLeft,
   X,
-  Clock,
   Link as LinkIcon
 } from "lucide-react";
 import { 
@@ -43,7 +37,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogClose
 } from '@/components/ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -80,7 +73,6 @@ export function PeerLinks() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -146,7 +138,10 @@ export function PeerLinks() {
   const handleAcceptLink = async (peer: Peer) => {
     if (!firestore) return;
     try {
-      await updateDoc(doc(firestore, 'friendships', peer.friendshipId), { status: 'accepted' });
+      await updateDoc(doc(firestore, 'friendships', peer.friendshipId), { 
+        status: 'accepted',
+        lastUpdated: serverTimestamp() 
+      });
       toast({ variant: "reward", title: "Link Synchronized", description: `You are now linked with ${peer.displayName}.` });
     } catch (e) {
       toast({ variant: "destructive", title: "Sync Failed", description: "Could not accept peer link." });
@@ -171,6 +166,10 @@ export function PeerLinks() {
         senderId: user.uid,
         text: newMessage,
         timestamp: Date.now()
+      });
+      // Update last activity on friendship doc
+      await updateDoc(doc(firestore, 'friendships', activeChatPeer.friendshipId), {
+        lastUpdated: serverTimestamp()
       });
       setNewMessage("");
     } catch (e) {
@@ -252,8 +251,8 @@ export function PeerLinks() {
         {acceptedPeers.length === 0 ? (
           <Card className="p-12 text-center border-2 border-dashed border-border/50 rounded-[2.5rem] bg-muted/5">
             <LinkIcon className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
-            <h4 className="text-lg font-black mb-1">No Active Links</h4>
-            <p className="text-xs text-muted-foreground font-medium max-w-xs mx-auto mb-6">Link with peers in the Global Feed to start collaborative traces.</p>
+            <h4 className="text-lg font-black mb-1 text-foreground">No Active Links</h4>
+            <p className="text-xs text-muted-foreground font-medium max-w-xs mx-auto mb-6 leading-relaxed">Link with peers in the Global Feed to start collaborative traces and tactical comms.</p>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -285,16 +284,39 @@ export function PeerLinks() {
         )}
       </div>
 
-      {/* Sent Requests Placeholder */}
+      {/* Sent Requests Section */}
       {sentRequests.length > 0 && (
         <div className="pt-4 border-t border-border/50">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground opacity-40 px-2">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground opacity-40 px-2 mb-4">
             Pending Transmission Trace ({sentRequests.length})
           </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {sentRequests.map(peer => (
+              <div key={peer.id} className="flex items-center justify-between p-4 bg-muted/10 rounded-2xl border border-border/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center font-bold text-muted-foreground border">
+                    {peer.displayName.charAt(0)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-black truncate">{peer.displayName}</p>
+                    <p className="text-[8px] font-bold text-muted-foreground uppercase">Waiting for verification...</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleRejectLink(peer)} 
+                  className="h-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 text-[8px] font-black uppercase"
+                >
+                  Cancel
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Chat Dialog - Full Screen Mobile Logic */}
+      {/* Tactical Chat Dialog */}
       <Dialog open={!!activeChatPeer} onOpenChange={() => setActiveChatChatPeer(null)}>
         <DialogContent className="max-w-md w-full h-[85vh] sm:h-[600px] rounded-[2.5rem] p-0 border-none shadow-2xl overflow-hidden outline-none z-[1300] flex flex-col bg-background">
           <DialogHeader className="p-6 border-b bg-card shrink-0 flex flex-row items-center justify-between space-y-0">
@@ -303,7 +325,7 @@ export function PeerLinks() {
                 {activeChatPeer?.displayName.charAt(0)}
               </div>
               <div className="text-left">
-                <DialogTitle className="text-lg font-black tracking-tight">{activeChatPeer?.displayName}</DialogTitle>
+                <DialogTitle className="text-lg font-black tracking-tight text-foreground">{activeChatPeer?.displayName}</DialogTitle>
                 <div className="flex items-center gap-1.5">
                   <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
                   <span className="text-[8px] font-black uppercase text-emerald-600 tracking-widest">Active Comm-Link</span>
@@ -369,7 +391,7 @@ export function PeerLinks() {
                 size="icon"
                 className="h-12 w-12 rounded-xl shadow-lg bg-primary shrink-0 active:scale-90 transition-all"
               >
-                {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 text-primary-foreground fill-current" />}
               </Button>
             </div>
           </div>
