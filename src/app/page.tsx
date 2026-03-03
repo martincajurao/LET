@@ -83,6 +83,8 @@ const GoogleIcon = () => (
   </svg>
 );
 
+type AppState = 'dashboard' | 'exam' | 'quickfire_quiz' | 'results' | 'quickfire_results' | 'onboarding';
+
 const GITHUB_APK_URL = "https://github.com/martincajurao/LET/releases/download/V2.1.0/let.apk";
 
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -321,7 +323,36 @@ function LetsPrepContent() {
     } finally {
       setIsCalibrating(false);
       if (isQuickFireMode) setState('quickfire_results');
-      else { setState('results'); if (user && !user.isPro) { setIsResultsUnlocked(false); setExamStatsForUnlock({ questionsCount: currentQuestions.length, correctAnswers: correctCount, timeSpent: timeSpent }); setShowResultUnlock(true); } else setIsResultsUnlocked(true); }
+      else { 
+        setState('results'); 
+        if (user && !user.isPro) { 
+          setIsResultsUnlocked(false); 
+          setExamStatsForUnlock({ questionsCount: currentQuestions.length, correctAnswers: correctCount, timeSpent: timeSpent }); 
+          setShowResultUnlock(true); 
+        } else {
+          setIsResultsUnlocked(true); 
+        }
+      }
+    }
+  };
+
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackText.trim() || !firestore || !user) return;
+    setIsSubmittingFeedback(true);
+    try {
+      await addDoc(collection(firestore, 'feedback'), {
+        userId: user.uid,
+        userName: user.displayName,
+        text: feedbackText,
+        timestamp: serverTimestamp()
+      });
+      toast({ variant: "reward", title: "Trace Recorded!", description: "Your pedagogical insight has been added to our vault." });
+      setFeedbackText("");
+      setShowFeedbackModal(false);
+    } catch (e) {
+      toast({ variant: "destructive", title: "Sync Failed", description: "Could not record feedback trace." });
+    } finally {
+      setIsSubmittingFeedback(false);
     }
   };
 
@@ -573,7 +604,59 @@ function LetsPrepContent() {
       </Dialog>
 
       <ResultUnlockDialog open={showResultUnlock} onClose={() => { if (isResultsUnlocked) setShowResultUnlock(false); }} onUnlock={() => { setIsResultsUnlocked(true); setShowResultUnlock(false); }} questionsCount={examStatsForUnlock.questionsCount} correctAnswers={examStatsForUnlock.correctAnswers} timeSpent={examStatsForUnlock.timeSpent} />
-      <Dialog open={!!lockedTrackInfo} onOpenChange={(open) => !open && setLockedTrackInfo(null)}><DialogContent className="rounded-[3rem] bg-card border-none shadow-2xl p-0 max-w-[380px] overflow-hidden outline-none z-[5100]"><div className="bg-primary/10 p-12 flex flex-col items-center justify-center relative overflow-hidden"><motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-24 h-24 bg-card rounded-[2.5rem] flex items-center justify-center shadow-2xl relative z-10 border-2 border-primary/20">{lockedTrackInfo?.icon}<div className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary rounded-full flex items-center justify-center border-4 border-card shadow-lg"><Lock className="w-4 h-4 text-primary-foreground" /></div></motion.div><motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 4, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent z-0" /></div><div className="p-8 text-center space-y-8"><div className="space-y-2"><span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-1">Sector Restricted</span><DialogTitle className="text-3xl font-black tracking-tighter text-foreground">{lockedTrackInfo?.name}</DialogTitle><DialogDescription className="text-muted-foreground font-medium text-sm leading-relaxed px-2">This sector requires <span className="text-foreground font-black">Rank {lockedTrackInfo?.reqRank}</span> ({getCareerRankTitle(lockedTrackInfo?.reqRank)}). Complete other exams to ascend.</DialogDescription></div><div className="grid gap-3"><button onClick={async () => { if (!user || isUnlockingEarly) return; const cost = lockedTrackInfo.cost; if ((user.credits || 0) < cost) { toast({ variant: "destructive", title: "Vault Restricted", description: `Requires ${cost} AI Credits.` }); return; } setIsUnlockingEarly(true); try { await updateProfile({ credits: increment(-cost), unlockedTracks: arrayUnion(lockedTrackInfo.id) as any }); await refreshUser(); toast({ variant: "reward", title: "Sector Unlocked!", description: `${lockedTrackInfo.name} is now accessible.` }); setLockedTrackInfo(null); } finally { setIsUnlockingEarly(false); } }} disabled={isUnlockingEarly} className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 shadow-xl bg-primary text-primary-foreground active:scale-95 transition-all flex items-center justify-center">{isUnlockingEarly ? <Loader2 className="w-5 h-5 animate-spin" /> : <Unlock className="w-5 h-5" />} {isUnlockingEarly ? "UNLOCKING..." : `Unlock Early (${lockedTrackInfo?.cost}c)`}</button><Button variant="ghost" onClick={() => setLockedTrackInfo(null)} className="w-full h-12 rounded-xl font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Return to Ground</Button></div></div></DialogContent></Dialog>
+      
+      <Dialog open={!!lockedTrackInfo} onOpenChange={(open) => !open && setLockedTrackInfo(null)}>
+        <DialogContent className="rounded-[3rem] bg-card border-none shadow-2xl p-0 max-w-[380px] overflow-hidden outline-none">
+          <div className="bg-primary/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-24 h-24 bg-card rounded-[2.5rem] flex items-center justify-center shadow-2xl relative z-10 border-2 border-primary/20">
+              {lockedTrackInfo?.icon}
+              <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary rounded-full flex items-center justify-center border-4 border-card shadow-lg">
+                <Lock className="w-4 h-4 text-primary-foreground" />
+              </div>
+            </motion.div>
+            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 4, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent z-0" />
+          </div>
+          <div className="p-8 text-center space-y-8">
+            <div className="space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-1">Sector Restricted</span>
+              <DialogTitle className="text-3xl font-black tracking-tighter text-foreground">{lockedTrackInfo?.name}</DialogTitle>
+              <DialogDescription className="text-muted-foreground font-medium text-sm leading-relaxed px-2">
+                This sector requires <span className="text-foreground font-black">Rank {lockedTrackInfo?.reqRank}</span> ({getCareerRankTitle(lockedTrackInfo?.reqRank)}). Complete other exams to ascend.
+              </DialogDescription>
+            </div>
+            <div className="grid gap-3">
+              <button 
+                onClick={async () => { 
+                  if (!user || isUnlockingEarly) return; 
+                  const cost = lockedTrackInfo.cost; 
+                  if ((user.credits || 0) < cost) { 
+                    toast({ variant: "destructive", title: "Vault Restricted", description: `Requires ${cost} AI Credits.` }); 
+                    return; 
+                  } 
+                  setIsUnlockingEarly(true); 
+                  try { 
+                    await updateProfile({ 
+                      credits: increment(-cost), 
+                      unlockedTracks: arrayUnion(lockedTrackInfo.id) as any 
+                    }); 
+                    await refreshUser(); 
+                    toast({ variant: "reward", title: "Sector Unlocked!", description: `${lockedTrackInfo.name} is now accessible.` }); 
+                    setLockedTrackInfo(null); 
+                  } finally { 
+                    setIsUnlockingEarly(false); 
+                  } 
+                }} 
+                disabled={isUnlockingEarly} 
+                className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-widest gap-3 shadow-xl bg-primary text-primary-foreground active:scale-95 transition-all flex items-center justify-center"
+              >
+                {isUnlockingEarly ? <Loader2 className="w-5 h-5 animate-spin" /> : <Unlock className="w-5 h-5" />} 
+                {isUnlockingEarly ? "UNLOCKING..." : `Unlock Early (${lockedTrackInfo?.cost}c)`}
+              </button>
+              <Button variant="ghost" onClick={() => setLockedTrackInfo(null)} className="w-full h-12 rounded-xl font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Return to Ground</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }
