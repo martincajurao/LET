@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -11,6 +12,7 @@
         "xp": { "type": "integer", "default": 0 },
         "level": { "type": "integer", "default": 1 },
         "isPro": { "type": "boolean", "default": false },
+        "squadId": { "type": "string" },
         "dailyAdCount": { "type": "integer", "default": 0 },
         "lastAdXpTimestamp": { "type": "number" },
         "lastQuickFireTimestamp": { "type": "number" },
@@ -28,6 +30,23 @@
         "referralTier": { "type": "string", "enum": ["Bronze", "Silver", "Gold", "Platinum"], "default": "Bronze" }
       }
     },
+    "StudySquad": {
+      "title": "Study Squad",
+      "description": "A guild of teachers studying together for collective rewards.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "inviteCode": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "memberCount": { "type": "integer", "default": 1 },
+        "totalXp": { "type": "integer", "default": 0 },
+        "level": { "type": "integer", "default": 1 },
+        "createdAt": { "type": "number" },
+        "description": { "type": "string" }
+      },
+      "required": ["id", "name", "inviteCode", "creatorId"]
+    },
     "Question": {
       "title": "Practice Question",
       "description": "A question used in the LET practice tests.",
@@ -43,21 +62,6 @@
         "explanation": { "type": "string" }
       },
       "required": ["id", "text", "options", "correctAnswer", "subject", "difficulty"]
-    },
-    "ExamResult": {
-      "title": "Exam Result",
-      "description": "The result of a completed practice test session.",
-      "type": "object",
-      "properties": {
-        "userId": { "type": "string" },
-        "displayName": { "type": "string" },
-        "timestamp": { "type": "number" },
-        "overallScore": { "type": "number" },
-        "timeSpent": { "type": "number" },
-        "xpEarned": { "type": "number" },
-        "results": { "type": "array" }
-      },
-      "required": ["userId", "timestamp", "overallScore", "timeSpent"]
     }
   },
   "auth": {
@@ -68,17 +72,13 @@
       "schema": "UserProfile",
       "description": "User specific profile settings and gamification stats."
     },
+    "/squads/{squadId}": {
+      "schema": "StudySquad",
+      "description": "Guild data for collaborative studying."
+    },
     "/questions/{questionId}": {
       "schema": "Question",
       "description": "Global pool of practice questions."
-    },
-    "/exam_results/{resultId}": {
-      "schema": "ExamResult",
-      "description": "Historical performance data."
-    },
-    "/system_configs/daily_insight": {
-      "schema": "Question",
-      "description": "Shared AI-generated question of the day."
     }
   }
 }

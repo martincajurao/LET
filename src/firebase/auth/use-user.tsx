@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, createContext, useContext, ReactNode, useRef } from 'react';
@@ -30,6 +31,7 @@ export interface UserProfile {
   level?: number;
   lastRewardedRank?: number;
   isPro?: boolean;
+  squadId?: string | null;
   dailyAdCount?: number;
   lastAdXpTimestamp?: number;
   lastQuickFireTimestamp?: number;
@@ -158,7 +160,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser) {
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
         
-        // Initial fetch to ensure data is present for the UI immediately
         try {
           const snap = await getDoc(userDocRef);
           if (!snap.exists()) {
@@ -171,7 +172,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error('[Auth] Initial profile fetch error:', e);
         }
 
-        // Set up real-time listener for ongoing updates
         unsubFromProfile = onSnapshot(userDocRef, (profileSnap) => {
           if (profileSnap.exists()) {
             const scrubbed = scrubUserData(profileSnap.data(), userRef.current);
@@ -229,7 +229,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     lastActiveDate: Date.now(),
     lastTaskReset: Date.now(),
     unlockedTracks: ['General Education', 'Professional Education', 'Specialization', 'all'],
-    referralCode: 'TESTER'
+    referralCode: 'TESTER',
+    squadId: null
   });
 
   const createUserProfileInFirestore = async (firebaseUser: any) => {
@@ -251,7 +252,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       lastActiveDate: Date.now(),
       lastTaskReset: Date.now(),
       referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
-      unlockedTracks: ['General Education']
+      unlockedTracks: ['General Education'],
+      squadId: null
     };
     
     try {
@@ -269,12 +271,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!auth || !firestore) return;
       const userCred = await signInAnonymously(auth);
       if (userCred.user) {
-        // Manual immediate sync for WebView stability
         await refreshUser();
       }
       toast({ variant: "reward", title: "Test Session Active", description: "Authenticated via Firebase trace." });
     } catch (e: any) {
-      console.warn('Bypassing to Virtual Persistent Trace:', e.message);
       const virtualUid = localStorage.getItem('virtual_educator_uid') || `bypass_${Math.random().toString(36).substring(2, 9)}`;
       localStorage.setItem('virtual_educator_uid', virtualUid);
       await handleVirtualSession(virtualUid);
@@ -305,7 +305,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (firebaseUser) {
-        // Direct sync: Manually fetch and update state to bypass WebView observer delay
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
         const snap = await getDoc(userDocRef);
         if (!snap.exists()) {
@@ -319,9 +318,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       toast({ title: "Welcome back!", description: "Teacher session synchronized." });
     } catch (error: any) {
-      console.error('Google Sign-In Error:', error);
       if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
-        toast({ variant: "destructive", title: "Sign-In Failed", description: error.message || "Could not authenticate with Google." });
+        toast({ variant: "destructive", title: "Sign-In Failed", description: error.message || "Could not authenticate." });
       }
     } finally {
       setLoading(false);
@@ -366,7 +364,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try { 
       await updateDoc(userDocRef, data); 
     } catch (e) { 
-      // Optimistic update fallback
       setUser(prev => prev ? { ...prev, ...data } : null);
     }
   };
