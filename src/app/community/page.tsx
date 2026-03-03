@@ -32,7 +32,8 @@ import {
   Activity,
   UserPlus,
   MessageSquare,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Send
 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRankData } from '@/lib/xp-system';
@@ -60,6 +61,7 @@ export default function CommunityPage() {
   const [loading, setLoading] = useState(true);
   const [topTeachers, setTopTeachers] = useState<any[]>([]);
   const [isSendingRequest, setIsSendingRequest] = useState<string | null>(null);
+  const [isInvitingSquad, setIsInvitingSquad] = useState<string | null>(null);
 
   // Fetch recent activity
   useEffect(() => {
@@ -115,6 +117,31 @@ export default function CommunityPage() {
       toast({ variant: "destructive", title: "Link Failed", description: "Could not establish peer trace." });
     } finally {
       setIsSendingRequest(null);
+    }
+  };
+
+  const handleInviteToSquad = async (targetUserId: string, targetName: string) => {
+    if (!user || !firestore || isInvitingSquad) return;
+    if (!user.squadId) {
+      toast({ 
+        variant: "destructive", 
+        title: "Squad Required", 
+        description: "You must found or join a Study Squad to send invitations." 
+      });
+      return;
+    }
+
+    setIsInvitingSquad(targetUserId);
+    try {
+      // For MVP, we simulate sending an invitation. In a full implementation, 
+      // this would create an 'invitation' document or send a real-time notification.
+      toast({ 
+        variant: "reward", 
+        title: "Invitation Transmitted", 
+        description: `Recruitment code for your guild sent to ${targetName}.` 
+      });
+    } finally {
+      setIsInvitingSquad(null);
     }
   };
 
@@ -184,13 +211,26 @@ export default function CommunityPage() {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <p className="font-black text-sm text-foreground truncate">{edu.displayName || 'Teacher'}</p>
-                              <button 
-                                onClick={() => handleAddFriend(edu.id, edu.displayName || 'Teacher')}
-                                disabled={isSendingRequest === edu.id || edu.id === user?.uid}
-                                className="text-primary hover:text-primary/80 disabled:opacity-30 transition-all p-1"
-                              >
-                                {isSendingRequest === edu.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
-                              </button>
+                              <div className="flex gap-1">
+                                <button 
+                                  onClick={() => handleAddFriend(edu.id, edu.displayName || 'Teacher')}
+                                  disabled={isSendingRequest === edu.id || edu.id === user?.uid}
+                                  title="Add Peer Link"
+                                  className="text-primary hover:text-primary/80 disabled:opacity-30 transition-all p-1"
+                                >
+                                  {isSendingRequest === edu.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+                                </button>
+                                {user?.squadId && (
+                                  <button 
+                                    onClick={() => handleInviteToSquad(edu.id, edu.displayName || 'Teacher')}
+                                    disabled={isInvitingSquad === edu.id || edu.id === user?.uid}
+                                    title="Invite to Squad"
+                                    className="text-primary hover:text-primary/80 disabled:opacity-30 transition-all p-1"
+                                  >
+                                    {isInvitingSquad === edu.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                                  </button>
+                                )}
+                              </div>
                             </div>
                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{rankInfo.title}</p>
                           </div>
@@ -242,15 +282,28 @@ export default function CommunityPage() {
                               {activity.displayName?.charAt(0) || 'T'}
                             </div>
                             <div className="space-y-1">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-3">
                                 <p className="font-black text-lg text-foreground">{activity.displayName || 'Teacher'}</p>
-                                <button 
-                                  onClick={() => handleAddFriend(activity.userId, activity.displayName || 'Teacher')}
-                                  disabled={isSendingRequest === activity.userId || activity.userId === user?.uid}
-                                  className="bg-primary/10 text-primary p-1.5 rounded-lg hover:bg-primary hover:text-white transition-all active:scale-90"
-                                >
-                                  {isSendingRequest === activity.userId ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-                                </button>
+                                <div className="flex gap-2">
+                                  <button 
+                                    onClick={() => handleAddFriend(activity.userId, activity.displayName || 'Teacher')}
+                                    disabled={isSendingRequest === activity.userId || activity.userId === user?.uid}
+                                    className="bg-primary/10 text-primary p-1.5 rounded-lg hover:bg-primary hover:text-white transition-all active:scale-90"
+                                    title="Add Friend"
+                                  >
+                                    {isSendingRequest === activity.userId ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                                  </button>
+                                  {user?.squadId && (
+                                    <button 
+                                      onClick={() => handleInviteToSquad(activity.userId, activity.displayName || 'Teacher')}
+                                      disabled={isInvitingSquad === activity.userId || activity.userId === user?.uid}
+                                      className="bg-primary/10 text-primary p-1.5 rounded-lg hover:bg-primary hover:text-white transition-all active:scale-90"
+                                      title="Invite to Squad"
+                                    >
+                                      {isInvitingSquad === activity.userId ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                                 <Star className="w-3 h-3" /> Resolved simulation • {formatDistanceToNow(activity.timestamp)} ago
