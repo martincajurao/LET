@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, createContext, useContext, ReactNode, useRef, useCallback } from 'react';
@@ -157,7 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const data = await response.json();
           
           if (data && data.address) {
-            const city = data.address.city || data.address.town || data.address.municipality || 'Unknown City';
+            const city = data.address.city || data.address.town || data.address.municipality || data.address.suburb || 'Unknown City';
             const region = data.address.state || data.address.region || 'Unknown Region';
             
             if (userRef.current && (userRef.current.locationCity !== city || userRef.current.locationRegion !== region)) {
@@ -219,8 +218,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser({ ...scrubbed, uid: firebaseUser.uid });
             setLoading(false);
             
-            // Auto-detect location if missing
-            if (!scrubbed.locationRegion) {
+            // Auto-detect location if missing or potentially stale
+            if (!scrubbed.locationCity || !scrubbed.locationRegion) {
               detectLocation();
             }
           }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -41,7 +40,9 @@ import {
   Check,
   Clock,
   MapPin,
-  Filter
+  Filter,
+  Building2,
+  Map as MapIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRankData } from '@/lib/xp-system';
@@ -59,7 +60,10 @@ interface ActivityFeedItem {
   timestamp: number;
   subject?: string;
   locationRegion?: string;
+  locationCity?: string;
 }
+
+type FilterLevel = 'global' | 'region' | 'city';
 
 export default function CommunityPage() {
   const { user, refreshUser } = useUser();
@@ -72,8 +76,8 @@ export default function CommunityPage() {
   const [isSendingRequest, setIsSendingRequest] = useState<string | null>(null);
   const [isInvitingSquad, setIsInvitingSquad] = useState<string | null>(null);
   
-  // Location Filter State
-  const [useLocalFilter, setLocalFilter] = useState(false);
+  // Location Filter Level
+  const [filterLevel, setFilterLevel] = useState<FilterLevel>('global');
 
   // Real-time friendship status tracking
   const friendshipsQuery = useMemo(() => {
@@ -107,12 +111,19 @@ export default function CommunityPage() {
     return () => unsub();
   }, [firestore]);
 
-  // Fetch top teachers with optional location filter
+  // Fetch top teachers based on filter level
   useEffect(() => {
     if (!firestore) return;
     
     let topQuery;
-    if (useLocalFilter && user?.locationRegion) {
+    if (filterLevel === 'city' && user?.locationCity) {
+      topQuery = query(
+        collection(firestore, "users"), 
+        where("locationCity", "==", user.locationCity),
+        orderBy("xp", "desc"), 
+        limit(10)
+      );
+    } else if (filterLevel === 'region' && user?.locationRegion) {
       topQuery = query(
         collection(firestore, "users"), 
         where("locationRegion", "==", user.locationRegion),
@@ -132,10 +143,10 @@ export default function CommunityPage() {
     }, (err) => {
       console.warn("Location query failed (likely index missing):", err);
       // Fallback to global if local filter fails
-      if (useLocalFilter) setLocalFilter(false);
+      setFilterLevel('global');
     });
     return () => unsub();
-  }, [firestore, useLocalFilter, user?.locationRegion]);
+  }, [firestore, filterLevel, user?.locationRegion, user?.locationCity]);
 
   const handleAddFriend = async (targetUser: any) => {
     const targetUserId = targetUser.id;
@@ -184,26 +195,10 @@ export default function CommunityPage() {
     }
   };
 
-  const handleInviteToSquad = async (targetUserId: string, targetName: string) => {
-    if (!user || !firestore || isInvitingSquad) return;
-    if (!user.squadId) {
-      toast({ variant: "destructive", title: "Guild Required", description: "Found a Study Squad to send invitations." });
-      return;
-    }
-
-    setIsInvitingSquad(targetUserId);
-    try {
-      const squadRef = doc(firestore, 'squads', user.squadId);
-      const squadSnap = await getDoc(squadRef);
-      
-      if (squadSnap.exists()) {
-        const inviteCode = squadSnap.data().inviteCode;
-        await navigator.clipboard.writeText(inviteCode);
-        toast({ variant: "reward", title: "Recruitment Key Copied!", description: `Share key ${inviteCode} with ${targetName}.` });
-      }
-    } finally {
-      setIsInvitingSquad(null);
-    }
+  const cycleFilter = () => {
+    if (filterLevel === 'global') setFilterLevel('region');
+    else if (filterLevel === 'region') setFilterLevel('city');
+    else setFilterLevel('global');
   };
 
   const filteredActivity = useMemo(() => {
@@ -211,11 +206,13 @@ export default function CommunityPage() {
     if (searchQuery) {
       list = list.filter(item => item.displayName?.toLowerCase().includes(searchQuery.toLowerCase()));
     }
-    if (useLocalFilter && user?.locationRegion) {
+    if (filterLevel === 'region' && user?.locationRegion) {
       list = list.filter(item => item.locationRegion === user.locationRegion);
+    } else if (filterLevel === 'city' && user?.locationCity) {
+      list = list.filter(item => item.locationCity === user.locationCity);
     }
     return list;
-  }, [recentActivity, searchQuery, useLocalFilter, user?.locationRegion]);
+  }, [recentActivity, searchQuery, filterLevel, user?.locationRegion, user?.locationCity]);
 
   const renderFriendButton = (targetUser: any) => {
     const status = friendshipStatusMap.get(targetUser.id);
@@ -262,8 +259,14 @@ export default function CommunityPage() {
               </div>
               <h1 className="text-4xl font-black tracking-tighter text-foreground">Intelligence Network</h1>
             </div>
-            <div className="flex items-center gap-2 text-muted-foreground font-bold uppercase tracking-widest text-[10px] ml-1">
+            <div className="flex flex-wrap items-center gap-2 text-muted-foreground font-bold uppercase tracking-widest text-[10px] ml-1">
               <span>Connect with Aspiring Filipino Teachers</span>
+              {user?.locationCity && (
+                <>
+                  <div className="w-1 h-1 bg-muted-foreground/30 rounded-full" />
+                  <span className="text-primary flex items-center gap-1"><Building2 className="w-3 h-3" /> {user.locationCity}</span>
+                </>
+              )}
               {user?.locationRegion && (
                 <>
                   <div className="w-1 h-1 bg-muted-foreground/30 rounded-full" />
@@ -284,12 +287,20 @@ export default function CommunityPage() {
               />
             </div>
             <Button 
-              onClick={() => setLocalFilter(!useLocalFilter)} 
-              variant={useLocalFilter ? "default" : "outline"}
-              className="h-14 w-14 rounded-2xl border-2 shrink-0 p-0"
-              title={useLocalFilter ? "Disable Regional Filter" : "Filter by My Region"}
+              onClick={cycleFilter} 
+              variant={filterLevel !== 'global' ? "default" : "outline"}
+              className={cn(
+                "h-14 px-4 rounded-2xl border-2 shrink-0 flex items-center gap-2 transition-all active:scale-95",
+                filterLevel === 'city' ? "bg-emerald-600 hover:bg-emerald-700 border-emerald-500 shadow-emerald-500/20" : 
+                filterLevel === 'region' ? "bg-primary text-primary-foreground border-primary shadow-primary/20" : ""
+              )}
             >
-              <Filter className={cn("w-5 h-5", useLocalFilter ? "fill-current" : "")} />
+              {filterLevel === 'global' ? <Globe className="w-5 h-5" /> : 
+               filterLevel === 'region' ? <MapIcon className="w-5 h-5" /> : 
+               <Building2 className="w-5 h-5" />}
+              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">
+                {filterLevel === 'global' ? "Global" : filterLevel === 'region' ? "Region" : "City"}
+              </span>
             </Button>
           </div>
         </header>
@@ -315,9 +326,16 @@ export default function CommunityPage() {
                     <Trophy className="w-4 h-4 text-yellow-500" />
                     Elite Vanguard
                   </h3>
-                  {useLocalFilter && (
-                    <Badge variant="outline" className="text-[8px] font-black uppercase bg-primary/5 text-primary border-primary/20">Regional</Badge>
-                  )}
+                  <Badge variant="outline" className={cn(
+                    "text-[8px] font-black uppercase border-none px-3",
+                    filterLevel === 'city' ? "bg-emerald-500/10 text-emerald-600" :
+                    filterLevel === 'region' ? "bg-primary/10 text-primary" :
+                    "bg-muted/20 text-muted-foreground"
+                  )}>
+                    {filterLevel === 'city' ? `Local: ${user?.locationCity}` : 
+                     filterLevel === 'region' ? `Regional: ${user?.locationRegion}` : 
+                     "Global"}
+                  </Badge>
                 </div>
                 <div className="space-y-3">
                   {topTeachers.map((edu, idx) => {
@@ -338,12 +356,12 @@ export default function CommunityPage() {
                                 {renderFriendButton(edu)}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{rankInfo.title}</p>
-                              {edu.locationRegion && (
+                              {edu.locationCity && (
                                 <>
                                   <div className="w-0.5 h-0.5 bg-muted-foreground rounded-full" />
-                                  <span className="text-[8px] font-black text-primary/60 uppercase">{edu.locationRegion}</span>
+                                  <span className="text-[8px] font-black text-emerald-600 uppercase flex items-center gap-0.5"><Building2 className="w-2 h-2" /> {edu.locationCity}</span>
                                 </>
                               )}
                             </div>
@@ -368,10 +386,21 @@ export default function CommunityPage() {
                     <Compass className="w-4 h-4 text-primary" />
                     Live Trace
                   </h3>
-                  <div className="flex items-center gap-2">
-                    {useLocalFilter && <Badge className="bg-primary/10 text-primary border-none text-[8px] uppercase">{user?.locationRegion}</Badge>}
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                    <span className="text-[10px] font-black uppercase text-emerald-600 tracking-widest">Live</span>
+                  <div className="flex items-center gap-3">
+                    {filterLevel === 'city' && user?.locationCity && (
+                      <Badge className="bg-emerald-500/10 text-emerald-600 border-none text-[8px] uppercase gap-1">
+                        <Building2 className="w-2.5 h-2.5" /> {user.locationCity}
+                      </Badge>
+                    )}
+                    {filterLevel === 'region' && user?.locationRegion && (
+                      <Badge className="bg-primary/10 text-primary border-none text-[8px] uppercase gap-1">
+                        <MapPin className="w-2.5 h-2.5" /> {user.locationRegion}
+                      </Badge>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                      <span className="text-[10px] font-black uppercase text-emerald-600 tracking-widest">Live</span>
+                    </div>
                   </div>
                 </div>
 
@@ -383,7 +412,7 @@ export default function CommunityPage() {
                 ) : filteredActivity.length === 0 ? (
                   <div className="text-center py-24 bg-card rounded-[3rem] border shadow-inner">
                     <Globe className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
-                    <p className="text-muted-foreground font-bold text-sm">No activity detected{useLocalFilter ? " in your region" : ""}.</p>
+                    <p className="text-muted-foreground font-bold text-sm">No activity detected {filterLevel === 'city' ? `in ${user?.locationCity}` : filterLevel === 'region' ? `in ${user?.locationRegion}` : ""}.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-4">
@@ -406,7 +435,12 @@ export default function CommunityPage() {
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                                   <Star className="w-3 h-3" /> {activity.subject || 'Simulation'} • {formatDistanceToNow(activity.timestamp)} ago
                                 </p>
-                                {activity.locationRegion && (
+                                {activity.locationCity && (
+                                  <Badge variant="outline" className="h-5 px-2 bg-emerald-500/5 border-emerald-500/20 text-[8px] font-black uppercase text-emerald-600">
+                                    <Building2 className="w-2.5 h-2.5 mr-1" /> {activity.locationCity}
+                                  </Badge>
+                                )}
+                                {activity.locationRegion && !activity.locationCity && (
                                   <Badge variant="outline" className="h-5 px-2 bg-muted/20 border-border/50 text-[8px] font-black uppercase text-muted-foreground">
                                     <MapPin className="w-2.5 h-2.5 mr-1" /> {activity.locationRegion}
                                   </Badge>
