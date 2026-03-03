@@ -1,3 +1,4 @@
+
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
@@ -191,18 +192,19 @@ function LetsPrepContent() {
   const startExam = useCallback(async (category: string) => {
     if (!user) { setShowAuthModal(true); return; }
     if (!firestore || isStartingRef.current) return;
-    isStartingRef.current = true;
 
+    // Check lock status immediately before any async work or ref setting
     const isLocked = !isTrackUnlocked(rankData?.rank || 1, category, user.unlockedTracks);
     if (isLocked && category !== 'quickfire') {
       const modeConfig = getTrackConfig(category, user?.majorship || 'Major');
       setLockedTrackInfo(modeConfig);
-      isStartingRef.current = false;
       return;
     }
 
+    isStartingRef.current = true;
     setIsCalibrating(true);
     setLoadingMessage("Syncing Exam Path...");
+    
     try {
       const questionPool = await fetchQuestionsFromFirestore(firestore);
       let finalQuestions: Question[] = [];
@@ -233,14 +235,17 @@ function LetsPrepContent() {
       }
       
       if (finalQuestions.length === 0) throw new Error(`Insufficient exam items.`);
+      
       setCurrentQuestions(finalQuestions);
       setActiveSimCategory(category);
       setIsResultsUnlocked(false);
+      
+      // Perform state switch after a minimal settling delay to ensure questions are loaded
       setTimeout(() => { 
         setState(category === 'quickfire' ? 'quickfire_quiz' : 'exam'); 
         setIsCalibrating(false); 
         isStartingRef.current = false;
-      }, 300);
+      }, 150);
     } catch (e: any) { 
       toast({ variant: "destructive", title: "Failed to Start", description: e.message }); 
       setIsCalibrating(false); 
@@ -248,14 +253,20 @@ function LetsPrepContent() {
     }
   }, [user, firestore, limits, toast, rankData]);
 
+  // Consumes the startParam from the URL and clears it immediately to prevent re-triggering
   useEffect(() => {
-    if (startParam && user && state === 'dashboard' && !isCalibrating) {
-      startExam(startParam);
+    if (startParam && user && state === 'dashboard' && !isStartingRef.current) {
+      const targetMode = startParam;
+      
+      // Clear URL param immediately
       const params = new URLSearchParams(window.location.search);
       params.delete('start');
-      window.history.replaceState({}, '', window.location.pathname + (params.toString() ? `?${params.toString()}` : ''));
+      const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : '');
+      window.history.replaceState({}, '', newUrl);
+      
+      startExam(targetMode);
     }
-  }, [startParam, user, state, isCalibrating, startExam]);
+  }, [startParam, user, state, startExam]);
 
   useEffect(() => {
     const fetchLatestApk = async () => {
