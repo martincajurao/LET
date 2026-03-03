@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
@@ -392,7 +391,7 @@ function LetsPrepContent() {
   const itemVariants = { hidden: { opacity: 0, y: 20, scale: 0.95 }, show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 100, damping: 12 } } };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-background text-foreground font-body" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined }}>
+    <div className="min-h-screen bg-background text-foreground font-body" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined }}>
       <Toaster />
       <AnimatePresence>{isCalibrating && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[5100] flex items-center justify-center bg-background/80 backdrop-blur-md"><EducationalLoader message={loadingMessage} /></motion.div>)}</AnimatePresence>
 
@@ -414,8 +413,8 @@ function LetsPrepContent() {
             <QuickFireResults questions={currentQuestions} answers={examAnswers} timeSpent={examTime} xpEarned={lastXpEarned} onRestart={() => setState('dashboard')} />
           </motion.div>
         ) : (
-          <motion.div key="dashboard" variants={containerVariants} initial="hidden" animate="show" className="max-w-7xl mx-auto px-4 pb-8 space-y-6 pt-4">
-            <motion.div variants={containerVariants} className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div key="dashboard" className="max-w-7xl mx-auto px-4 pb-8 space-y-6 pt-4">
+            <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {displayStats.map((stat, i) => (
                 <motion.div key={i} variants={itemVariants} whileTap={{ scale: 0.95 }} className="android-surface rounded-2xl p-4 flex items-center gap-4 border-none shadow-md3-1">
                   <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner", stat.color)}>{stat.icon}</div>
@@ -426,7 +425,7 @@ function LetsPrepContent() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-8 space-y-6">
-                <motion.div variants={itemVariants} whileHover={{ y: -4 }}>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} whileHover={{ y: -4 }}>
                   <Card className="overflow-hidden border-none shadow-2xl rounded-[3rem] bg-gradient-to-br from-primary/30 via-card to-background p-8 md:p-14 relative group active:scale-[0.99] transition-all">
                     <div className="relative z-10 space-y-8">
                       <div className="flex items-center gap-2">
@@ -507,7 +506,7 @@ function LetsPrepContent() {
                     ].map((track, i) => {
                       const isLocked = user && !isTrackUnlocked(rankData?.rank || 1, track.id, user.unlockedTracks);
                       return (
-                        <motion.div key={i} variants={itemVariants} whileTap={{ scale: 0.97 }}>
+                        <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} whileTap={{ scale: 0.97 }}>
                           <Card onClick={() => startExam(track.id)} className={cn("cursor-pointer border-2 rounded-[2.5rem] bg-card overflow-hidden active:scale-95 transition-all relative h-full group hover:shadow-2xl", isLocked ? "border-muted/50 bg-muted/5 opacity-80" : "hover:border-primary border-border/50 bg-gradient-to-br via-card to-card " + track.bg)}>
                             <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
                               <div className={cn("relative transition-transform duration-500", !isLocked && "group-hover:scale-110")}>
@@ -533,13 +532,13 @@ function LetsPrepContent() {
                     Intelligence Lounge
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-1">
-                    <motion.div variants={itemVariants} whileTap={{ scale: 0.98 }}>
+                    <motion.div whileTap={{ scale: 0.98 }}>
                       <Card onClick={() => setShowFeedbackModal(true)} className="android-surface cursor-pointer rounded-[2.25rem] p-6 flex items-center gap-5 border-none shadow-md3-1 bg-card group">
                         <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500"><MessageSquare className="w-7 h-7" /></div>
                         <div><h4 className="font-black text-lg">Send Feedback</h4><p className="text-[10px] font-bold text-muted-foreground uppercase">Refine simulations</p></div>
                       </Card>
                     </motion.div>
-                    <motion.div variants={itemVariants} whileTap={{ scale: 0.98 }}>
+                    <motion.div whileTap={{ scale: 0.98 }}>
                       <Card onClick={() => window.location.href = 'mailto:support@letprep.app'} className="android-surface cursor-pointer rounded-[2.25rem] p-6 flex items-center gap-5 border-none shadow-md3-1 bg-card group">
                         <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-emerald-500 group-hover:text-white transition-all duration-500"><Mail className="w-7 h-7 text-emerald-600 group-hover:text-white transition-all duration-500" /></div>
                         <div><h4 className="font-black text-lg">Contact Us</h4><p className="text-[10px] font-bold text-muted-foreground uppercase">System support</p></div>
@@ -550,7 +549,7 @@ function LetsPrepContent() {
               </div>
 
               <div className="lg:col-span-4 space-y-6">
-                <motion.div variants={itemVariants}>
+                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
                   <Card className="android-surface border-none shadow-2xl rounded-[2.5rem] bg-gradient-to-br from-emerald-500/20 via-card to-background p-8 overflow-hidden group">
                     <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:rotate-12 transition-transform duration-700"><Smartphone className="w-24 h-24 text-emerald-600" /></div>
                     <div className="relative z-10 space-y-6">
@@ -581,7 +580,7 @@ function LetsPrepContent() {
                   </Card>
                 </motion.div>
 
-                <motion.div variants={itemVariants}>
+                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
                   <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-8 flex flex-col items-center text-center space-y-6">
                     <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner"><BrainCircuit className="w-8 h-8 text-primary" /></div>
                     <div className="space-y-2"><h4 className="text-xl font-black">Strategic Core</h4><p className="text-xs text-muted-foreground font-medium px-4">Over 3.5K+ curated items analyzed by professional pedagogical engines.</p></div>
@@ -594,11 +593,11 @@ function LetsPrepContent() {
               </div>
             </div>
 
-            <motion.div variants={itemVariants} className="pt-8 text-center pb-12">
+            <div className="pt-8 text-center pb-12">
               <div className="flex items-center justify-center gap-3 mb-4"><div className="h-[1px] w-16 bg-border" /><motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }}><Heart className="w-5 h-5 text-rose-500 fill-current" /></motion.div><div className="h-[1px] w-16 bg-border" /></div>
               <p className="text-[10px] font-black uppercase tracking-[0.5em] text-muted-foreground opacity-40">Dedicated to the Aspiring Filipino Teacher</p>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
       </AnimatePresence>
 
@@ -677,7 +676,7 @@ function LetsPrepContent() {
           </div>
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </div>
   );
 }
 
