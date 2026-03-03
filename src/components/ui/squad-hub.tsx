@@ -142,11 +142,10 @@ export function SquadHub() {
     try {
       const squadsRef = collection(firestore, 'squads');
       const q = query(squadsRef, where('inviteCode', '==', joinCode.toUpperCase()));
-      const snap = await getDoc(doc(firestore, 'system_configs', 'global')); // Dummy read to trigger rule context if needed
       
-      const snapshot = await getDoc(doc(firestore, 'system_configs', 'global')); // Simplified check
-      // For join logic, we fetch the squad directly
-      const qSnap = await onSnapshot(q, async (s) => {
+      // We use onSnapshot for a single-time query get here by unsubscribing immediately
+      const unsub = onSnapshot(q, async (s) => {
+        unsub();
         if (s.empty) {
           toast({ variant: "destructive", title: "Trace Not Found", description: "Invalid recruitment code." });
           setIsJoining(false);
@@ -156,6 +155,12 @@ export function SquadHub() {
         const squadDoc = s.docs[0];
         const squadId = squadDoc.id;
         const squadData = squadDoc.data();
+
+        if (!squadData.isActive) {
+          toast({ variant: "destructive", title: "Guild Inactive", description: "This squad has been disbanded." });
+          setIsJoining(false);
+          return;
+        }
 
         if (squadData.memberCount >= 10) {
           toast({ variant: "destructive", title: "Guild Full", description: "This squad has reached the roster limit." });
@@ -172,7 +177,7 @@ export function SquadHub() {
         
         await batch.commit();
         await refreshUser();
-        toast({ variant: "reward", title: "Guild Joined!", description: "You have been recruited to the squad." });
+        toast({ variant: "reward", title: "Enlistment Success!", description: `You have joined ${squadData.name}.` });
         setIsJoining(false);
       });
     } catch (e) {
@@ -190,7 +195,7 @@ export function SquadHub() {
       batch.update(doc(firestore, 'squads', squad.id), { memberCount: increment(-1) });
       
       await batch.commit();
-      toast({ title: "Member Removed", description: `${memberName} has been purged from the roster.` });
+      toast({ title: "Roster Updated", description: `${memberName} has been purged from the guild.` });
     } catch (e) {
       toast({ variant: "destructive", title: "Action Failed", description: "Could not update guild roster." });
     } finally {
@@ -208,7 +213,7 @@ export function SquadHub() {
       
       await batch.commit();
       await refreshUser();
-      toast({ title: "Exited Guild", description: "You have abandoned your current squad trace." });
+      toast({ title: "Trace Abandoned", description: `You have left ${squad.name}.` });
     } catch (e) {
       toast({ variant: "destructive", title: "Exit Failed", description: "Could not sync leave request." });
     } finally {
@@ -243,7 +248,7 @@ export function SquadHub() {
         await navigator.share({ title: `Study Squad: ${squad.name}`, text: inviteText, url: window.location.origin + '/community' });
       } else {
         await navigator.clipboard.writeText(squad.inviteCode);
-        toast({ title: "Key Copied", description: "Recruitment key saved to clipboard." });
+        toast({ title: "Key Secured!", description: "Recruitment key copied to clipboard." });
       }
     } catch (e) {}
   };

@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useCollection } from '@/firebase';
 import { 
   collection, 
   query, 
@@ -37,9 +37,11 @@ import {
   UserPlus,
   Link as LinkIcon,
   Send,
-  Activity
+  Activity,
+  Check,
+  Clock
 } from "lucide-react";
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getRankData } from '@/lib/xp-system';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -66,6 +68,24 @@ export default function CommunityPage() {
   const [topTeachers, setTopTeachers] = useState<any[]>([]);
   const [isSendingRequest, setIsSendingRequest] = useState<string | null>(null);
   const [isInvitingSquad, setIsInvitingSquad] = useState<string | null>(null);
+
+  // Real-time friendship status tracking for buttons
+  const friendshipsQuery = useMemo(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'friendships'), where('userIds', 'array-contains', user.uid));
+  }, [user, firestore]);
+  
+  const { data: userFriendships } = useCollection(friendshipsQuery);
+
+  const friendshipStatusMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (!userFriendships || !user) return map;
+    userFriendships.forEach((f: any) => {
+      const otherId = f.userIds.find((id: string) => id !== user.uid);
+      if (otherId) map.set(otherId, f.status);
+    });
+    return map;
+  }, [userFriendships, user]);
 
   // Fetch recent activity - Optimized limit for Spark plan
   useEffect(() => {
@@ -109,12 +129,11 @@ export default function CommunityPage() {
       const snap = await getDoc(friendRef);
 
       if (snap.exists()) {
-        toast({ title: "Already Trace Found", description: "This teacher is already in your pending or accepted links." });
+        toast({ title: "Trace Active", description: `A link with ${targetName} already exists.` });
         setIsSendingRequest(null);
         return;
       }
 
-      // Denormalize user info to friendship doc to save Spark plan reads
       await setDoc(friendRef, {
         userIds: [user.uid, targetUserId],
         status: 'pending',
@@ -131,7 +150,7 @@ export default function CommunityPage() {
         }
       });
 
-      toast({ variant: "reward", title: "Request Transmitted", description: `Link request sent to ${targetName}.` });
+      toast({ variant: "reward", title: "Request Transmitted!", description: `Link request sent to ${targetName}.` });
     } catch (e) {
       toast({ variant: "destructive", title: "Link Failed", description: "Could not establish peer trace." });
     } finally {
@@ -154,7 +173,7 @@ export default function CommunityPage() {
       if (squadSnap.exists()) {
         const inviteCode = squadSnap.data().inviteCode;
         await navigator.clipboard.writeText(inviteCode);
-        toast({ variant: "reward", title: "Recruitment Key Copied", description: `Share key ${inviteCode} with ${targetName}.` });
+        toast({ variant: "reward", title: "Recruitment Key Copied!", description: `Share key ${inviteCode} with ${targetName}.` });
       }
     } finally {
       setIsInvitingSquad(null);
@@ -165,6 +184,40 @@ export default function CommunityPage() {
     if (!searchQuery) return recentActivity;
     return recentActivity.filter(item => item.displayName?.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [recentActivity, searchQuery]);
+
+  const renderFriendButton = (targetUser: any) => {
+    const status = friendshipStatusMap.get(targetUser.id);
+    const isSelf = targetUser.id === user?.uid;
+
+    if (isSelf) return null;
+
+    if (status === 'accepted') {
+      return (
+        <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 gap-1 px-2">
+          <Check className="w-3 h-3" /> Linked
+        </Badge>
+      );
+    }
+
+    if (status === 'pending') {
+      return (
+        <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 gap-1 px-2">
+          <Clock className="w-3 h-3" /> Sent
+        </Badge>
+      );
+    }
+
+    return (
+      <button 
+        onClick={() => handleAddFriend(targetUser)}
+        disabled={isSendingRequest === targetUser.id}
+        className="text-primary hover:text-primary/80 disabled:opacity-30 transition-all p-1"
+        title="Add Friend"
+      >
+        {isSendingRequest === targetUser.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+      </button>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8 pb-32 font-body">
@@ -227,18 +280,13 @@ export default function CommunityPage() {
                             <div className="flex items-center gap-2">
                               <p className="font-black text-sm text-foreground truncate">{edu.displayName || 'Teacher'}</p>
                               <div className="flex gap-1">
-                                <button 
-                                  onClick={() => handleAddFriend(edu)}
-                                  disabled={isSendingRequest === edu.id || edu.id === user?.uid}
-                                  className="text-primary hover:text-primary/80 disabled:opacity-30 transition-all p-1"
-                                >
-                                  {isSendingRequest === edu.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
-                                </button>
-                                {user?.squadId && (
+                                {renderFriendButton(edu)}
+                                {user?.squadId && edu.id !== user.uid && (
                                   <button 
                                     onClick={() => handleInviteToSquad(edu.id, edu.displayName || 'Teacher')}
-                                    disabled={isInvitingSquad === edu.id || edu.id === user?.uid}
+                                    disabled={isInvitingSquad === edu.id}
                                     className="text-primary hover:text-primary/80 disabled:opacity-30 transition-all p-1"
+                                    title="Invite to Squad"
                                   >
                                     {isInvitingSquad === edu.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                                   </button>
@@ -297,18 +345,13 @@ export default function CommunityPage() {
                               <div className="flex items-center gap-3">
                                 <p className="font-black text-lg text-foreground">{activity.displayName || 'Teacher'}</p>
                                 <div className="flex gap-2">
-                                  <button 
-                                    onClick={() => handleAddFriend({ id: activity.userId, displayName: activity.displayName })}
-                                    disabled={isSendingRequest === activity.userId || activity.userId === user?.uid}
-                                    className="bg-primary/10 text-primary p-1.5 rounded-lg hover:bg-primary hover:text-white transition-all active:scale-90"
-                                  >
-                                    {isSendingRequest === activity.userId ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-                                  </button>
-                                  {user?.squadId && (
+                                  {renderFriendButton({ id: activity.userId, displayName: activity.displayName })}
+                                  {user?.squadId && activity.userId !== user.uid && (
                                     <button 
                                       onClick={() => handleInviteToSquad(activity.userId, activity.displayName || 'Teacher')}
-                                      disabled={isInvitingSquad === activity.userId || activity.userId === user?.uid}
+                                      disabled={isInvitingSquad === activity.userId}
                                       className="bg-primary/10 text-primary p-1.5 rounded-lg hover:bg-primary hover:text-white transition-all active:scale-90"
+                                      title="Invite to Squad"
                                     >
                                       {isInvitingSquad === activity.userId ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                                     </button>
