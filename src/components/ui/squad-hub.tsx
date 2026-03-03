@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { 
   Users, 
   Zap, 
@@ -339,9 +340,10 @@ export function SquadHub() {
                   return (
                     <motion.div key={member.id} whileHover={{ x: 4 }} className="android-surface p-4 rounded-2xl flex items-center justify-between bg-card border-border/50 group">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center text-xl border border-primary/10 shadow-inner group-hover:bg-primary transition-all duration-500">
-                          🎓
-                        </div>
+                        <Avatar className="w-12 h-12 rounded-xl shadow-inner group-hover:scale-105 transition-transform duration-500">
+                          <AvatarImage src={member.photoURL || ""} />
+                          <AvatarFallback className="bg-primary/5 text-primary text-xl font-black">🎓</AvatarFallback>
+                        </Avatar>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="font-black text-sm text-foreground truncate">{member.displayName || 'Teacher'}</p>

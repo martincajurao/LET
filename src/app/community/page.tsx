@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { 
   Users, 
   Search, 
@@ -329,20 +330,22 @@ export default function CommunityPage() {
                     return (
                       <Card key={edu.id} className="android-surface border-none shadow-md3-1 rounded-1.75rem overflow-hidden group">
                         <CardContent className="p-5 flex items-center gap-5">
-                          <div className={cn(
-                            "w-14 h-14 rounded-2xl flex items-center justify-center font-black text-white shadow-xl relative overflow-hidden",
-                            idx === 0 ? "bg-gradient-to-br from-yellow-400 to-yellow-600" : 
-                            idx === 1 ? "bg-gradient-to-br from-slate-300 to-slate-500" : 
-                            idx === 2 ? "bg-gradient-to-br from-orange-400 to-orange-600" : 
-                            "bg-primary/20 text-primary"
+                          <Avatar className={cn(
+                            "w-14 h-14 rounded-2xl shadow-xl relative overflow-hidden",
+                            idx === 0 ? "border-2 border-yellow-400" : 
+                            idx === 1 ? "border-2 border-slate-300" : 
+                            idx === 2 ? "border-2 border-orange-400" : ""
                           )}>
-                            {edu.photoURL ? (
-                              <img src={edu.photoURL} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="text-2xl select-none">🎓</span>
-                            )}
+                            <AvatarImage src={edu.photoURL || ""} className="object-cover" />
+                            <AvatarFallback className={cn(
+                              "text-2xl font-black text-white",
+                              idx === 0 ? "bg-gradient-to-br from-yellow-400 to-yellow-600" : 
+                              idx === 1 ? "bg-gradient-to-br from-slate-300 to-slate-500" : 
+                              idx === 2 ? "bg-gradient-to-br from-orange-400 to-orange-600" : 
+                              "bg-primary/20 text-primary"
+                            )}>🎓</AvatarFallback>
                             <div className="absolute -top-1 -right-1 w-5 h-5 bg-card border-2 border-current rounded-full flex items-center justify-center text-[8px] text-foreground">{rankInfo.rank}</div>
-                          </div>
+                          </Avatar>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <p className="font-black text-base text-foreground truncate">{edu.displayName || 'Teacher'}</p>
@@ -396,9 +399,10 @@ export default function CommunityPage() {
                         <div className="absolute left-0 top-0 bottom-0 w-2 bg-primary/20 group-hover:bg-primary transition-colors duration-500" />
                         <CardContent className="p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-8">
                           <div className="flex items-center gap-6">
-                            <div className="w-16 h-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center font-black text-primary text-2xl shadow-inner group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 overflow-hidden">
-                              <span className="text-3xl select-none">🎓</span>
-                            </div>
+                            <Avatar className="w-16 h-16 rounded-[1.5rem] shadow-inner group-hover:scale-110 transition-all duration-500">
+                              <AvatarImage src="" />
+                              <AvatarFallback className="bg-primary/10 text-primary text-3xl font-black">🎓</AvatarFallback>
+                            </Avatar>
                             <div className="space-y-1.5">
                               <div className="flex items-center gap-4">
                                 <p className="font-black text-xl text-foreground tracking-tight">{activity.displayName || 'Guest Teacher'}</p>
