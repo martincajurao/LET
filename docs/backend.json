@@ -28,7 +28,9 @@
         "referralCount": { "type": "integer", "default": 0 },
         "referralCreditsEarned": { "type": "integer", "default": 0 },
         "referralTier": { "type": "string", "enum": ["Bronze", "Silver", "Gold", "Platinum"], "default": "Bronze" },
-        "unlockedTracks": { "type": "array", "items": { "type": "string" } }
+        "unlockedTracks": { "type": "array", "items": { "type": "string" } },
+        "locationRegion": { "type": "string", "description": "The administrative region detected from phone." },
+        "locationCity": { "type": "string", "description": "The city detected from phone." }
       }
     },
     "StudySquad": {

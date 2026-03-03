@@ -39,7 +39,9 @@ import {
   Send,
   Activity,
   Check,
-  Clock
+  Clock,
+  MapPin,
+  Filter
 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRankData } from '@/lib/xp-system';
@@ -56,6 +58,7 @@ interface ActivityFeedItem {
   overallScore: number;
   timestamp: number;
   subject?: string;
+  locationRegion?: string;
 }
 
 export default function CommunityPage() {
@@ -68,8 +71,11 @@ export default function CommunityPage() {
   const [topTeachers, setTopTeachers] = useState<any[]>([]);
   const [isSendingRequest, setIsSendingRequest] = useState<string | null>(null);
   const [isInvitingSquad, setIsInvitingSquad] = useState<string | null>(null);
+  
+  // Location Filter State
+  const [useLocalFilter, setLocalFilter] = useState(false);
 
-  // Real-time friendship status tracking for buttons
+  // Real-time friendship status tracking
   const friendshipsQuery = useMemo(() => {
     if (!user || !firestore) return null;
     return query(collection(firestore, 'friendships'), where('userIds', 'array-contains', user.uid));
@@ -87,10 +93,10 @@ export default function CommunityPage() {
     return map;
   }, [userFriendships, user]);
 
-  // Fetch recent activity - Optimized limit for Spark plan
+  // Fetch recent activity
   useEffect(() => {
     if (!firestore) return;
-    const activityQuery = query(collection(firestore, "exam_results"), orderBy("timestamp", "desc"), limit(8));
+    const activityQuery = query(collection(firestore, "exam_results"), orderBy("timestamp", "desc"), limit(12));
     const unsub = onSnapshot(activityQuery, (snap) => {
       setRecentActivity(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityFeedItem)));
       setLoading(false);
@@ -101,15 +107,35 @@ export default function CommunityPage() {
     return () => unsub();
   }, [firestore]);
 
-  // Fetch top teachers
+  // Fetch top teachers with optional location filter
   useEffect(() => {
     if (!firestore) return;
-    const topQuery = query(collection(firestore, "users"), orderBy("xp", "desc"), limit(5));
+    
+    let topQuery;
+    if (useLocalFilter && user?.locationRegion) {
+      topQuery = query(
+        collection(firestore, "users"), 
+        where("locationRegion", "==", user.locationRegion),
+        orderBy("xp", "desc"), 
+        limit(10)
+      );
+    } else {
+      topQuery = query(
+        collection(firestore, "users"), 
+        orderBy("xp", "desc"), 
+        limit(10)
+      );
+    }
+
     const unsub = onSnapshot(topQuery, (snap) => {
       setTopTeachers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => {
+      console.warn("Location query failed (likely index missing):", err);
+      // Fallback to global if local filter fails
+      if (useLocalFilter) setLocalFilter(false);
     });
     return () => unsub();
-  }, [firestore]);
+  }, [firestore, useLocalFilter, user?.locationRegion]);
 
   const handleAddFriend = async (targetUser: any) => {
     const targetUserId = targetUser.id;
@@ -181,9 +207,15 @@ export default function CommunityPage() {
   };
 
   const filteredActivity = useMemo(() => {
-    if (!searchQuery) return recentActivity;
-    return recentActivity.filter(item => item.displayName?.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [recentActivity, searchQuery]);
+    let list = recentActivity;
+    if (searchQuery) {
+      list = list.filter(item => item.displayName?.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+    if (useLocalFilter && user?.locationRegion) {
+      list = list.filter(item => item.locationRegion === user.locationRegion);
+    }
+    return list;
+  }, [recentActivity, searchQuery, useLocalFilter, user?.locationRegion]);
 
   const renderFriendButton = (targetUser: any) => {
     const status = friendshipStatusMap.get(targetUser.id);
@@ -230,17 +262,35 @@ export default function CommunityPage() {
               </div>
               <h1 className="text-4xl font-black tracking-tighter text-foreground">Intelligence Network</h1>
             </div>
-            <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px] ml-1">Connect with Aspiring Filipino Teachers</p>
+            <div className="flex items-center gap-2 text-muted-foreground font-bold uppercase tracking-widest text-[10px] ml-1">
+              <span>Connect with Aspiring Filipino Teachers</span>
+              {user?.locationRegion && (
+                <>
+                  <div className="w-1 h-1 bg-muted-foreground/30 rounded-full" />
+                  <span className="text-primary flex items-center gap-1"><MapPin className="w-3 h-3" /> {user.locationRegion}</span>
+                </>
+              )}
+            </div>
           </div>
           
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground opacity-40" />
-            <Input 
-              placeholder="Search teachers or keys..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-14 pl-11 rounded-2xl border-2 bg-card shadow-sm focus:border-primary transition-all font-bold"
-            />
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="relative flex-1 md:w-80">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground opacity-40" />
+              <Input 
+                placeholder="Search teachers..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-14 pl-11 rounded-2xl border-2 bg-card shadow-sm focus:border-primary transition-all font-bold"
+              />
+            </div>
+            <Button 
+              onClick={() => setLocalFilter(!useLocalFilter)} 
+              variant={useLocalFilter ? "default" : "outline"}
+              className="h-14 w-14 rounded-2xl border-2 shrink-0 p-0"
+              title={useLocalFilter ? "Disable Regional Filter" : "Filter by My Region"}
+            >
+              <Filter className={cn("w-5 h-5", useLocalFilter ? "fill-current" : "")} />
+            </Button>
           </div>
         </header>
 
@@ -260,10 +310,15 @@ export default function CommunityPage() {
           <TabsContent value="feed" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               <div className="lg:col-span-4 space-y-6">
-                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-foreground px-2 flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-yellow-500" />
-                  Elite Vanguard
-                </h3>
+                <div className="flex items-center justify-between px-2">
+                  <h3 className="text-sm font-black uppercase tracking-[0.2em] text-foreground flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-yellow-500" />
+                    Elite Vanguard
+                  </h3>
+                  {useLocalFilter && (
+                    <Badge variant="outline" className="text-[8px] font-black uppercase bg-primary/5 text-primary border-primary/20">Regional</Badge>
+                  )}
+                </div>
                 <div className="space-y-3">
                   {topTeachers.map((edu, idx) => {
                     const rankInfo = getRankData(edu.xp || 0);
@@ -281,19 +336,17 @@ export default function CommunityPage() {
                               <p className="font-black text-sm text-foreground truncate">{edu.displayName || 'Teacher'}</p>
                               <div className="flex gap-1">
                                 {renderFriendButton(edu)}
-                                {user?.squadId && edu.id !== user.uid && (
-                                  <button 
-                                    onClick={() => handleInviteToSquad(edu.id, edu.displayName || 'Teacher')}
-                                    disabled={isInvitingSquad === edu.id}
-                                    className="text-primary hover:text-primary/80 disabled:opacity-30 transition-all p-1"
-                                    title="Invite to Squad"
-                                  >
-                                    {isInvitingSquad === edu.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                                  </button>
-                                )}
                               </div>
                             </div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{rankInfo.title}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{rankInfo.title}</p>
+                              {edu.locationRegion && (
+                                <>
+                                  <div className="w-0.5 h-0.5 bg-muted-foreground rounded-full" />
+                                  <span className="text-[8px] font-black text-primary/60 uppercase">{edu.locationRegion}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
                           <div className="text-right">
                             <p className="text-xs font-black text-primary">Rank {rankInfo.rank}</p>
@@ -316,6 +369,7 @@ export default function CommunityPage() {
                     Live Trace
                   </h3>
                   <div className="flex items-center gap-2">
+                    {useLocalFilter && <Badge className="bg-primary/10 text-primary border-none text-[8px] uppercase">{user?.locationRegion}</Badge>}
                     <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                     <span className="text-[10px] font-black uppercase text-emerald-600 tracking-widest">Live</span>
                   </div>
@@ -329,7 +383,7 @@ export default function CommunityPage() {
                 ) : filteredActivity.length === 0 ? (
                   <div className="text-center py-24 bg-card rounded-[3rem] border shadow-inner">
                     <Globe className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
-                    <p className="text-muted-foreground font-bold text-sm">No activity detected.</p>
+                    <p className="text-muted-foreground font-bold text-sm">No activity detected{useLocalFilter ? " in your region" : ""}.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-4">
@@ -346,21 +400,18 @@ export default function CommunityPage() {
                                 <p className="font-black text-lg text-foreground">{activity.displayName || 'Teacher'}</p>
                                 <div className="flex gap-2">
                                   {renderFriendButton({ id: activity.userId, displayName: activity.displayName })}
-                                  {user?.squadId && activity.userId !== user.uid && (
-                                    <button 
-                                      onClick={() => handleInviteToSquad(activity.userId, activity.displayName || 'Teacher')}
-                                      disabled={isInvitingSquad === activity.userId}
-                                      className="bg-primary/10 text-primary p-1.5 rounded-lg hover:bg-primary hover:text-white transition-all active:scale-90"
-                                      title="Invite to Squad"
-                                    >
-                                      {isInvitingSquad === activity.userId ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                    </button>
-                                  )}
                                 </div>
                               </div>
-                              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                                <Star className="w-3 h-3" /> {activity.subject || 'Simulation'} • {formatDistanceToNow(activity.timestamp)} ago
-                              </p>
+                              <div className="flex items-center gap-3 flex-wrap">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                                  <Star className="w-3 h-3" /> {activity.subject || 'Simulation'} • {formatDistanceToNow(activity.timestamp)} ago
+                                </p>
+                                {activity.locationRegion && (
+                                  <Badge variant="outline" className="h-5 px-2 bg-muted/20 border-border/50 text-[8px] font-black uppercase text-muted-foreground">
+                                    <MapPin className="w-2.5 h-2.5 mr-1" /> {activity.locationRegion}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-6">

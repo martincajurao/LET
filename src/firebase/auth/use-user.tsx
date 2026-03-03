@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, createContext, useContext, ReactNode, useRef } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useRef, useCallback } from 'react';
 import {
   onAuthStateChanged,
   signInWithPopup,
@@ -64,6 +64,8 @@ export interface UserProfile {
   qualityScore?: number;
   lastQualityUpdate?: any;
   unlockedTracks?: string[];
+  locationRegion?: string;
+  locationCity?: string;
 }
 
 interface AuthContextType {
@@ -77,6 +79,7 @@ interface AuthContextType {
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   addXp: (amount: number) => Promise<void>;
   refreshUser: () => Promise<void>;
+  detectLocation: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -90,6 +93,7 @@ const AuthContext = createContext<AuthContextType>({
   updateProfile: async () => {},
   addXp: async () => {},
   refreshUser: async () => {},
+  detectLocation: async () => {},
 });
 
 function isFirestoreSentinel(val: any): boolean {
@@ -141,6 +145,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { userRef.current = user; }, [user]);
 
+  const detectLocation = useCallback(async () => {
+    if (typeof window === 'undefined' || !navigator.geolocation || !userRef.current) return;
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          // Use a free reverse geocoding API (low volume)
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`);
+          const data = await response.json();
+          
+          if (data && data.address) {
+            const city = data.address.city || data.address.town || data.address.municipality || 'Unknown City';
+            const region = data.address.state || data.address.region || 'Unknown Region';
+            
+            if (userRef.current && (userRef.current.locationCity !== city || userRef.current.locationRegion !== region)) {
+              const userDocRef = doc(firestore!, 'users', userRef.current.uid);
+              await updateDoc(userDocRef, {
+                locationCity: city,
+                locationRegion: region,
+                lastActiveDate: serverTimestamp()
+              });
+              setUser(prev => prev ? { ...prev, locationCity: city, locationRegion: region } : null);
+              console.log(`[Location] Calibrated to ${city}, ${region}`);
+            }
+          }
+        } catch (e) {
+          console.warn('[Location] Reverse geocode failed:', e);
+        }
+      },
+      (error) => {
+        console.warn('[Location] Access denied or failed:', error.message);
+      },
+      { timeout: 10000 }
+    );
+  }, []);
+
   useEffect(() => {
     if (!auth || !firestore) return;
     
@@ -177,6 +218,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const scrubbed = scrubUserData(profileSnap.data(), userRef.current);
             setUser({ ...scrubbed, uid: firebaseUser.uid });
             setLoading(false);
+            
+            // Auto-detect location if missing
+            if (!scrubbed.locationRegion) {
+              detectLocation();
+            }
           }
         }, (error) => {
           console.error('[Auth] Firestore Profile Sync Error:', error);
@@ -192,10 +238,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       unsubFromAuth();
       if (unsubFromProfile) unsubFromProfile();
     };
-  }, [firestore, auth]);
+  }, [firestore, auth, detectLocation]);
 
   const handleVirtualSession = async (uid: string) => {
-    const userDocRef = doc(firestore, 'users', uid);
+    const userDocRef = doc(firestore!, 'users', uid);
     try {
       const snap = await getDoc(userDocRef);
       if (snap.exists()) {
@@ -230,7 +276,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     lastTaskReset: Date.now(),
     unlockedTracks: ['General Education', 'Professional Education', 'Specialization', 'all'],
     referralCode: 'TESTER',
-    squadId: null
+    squadId: null,
+    locationRegion: 'Metro Manila',
+    locationCity: 'Quezon City'
   });
 
   const createUserProfileInFirestore = async (firebaseUser: any) => {
@@ -257,7 +305,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     
     try {
-      await setDoc(doc(firestore, 'users', firebaseUser.uid), newUserProfile, { merge: true });
+      await setDoc(doc(firestore!, 'users', firebaseUser.uid), newUserProfile, { merge: true });
+      detectLocation();
       return newUserProfile;
     } catch (e) {
       console.error('[Auth] Firestore Init Error:', e);
@@ -305,7 +354,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (firebaseUser) {
-        const userDocRef = doc(firestore, 'users', firebaseUser.uid);
+        const userDocRef = doc(firestore!, 'users', firebaseUser.uid);
         const snap = await getDoc(userDocRef);
         if (!snap.exists()) {
           const newProfile = await createUserProfileInFirestore(firebaseUser);
@@ -391,7 +440,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await updateDoc(doc(firestore, 'users', user.uid), { xp: increment(amt) });
         }
       },
-      refreshUser 
+      refreshUser,
+      detectLocation
     }}>
       {children}
     </AuthContext.Provider>
