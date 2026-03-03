@@ -27,7 +27,8 @@
         "referredBy": { "type": "string" },
         "referralCount": { "type": "integer", "default": 0 },
         "referralCreditsEarned": { "type": "integer", "default": 0 },
-        "referralTier": { "type": "string", "enum": ["Bronze", "Silver", "Gold", "Platinum"], "default": "Bronze" }
+        "referralTier": { "type": "string", "enum": ["Bronze", "Silver", "Gold", "Platinum"], "default": "Bronze" },
+        "unlockedTracks": { "type": "array", "items": { "type": "string" } }
       }
     },
     "StudySquad": {
@@ -43,45 +44,23 @@
         "totalXp": { "type": "integer", "default": 0 },
         "level": { "type": "integer", "default": 1 },
         "createdAt": { "type": "number" },
-        "description": { "type": "string" }
+        "description": { "type": "string" },
+        "isActive": { "type": "boolean", "default": true }
       },
       "required": ["id", "name", "inviteCode", "creatorId"]
     },
-    "Question": {
-      "title": "Practice Question",
-      "description": "A question used in the LET practice tests.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "text": { "type": "string" },
-        "options": { "type": "array", "items": { "type": "string" } },
-        "correctAnswer": { "type": "string" },
-        "subject": { "type": "string" },
-        "subCategory": { "type": "string" },
-        "difficulty": { "type": "string", "enum": ["easy", "medium", "hard"] },
-        "explanation": { "type": "string" }
-      },
-      "required": ["id", "text", "options", "correctAnswer", "subject", "difficulty"]
-    },
     "Friendship": {
       "title": "Peer Link",
-      "description": "A connection between two teachers.",
+      "description": "A denormalized connection between two teachers to save Spark plan reads.",
       "type": "object",
       "properties": {
         "userIds": { "type": "array", "items": { "type": "string" } },
         "status": { "type": "string", "enum": ["pending", "accepted"] },
         "createdAt": { "type": "number" },
-        "initiatorId": { "type": "string" }
-      }
-    },
-    "ChatMessage": {
-      "title": "Comm Message",
-      "description": "A message sent between peers.",
-      "type": "object",
-      "properties": {
-        "senderId": { "type": "string" },
-        "text": { "type": "string" },
-        "timestamp": { "type": "number" }
+        "initiatorId": { "type": "string" },
+        "userNames": { "type": "object", "description": "Map of UID to display name" },
+        "userPhotos": { "type": "object", "description": "Map of UID to photo URL" },
+        "lastUpdated": { "type": "number" }
       }
     }
   },
@@ -96,10 +75,6 @@
     "/squads/{squadId}": {
       "schema": "StudySquad",
       "description": "Guild data for collaborative studying."
-    },
-    "/questions/{questionId}": {
-      "schema": "Question",
-      "description": "Global pool of practice questions."
     },
     "/friendships/{friendshipId}": {
       "schema": "Friendship",

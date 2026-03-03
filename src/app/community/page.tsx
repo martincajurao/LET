@@ -13,7 +13,6 @@ import {
   doc, 
   getDoc, 
   setDoc, 
-  deleteDoc,
   serverTimestamp 
 } from 'firebase/firestore';
 import { Card, CardContent } from "@/components/ui/card";
@@ -68,10 +67,10 @@ export default function CommunityPage() {
   const [isSendingRequest, setIsSendingRequest] = useState<string | null>(null);
   const [isInvitingSquad, setIsInvitingSquad] = useState<string | null>(null);
 
-  // Fetch recent activity
+  // Fetch recent activity - Optimized limit for Spark plan
   useEffect(() => {
     if (!firestore) return;
-    const activityQuery = query(collection(firestore, "exam_results"), orderBy("timestamp", "desc"), limit(10));
+    const activityQuery = query(collection(firestore, "exam_results"), orderBy("timestamp", "desc"), limit(8));
     const unsub = onSnapshot(activityQuery, (snap) => {
       setRecentActivity(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityFeedItem)));
       setLoading(false);
@@ -92,7 +91,11 @@ export default function CommunityPage() {
     return () => unsub();
   }, [firestore]);
 
-  const handleAddFriend = async (targetUserId: string, targetName: string) => {
+  const handleAddFriend = async (targetUser: any) => {
+    const targetUserId = targetUser.id;
+    const targetName = targetUser.displayName || 'Teacher';
+    const targetPhoto = targetUser.photoURL || '';
+
     if (!user || !firestore || isSendingRequest) return;
     if (targetUserId === user.uid) {
       toast({ variant: "destructive", title: "Logic Error", description: "You cannot link with yourself." });
@@ -101,28 +104,31 @@ export default function CommunityPage() {
 
     setIsSendingRequest(targetUserId);
     try {
-      // Deterministic ID ensures only one friendship document exists between two users
       const friendshipId = [user.uid, targetUserId].sort().join('_');
       const friendRef = doc(firestore, 'friendships', friendshipId);
       const snap = await getDoc(friendRef);
 
       if (snap.exists()) {
-        const data = snap.data();
-        if (data.status === 'accepted') {
-          toast({ title: "Already Linked", description: "This teacher is already in your roster." });
-        } else {
-          toast({ title: "Trace Pending", description: "A link request is already active for this teacher." });
-        }
+        toast({ title: "Already Trace Found", description: "This teacher is already in your pending or accepted links." });
         setIsSendingRequest(null);
         return;
       }
 
+      // Denormalize user info to friendship doc to save Spark plan reads
       await setDoc(friendRef, {
         userIds: [user.uid, targetUserId],
         status: 'pending',
         initiatorId: user.uid,
         createdAt: Date.now(),
-        lastUpdated: serverTimestamp()
+        lastUpdated: serverTimestamp(),
+        userNames: {
+          [user.uid]: user.displayName,
+          [targetUserId]: targetName
+        },
+        userPhotos: {
+          [user.uid]: user.photoURL,
+          [targetUserId]: targetPhoto
+        }
       });
 
       toast({ variant: "reward", title: "Request Transmitted", description: `Link request sent to ${targetName}.` });
@@ -136,30 +142,19 @@ export default function CommunityPage() {
   const handleInviteToSquad = async (targetUserId: string, targetName: string) => {
     if (!user || !firestore || isInvitingSquad) return;
     if (!user.squadId) {
-      toast({ 
-        variant: "destructive", 
-        title: "Guild Required", 
-        description: "Found a Study Squad to send invitations." 
-      });
+      toast({ variant: "destructive", title: "Guild Required", description: "Found a Study Squad to send invitations." });
       return;
     }
 
     setIsInvitingSquad(targetUserId);
     try {
-      // Fetch squad to get invite code
       const squadRef = doc(firestore, 'squads', user.squadId);
       const squadSnap = await getDoc(squadRef);
       
       if (squadSnap.exists()) {
         const inviteCode = squadSnap.data().inviteCode;
-        // In a real game, this might send an in-app message. 
-        // For our MVP, we provide the copy-action logic for the user.
         await navigator.clipboard.writeText(inviteCode);
-        toast({ 
-          variant: "reward", 
-          title: "Recruitment Key Copied", 
-          description: `Share key ${inviteCode} with ${targetName}.` 
-        });
+        toast({ variant: "reward", title: "Recruitment Key Copied", description: `Share key ${inviteCode} with ${targetName}.` });
       }
     } finally {
       setIsInvitingSquad(null);
@@ -188,7 +183,7 @@ export default function CommunityPage() {
           <div className="relative w-full md:w-80">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground opacity-40" />
             <Input 
-              placeholder="Search teachers or recruitment keys..." 
+              placeholder="Search teachers or keys..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-14 pl-11 rounded-2xl border-2 bg-card shadow-sm focus:border-primary transition-all font-bold"
@@ -211,7 +206,6 @@ export default function CommunityPage() {
 
           <TabsContent value="feed" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Left Column: Top Teachers */}
               <div className="lg:col-span-4 space-y-6">
                 <h3 className="text-sm font-black uppercase tracking-[0.2em] text-foreground px-2 flex items-center gap-2">
                   <Trophy className="w-4 h-4 text-yellow-500" />
@@ -234,7 +228,7 @@ export default function CommunityPage() {
                               <p className="font-black text-sm text-foreground truncate">{edu.displayName || 'Teacher'}</p>
                               <div className="flex gap-1">
                                 <button 
-                                  onClick={() => handleAddFriend(edu.id, edu.displayName || 'Teacher')}
+                                  onClick={() => handleAddFriend(edu)}
                                   disabled={isSendingRequest === edu.id || edu.id === user?.uid}
                                   className="text-primary hover:text-primary/80 disabled:opacity-30 transition-all p-1"
                                 >
@@ -267,16 +261,15 @@ export default function CommunityPage() {
                 </div>
               </div>
 
-              {/* Right Column: Feed */}
               <div className="lg:col-span-8 space-y-6">
                 <div className="flex items-center justify-between px-2">
                   <h3 className="text-sm font-black uppercase tracking-[0.2em] text-foreground flex items-center gap-2">
                     <Compass className="w-4 h-4 text-primary" />
-                    Live Performance Trace
+                    Live Trace
                   </h3>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                    <span className="text-[10px] font-black uppercase text-emerald-600 tracking-widest">Live Sync</span>
+                    <span className="text-[10px] font-black uppercase text-emerald-600 tracking-widest">Live</span>
                   </div>
                 </div>
 
@@ -288,7 +281,7 @@ export default function CommunityPage() {
                 ) : filteredActivity.length === 0 ? (
                   <div className="text-center py-24 bg-card rounded-[3rem] border shadow-inner">
                     <Globe className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
-                    <p className="text-muted-foreground font-bold text-sm">No activity found matching your search.</p>
+                    <p className="text-muted-foreground font-bold text-sm">No activity detected.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-4">
@@ -305,7 +298,7 @@ export default function CommunityPage() {
                                 <p className="font-black text-lg text-foreground">{activity.displayName || 'Teacher'}</p>
                                 <div className="flex gap-2">
                                   <button 
-                                    onClick={() => handleAddFriend(activity.userId, activity.displayName || 'Teacher')}
+                                    onClick={() => handleAddFriend({ id: activity.userId, displayName: activity.displayName })}
                                     disabled={isSendingRequest === activity.userId || activity.userId === user?.uid}
                                     className="bg-primary/10 text-primary p-1.5 rounded-lg hover:bg-primary hover:text-white transition-all active:scale-90"
                                   >
@@ -323,18 +316,17 @@ export default function CommunityPage() {
                                 </div>
                               </div>
                               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                                <Star className="w-3 h-3" /> Resolved simulation • {formatDistanceToNow(activity.timestamp)} ago
+                                <Star className="w-3 h-3" /> {activity.subject || 'Simulation'} • {formatDistanceToNow(activity.timestamp)} ago
                               </p>
                             </div>
                           </div>
                           <div className="flex items-center gap-6">
                             <div className="text-center">
-                              <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest mb-1">Board Rating</p>
+                              <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest mb-1">Rating</p>
                               <div className={cn("text-2xl font-black tracking-tighter tabular-nums leading-none", activity.overallScore >= 75 ? "text-emerald-600" : "text-orange-600")}>
                                 {activity.overallScore}%
                               </div>
                             </div>
-                            <div className="h-10 w-[1px] bg-border mx-2" />
                             <button className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center hover:bg-primary hover:text-primary-foreground active:scale-90 transition-all">
                               <ChevronRight className="w-5 h-5" />
                             </button>
@@ -357,7 +349,6 @@ export default function CommunityPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Global Stats Footer */}
         <footer className="pt-12 text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="h-[1px] w-16 bg-border" />

@@ -11,7 +11,6 @@ import {
   doc, 
   updateDoc, 
   deleteDoc,
-  getDoc,
   orderBy,
   limit,
   addDoc,
@@ -63,7 +62,7 @@ interface Message {
 }
 
 export function PeerLinks() {
-  const { user, refreshUser } = useUser();
+  const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   
@@ -76,53 +75,50 @@ export function PeerLinks() {
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Optimized Spark Plan Listener: Uses denormalized data inside Friendship doc
   useEffect(() => {
     if (!user || !firestore) return;
 
     const friendshipsQuery = query(
       collection(firestore, 'friendships'),
-      where('userIds', 'array-contains', user.uid)
+      where('userIds', 'array-contains', user.uid),
+      orderBy('lastUpdated', 'desc'),
+      limit(20)
     );
 
-    const unsub = onSnapshot(friendshipsQuery, async (snap) => {
-      const peerLinks: Peer[] = [];
-      
-      for (const fDoc of snap.docs) {
+    const unsub = onSnapshot(friendshipsQuery, (snap) => {
+      const peerLinks: Peer[] = snap.docs.map(fDoc => {
         const data = fDoc.data();
         const otherUserId = data.userIds.find((id: string) => id !== user.uid);
         
-        // Fetch peer user profile
-        const peerSnap = await getDoc(doc(firestore, 'users', otherUserId));
-        if (peerSnap.exists()) {
-          const peerData = peerSnap.data();
-          peerLinks.push({
-            id: otherUserId,
-            displayName: peerData.displayName || 'Teacher',
-            photoURL: peerData.photoURL,
-            xp: peerData.xp || 0,
-            majorship: peerData.majorship,
-            status: data.status,
-            friendshipId: fDoc.id,
-            isInitiator: data.initiatorId === user.uid
-          });
-        }
-      }
+        return {
+          id: otherUserId,
+          displayName: data.userNames?.[otherUserId] || 'Teacher',
+          photoURL: data.userPhotos?.[otherUserId] || '',
+          xp: 0, // In Spark plan, we avoid extra fetches for XP in the list
+          status: data.status,
+          friendshipId: fDoc.id,
+          isInitiator: data.initiatorId === user.uid
+        };
+      });
       
       setPeers(peerLinks);
+      setLoading(false);
+    }, (err) => {
+      console.error("Peer sync error:", err);
       setLoading(false);
     });
 
     return () => unsub();
   }, [user?.uid, firestore]);
 
-  // Chat Messages Listener
   useEffect(() => {
     if (!activeChatPeer || !firestore) return;
 
     const messagesQuery = query(
       collection(firestore, 'friendships', activeChatPeer.friendshipId, 'messages'),
       orderBy('timestamp', 'asc'),
-      limit(50)
+      limit(50) // Spark plan safe limit
     );
 
     const unsub = onSnapshot(messagesQuery, (snap) => {
@@ -167,7 +163,6 @@ export function PeerLinks() {
         text: newMessage,
         timestamp: Date.now()
       });
-      // Update last activity on friendship doc
       await updateDoc(doc(firestore, 'friendships', activeChatPeer.friendshipId), {
         lastUpdated: serverTimestamp()
       });
@@ -194,7 +189,6 @@ export function PeerLinks() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Pending Requests Section */}
       {pendingRequests.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-sm font-black uppercase tracking-[0.2em] text-foreground flex items-center gap-2 px-2">
@@ -211,25 +205,12 @@ export function PeerLinks() {
                     </div>
                     <div className="min-w-0">
                       <p className="font-black text-sm text-foreground truncate">{peer.displayName}</p>
-                      <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate">Rank {getRankData(peer.xp).rank}</p>
+                      <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate">Awaiting Link</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleAcceptLink(peer)} 
-                      className="h-9 px-4 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg bg-primary"
-                    >
-                      Accept
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => handleRejectLink(peer)} 
-                      className="h-9 w-9 rounded-xl text-muted-foreground hover:bg-rose-50 hover:text-rose-500"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
+                    <Button size="sm" onClick={() => handleAcceptLink(peer)} className="h-9 px-4 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg bg-primary">Accept</Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleRejectLink(peer)} className="h-9 w-9 rounded-xl text-muted-foreground hover:bg-rose-50 hover:text-rose-500"><X className="w-4 h-4" /></Button>
                   </div>
                 </CardContent>
               </Card>
@@ -238,7 +219,6 @@ export function PeerLinks() {
         </div>
       )}
 
-      {/* Peer List Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between px-2">
           <h3 className="text-sm font-black uppercase tracking-[0.2em] text-foreground flex items-center gap-2">
@@ -252,39 +232,35 @@ export function PeerLinks() {
           <Card className="p-12 text-center border-2 border-dashed border-border/50 rounded-[2.5rem] bg-muted/5">
             <LinkIcon className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
             <h4 className="text-lg font-black mb-1 text-foreground">No Active Links</h4>
-            <p className="text-xs text-muted-foreground font-medium max-w-xs mx-auto mb-6 leading-relaxed">Link with peers in the Global Feed to start collaborative traces and tactical comms.</p>
+            <p className="text-xs text-muted-foreground font-medium max-w-xs mx-auto mb-6 leading-relaxed">Recruit peers in the Global Feed to start tactical comms.</p>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {acceptedPeers.map(peer => {
-              const rank = getRankData(peer.xp);
-              return (
-                <Card key={peer.id} className="android-surface border-none shadow-md3-1 rounded-2xl bg-card hover:shadow-xl transition-all group cursor-pointer" onClick={() => setActiveChatChatPeer(peer)}>
-                  <CardContent className="p-5 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="relative">
-                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center font-black text-primary border border-primary/10 shadow-inner group-hover:bg-primary group-hover:text-white transition-all duration-500">
-                          {peer.displayName.charAt(0)}
-                        </div>
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-card rounded-full shadow-sm" />
+            {acceptedPeers.map(peer => (
+              <Card key={peer.id} className="android-surface border-none shadow-md3-1 rounded-2xl bg-card hover:shadow-xl transition-all group cursor-pointer" onClick={() => setActiveChatChatPeer(peer)}>
+                <CardContent className="p-5 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center font-black text-primary border border-primary/10 shadow-inner group-hover:bg-primary group-hover:text-white transition-all duration-500">
+                        {peer.displayName.charAt(0)}
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-black text-sm text-foreground truncate">{peer.displayName}</p>
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate">{peer.majorship || 'Aspiring Teacher'}</p>
-                      </div>
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-card rounded-full shadow-sm" />
                     </div>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-muted/30 group-hover:bg-primary/10 group-hover:text-primary transition-all">
-                      <MessageSquare className="w-5 h-5" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    <div className="min-w-0">
+                      <p className="font-black text-sm text-foreground truncate">{peer.displayName}</p>
+                      <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate">Verified Peer</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-muted/30 group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                    <MessageSquare className="w-5 h-5" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Sent Requests Section */}
       {sentRequests.length > 0 && (
         <div className="pt-4 border-t border-border/50">
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground opacity-40 px-2 mb-4">
@@ -299,24 +275,16 @@ export function PeerLinks() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-black truncate">{peer.displayName}</p>
-                    <p className="text-[8px] font-bold text-muted-foreground uppercase">Waiting for verification...</p>
+                    <p className="text-[8px] font-bold text-muted-foreground uppercase">Waiting...</p>
                   </div>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => handleRejectLink(peer)} 
-                  className="h-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 text-[8px] font-black uppercase"
-                >
-                  Cancel
-                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleRejectLink(peer)} className="h-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 text-[8px] font-black uppercase">Cancel</Button>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Tactical Chat Dialog */}
       <Dialog open={!!activeChatPeer} onOpenChange={() => setActiveChatChatPeer(null)}>
         <DialogContent className="max-w-md w-full h-[85vh] sm:h-[600px] rounded-[2.5rem] p-0 border-none shadow-2xl overflow-hidden outline-none z-[1300] flex flex-col bg-background">
           <DialogHeader className="p-6 border-b bg-card shrink-0 flex flex-row items-center justify-between space-y-0">
@@ -341,34 +309,16 @@ export function PeerLinks() {
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center opacity-30">
                 <ShieldCheck className="w-12 h-12 mb-2" />
-                <p className="text-[10px] font-black uppercase tracking-widest">End-to-end encrypted trace</p>
+                <p className="text-[10px] font-black uppercase tracking-widest">Secured Comm-Trace</p>
               </div>
             ) : (
               messages.map((msg) => {
                 const isMine = msg.senderId === user?.uid;
                 return (
-                  <motion.div 
-                    key={msg.id}
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    className={cn(
-                      "flex w-full",
-                      isMine ? "justify-end" : "justify-start"
-                    )}
-                  >
-                    <div className={cn(
-                      "max-w-[80%] p-4 rounded-2xl text-sm font-medium shadow-sm relative",
-                      isMine 
-                        ? "bg-primary text-primary-foreground rounded-tr-none" 
-                        : "bg-card border border-border/50 text-foreground rounded-tl-none"
-                    )}>
+                  <motion.div key={msg.id} initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} className={cn("flex w-full", isMine ? "justify-end" : "justify-start")}>
+                    <div className={cn("max-w-[80%] p-4 rounded-2xl text-sm font-medium shadow-sm relative", isMine ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-card border border-border/50 text-foreground rounded-tl-none")}>
                       {msg.text}
-                      <p className={cn(
-                        "text-[7px] font-black uppercase tracking-widest mt-1 opacity-40",
-                        isMine ? "text-white" : "text-muted-foreground"
-                      )}>
-                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
+                      <p className={cn("text-[7px] font-black uppercase tracking-widest mt-1 opacity-40", isMine ? "text-white" : "text-muted-foreground")}>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                   </motion.div>
                 );
@@ -378,19 +328,8 @@ export function PeerLinks() {
 
           <div className="p-6 bg-card border-t shrink-0">
             <div className="flex gap-2">
-              <Input 
-                placeholder="Type communication..." 
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                className="h-12 rounded-xl border-2 font-medium bg-muted/10 focus:bg-card transition-all"
-              />
-              <Button 
-                onClick={handleSendMessage}
-                disabled={!newMessage.trim() || isSending}
-                size="icon"
-                className="h-12 w-12 rounded-xl shadow-lg bg-primary shrink-0 active:scale-90 transition-all"
-              >
+              <Input placeholder="Type communication..." value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} className="h-12 rounded-xl border-2 font-medium bg-muted/10 focus:bg-card transition-all" />
+              <Button onClick={handleSendMessage} disabled={!newMessage.trim() || isSending} size="icon" className="h-12 w-12 rounded-xl shadow-lg bg-primary shrink-0 active:scale-90 transition-all">
                 {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 text-primary-foreground fill-current" />}
               </Button>
             </div>
