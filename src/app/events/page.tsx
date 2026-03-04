@@ -6,6 +6,10 @@ import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/f
 import { EventsSection } from '@/components/ui/EventsSection';
 import { Leaderboard } from '@/components/ui/leaderboard';
 import { WeeklyTournament } from '@/components/ui/weekly-tournament';
+import { FriendDuels } from '@/components/ui/friend-duels';
+import { SquadWars } from '@/components/ui/squad-wars';
+import { RankedMatchmaking } from '@/components/ui/ranked-matchmaking';
+import { PredictionLeague } from '@/components/ui/prediction-league';
 import { 
   Trophy, 
   Globe, 
@@ -18,7 +22,9 @@ import {
   Loader2,
   Sparkles,
   MapPin,
-  ShieldCheck
+  ShieldCheck,
+  Swords,
+  Target
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -209,13 +215,40 @@ export default function EventsPage() {
                   <span className="text-[9px] font-black uppercase tracking-widest text-red-500">Live Event</span>
                 </div>
                 <WeeklyTournament 
-                  currentUserId={user?.uid}
-                  currentUserScore={0}
-                  onJoinTournament={() => {
-                    // Handled within component
-                  }}
+                  userId={user?.uid}
+                  userName={user?.displayName}
+                  userXp={user?.xp}
+                  userScore={0}
                 />
               </div>
+
+              {/* Friend Duels Section */}
+              <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
+                <CardContent className="p-6">
+                  <FriendDuels userId={user?.uid} />
+                </CardContent>
+              </Card>
+
+              {/* Squad Wars Section */}
+              <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
+                <CardContent className="p-6">
+                  <SquadWars userSquadId={user?.squadId} />
+                </CardContent>
+              </Card>
+
+              {/* Ranked Matchmaking Section */}
+              <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
+                <CardContent className="p-6">
+                  <RankedMatchmaking userId={user?.uid} userXp={user?.xp} />
+                </CardContent>
+              </Card>
+
+              {/* Prediction League Section */}
+              <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
+                <CardContent className="p-6">
+                  <PredictionLeague userId={user?.uid} />
+                </CardContent>
+              </Card>
 
               <div className="space-y-4">
                 <div className="flex items-center gap-3 mb-2 px-2">
