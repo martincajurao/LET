@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -25,8 +24,6 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from "@/components/ui/card";
-import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
 
 interface ActivityFeedItem {
   id: string;
@@ -42,6 +39,7 @@ interface ActivityFeedItem {
 
 export default function EventsPage() {
   const firestore = useFirestore();
+  const { user } = useUser();
   const [worldRecords, setWorldRecords] = useState<ActivityFeedItem[]>([]);
   const [loadingRecords, setLoadingRecords] = useState(true);
 
@@ -66,7 +64,6 @@ export default function EventsPage() {
       const unsub = onSnapshot(recordQuery, (snap) => {
         if (!snap.empty) {
           const data = { id: snap.docs[0].id, ...snap.docs[0].data() } as ActivityFeedItem;
-          // Filter out duplicates if category data is identical
           const existingIdx = recordDocs.findIndex(r => r.subject === data.subject);
           if (existingIdx !== -1) recordDocs[existingIdx] = data;
           else recordDocs.push(data);
@@ -251,3 +248,4 @@ export default function EventsPage() {
     </div>
   );
 }
+

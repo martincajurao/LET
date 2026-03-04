@@ -788,9 +788,6 @@ function LetsPrepContent() {
         </DialogContent>
       </Dialog>
 
-      {/* Gamification Settings Dialog */}
-      <GamificationSettings open={showGamificationSettings} onOpenChange={setShowGamificationSettings} />
-
       {/* Celebration Effects */}
       {celebration.show && <CelebrationEffect show={celebration.show} type={celebration.type} />}
     </div>
