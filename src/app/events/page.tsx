@@ -117,139 +117,58 @@ export default function EventsPage() {
             <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner">
               <Globe className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-5xl font-black tracking-tighter text-foreground">Global Arena</h1>
+<h1 className="text-5xl font-black tracking-tighter text-foreground">Weekly Championship</h1>
           </div>
           <p className="text-muted-foreground font-medium md:text-xl ml-1 opacity-80">Compete with educators nationwide and claim legendary records.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           <div className="lg:col-span-8 space-y-16">
-            <EventsSection />
-
-            {/* Hall of Fame / World Records Section */}
-            <div className="space-y-8 pt-12 border-t border-border/50">
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-yellow-500/10 rounded-2xl flex items-center justify-center border-2 border-yellow-500/20 shadow-lg">
-                      <Trophy className="w-6 h-6 text-yellow-600" />
-                    </div>
-                    <h2 className="text-3xl font-black tracking-tighter">Intelligence Records</h2>
-                  </div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-60 ml-1">The Absolute Global Vanguard</p>
-                </div>
-                <div className="flex items-center gap-2 bg-muted/20 px-4 py-2 rounded-xl border border-border/50">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                  <span className="text-[9px] font-black uppercase text-emerald-600 tracking-widest">Live Sync Enabled</span>
-                </div>
+            {/* Weekly Championship */}
+            <div>
+              <div className="flex items-center gap-2 mb-3 px-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-red-500">Live Event</span>
               </div>
-
-              {loadingRecords ? (
-                <div className="flex flex-col items-center justify-center py-32 bg-card rounded-[3rem] border-2 border-dashed border-border/50 shadow-inner">
-                  <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
-                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Synchronizing Global Records...</p>
-                </div>
-              ) : worldRecords.length === 0 ? (
-                <div className="text-center py-24 bg-muted/5 rounded-[3rem] border-2 border-dashed border-border/50">
-                  <Trophy className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
-                  <p className="text-muted-foreground font-bold text-sm uppercase tracking-widest">No records established in the vault.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {worldRecords.map((record) => (
-                    <Card key={record.id} className="android-surface border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-yellow-500/10 via-card to-card border-2 border-yellow-500/20 overflow-hidden group">
-                      <CardContent className="p-8 relative">
-                        <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:rotate-12 transition-transform duration-700">
-                          <Medal className="w-24 h-24 text-yellow-600" />
-                        </div>
-                        
-                        <div className="flex items-start justify-between mb-8 relative z-10">
-                          <div className="space-y-1">
-                            <Badge className="bg-yellow-500 text-yellow-900 font-black text-[8px] uppercase tracking-widest rounded-lg px-3 mb-2 border-none shadow-md">World Record Trace</Badge>
-                            <h3 className="text-2xl font-black tracking-tighter leading-tight">{record.subject === 'all' ? 'Full Board Simulation' : record.subject}</h3>
-                            <div className="flex items-center gap-2 text-[9px] font-black uppercase text-muted-foreground tracking-widest opacity-60">
-                              <MapPin className="w-3 h-3" />
-                              {record.locationRegion || 'Global Sector'}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-4xl font-black text-yellow-600 tracking-tighter tabular-nums">{record.overallScore}%</div>
-                            <span className="text-[8px] font-black uppercase text-muted-foreground opacity-40 tracking-widest">Precision Rating</span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-5 p-5 bg-card rounded-[2.25rem] border-2 border-yellow-500/10 shadow-sm relative z-10 transition-all hover:bg-muted/5">
-                          <div className="w-14 h-14 bg-yellow-500/20 rounded-2xl flex items-center justify-center font-black text-yellow-700 text-xl shadow-inner group-hover:scale-110 transition-transform">
-                            {record.displayName?.charAt(0) || '🎓'}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-black text-lg text-foreground truncate">{record.displayName}</p>
-                            <div className="flex items-center gap-3 mt-0.5">
-                              <Badge variant="outline" className="h-5 px-2 bg-emerald-500/5 border-emerald-500/20 text-[8px] font-black uppercase text-emerald-600">
-                                <Building2 className="w-2.5 h-2.5 mr-1" /> {record.locationCity || 'International'}
-                              </Badge>
-                              <div className="flex items-center gap-1 text-[8px] font-black text-muted-foreground opacity-60 uppercase">
-                                <Timer className="w-2.5 h-2.5" />
-                                {formatTime(record.timeSpent)}
-                              </div>
-                            </div>
-                          </div>
-                          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-yellow-500/10 hover:text-yellow-600 active:scale-90">
-                            <ChevronRight className="w-5 h-5" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
+              <WeeklyTournament 
+                userId={user?.uid}
+                userName={user?.displayName}
+                userXp={user?.xp}
+                userScore={0}
+              />
             </div>
+
+            {/* Ranked Matchmaking Section */}
+            <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
+              <CardContent className="p-6">
+                <RankedMatchmaking userId={user?.uid} userXp={user?.xp} />
+              </CardContent>
+            </Card>
+
+            {/* Prediction League Section */}
+            <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
+              <CardContent className="p-6">
+                <PredictionLeague userId={user?.uid} />
+              </CardContent>
+            </Card>
+
+            {/* Friend Duels Section */}
+            <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
+              <CardContent className="p-6">
+                <FriendDuels userId={user?.uid} />
+              </CardContent>
+            </Card>
+
+            {/* Squad Wars Section */}
+            <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
+              <CardContent className="p-6">
+                <SquadWars userSquadId={user?.squadId} />
+              </CardContent>
+            </Card>
           </div>
 
           <div className="lg:col-span-4 space-y-8">
             <div className="sticky top-24 space-y-8">
-              {/* Weekly Championship with LIVE Badge */}
-              <div>
-                <div className="flex items-center gap-2 mb-3 px-2">
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-red-500">Live Event</span>
-                </div>
-                <WeeklyTournament 
-                  userId={user?.uid}
-                  userName={user?.displayName}
-                  userXp={user?.xp}
-                  userScore={0}
-                />
-              </div>
-
-              {/* Friend Duels Section */}
-              <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
-                <CardContent className="p-6">
-                  <FriendDuels userId={user?.uid} />
-                </CardContent>
-              </Card>
-
-              {/* Squad Wars Section */}
-              <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
-                <CardContent className="p-6">
-                  <SquadWars userSquadId={user?.squadId} />
-                </CardContent>
-              </Card>
-
-              {/* Ranked Matchmaking Section */}
-              <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
-                <CardContent className="p-6">
-                  <RankedMatchmaking userId={user?.uid} userXp={user?.xp} />
-                </CardContent>
-              </Card>
-
-              {/* Prediction League Section */}
-              <Card className="border-none shadow-xl rounded-[2rem] bg-card overflow-hidden">
-                <CardContent className="p-6">
-                  <PredictionLeague userId={user?.uid} />
-                </CardContent>
-              </Card>
-
               <div className="space-y-4">
                 <div className="flex items-center gap-3 mb-2 px-2">
                   <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shadow-inner">
@@ -258,6 +177,85 @@ export default function EventsPage() {
                   <h3 className="font-black uppercase tracking-[0.2em] text-xs text-foreground">Top Rankers</h3>
                 </div>
                 <Leaderboard />
+              </div>
+
+              {/* Hall of Fame / World Records Section */}
+              <div className="space-y-8 pt-12 border-t border-border/50">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-yellow-500/10 rounded-2xl flex items-center justify-center border-2 border-yellow-500/20 shadow-lg">
+                        <Trophy className="w-6 h-6 text-yellow-600" />
+                      </div>
+                      <h2 className="text-3xl font-black tracking-tighter">Intelligence Records</h2>
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-60 ml-1">The Absolute Global Vanguard</p>
+                  </div>
+                  <div className="flex items-center gap-2 bg-muted/20 px-4 py-2 rounded-xl border border-border/50">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                    <span className="text-[9px] font-black uppercase text-emerald-600 tracking-widest">Live Sync Enabled</span>
+                  </div>
+                </div>
+
+                {loadingRecords ? (
+                  <div className="flex flex-col items-center justify-center py-32 bg-card rounded-[3rem] border-2 border-dashed border-border/50 shadow-inner">
+                    <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Synchronizing Global Records...</p>
+                  </div>
+                ) : worldRecords.length === 0 ? (
+                  <div className="text-center py-24 bg-muted/5 rounded-[3rem] border-2 border-dashed border-border/50">
+                    <Trophy className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
+                    <p className="text-muted-foreground font-bold text-sm uppercase tracking-widest">No records established in the vault.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {worldRecords.map((record) => (
+                      <Card key={record.id} className="android-surface border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-yellow-500/10 via-card to-card border-2 border-yellow-500/20 overflow-hidden group">
+                        <CardContent className="p-8 relative">
+                          <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:rotate-12 transition-transform duration-700">
+                            <Medal className="w-24 h-24 text-yellow-600" />
+                          </div>
+                          
+                          <div className="flex items-start justify-between mb-8 relative z-10">
+                            <div className="space-y-1">
+                              <Badge className="bg-yellow-500 text-yellow-900 font-black text-[8px] uppercase tracking-widest rounded-lg px-3 mb-2 border-none shadow-md">World Record Trace</Badge>
+                              <h3 className="text-2xl font-black tracking-tighter leading-tight">{record.subject === 'all' ? 'Full Board Simulation' : record.subject}</h3>
+                              <div className="flex items-center gap-2 text-[9px] font-black uppercase text-muted-foreground tracking-widest opacity-60">
+                                <MapPin className="w-3 h-3" />
+                                {record.locationRegion || 'Global Sector'}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-4xl font-black text-yellow-600 tracking-tighter tabular-nums">{record.overallScore}%</div>
+                              <span className="text-[8px] font-black uppercase text-muted-foreground opacity-40 tracking-widest">Precision Rating</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-5 p-5 bg-card rounded-[2.25rem] border-2 border-yellow-500/10 shadow-sm relative z-10 transition-all hover:bg-muted/5">
+                            <div className="w-14 h-14 bg-yellow-500/20 rounded-2xl flex items-center justify-center font-black text-yellow-700 text-xl shadow-inner group-hover:scale-110 transition-transform">
+                              {record.displayName?.charAt(0) || '🎓'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-black text-lg text-foreground truncate">{record.displayName}</p>
+                              <div className="flex items-center gap-3 mt-0.5">
+                                <Badge variant="outline" className="h-5 px-2 bg-emerald-500/5 border-emerald-500/20 text-[8px] font-black uppercase text-emerald-600">
+                                  <Building2 className="w-2.5 h-2.5 mr-1" /> {record.locationCity || 'International'}
+                                </Badge>
+                                <div className="flex items-center gap-1 text-[8px] font-black text-muted-foreground opacity-60 uppercase">
+                                  <Timer className="w-2.5 h-2.5" />
+                                  {formatTime(record.timeSpent)}
+                                </div>
+                              </div>
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-yellow-500/10 hover:text-yellow-600 active:scale-90">
+                              <ChevronRight className="w-5 h-5" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <Card className="android-surface border-none shadow-xl rounded-[2.5rem] bg-foreground text-background p-8 relative overflow-hidden group active:scale-[0.98] transition-all">
