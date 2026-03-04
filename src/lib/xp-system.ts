@@ -53,6 +53,23 @@ export const AI_UNLOCK_COST = 10;
 export const AI_DEEP_DIVE_COST = 5; 
 export const STREAK_RECOVERY_COST = 50; 
 
+// STREAK FREEZE SYSTEM (NEW)
+export const STREAK_FREEZE_COST_XP = 500;
+export const STREAK_FREEZE_COST_CREDITS = 25;
+export const STREAK_WARNING_HOURS = 24;
+
+// FIRST WIN BONUS (NEW)
+export const FIRST_WIN_BONUS_MULTIPLIER = 2;
+
+// MONTHLY MEGA REWARD (NEW)
+export const MONTHLY_REWARD_DAY = 30;
+export const MONTHLY_MEGA_REWARD = {
+  xp: 5000,
+  credits: 500,
+  badge: 'Monthly Champion',
+  avatarFrame: 'Gold Frame'
+};
+
 /**
  * TIERED ECONOMY CONFIGURATION
  * Re-balanced for early-game speed and late-game prestige.

@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { 
-  Zap,
   Trophy,
   Flame,
   Moon,
@@ -22,10 +20,10 @@ import {
   Sword,
   TrendingUp,
   Settings,
-  ChevronRight,
   ShieldCheck,
-  ShieldAlert,
-  GraduationCap
+  Snowflake,
+  Star,
+  Zap
 } from "lucide-react";
 import { AchievementSystem } from '@/components/ui/achievement-system';
 import { ReferralSystem } from '@/components/ui/referral-system';
@@ -34,15 +32,26 @@ import { Toaster } from "@/components/ui/toaster";
 import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { getRankData, CAREER_TIERS } from '@/lib/xp-system';
+import { getRankData, CAREER_TIERS, FIRST_WIN_BONUS_MULTIPLIER } from '@/lib/xp-system';
 import Link from 'next/link';
+import { FirstWinProgressIndicator } from '@/components/ui/first-win-bonus';
+import { StreakFreezeDialog, StreakFreezeButton } from '@/components/ui/streak-freeze-dialog';
 
 export default function DashboardPage() {
   const { user } = useUser();
   const router = useRouter();
   const { isDark, toggleDarkMode } = useTheme();
+  const [showStreakFreeze, setShowStreakFreeze] = useState(false);
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
+
+  // Check if First Win is available today
+  const isFirstWinAvailable = useMemo(() => {
+    if (!user?.lastFirstWinDate) return true;
+    const now = new Date();
+    const lastWin = new Date(user.lastFirstWinDate);
+    return now.toDateString() !== lastWin.toDateString();
+  }, [user?.lastFirstWinDate]);
 
   const displayStats = user ? [
     { icon: <Sparkles className="w-4 h-4 text-yellow-500 fill-current animate-sparkle" />, label: 'Vault Units', value: user.credits || 0, color: 'text-yellow-500 bg-yellow-500/10' },
@@ -54,7 +63,6 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background font-body">
       <div className="max-w-7xl mx-auto px-4 pt-6 pb-24 space-y-8">
-        {/* Dashboard Header with Profile Photo - Scholar Identity Pattern */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-2">
           <div className="flex items-center gap-5">
             <Avatar className="w-16 h-16 border-4 border-card shadow-xl rounded-2xl">
@@ -81,7 +89,17 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Quick Stats Grid */}
+        {/* First Win Bonus Indicator */}
+        {user && isFirstWinAvailable && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-2xl p-4 border-2 border-yellow-500/20"
+          >
+            <FirstWinProgressIndicator isCompleted={!isFirstWinAvailable} />
+          </motion.div>
+        )}
+
         {user && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {displayStats.map((stat, i) => (
@@ -93,6 +111,16 @@ export default function DashboardPage() {
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mt-1">{stat.label}</p>
               </Card>
             ))}
+          </div>
+        )}
+
+        {/* Streak Freeze Button */}
+        {user && (user.streakCount || 0) >= 3 && (
+          <div className="flex justify-center">
+            <StreakFreezeButton 
+              onClick={() => setShowStreakFreeze(true)} 
+              streakCount={user.streakCount || 0} 
+            />
           </div>
         )}
 
@@ -148,9 +176,7 @@ export default function DashboardPage() {
                               <div className="flex items-center gap-2">
                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Rank {tier.minRank} — {tier.maxRank}</p>
                                 <div className="w-1 h-1 bg-muted-foreground/30 rounded-full" />
-                                <div className="flex items-center gap-1">
-                                  <Badge className="bg-primary/10 text-primary text-[8px] font-black border-none px-2">{tier.multiplier}x Buff</Badge>
-                                </div>
+                                <Badge className="bg-primary/10 text-primary text-[8px] font-black border-none px-2">{tier.multiplier}x Buff</Badge>
                               </div>
                             </div>
                             <div className="flex flex-col items-end gap-1">
@@ -216,7 +242,15 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      
+      {/* Streak Freeze Dialog */}
+      <StreakFreezeDialog 
+        isOpen={showStreakFreeze} 
+        onClose={() => setShowStreakFreeze(false)} 
+      />
+      
       <Toaster />
     </div>
   );
 }
+

@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from '@/firebase/auth/use-user';
 import { getRankData } from '@/lib/xp-system';
+import { MONTHLY_REWARD_DAY, MONTHLY_MEGA_REWARD } from '@/lib/xp-system';
 
 const BASE_REWARDS = [
   { day: 1, xp: 25, credits: 5, type: 'normal' },

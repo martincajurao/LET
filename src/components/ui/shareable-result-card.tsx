@@ -1,336 +1,308 @@
 'use client';
 
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { 
   Share2, 
   Download, 
-  CheckCircle2, 
   Trophy, 
+  Star, 
+  Zap, 
   Flame,
-  Sparkles,
-  Copy,
+  Award,
+  Target,
+  CheckCircle2,
   Twitter,
   Facebook,
-  MessageCircle,
-  Loader2,
-  X
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+  Link2,
+  Copy,
+  X,
+  Loader2
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getRankData, getCareerRankTitle } from '@/lib/xp-system';
 
 interface ShareableResultCardProps {
-  open: boolean;
-  onClose: () => void;
   score: number;
-  totalQuestions: number;
-  correctAnswers: number;
-  timeSpent: number;
-  rank?: number;
-  streak?: number;
-  xpEarned?: number;
+  rank: number;
+  xpEarned: number;
+  totalXp: number;
+  streakCount: number;
   subject?: string;
+  timeSpent?: number;
+  onShare?: () => void;
+  onClose?: () => void;
 }
 
 export function ShareableResultCard({
-  open,
-  onClose,
   score,
-  totalQuestions,
-  correctAnswers,
-  timeSpent,
-  rank = 1,
-  streak = 0,
-  xpEarned = 0,
+  rank,
+  xpEarned,
+  totalXp,
+  streakCount,
   subject = 'Full Simulation',
+  timeSpent,
+  onShare,
+  onClose
 }: ShareableResultCardProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [isExporting, setIsExporting] = useState(false);
+  const [showShareOptions, setShowShareOptions] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  // Generate canvas image
-  const generateImage = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  const rankData = getRankData(totalXp);
+  const rankTitle = getCareerRankTitle(rank);
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+  const getScoreColor = (score: number) => {
+    if (score >= 90) return 'from-yellow-400 to-amber-500';
+    if (score >= 80) return 'from-emerald-400 to-green-500';
+    if (score >= 70) return 'from-blue-400 to-cyan-500';
+    if (score >= 60) return 'from-purple-400 to-violet-500';
+    return 'from-gray-400 to-slate-500';
+  };
 
-    // Set canvas size (Instagram story ratio 9:16)
-    canvas.width = 1080;
-    canvas.height = 1920;
+  const getScoreEmoji = (score: number) => {
+    if (score >= 90) return '🏆';
+    if (score >= 80) return '⭐';
+    if (score >= 70) return '🎯';
+    if (score >= 60) return '💪';
+    return '📚';
+  };
 
-    // Background gradient
-    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, '#1e293b');
-    gradient.addColorStop(1, '#0f172a');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Decorative circles
-    ctx.fillStyle = 'rgba(16, 185, 129, 0.1)';
-    ctx.beginPath();
-    ctx.arc(200, 200, 400, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
-    ctx.beginPath();
-    ctx.arc(900, 1600, 300, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Header
-    ctx.fillStyle = '#10b981';
-    ctx.font = 'bold 48px system-ui';
-    ctx.textAlign = 'center';
-    ctx.fillText("LET's PREP", canvas.width / 2, 180);
-
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '32px system-ui';
-    ctx.fillText("Board Exam Results", canvas.width / 2, 240);
-
-    // Subject badge
-    ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
-    ctx.roundRect(340, 300, 400, 60, 30);
-    ctx.fill();
-    ctx.fillStyle = '#10b981';
-    ctx.font = 'bold 28px system-ui';
-    ctx.fillText(subject, canvas.width / 2, 340);
-
-    // Score circle
-    const centerX = canvas.width / 2;
-    const centerY = 650;
-    const radius = 200;
-
-    // Background circle
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(30, 41, 59, 0.8)';
-    ctx.fill();
-    ctx.strokeStyle = score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : '#ef4444';
-    ctx.lineWidth = 20;
-    ctx.stroke();
-
-    // Score text
-    ctx.fillStyle = score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : '#ef4444';
-    ctx.font = 'bold 120px system-ui';
-    ctx.fillText(`${score}%`, centerX, centerY + 40);
-
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '28px system-ui';
-    ctx.fillText(getScoreMessage(score), centerX, centerY + 100);
-
-    // Stats row
-    const stats = [
-      { label: 'Correct', value: `${correctAnswers}/${totalQuestions}`, color: '#10b981' },
-      { label: 'Time', value: formatTime(timeSpent), color: '#3b82f6' },
-      { label: 'XP', value: `+${xpEarned}`, color: '#f59e0b' },
-    ];
-
-    const startX = 140;
-    const spacing = 340;
-
-    stats.forEach((stat, i) => {
-      const x = startX + i * spacing;
-      
-      // Card background
-      ctx.fillStyle = 'rgba(30, 41, 59, 0.6)';
-      ctx.roundRect(x - 100, 1000, 200, 180, 24);
-      ctx.fill();
-
-      // Value
-      ctx.fillStyle = stat.color;
-      ctx.font = 'bold 48px system-ui';
-      ctx.fillText(stat.value, x, 1080);
-
-      // Label
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '24px system-ui';
-      ctx.fillText(stat.label, x, 1130);
-    });
-
-    // Bottom info
-    if (streak > 0) {
-      ctx.fillStyle = 'rgba(249, 115, 22, 0.2)';
-      ctx.roundRect(340, 1300, 400, 80, 40);
-      ctx.fill();
-      ctx.fillStyle = '#f97316';
-      ctx.font = 'bold 36px system-ui';
-      ctx.fillText(`🔥 ${streak} Day Streak`, canvas.width / 2, 1350);
-    }
-
-    // Rank
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.2)';
-    ctx.roundRect(340, 1420, 400, 80, 40);
-    ctx.fill();
-    ctx.fillStyle = '#3b82f6';
-    ctx.font = 'bold 36px system-ui';
-    ctx.fillText(`Rank ${rank}`, canvas.width / 2, 1470);
-
-    // Footer
-    ctx.fillStyle = '#64748b';
-    ctx.font = '24px system-ui';
-    ctx.fillText("Join me on LET's Prep!", canvas.width / 2, 1750);
-    ctx.fillText("letprep.app", canvas.width / 2, 1800);
-
-    // Generate image URL
-    const dataUrl = canvas.toDataURL('image/png');
-    setGeneratedImage(dataUrl);
-  }, [score, totalQuestions, correctAnswers, timeSpent, xpEarned, streak, rank, subject]);
-
-  const handleShare = async () => {
-    setIsGenerating(true);
-    
+  const handleCopyLink = async () => {
     try {
-      await generateImage();
-      
-      if (generatedImage && navigator.share) {
-        const response = await fetch(generatedImage);
-        const blob = await response.blob();
-        const file = new File([blob], 'result.png', { type: 'image/png' });
-        
+      await navigator.clipboard.writeText(`I scored ${score}% on ${subject}! 🎉\n\nLet me challenge you to beat my score!`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      console.error('Failed to copy:', e);
+    }
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
         await navigator.share({
-          title: "My LET Exam Results",
-          text: `I scored ${score}% on LET's Prep! 🔥`,
-          files: [file],
+          title: `I scored ${score}% on ${subject}!`,
+          text: `I just scored ${score}% on ${subject}! 🎉 Can you beat my score?`,
         });
-      } else {
-        // Fallback to clipboard
-        await navigator.clipboard.writeText(`I scored ${score}% on LET's Prep! 🎓\n\nCorrect: ${correctAnswers}/${totalQuestions}\nTime: ${formatTime(timeSpent)}\nStreak: ${streak} days\n\nJoin me: letprep.app`);
-        toast({ title: "Results copied!", description: "Share your achievement!" });
+      } catch (e) {
+        if ((e as Error).name !== 'AbortError') {
+          setShowShareOptions(true);
+        }
       }
-    } catch (e) {
-      // Silent fail for share
-    } finally {
-      setIsGenerating(false);
+    } else {
+      setShowShareOptions(true);
     }
   };
 
-  const handleCopyImage = async () => {
-    if (!generatedImage) {
-      await generateImage();
-    }
-    
-    try {
-      const response = await fetch(generatedImage!);
-      const blob = await response.blob();
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': blob })
-      ]);
-      setIsCopied(true);
-      toast({ title: "Image copied!", description: "Paste in your social media" });
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (e) {
-      toast({ variant: "destructive", title: "Copy failed", description: "Try downloading instead" });
-    }
-  };
-
-  const handleDownload = () => {
-    if (!generatedImage) {
-      generateImage();
-      return;
-    }
-
-    const link = document.createElement('a');
-    link.download = `lets-prep-result-${Date.now()}.png`;
-    link.href = generatedImage;
-    link.click();
-    toast({ title: "Downloaded!", description: "Share your achievement!" });
+  const formatTime = (seconds?: number) => {
+    if (!seconds) return '--:--';
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}m ${s}s`;
   };
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-[400px] overflow-hidden outline-none">
-          <DialogHeader className="p-6 pb-0 text-center">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
-                <Trophy className="w-8 h-8 text-primary" />
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className="w-full max-w-sm"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Result Card Preview */}
+          <div 
+            ref={cardRef}
+            className={cn(
+              "rounded-[2.5rem] overflow-hidden shadow-2xl",
+              "bg-gradient-to-br from-card to-card"
+            )}
+          >
+            {/* Header */}
+            <div className={cn(
+              "p-8 text-center text-white relative overflow-hidden",
+              "bg-gradient-to-br from-primary to-purple-600"
+            )}>
+              <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10" />
+              <div className="absolute top-0 right-0 p-4 opacity-20">
+                <Trophy className="w-24 h-24" />
               </div>
+              
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", delay: 0.2 }}
+                className="text-6xl mb-2"
+              >
+                {getScoreEmoji(score)}
+              </motion.div>
+              
+              <h2 className="text-3xl font-black tracking-tight">
+                {score}%
+              </h2>
+              <p className="text-white/80 text-sm font-medium uppercase tracking-wider">
+                {subject}
+              </p>
+
+              {score >= 90 && (
+                <Badge className="mt-3 bg-yellow-500 text-yellow-900 font-black text-xs">
+                  <Star className="w-3 h-3 mr-1 fill-current" />
+                  Perfect Score!
+                </Badge>
+              )}
             </div>
-            <DialogTitle className="text-2xl font-black">Share Your Results!</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Show off your achievement and inspire others
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="p-6 space-y-4">
-            {/* Preview */}
-            <div className="aspect-[9/16] max-h-[300px] mx-auto rounded-2xl overflow-hidden bg-muted relative">
-              {generatedImage ? (
-                <img src={generatedImage} alt="Result card" className="w-full h-full object-cover" />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Button variant="outline" onClick={generateImage} className="gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Generate Preview
-                  </Button>
+
+            {/* Stats */}
+            <div className="p-6 bg-card space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-muted/30 rounded-2xl p-4 text-center">
+                  <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-2">
+                    <Zap className="w-5 h-5 text-primary" />
+                  </div>
+                  <p className="text-2xl font-black text-primary">+{xpEarned}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase">XP Earned</p>
+                </div>
+                <div className="bg-muted/30 rounded-2xl p-4 text-center">
+                  <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center mx-auto mb-2">
+                    <Flame className="w-5 h-5 text-orange-500" />
+                  </div>
+                  <p className="text-2xl font-black text-orange-500">{streakCount}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase">Day Streak</p>
+                </div>
+              </div>
+
+              <div className="bg-muted/30 rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-muted-foreground uppercase">Rank Progress</span>
+                  <span className="text-sm font-black text-primary">Rank {rank}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${rankData.progress}%` }}
+                      transition={{ delay: 0.5, duration: 0.8 }}
+                      className="h-full bg-gradient-to-r from-primary to-purple-500"
+                    />
+                  </div>
+                  <span className="text-[10px] font-bold text-muted-foreground">
+                    {Math.round(rankData.progress)}%
+                  </span>
+                </div>
+                <p className="text-[9px] text-muted-foreground mt-1">{rankTitle}</p>
+              </div>
+
+              {timeSpent && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Time Spent</span>
+                  <span className="font-black">{formatTime(timeSpent)}</span>
                 </div>
               )}
             </div>
 
-            {/* Action buttons */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* Branding */}
+            <div className="px-6 py-4 bg-muted/20 flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                LET Prep
+              </span>
+              <div className="flex items-center gap-1">
+                <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                <Star className="w-3 h-3 text-yellow-500 fill-current" />
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="mt-4 space-y-3">
+            <Button 
+              onClick={handleNativeShare}
+              className="w-full h-14 rounded-2xl font-black text-sm gap-2 bg-primary hover:bg-primary/90"
+            >
+              <Share2 className="w-5 h-5" />
+              Share Result
+            </Button>
+            
+            <div className="flex gap-3">
               <Button 
-                onClick={handleShare}
-                disabled={isGenerating}
-                className="h-12 rounded-xl font-black text-xs gap-2"
-              >
-                {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
-                Share
-              </Button>
-              
-              <Button 
-                onClick={handleDownload}
-                disabled={isGenerating}
                 variant="outline"
-                className="h-12 rounded-xl font-black text-xs gap-2"
+                onClick={handleCopyLink}
+                className="flex-1 h-12 rounded-xl font-black text-xs gap-2"
               >
-                <Download className="w-4 h-4" />
-                Download
+                {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {copied ? 'Copied!' : 'Copy'}
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={onClose}
+                className="flex-1 h-12 rounded-xl font-black text-xs"
+              >
+                Close
               </Button>
             </div>
-
-            <Button 
-              onClick={handleCopyImage}
-              variant="ghost"
-              className="w-full h-10 rounded-xl font-bold text-xs gap-2"
-            >
-              {isCopied ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-              {isCopied ? "Copied to clipboard!" : "Copy as Image"}
-            </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </motion.div>
+      </div>
 
-      {/* Hidden canvas for generation */}
-      <canvas ref={canvasRef} className="hidden" />
+      {/* Share Options Modal */}
+      <AnimatePresence>
+        {showShareOptions && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60"
+            onClick={() => setShowShareOptions(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="bg-card rounded-[2rem] p-6 w-full max-w-xs mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-black">Share to</h3>
+                <button onClick={() => setShowShareOptions(false)}>
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <button className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                  <div className="w-12 h-12 bg-[#1DA1F2] rounded-xl flex items-center justify-center">
+                    <Twitter className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xs font-bold">Twitter</span>
+                </button>
+                <button className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                  <div className="w-12 h-12 bg-[#4267B2] rounded-xl flex items-center justify-center">
+                    <Facebook className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xs font-bold">Facebook</span>
+                </button>
+              </div>
+
+              <Button 
+                variant="ghost"
+                onClick={() => setShowShareOptions(false)}
+                className="w-full mt-4"
+              >
+                Cancel
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
 
-// Helper functions
-function getScoreMessage(score: number): string {
-  if (score >= 90) return "Outstanding!";
-  if (score >= 80) return "Excellent!";
-  if (score >= 70) return "Great Job!";
-  if (score >= 60) return "Good Effort!";
-  return "Keep Practicing!";
-}
-
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
-}
+export default ShareableResultCard;
 

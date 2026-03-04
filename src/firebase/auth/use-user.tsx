@@ -65,6 +65,17 @@ export interface UserProfile {
   unlockedTracks?: string[];
   locationRegion?: string;
   locationCity?: string;
+  // New Gamification Fields
+  streakFreezesAvailable?: number;
+  lastStreakFreezeUsed?: number;
+  hasStreakProtection?: boolean;
+  lastFirstWinDate?: number;
+  totalFirstWins?: number;
+  lastMonthlyClaimDate?: number;
+  monthlyStreakCount?: number;
+  totalXpEarned?: number;
+  soundEnabled?: boolean;
+  hapticEnabled?: boolean;
 }
 
 interface AuthContextType {
