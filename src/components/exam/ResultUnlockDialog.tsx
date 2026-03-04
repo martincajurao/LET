@@ -448,7 +448,7 @@ export function ResultUnlockDialog({
           onUnlock();
         }
       }}>
-        <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-0 max-w-[340px] overflow-hidden outline-none z-[1100]">
+        <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-0 max-w-[340px] overflow-hidden outline-none">
           <div className="bg-emerald-500/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
             <motion.div
               initial={{ scale: 0, rotate: -45 }}

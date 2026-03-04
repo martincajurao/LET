@@ -566,7 +566,7 @@ const handleGenerateExplanation = async (q: Question) => {
       </AnimatePresence>
 
       <Dialog open={showPurchaseSuccess} onOpenChange={setShowPurchaseSuccess}>
-        <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-0 max-w-[320px] overflow-hidden outline-none z-[1100]">
+        <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-0 max-w-[320px] overflow-hidden outline-none">
           <div className="bg-emerald-500/10 p-10 flex flex-col items-center justify-center relative overflow-hidden">
             <motion.div initial={{ scale: 0, rotate: -45 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", damping: 12, stiffness: 200 }} className="w-20 h-20 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-2xl relative z-10"><CheckCircle2 className="w-10 h-10" /></motion.div>
             <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 3, repeat: Infinity }} className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 to-transparent z-0" />

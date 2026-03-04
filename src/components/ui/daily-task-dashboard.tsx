@@ -316,7 +316,7 @@ export function DailyQuestDashboard() {
       </AnimatePresence>
 
       <Dialog open={!!creditError} onOpenChange={() => setCreditError(null)}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-md3-3 p-0 max-w-[340px] overflow-hidden outline-none z-[1200]" hideCloseButton={watchingAdForRefill}>
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-md3-3 p-0 max-w-[340px] overflow-hidden outline-none" hideCloseButton={watchingAdForRefill}>
           <div className="bg-amber-500/10 p-10 flex flex-col items-center justify-center relative overflow-hidden">
             <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center shadow-xl relative z-10 border border-amber-200">
               {verifyingAdForRefill ? <ShieldAlert className="w-8 h-8 text-amber-500 animate-pulse" /> : <Sparkles className="w-8 h-8 text-amber-500 fill-current animate-sparkle" />}

@@ -27,7 +27,7 @@ export function RankUpDialog({ isOpen, onClose, rank, reward }: RankUpDialogProp
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="rounded-[3rem] border-none shadow-2xl p-0 max-w-[340px] overflow-hidden outline-none z-[1100]">
+      <DialogContent className="rounded-[3rem] border-none shadow-2xl p-0 max-w-[340px] overflow-hidden outline-none">
         <div className="bg-primary/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
           <motion.div
             initial={{ scale: 0, rotate: -180 }}

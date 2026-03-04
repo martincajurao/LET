@@ -223,7 +223,7 @@ export function FloatingXP({ amount, show, onComplete }: FloatingXPProps) {
           }}
           exit={{ opacity: 0, y: -100 }}
           transition={{ duration: 2 }}
-          className="fixed pointer-events-none z-[5000] left-1/2 top-1/2 -translate-x-1/2"
+          className="fixed pointer-events-none z-[6002] left-1/2 top-1/2 -translate-x-1/2"
         >
           <div className="bg-gradient-to-r from-emerald-500 to-green-400 px-6 py-3 rounded-full shadow-2xl border-2 border-white/30">
             <span className="text-2xl font-black text-white flex items-center gap-2">

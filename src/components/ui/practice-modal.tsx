@@ -381,7 +381,7 @@ export function PracticeModal({
 
       {/* Unlock Success Dialog */}
       <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-        <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-0 max-w-[340px] overflow-hidden outline-none z-[1100]">
+        <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-0 max-w-[340px] overflow-hidden outline-none">
           <div className="bg-emerald-500/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
             <motion.div
               initial={{ scale: 0, rotate: -45 }}
@@ -466,7 +466,7 @@ export function PracticeModal({
 
       {/* Insufficient Credits Dialog */}
       <Dialog open={!!creditError} onOpenChange={() => setCreditError(null)}>
-        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-[360px] overflow-hidden outline-none z-[1200]" hideCloseButton={watchingAd}>
+        <DialogContent className="rounded-[2.5rem] bg-card border-none shadow-2xl p-0 max-w-[360px] overflow-hidden outline-none" hideCloseButton={watchingAd}>
           <div className="bg-amber-500/10 p-10 flex flex-col items-center justify-center relative overflow-hidden">
             <motion.div 
               initial={{ scale: 0.8, opacity: 0 }}

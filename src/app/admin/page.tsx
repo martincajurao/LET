@@ -813,7 +813,7 @@ export default function AdminDashboard() {
       </main>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl rounded-[3rem] p-0 border-none shadow-[0_40px_120px_rgba(0,0,0,0.5)] overflow-hidden outline-none z-[1100] flex flex-col max-h-[95vh]">
+<DialogContent className="max-w-2xl rounded-[3rem] p-0 border-none shadow-[0_40px_120px_rgba(0,0,0,0.5)] overflow-hidden outline-none flex flex-col max-h-[95vh]">
           <div className="bg-primary/10 p-8 border-b shrink-0 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-primary-foreground shadow-xl shadow-primary/20"><Brain className="w-6 h-6" /></div>
@@ -844,7 +844,7 @@ export default function AdminDashboard() {
       </Dialog>
 
       <Dialog open={!!manageUser} onOpenChange={() => setManageUser(null)}>
-        <DialogContent className="max-w-2xl rounded-[3rem] p-0 border-none shadow-[0_40px_120px_rgba(0,0,0,0.5)] overflow-hidden outline-none z-[1100] flex flex-col max-h-[95vh] bg-background">
+<DialogContent className="max-w-2xl rounded-[3rem] p-0 border-none shadow-[0_40px_120px_rgba(0,0,0,0.5)] overflow-hidden outline-none flex flex-col max-h-[95vh] bg-background">
           <div className="bg-foreground text-background p-8 flex flex-col sm:flex-row items-center gap-6 relative overflow-hidden shrink-0">
             <Avatar className="w-20 h-20 rounded-[1.75rem] shadow-2xl relative z-10 shrink-0">
               <AvatarImage src={manageUser?.photoURL || ""} />

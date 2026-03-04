@@ -289,7 +289,7 @@ export function PeerLinks() {
       )}
 
       <Dialog open={!!activeChatPeer} onOpenChange={() => setActiveChatChatPeer(null)}>
-        <DialogContent className="max-w-md w-full h-[85vh] sm:h-[600px] rounded-[2.5rem] p-0 border-none shadow-2xl overflow-hidden outline-none z-[9999] flex flex-col bg-background">
+        <DialogContent className="max-w-md w-full h-[85vh] sm:h-[600px] rounded-[2.5rem] p-0 border-none shadow-2xl overflow-hidden outline-none flex flex-col bg-background">
           <DialogHeader className="p-6 border-b bg-card shrink-0 flex flex-row items-center justify-between space-y-0">
             <div className="flex items-center gap-4">
               <Avatar className="w-10 h-10 rounded-xl shadow-inner">

@@ -142,7 +142,7 @@ export function DailyLoginRewards({
       </Card>
       <AnimatePresence>
         {showReward && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/80 backdrop-blur-xl px-4" onClick={() => setShowReward(false)}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/80 backdrop-blur-xl px-4" onClick={() => setShowReward(false)}>
             <motion.div initial={{ scale: 0.8, y: 50, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.8, y: 50, opacity: 0 }} className="relative p-10 rounded-[3rem] bg-card border-none w-full max-w-sm shadow-md3-3 text-center space-y-8" onClick={(e) => e.stopPropagation()}>
               <div className="absolute -top-12 left-1/2 -translate-x-1/2"><div className="w-24 h-24 bg-primary text-primary-foreground rounded-[2rem] flex items-center justify-center shadow-2xl animate-victory ring-8 ring-background"><Trophy className="w-12 h-12" /></div></div>
               <div className="pt-8 space-y-1"><h3 className="text-3xl font-black tracking-tighter">Loot Secured!</h3><p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground opacity-60">Trace Recorded Successfully</p></div>
