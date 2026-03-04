@@ -262,6 +262,18 @@ export function SquadHub() {
     );
   }
 
+  if (!squad) {
+    return (
+      <div className="space-y-8 animate-in fade-in duration-500 font-body">
+        <Card className="p-8 text-center border-2 border-dashed border-border/50 rounded-[2.5rem] bg-muted/5">
+          <Users className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
+          <h4 className="text-lg font-black mb-1 text-foreground">No Active Guild</h4>
+          <p className="text-xs text-muted-foreground font-medium max-w-xs mx-auto mb-6 leading-relaxed">Create or join a squad to unlock collective intelligence bonuses.</p>
+        </Card>
+      </div>
+    );
+  }
+
   const squadLevelProgress = (squad.totalXp % 10000) / 100;
 
   return (
@@ -357,3 +369,4 @@ export function SquadHub() {
     </div>
   );
 }
+
