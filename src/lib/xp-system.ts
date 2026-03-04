@@ -202,6 +202,7 @@ export const DAILY_AD_LIMIT = AD_SHOWCASE.MAX_SHOWCASE_ADS_PER_DAY;
 // STREAK FREEZE SYSTEM
 export const STREAK_FREEZE_COST_XP = 500;
 export const STREAK_FREEZE_COST_CREDITS = 25;
+export const STREAK_RECOVERY_COST = 15; // Cost to recover a broken streak
 export const STREAK_WARNING_HOURS = 24;
 
 // FIRST WIN BONUS

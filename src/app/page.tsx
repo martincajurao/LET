@@ -70,6 +70,14 @@ import { CelebrationEffect, useCelebration, FloatingXP } from '@/components/ui/c
 import { ShareableResultCard } from '@/components/ui/shareable-result-card';
 import { FirstWinBonus, FirstWinMini } from '@/components/ui/first-win-bonus';
 import { EnhancedAchievementSystem } from '@/components/ui/enhanced-achievements';
+import { EventsSection } from '@/components/ui/EventsSection';
+import { WeeklyTournament } from '@/components/ui/weekly-tournament';
+import { FriendDuels } from '@/components/ui/friend-duels';
+import { SquadWars } from '@/components/ui/squad-wars';
+import { RankedMatchmaking } from '@/components/ui/ranked-matchmaking';
+import { PredictionLeague } from '@/components/ui/prediction-league';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import Autoplay from 'embla-carousel-autoplay';
 import { Settings } from 'lucide-react';
 
 const GoogleIcon = () => (
@@ -518,6 +526,82 @@ function LetsPrepContent() {
                   </div>
                   <div className="absolute -top-20 -right-20 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[100px]" />
                 </Card>
+
+{/* Live Events Carousel */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-red-500">Live Events</span>
+                    <Badge variant="outline" className="font-black text-[8px] uppercase tracking-widest bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30 text-purple-600 ml-auto">
+                      <Sparkles className="w-3 h-3 mr-1 animate-sparkle" />
+                      Compete Now
+                    </Badge>
+                  </div>
+                  <Carousel className="w-full" opts={{ loop: true, align: "start" }} plugins={[Autoplay({ delay: 4000 })]}>
+                    <CarouselContent>
+                      <CarouselItem>
+                        <div className="relative group">
+                          <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 via-purple-500/20 to-pink-500/20 rounded-[2rem] blur-xl opacity-50 group-hover:opacity-80 transition-opacity" />
+                          <Card className="relative border-none shadow-2xl rounded-[2rem] bg-gradient-to-br from-yellow-500/10 via-card to-card overflow-hidden border-2 border-yellow-500/20">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-2xl" />
+                            <CardContent className="p-4 md:p-6">
+                              <WeeklyTournament 
+                                userId={user?.uid}
+                                userName={user?.displayName}
+                                userXp={user?.xp}
+                                userScore={0}
+                              />
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </CarouselItem>
+                      <CarouselItem>
+                        <div className="relative group">
+                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-teal-500/20 rounded-[2rem] blur-xl opacity-50 group-hover:opacity-80 transition-opacity" />
+                          <Card className="relative border-none shadow-2xl rounded-[2rem] bg-gradient-to-br from-blue-500/10 via-card to-card overflow-hidden border-2 border-blue-500/20">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl" />
+                            <CardContent className="p-4 md:p-6">
+                              <FriendDuels userId={user?.uid} />
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </CarouselItem>
+                      <CarouselItem>
+                        <div className="relative group">
+                          <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 via-orange-500/20 to-yellow-500/20 rounded-[2rem] blur-xl opacity-50 group-hover:opacity-80 transition-opacity" />
+                          <Card className="relative border-none shadow-2xl rounded-[2rem] bg-gradient-to-br from-red-500/10 via-card to-card overflow-hidden border-2 border-red-500/20">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-2xl" />
+                            <CardContent className="p-4 md:p-6">
+                              <SquadWars userSquadId={user?.squadId} />
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </CarouselItem>
+                      <CarouselItem>
+                        <div className="relative group">
+                          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-rose-500/20 rounded-[2rem] blur-xl opacity-50 group-hover:opacity-80 transition-opacity" />
+                          <Card className="relative border-none shadow-2xl rounded-[2rem] bg-gradient-to-br from-purple-500/10 via-card to-card overflow-hidden border-2 border-purple-500/20">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl" />
+                            <CardContent className="p-4 md:p-6">
+                              <RankedMatchmaking userId={user?.uid} userXp={user?.xp} />
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </CarouselItem>
+                      <CarouselItem>
+                        <div className="relative group">
+                          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-cyan-500/20 rounded-[2rem] blur-xl opacity-50 group-hover:opacity-80 transition-opacity" />
+                          <Card className="relative border-none shadow-2xl rounded-[2rem] bg-gradient-to-br from-emerald-500/10 via-card to-card overflow-hidden border-2 border-emerald-500/20">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl" />
+                            <CardContent className="p-4 md:p-6">
+                              <PredictionLeague userId={user?.uid} />
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </CarouselItem>
+                    </CarouselContent>
+                  </Carousel>
+                </div>
 
                 <div className="space-y-6">
                   <div className="flex items-center justify-between px-4">
