@@ -76,6 +76,16 @@ export interface UserProfile {
   totalXpEarned?: number;
   soundEnabled?: boolean;
   hapticEnabled?: boolean;
+  
+  // Achievement Tracking Fields
+  squadQuestsCompleted?: number;
+  duelsCreated?: number;
+  duelsWon?: number;
+  questionsUnder20Seconds?: number;
+  weeklyFullSimulations?: number;
+  lastWeeklyReset?: number;
+  perfectStreakCount?: number;
+  totalPerfectScores?: number;
 }
 
 interface AuthContextType {

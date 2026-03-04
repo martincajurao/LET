@@ -101,7 +101,7 @@ export const EXTENDED_ACHIEVEMENTS: Achievement[] = [
 
   // SPEED ACHIEVEMENTS
   { id: 'speed_under_30', name: 'Quick Thinker', description: 'Complete a question under 30 seconds', icon: <SpeedIcon className="w-6 h-6 text-blue-500" />, requirement: 30, type: 'speed', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK * 0.5, rarity: 'common', category: 'Speed' },
-  { id: 'speed_under_20', name: 'Lightning Fast', description: 'Complete a question under 20 seconds', icon: <SpeedIcon className="w-6 h-6 text-purple-500" />, requirement: 20, type: 'speed', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK, rarity: 'rare', category: 'Speed' },
+  { id: 'speed_under_20', name: 'Speed Reader', description: '50 questions under 20 seconds average', icon: <SpeedIcon className="w-6 h-6 text-purple-500" />, requirement: 50, type: 'speed', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK * 1.5, rarity: 'rare', category: 'Speed' },
   { id: 'speed_under_10', name: 'Speed Demon', description: 'Complete a question under 10 seconds', icon: <Rocket className="w-6 h-6 text-red-500" />, requirement: 10, type: 'speed', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK * 1.5, rarity: 'epic', category: 'Speed' },
   { id: 'quickfire_fast', name: 'Rapid Responder', description: 'Complete Quick Fire in under 60 seconds', icon: <Timer className="w-6 h-6 text-orange-500" />, requirement: 60, type: 'speed', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK, rarity: 'rare', category: 'Speed' },
 
@@ -112,20 +112,23 @@ export const EXTENDED_ACHIEVEMENTS: Achievement[] = [
 
   // SOCIAL ACHIEVEMENTS
   { id: 'referral_1', name: 'First Recruit', description: 'Refer your first friend', icon: <Users className="w-6 h-6 text-blue-500" />, requirement: 1, type: 'social', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK, rarity: 'common', category: 'Social' },
-  { id: 'referral_5', name: 'Squad Leader', description: 'Refer 5 friends', icon: <Users className="w-6 h-6 text-purple-500" />, requirement: 5, type: 'social', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK, rarity: 'rare', category: 'Social' },
+  { id: 'referral_5', name: 'Mentor', description: 'Help 5 friends pass (referral success)', icon: <Users className="w-6 h-6 text-purple-500" />, requirement: 5, type: 'social', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK, rarity: 'rare', category: 'Social' },
   { id: 'referral_10', name: 'Guild Mentor', description: 'Refer 10 friends', icon: <Medal className="w-6 h-6 text-emerald-500" />, requirement: 10, type: 'social', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK * 1.5, rarity: 'epic', category: 'Social' },
   { id: 'referral_25', name: 'Master Recruiter', description: 'Refer 25 friends', icon: <Crown className="w-6 h-6 text-yellow-500" />, requirement: 25, type: 'social', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK * 2, rarity: 'legendary', category: 'Social' },
   { id: 'share_result', name: 'Social Butterfly', description: 'Share your results 10 times', icon: <Share2 className="w-6 h-6 text-pink-500" />, requirement: 10, type: 'social', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK, rarity: 'rare', category: 'Social' },
+  { id: 'duel_challenger', name: 'Challenger', description: 'Challenge a friend to a duel', icon: <Swords className="w-6 h-6 text-red-500" />, requirement: 1, type: 'social', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK, rarity: 'common', category: 'Social' },
+  { id: 'duel_warrior', name: 'Duel Warrior', description: 'Complete 10 duels', icon: <Swords className="w-6 h-6 text-orange-500" />, requirement: 10, type: 'social', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK, rarity: 'rare', category: 'Social' },
+  { id: 'squad_quest_10', name: 'Team Player', description: 'Complete squad quests 10 times', icon: <Users className="w-6 h-6 text-green-500" />, requirement: 10, type: 'social', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK * 1.5, rarity: 'rare', category: 'Social' },
 
   // SEASONAL ACHIEVEMENTS (Limited Time)
-  { id: 'seasonal_exam_month', name: 'Exam Month Warrior', description: 'Complete 100 questions during exam month', icon: <BookOpen className="w-6 h-6 text-red-500" />, requirement: 100, type: 'seasonal', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK * 2, rarity: 'epic', category: 'Seasonal', isLimited: true, season: 'exam_month' },
+  { id: 'seasonal_exam_month', name: 'Board Exam Warrior', description: 'Take 10 full simulations in a week', icon: <BookOpen className="w-6 h-6 text-red-500" />, requirement: 10, type: 'seasonal', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK * 2, rarity: 'epic', category: 'Seasonal', isLimited: true, season: 'exam_month' },
   { id: 'seasonal_new_year', name: 'New Year Resolution', description: 'Start a streak in the new year', icon: <Rocket className="w-6 h-6 text-yellow-500" />, requirement: 1, type: 'seasonal', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK, rarity: 'rare', category: 'Seasonal', isLimited: true, season: 'new_year' },
   { id: 'seasonal_teacher_month', name: 'Teacher Month Champion', description: 'Complete 500 questions in Teacher Month', icon: <GraduationCap className="w-6 h-6 text-purple-500" />, requirement: 500, type: 'seasonal', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK * 3, rarity: 'legendary', category: 'Seasonal', isLimited: true, season: 'teacher_month' },
 
   // MASTERY ACHIEVEMENTS
   { id: 'mastery_gened', name: 'General Education Master', description: 'Get 90%+ in all Gen Ed categories', icon: <Shield className="w-6 h-6 text-blue-500" />, requirement: 1, type: 'mastery', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK * 2, rarity: 'epic', category: 'Mastery' },
   { id: 'mastery_profed', name: 'Professional Education Master', description: 'Get 90%+ in all Prof Ed categories', icon: <Shield className="w-6 h-6 text-purple-500" />, requirement: 1, type: 'mastery', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK * 2, rarity: 'epic', category: 'Mastery' },
-  { id: 'mastery_specialization', name: 'Specialization Master', description: 'Get 90%+ in all Specialization categories', icon: <Star className="w-6 h-6 text-emerald-500" />, requirement: 1, type: 'mastery', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK * 2, rarity: 'epic', category: 'Mastery' },
+  { id: 'mastery_specialization', name: 'Subject Expert', description: '100% in all Specialization questions', icon: <Star className="w-6 h-6 text-emerald-500" />, requirement: 1, type: 'mastery', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK * 2, rarity: 'epic', category: 'Mastery' },
   { id: 'mastery_full_sim', name: 'Full Simulation Expert', description: 'Get 90%+ in 10 full simulations', icon: <Trophy className="w-6 h-6 text-yellow-500" />, requirement: 10, type: 'mastery', xpReward: XP_REWARDS.ACHIEVEMENT_UNLOCK * 3, rarity: 'legendary', category: 'Mastery' },
 
   // SPECIAL ACHIEVEMENTS
@@ -153,6 +156,15 @@ interface EnhancedAchievementSystemProps {
     profEdMastery?: boolean;
     specializationMastery?: boolean;
     fullSim90PlusCount?: number;
+    // New achievement tracking fields
+    squadQuestsCompleted?: number;
+    duelsCreated?: number;
+    duelsWon?: number;
+    questionsUnder20Seconds?: number;
+    weeklyFullSimulations?: number;
+    lastWeeklyReset?: number;
+    perfectStreakCount?: number;
+    totalPerfectScores?: number;
   };
   unlockedAchievements: string[];
   onAchievementUnlock?: (achievement: Achievement) => void;
