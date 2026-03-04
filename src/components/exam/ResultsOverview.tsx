@@ -43,7 +43,8 @@ import { useUser, useFirestore } from '@/firebase';
 import { doc, updateDoc, increment, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getRankData, DAILY_AD_LIMIT, AI_UNLOCK_COST, AI_DEEP_DIVE_COST, XP_REWARDS } from '@/lib/xp-system';
+import { getRankData, DAILY_AD_LIMIT, AI_COSTS, XP_REWARDS, CREDIT_EARNING } from '@/lib/xp-system';
+import { getCachedExplanation, cacheExplanation, getStaticExplanation } from '@/lib/ai-cache';
 
 interface ResultsOverviewProps {
   questions: Question[];
@@ -204,15 +205,15 @@ export function ResultsOverview({
   const handleUnlockWithCredits = async () => {
     if (!user || !firestore) return;
     const credits = typeof user.credits === 'number' ? user.credits : 0;
-    if (credits < AI_UNLOCK_COST) {
-      toast({ variant: "destructive", title: "Vault Restricted", description: `Requires ${AI_UNLOCK_COST} credits.` });
+    if (credits < AI_COSTS.UNLOCK_RESULTS) {
+      toast({ variant: "destructive", title: "Vault Restricted", description: `Requires ${AI_COSTS.UNLOCK_RESULTS} credits.` });
       return;
     }
     
     setUnlocking(true);
     try {
       const userRef = doc(firestore, 'users', user.uid);
-      await updateDoc(userRef, { credits: increment(-AI_UNLOCK_COST) });
+      await updateDoc(userRef, { credits: increment(-AI_COSTS.UNLOCK_RESULTS) });
       await refreshUser();
       setIsUnlocked(true);
       setShowPurchaseSuccess(true);
@@ -223,28 +224,53 @@ export function ResultsOverview({
     }
   };
 
-  const handleGenerateExplanation = async (q: Question) => {
+const handleGenerateExplanation = async (q: Question) => {
     if (!user || !firestore) return;
     if (generatingIds.has(q.id) || localExplanations[q.id]) return;
 
     const isPro = !!user.isPro;
     const credits = typeof user.credits === 'number' ? user.credits : 0;
-
-    if (!isPro && credits < AI_DEEP_DIVE_COST) {
-      toast({ variant: "destructive", title: "Credits Required", description: `Deep dive requires ${AI_DEEP_DIVE_COST} credits.` });
-      return;
-    }
     
     setGeneratingIds(prev => new Set(prev).add(q.id));
     
     try {
+      // STEP 1: Check if explanation exists in Firestore cache
+      const cachedResult = await getCachedExplanation(q.id);
+      
+      if (cachedResult?.exists && cachedResult.explanation) {
+        // CACHE HIT: Use cached explanation (FREE - no AI call needed!)
+        console.log(`[AI Cache] Cache hit for ${q.id} - serving from cache`);
+        setLocalExplanations(prev => ({ ...prev, [q.id]: cachedResult.explanation }));
+        
+        // Optionally: Still deduct credits for Pro users or add review count
+        if (isPro) {
+          await updateDoc(doc(firestore, 'users', user.uid), {
+            mistakesReviewed: increment(1)
+          });
+        }
+        
+        await refreshUser();
+        return;
+      }
+      
+      // CACHE MISS: Need to generate new explanation (costs credits for non-Pro)
+      console.log(`[AI Cache] Cache miss for ${q.id} - generating new explanation`);
+      
+      if (!isPro && credits < AI_COSTS.EXPLANATION_DEEP_DIVE) {
+        toast({ variant: "destructive", title: "Credits Required", description: `Deep dive requires ${AI_COSTS.EXPLANATION_DEEP_DIVE} credits.` });
+        setGeneratingIds(prev => { const next = new Set(prev); next.delete(q.id); return next; });
+        return;
+      }
+      
+      // Deduct credits for non-Pro users
       if (!isPro) {
         await updateDoc(doc(firestore, 'users', user.uid), {
-          credits: increment(-AI_DEEP_DIVE_COST),
+          credits: increment(-AI_COSTS.EXPLANATION_DEEP_DIVE),
           mistakesReviewed: increment(1)
         });
       }
 
+      // Generate new explanation via AI
       const result = await explainMistakesBatch({
         mistakes: [{
           questionId: q.id,
@@ -258,8 +284,18 @@ export function ResultsOverview({
       
       if (result.explanations?.[0]) {
         const explanation = result.explanations[0].aiExplanation;
+        
+        // STEP 2: Save new explanation to Firestore cache for future use
+        await cacheExplanation(q.id, explanation, {
+          subject: q.subject,
+          category: q.subCategory || '',
+          correctAnswer: q.correctAnswer,
+          userAnswer: answers[q.id] || "No Answer"
+        });
+        
         setLocalExplanations(prev => ({ ...prev, [q.id]: explanation }));
         
+        // Also save to exam results if available
         if (resultId && !user.uid.startsWith('bypass')) {
           const examDocRef = doc(firestore, 'exam_results', resultId);
           const docSnap = await getDoc(examDocRef);
@@ -277,7 +313,11 @@ export function ResultsOverview({
         await refreshUser();
       }
     } catch (e) {
-      setLocalExplanations(prev => ({ ...prev, [q.id]: "Pedagogical insight unavailable." }));
+      console.error('[AI Cache] Error generating explanation:', e);
+      // Fallback to static explanation if AI fails
+      const isCorrect = answers[q.id] === q.correctAnswer;
+      const staticExplanation = getStaticExplanation(q.subject, isCorrect);
+      setLocalExplanations(prev => ({ ...prev, [q.id]: staticExplanation }));
     } finally {
       setGeneratingIds(prev => { const next = new Set(prev); next.delete(q.id); return next; });
     }

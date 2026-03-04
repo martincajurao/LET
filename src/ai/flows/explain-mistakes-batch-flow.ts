@@ -1,6 +1,7 @@
 /**
  * @fileOverview A Puter.js-powered flow for batched pedagogical explanations using GPT-5 Nano.
  * Note: This function runs in the browser environment since Puter is loaded via script tag.
+ * OPTIMIZED: Explanations are cached in Firestore - first call costs credits, subsequent calls are FREE!
  */
 
 import { puter } from '@/ai/puter';
@@ -36,7 +37,6 @@ export async function explainMistakesBatch(
   input: ExplainMistakesInput
 ): Promise<ExplainMistakesOutput> {
   try {
-    // Check if we're in browser environment and Puter is available
     if (typeof window === 'undefined') {
       return { explanations: [] };
     }
@@ -53,18 +53,22 @@ export async function explainMistakesBatch(
       };
     }
 
-    const context = input.mistakes.map(m => `Q: ${m.text}\nCorrect: ${m.correctAnswer}\nUser: ${m.userAnswer}`).join('\n---\n');
-    
-    const response = await puter.ai.chat(`For each of these LET mistakes, provide a 2-sentence pedagogical explanation. 
-      First sentence: Identify the correct answer.
-      Second sentence: Explain why the user's answer was wrong and the key concept they missed.
-      Return a JSON array of objects with fields "questionId" and "aiExplanation".
+    // Build context - OPTIMIZED for shorter prompts (reduces API costs)
+    const context = input.mistakes.map(m => 
+      `Q: ${m.text.substring(0, 150)}... | Correct: ${m.correctAnswer} | Wrong: ${m.userAnswer} | Subject: ${m.subject}`
+    ).join('\n');
+
+    // STREAMLINED PROMPT: More concise for faster processing & lower costs
+    const response = await puter.ai.chat(`Generate brief pedagogical explanations for each mistake.
+      Format: JSON array with "questionId" and "aiExplanation" (max 2 sentences each).
+      Focus on: 1) What the correct answer is, 2) Why the answer is correct, 3) Key concept to remember.
       
-      Mistakes:
+      Questions:
       ${context}
       
-      ONLY return JSON array, nothing else.`, {
-      model: 'gpt-5-nano'
+      JSON:`, {
+      model: 'gpt-5-nano',
+      max_tokens: 2048
     });
 
     const rawText = response.toString() || "[]";
@@ -83,12 +87,11 @@ export async function explainMistakesBatch(
       }
     }
 
-    // Ensure every item has a questionId and matches schema
     const sanitizedExplanations = input.mistakes.map((m, idx) => {
       const aiItem = Array.isArray(parsed) ? (parsed[idx] || parsed.find((p: any) => p.questionId === m.questionId)) : null;
       return {
         questionId: m.questionId,
-        aiExplanation: aiItem?.aiExplanation || aiItem?.explanation || "Review the core concepts related to this subject track."
+        aiExplanation: aiItem?.aiExplanation || "Review the core concepts related to this subject track."
       };
     });
 
@@ -103,3 +106,4 @@ export async function explainMistakesBatch(
     };
   }
 }
+

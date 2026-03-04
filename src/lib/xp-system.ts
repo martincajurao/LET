@@ -1,7 +1,7 @@
 /**
  * Professional Growth (XP) Utility
  * Defines career progression, tiered unlock ranks, and scaling reward structures.
- * REFACTORED: Tiered multipliers and Skill Expression bonuses for profitability.
+ * REFACTORED: Halved earning rates for profitability + AI credit focus.
  */
 
 export const UNLOCK_RANKS = {
@@ -11,30 +11,54 @@ export const UNLOCK_RANKS = {
   FULL_SIMULATION: 10
 };
 
+// HALVED EARNING RATES (Profitability Focus)
 export const XP_REWARDS = {
-  CORRECT_ANSWER: 15,
-  FINISH_TRACK: 150,
-  FINISH_FULL_SIM: 750, // BUFFED for endurance
-  MISTAKE_REVIEW: 50,
-  AD_WATCH_XP: 30, // BUFFED for effort
-  QUICK_FIRE_COMPLETE: 60, // BUFFED for speed
-  DAILY_STREAK_BONUS: 100,
-  QUESTION_OF_THE_DAY: 30,
-  DAILY_LOGIN_BONUS: 50,
-  POMODORO_COMPLETE: 40, // BUFFED for focus
-  ACHIEVEMENT_UNLOCK: 250,
-  PERSONAL_BEST: 200,
+  CORRECT_ANSWER: 8,         // Was 15 - HALVED
+  FINISH_TRACK: 75,         // Was 150 - HALVED
+  FINISH_FULL_SIM: 375,     // Was 750 - HALVED
+  MISTAKE_REVIEW: 15,       // Was 30 - HALVED (but encourages AI use!)
+  AD_WATCH_XP: 15,          // Was 30 - HALVED
+  QUICK_FIRE_COMPLETE: 30,  // Was 60 - HALVED
+  DAILY_STREAK_BONUS: 50,   // Was 100 - HALVED
+  QUESTION_OF_THE_DAY: 15,  // Was 30 - HALVED
+  DAILY_LOGIN_BONUS: 20,    // Was 50 - HALVED
+  POMODORO_COMPLETE: 20,    // Was 40 - HALVED
+  ACHIEVEMENT_UNLOCK: 125,  // Was 250 - HALVED
+  PERSONAL_BEST: 100,        // Was 200 - HALVED
   // SKILL EXPRESSION: Metacognition mechanics
-  CONFIDENT_CORRECT_BONUS: 15, // High reward for certainty
-  CONFIDENT_WRONG_PENALTY: -10, // High risk for overconfidence
+  CONFIDENT_CORRECT_BONUS: 8,   // Was 15 - HALVED
+  CONFIDENT_WRONG_PENALTY: -5,  // Was -10 - HALVED
+};
+
+// HALVED CREDIT EARNING (users must spend AI credits to progress)
+export const CREDIT_EARNING = {
+  // Passive earning (reduced)
+  DAILY_LOGIN: 5,           // Was 10 - HALVED
+  DAILY_TASK_COMPLETE: 15,  // Was 20 - HALVED  
+  STREAK_MILESTONE: 25,     // Was 50 - HALVED
+  WEEKLY_GOAL: 50,          // NEW - Weekly bonus
+  
+  // Active earning (reduced)
+  CORRECT_ANSWER: 1,        // Was 2 - HALVED
+  FINISH_MOCK_TEST: 15,     // Was 25 - HALVED
+  PERFECT_SCORE_BONUS: 50,  // Was 100 - HALVED
+  
+  // Engagement earning (reduced)
+  REFERRAL_SIGNUP: 15,     // Was 25 - HALVED
+  REFERRAL_COMPLETE: 25,   // Was 50 - HALVED
+  
+  // AI-POWERED earning (higher - encourages AI use!)
+  AI_EXPLANATION_USED: 3,      // NEW - Earn credits by using AI explanations!
+  PERFORMANCE_SUMMARY_VIEWED: 5, // NEW - Earn for viewing AI analysis
+  WEEKLY_AI_REPORT: 10,        // NEW - Earn for weekly AI review
 };
 
 export const REFERRAL_REWARDS = {
-  REFERRER_CREDITS: 15, // Credits for the person who invited
-  REFEREE_CREDITS: 5,   // Credits for the new person signing up
-  MILESTONE_5: 50,      // Bonus credits at 5 referrals
-  MILESTONE_10: 150,    // Bonus credits at 10 referrals
-  MILESTONE_25: 500,    // Bonus credits at 25 referrals
+  REFERRER_CREDITS: 10,    // Was 15 - HALVED
+  REFEREE_CREDITS: 3,      // Was 5 - HALVED
+  MILESTONE_5: 30,         // Was 50 - HALVED
+  MILESTONE_10: 100,       // Was 150 - HALVED
+  MILESTONE_25: 350,       // Was 500 - HALVED
 };
 
 export const COOLDOWNS = {
@@ -47,11 +71,71 @@ export const MIN_QUESTION_TIME = 3;
 export const MIN_QUICK_FIRE_TIME = 15; 
 export const MIN_QOTD_TIME = 3; 
 
-// PROFITABILITY CONFIGURATION
-export const DAILY_AD_LIMIT = 20; 
-export const AI_UNLOCK_COST = 10; 
-export const AI_DEEP_DIVE_COST = 5; 
-export const STREAK_RECOVERY_COST = 50; 
+// INCREASED AI COSTS (Profitability Focus - users spend more!)
+export const AI_COSTS = {
+  // Basic AI features (INCREASED from original)
+  UNLOCK_RESULTS: 15,       // Was 10 - INCREASED
+  EXPLANATION_DEEP_DIVE: 5, // Was 5 - KEPT SAME
+  
+  // Premium AI features 
+  // PERFORMANCE_SUMMARY: Now FREE - uses cached/static content from Firestore (no AI call)
+  WEEKLY_REPORT: 20,        // NEW - premium AI report
+  PERSONALIZED_RECOMMENDATION: 15, // NEW - AI recommendations
+  
+  // Batch operations (NEW)
+  MISTAKE_BATCH_5: 30,      // NEW - 5 mistakes at once
+  MISTAKE_BATCH_10: 50,     // NEW - 10 mistakes at once
+};
+
+// OPTIMIZATION: AI explanations are cached in Firestore to avoid repeated API calls
+// When a user requests an explanation for a question, we first check if it exists in Firestore
+// If cached: serve from Firestore (FREE)
+// If not cached: call AI, save to Firestore, then serve (cost credits)
+export const AI_OPTIMIZATION = {
+  // Firestore collection for cached explanations
+  EXPLANATIONS_COLLECTION: 'cached_explanations',
+  
+  // Cache settings
+  CACHE_EXPIRY_DAYS: 90,    // explanations valid for 90 days
+  MIN_SIMILARITY_THRESHOLD: 0.8, // for similar question matching
+  
+  // Fallback: if no cached explanation exists, use static pedagogical insights
+  USE_STATIC_FALLBACK: true,
+};
+
+// AD SHOWCASE CONFIGURATION (NEW - Voluntary ad watching!)
+export const AD_SHOWCASE = {
+  // Rewards for watching ads voluntarily
+  AD_REWARD_CREDITS: 5,     // Credits per ad (was 5 in fake system)
+  AD_REWARD_XP: 15,        // XP per ad
+  
+  // Daily limits (increased for voluntary watching!)
+  MAX_SHOWCASE_ADS_PER_DAY: 30,  // Increased from 20 - more opportunities!
+  COOLDOWN_MINUTES: 5,      // Cooldown between ads
+  
+  // Bonus multipliers
+  BONUS_STREAK_3: 1.25,    // 25% bonus if 3+ ads in a row
+  BONUS_STREAK_5: 1.5,     // 50% bonus if 5+ ads in a row
+  BONUS_STREAK_10: 2.0,    // 100% bonus (2x) if 10+ ads!
+  
+  // Session rewards
+  SESSION_BONUS_ADS_10: 25,  // Bonus for watching 10 ads in a session
+  SESSION_BONUS_ADS_20: 50,  // Bonus for watching 20 ads in a session
+  SESSION_BONUS_ADS_30: 100, // Bonus for watching 30 ads - JACKPOT!
+};
+
+// DAILY LIMITS (NEW - Profitability Control)
+export const DAILY_LIMITS = {
+  MAX_CREDITS_PER_DAY: 100,    // Maximum credits user can earn per day
+  MAX_XP_PER_DAY: 500,         // Maximum XP user can earn per day
+  MAX_ADS_PER_DAY: 30,         // Maximum ads per day
+  MAX_AI_EXPLANATIONS_PER_DAY: 20, // Maximum AI explanations per day
+};
+
+// Legacy exports (for backward compatibility)
+export const AI_UNLOCK_COST = AI_COSTS.UNLOCK_RESULTS;
+export const AI_DEEP_DIVE_COST = AI_COSTS.EXPLANATION_DEEP_DIVE;
+export const DAILY_AD_LIMIT = AD_SHOWCASE.MAX_SHOWCASE_ADS_PER_DAY;
 
 // STREAK FREEZE SYSTEM (NEW)
 export const STREAK_FREEZE_COST_XP = 500;

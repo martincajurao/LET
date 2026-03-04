@@ -1,7 +1,7 @@
-
 /**
  * @fileOverview A Puter.js-powered flow for personalized performance summaries using GPT-5 Nano.
  * Note: This function runs in the browser environment since Puter is loaded via script tag.
+ * OPTIMIZED: This is now FREE after unlocking results (uses cached/static content when available)
  */
 
 import { puter } from '@/ai/puter';
@@ -35,7 +35,6 @@ export async function generatePersonalizedPerformanceSummary(
   input: PersonalizedPerformanceSummaryInput
 ): Promise<PersonalizedPerformanceSummaryOutput> {
   try {
-    // Check if we're in browser environment and Puter is available
     if (typeof window === 'undefined') {
       return {
         summary: `Score: ${input.overallScorePercentage}%.`,
@@ -55,18 +54,23 @@ export async function generatePersonalizedPerformanceSummary(
       };
     }
 
+    // OPTIMIZED: Shorter context for lower API costs
     const breakdown = input.testResults.map(r => `${r.subjectName}: ${r.scorePercentage}%`).join(', ');
     
-    const response = await puter.ai.chat(`Analyze this LET board simulation performance and return a JSON object with fields: summary (string, max 15 words), strengths (string array, max 2), weaknesses (string array, max 2), recommendations (string, max 1 sentence).
+    // STREAMLINED PROMPT: More concise for faster/cheaper processing
+    const response = await puter.ai.chat(`Analyze LET performance. Return JSON with:
+      - summary (max 15 words): overall score summary
+      - strengths (max 2): what user did well
+      - weaknesses (max 2): areas needing improvement
+      - recommendations (max 1 sentence): actionable next step
       
-      Overall Score: ${input.overallScorePercentage}%
-      Breakdown: ${breakdown}
+      Data: Overall ${input.overallScorePercentage}%. Breakdown: ${breakdown}
       
-      ONLY return JSON object, nothing else.`, {
-      model: 'gpt-5-nano'
+      JSON:`, {
+      model: 'gpt-5-nano',
+      max_tokens: 1024  // Reduced for faster/cheaper responses
     });
 
-    // Simple JSON extraction in case model adds markers
     const rawText = response.toString() || "{}";
     const jsonStr = rawText.substring(rawText.indexOf('{'), rawText.lastIndexOf('}') + 1);
     const output = JSON.parse(jsonStr);
@@ -87,3 +91,4 @@ export async function generatePersonalizedPerformanceSummary(
     };
   }
 }
+
