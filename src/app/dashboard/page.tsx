@@ -36,12 +36,16 @@ import { getRankData, CAREER_TIERS, FIRST_WIN_BONUS_MULTIPLIER } from '@/lib/xp-
 import Link from 'next/link';
 import { FirstWinProgressIndicator } from '@/components/ui/first-win-bonus';
 import { StreakFreezeDialog, StreakFreezeButton } from '@/components/ui/streak-freeze-dialog';
+import { XpBoosterDialog, XpBoosterButton } from '@/components/ui/xp-booster-dialog';
+import { AiBuddyDialog, AiBuddyButton } from '@/components/ui/ai-buddy-dialog';
 
 export default function DashboardPage() {
   const { user } = useUser();
   const router = useRouter();
   const { isDark, toggleDarkMode } = useTheme();
   const [showStreakFreeze, setShowStreakFreeze] = useState(false);
+  const [showXpBooster, setShowXpBooster] = useState(false);
+  const [showAiBuddy, setShowAiBuddy] = useState(false);
 
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
 
@@ -114,13 +118,21 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Streak Freeze Button */}
+{/* Streak Freeze Button */}
         {user && (user.streakCount || 0) >= 3 && (
           <div className="flex justify-center">
             <StreakFreezeButton 
               onClick={() => setShowStreakFreeze(true)} 
               streakCount={user.streakCount || 0} 
             />
+          </div>
+        )}
+
+        {/* XP Booster & AI Buddy Buttons */}
+        {user && (
+          <div className="flex justify-center gap-4">
+            <XpBoosterButton onClick={() => setShowXpBooster(true)} />
+            <AiBuddyButton onClick={() => setShowAiBuddy(true)} />
           </div>
         )}
 
@@ -243,10 +255,22 @@ export default function DashboardPage() {
         </div>
       </div>
       
-      {/* Streak Freeze Dialog */}
+{/* Streak Freeze Dialog */}
       <StreakFreezeDialog 
         isOpen={showStreakFreeze} 
         onClose={() => setShowStreakFreeze(false)} 
+      />
+      
+      {/* XP Booster Dialog */}
+      <XpBoosterDialog 
+        isOpen={showXpBooster} 
+        onClose={() => setShowXpBooster(false)} 
+      />
+      
+      {/* AI Buddy Dialog */}
+      <AiBuddyDialog 
+        isOpen={showAiBuddy} 
+        onClose={() => setShowAiBuddy(false)} 
       />
       
       <Toaster />

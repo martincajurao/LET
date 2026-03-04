@@ -78,74 +78,136 @@ export const AI_COSTS = {
   EXPLANATION_DEEP_DIVE: 5, // Was 5 - KEPT SAME
   
   // Premium AI features 
-  // PERFORMANCE_SUMMARY: Now FREE - uses cached/static content from Firestore (no AI call)
-  WEEKLY_REPORT: 20,        // NEW - premium AI report
-  PERSONALIZED_RECOMMENDATION: 15, // NEW - AI recommendations
+  WEEKLY_REPORT: 20,        // Premium AI report
+  PERSONALIZED_RECOMMENDATION: 15, // AI recommendations
   
-  // Batch operations (NEW)
-  MISTAKE_BATCH_5: 30,      // NEW - 5 mistakes at once
-  MISTAKE_BATCH_10: 50,     // NEW - 10 mistakes at once
+  // NEW: AI Buddy (personal AI tutor that costs credits per prompt)
+  AI_BUDDY_PER_PROMPT: 3,   // Cost per conversation with AI Buddy
+  
+  // Batch operations
+  MISTAKE_BATCH_5: 30,      
+  MISTAKE_BATCH_10: 50,     
+};
+
+// XP BOOSTER SYSTEM (NEW - Spend credits to multiply XP!)
+export const XP_BOOSTER = {
+  // Booster tiers with credit costs and XP multipliers
+  TIER_1: {
+    id: 'booster_1',
+    name: 'Bronze Booster',
+    cost: 25,              // Credits to activate
+    duration: 360,          // minutes (6 hours)
+    xpMultiplier: 1.5,     // 50% more XP
+    description: '+50% XP for 6 hours'
+  },
+  TIER_2: {
+    id: 'booster_2',
+    name: 'Silver Booster',
+    cost: 50,              // Credits to activate
+    duration: 720,         // minutes (12 hours)
+    xpMultiplier: 2.0,     // 100% more XP (2x)
+    description: '+100% XP for 12 hours'
+  },
+  TIER_3: {
+    id: 'booster_3',
+    name: 'Gold Booster',
+    cost: 100,             // Credits to activate
+    duration: 1440,        // minutes (24 hours)
+    xpMultiplier: 3.0,     // 200% more XP (3x)
+    description: '+200% XP for 24 hours'
+  },
+  
+  // Daily limits
+  MAX_BOOSTER_USES_PER_DAY: 3,
+  
+  // Stack with existing multipliers
+  STACK_WITH_TIER_MULTIPLIER: true,
+};
+
+// AI BUDDY SYSTEM (NEW - Personal AI tutor that costs credits per prompt!)
+export const AI_BUDDY = {
+  // AI Buddy features
+  COST_PER_MESSAGE: 3,     // Credits per message/prompt
+  DAILY_MESSAGE_LIMIT: 20, // Max messages per day for free users
+  PRO_MESSAGE_LIMIT: 100,  // Higher limit for Pro users
+  
+  // Available AI Buddy modes
+  MODES: {
+    TUTOR: {
+      id: 'tutor',
+      name: 'AI Tutor',
+      description: 'Explains concepts step-by-step',
+      systemPrompt: 'You are a patient LET tutor. Explain concepts clearly and step-by-step.'
+    },
+    QUIZZER: {
+      id: 'quizzers',
+      name: 'AI Quizzer',
+      description: 'Creates practice questions on any topic',
+      systemPrompt: 'You create practice questions for LET exam preparation. Generate multiple choice questions with correct answers.'
+    },
+    EXPLAINER: {
+      id: 'explainer',
+      name: 'AI Explainer',
+      description: 'Simplifies complex topics',
+      systemPrompt: 'You simplify complex educational topics into easy-to-understand explanations for students.'
+    },
+    MOTIVATOR: {
+      id: 'motivator',
+      name: 'AI Motivator',
+      description: 'Provides encouragement and study tips',
+      systemPrompt: 'You motivate students with encouragement, study tips, and positive reinforcement.'
+    }
+  },
+  
+  // Default settings
+  DEFAULT_MODE: 'tutor',
+  MAX_HISTORY_MESSAGES: 10, // Keep last 10 messages for context
 };
 
 // OPTIMIZATION: AI explanations are cached in Firestore to avoid repeated API calls
-// When a user requests an explanation for a question, we first check if it exists in Firestore
-// If cached: serve from Firestore (FREE)
-// If not cached: call AI, save to Firestore, then serve (cost credits)
 export const AI_OPTIMIZATION = {
-  // Firestore collection for cached explanations
   EXPLANATIONS_COLLECTION: 'cached_explanations',
-  
-  // Cache settings
-  CACHE_EXPIRY_DAYS: 90,    // explanations valid for 90 days
-  MIN_SIMILARITY_THRESHOLD: 0.8, // for similar question matching
-  
-  // Fallback: if no cached explanation exists, use static pedagogical insights
+  CACHE_EXPIRY_DAYS: 90,
+  MIN_SIMILARITY_THRESHOLD: 0.8,
   USE_STATIC_FALLBACK: true,
 };
 
 // AD SHOWCASE CONFIGURATION (NEW - Voluntary ad watching!)
 export const AD_SHOWCASE = {
-  // Rewards for watching ads voluntarily
-  AD_REWARD_CREDITS: 5,     // Credits per ad (was 5 in fake system)
-  AD_REWARD_XP: 15,        // XP per ad
-  
-  // Daily limits (increased for voluntary watching!)
-  MAX_SHOWCASE_ADS_PER_DAY: 30,  // Increased from 20 - more opportunities!
-  COOLDOWN_MINUTES: 5,      // Cooldown between ads
-  
-  // Bonus multipliers
-  BONUS_STREAK_3: 1.25,    // 25% bonus if 3+ ads in a row
-  BONUS_STREAK_5: 1.5,     // 50% bonus if 5+ ads in a row
-  BONUS_STREAK_10: 2.0,    // 100% bonus (2x) if 10+ ads!
-  
-  // Session rewards
-  SESSION_BONUS_ADS_10: 25,  // Bonus for watching 10 ads in a session
-  SESSION_BONUS_ADS_20: 50,  // Bonus for watching 20 ads in a session
-  SESSION_BONUS_ADS_30: 100, // Bonus for watching 30 ads - JACKPOT!
+  AD_REWARD_CREDITS: 5,
+  AD_REWARD_XP: 15,
+  MAX_SHOWCASE_ADS_PER_DAY: 30,
+  COOLDOWN_MINUTES: 5,
+  BONUS_STREAK_3: 1.25,
+  BONUS_STREAK_5: 1.5,
+  BONUS_STREAK_10: 2.0,
+  SESSION_BONUS_ADS_10: 25,
+  SESSION_BONUS_ADS_20: 50,
+  SESSION_BONUS_ADS_30: 100,
 };
 
 // DAILY LIMITS (NEW - Profitability Control)
 export const DAILY_LIMITS = {
-  MAX_CREDITS_PER_DAY: 100,    // Maximum credits user can earn per day
-  MAX_XP_PER_DAY: 500,         // Maximum XP user can earn per day
-  MAX_ADS_PER_DAY: 30,         // Maximum ads per day
-  MAX_AI_EXPLANATIONS_PER_DAY: 20, // Maximum AI explanations per day
+  MAX_CREDITS_PER_DAY: 100,
+  MAX_XP_PER_DAY: 500,
+  MAX_ADS_PER_DAY: 30,
+  MAX_AI_EXPLANATIONS_PER_DAY: 20,
 };
 
-// Legacy exports (for backward compatibility)
+// Legacy exports
 export const AI_UNLOCK_COST = AI_COSTS.UNLOCK_RESULTS;
 export const AI_DEEP_DIVE_COST = AI_COSTS.EXPLANATION_DEEP_DIVE;
 export const DAILY_AD_LIMIT = AD_SHOWCASE.MAX_SHOWCASE_ADS_PER_DAY;
 
-// STREAK FREEZE SYSTEM (NEW)
+// STREAK FREEZE SYSTEM
 export const STREAK_FREEZE_COST_XP = 500;
 export const STREAK_FREEZE_COST_CREDITS = 25;
 export const STREAK_WARNING_HOURS = 24;
 
-// FIRST WIN BONUS (NEW)
+// FIRST WIN BONUS
 export const FIRST_WIN_BONUS_MULTIPLIER = 2;
 
-// MONTHLY MEGA REWARD (NEW)
+// MONTHLY MEGA REWARD
 export const MONTHLY_REWARD_DAY = 30;
 export const MONTHLY_MEGA_REWARD = {
   xp: 5000,
@@ -156,7 +218,6 @@ export const MONTHLY_MEGA_REWARD = {
 
 /**
  * TIERED ECONOMY CONFIGURATION
- * Re-balanced for early-game speed and late-game prestige.
  */
 export const CAREER_TIERS = [
   { minRank: 1,  maxRank: 3,  title: "Novice Candidate",     req: 300,   reward: 10,  multiplier: 1.0 },
@@ -218,37 +279,19 @@ export function isTrackUnlocked(rank: number, track: string, unlockedTracks: str
   return true;
 }
 
-/**
- * RANK-BASED QUESTION LIMITS CONFIGURATION
- * Allows dynamic question limits based on user rank.
- * Full LET: 150 questions per category, 450 total for full simulation.
- */
 export const QUESTION_LIMITS_BY_RANK: Record<number, { limitGenEd: number; limitProfEd: number; limitSpec: number; total: number }> = {
-  // Rank 1-2: Novice
   1: { limitGenEd: 10, limitProfEd: 10, limitSpec: 10, total: 30 },
-  // Rank 3-4: Junior Intern
   3: { limitGenEd: 25, limitProfEd: 25, limitSpec: 25, total: 75 },
-  // Rank 5-6: Aspiring Professional
   5: { limitGenEd: 50, limitProfEd: 50, limitSpec: 50, total: 150 },
-  // Rank 7-8: Qualified Educator
   7: { limitGenEd: 75, limitProfEd: 75, limitSpec: 75, total: 225 },
-  // Rank 9: Subject Specialist
   9: { limitGenEd: 100, limitProfEd: 100, limitSpec: 100, total: 300 },
-  // Rank 10+: Master Candidate (Full LET)
   10: { limitGenEd: 150, limitProfEd: 150, limitSpec: 150, total: 450 },
 };
 
-/**
- * Get question limits based on user rank
- * @param rank - User's current rank
- * @param customLimits - Optional custom limits from Firestore config
- * @returns Question limits for each category
- */
 export function getQuestionLimitsByRank(
   rank: number, 
   customLimits?: { genEd?: number; profEd?: number; spec?: number }
 ): { limitGenEd: number; limitProfEd: number; limitSpec: number; total: number } {
-  // Use custom limits from Firestore if provided
   if (customLimits) {
     const limitGenEd = customLimits.genEd || 10;
     const limitProfEd = customLimits.profEd || 10;
@@ -261,7 +304,6 @@ export function getQuestionLimitsByRank(
     };
   }
 
-  // Find the appropriate tier based on rank
   const tiers = [10, 9, 7, 5, 3, 1];
   for (const tier of tiers) {
     if (rank >= tier) {
@@ -269,13 +311,9 @@ export function getQuestionLimitsByRank(
     }
   }
   
-  // Default to rank 1 limits
   return QUESTION_LIMITS_BY_RANK[1];
 }
 
-/**
- * Get the rank tier name for display
- */
 export function getRankTierName(rank: number): string {
   if (rank >= 10) return "Master Candidate (Full LET)";
   if (rank >= 9) return "Subject Specialist";
