@@ -41,7 +41,15 @@ import {
   Minus,
   Lightbulb,
   Eye,
-  Calendar
+  Calendar,
+  DollarSign,
+  Lock,
+  Target,
+  Flame,
+  Gift,
+  Shield,
+  Coins,
+  Play
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -131,6 +139,45 @@ export default function AdminDashboard() {
   // Rank-based question limits
   const [rankLimits, setRankLimits] = useState<Record<number, { genEd: number; profEd: number; spec: number }>>({});
   
+  // XP & Rewards Settings
+  const [xpRewards, setXpRewards] = useState({
+    correctAnswer: 15,
+    finishTrack: 150,
+    finishFullSim: 750,
+    mistakeReview: 50,
+    adWatchXp: 30,
+    quickFireComplete: 60,
+    dailyStreakBonus: 100,
+    questionOfTheDay: 30,
+    dailyLoginBonus: 50,
+    pomodoroComplete: 40,
+    achievementUnlock: 250,
+    personalBest: 200,
+    confidentCorrectBonus: 15,
+    confidentWrongPenalty: -10,
+  });
+
+  // Anti-Abuse Settings
+  const [antiAbuseSettings, setAntiAbuseSettings] = useState({
+    minQuestionTime: 3,
+    minQuickFireTime: 15,
+    minQotdTime: 3,
+    dailyAdLimit: 20,
+  });
+
+  // AI Feature Settings
+  const [aiSettings, setAiSettings] = useState({
+    aiUnlockCost: 10,
+    aiDeepDiveCost: 5,
+    streakRecoveryCost: 50,
+  });
+
+  // Exam Settings
+  const [examSettings, setExamSettings] = useState({
+    adXpCooldown: 30,
+    quickFireCooldown: 60,
+  });
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Partial<Question> | null>(null);
   
@@ -176,6 +223,31 @@ export default function AdminDashboard() {
           limitSpec: data.limitSpec || 10 
         });
         setConfigNote(data.note || "");
+        
+        // Load rank-based question limits
+        if (data.rankLimits) {
+          setRankLimits(data.rankLimits);
+        }
+        
+        // Load XP rewards settings
+        if (data.xpRewards) {
+          setXpRewards(data.xpRewards);
+        }
+        
+        // Load anti-abuse settings
+        if (data.antiAbuseSettings) {
+          setAntiAbuseSettings(data.antiAbuseSettings);
+        }
+        
+        // Load AI settings
+        if (data.aiSettings) {
+          setAiSettings(data.aiSettings);
+        }
+        
+        // Load exam settings
+        if (data.examSettings) {
+          setExamSettings(data.examSettings);
+        }
       }
     } catch (error: any) {
       console.error("Admin data sync failed:", error);
@@ -432,44 +504,310 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="config" className="space-y-8 animate-in fade-in duration-500">
+            {/* Exam Settings Section */}
             <Card className="android-surface border-none shadow-2xl rounded-[3rem] bg-card overflow-hidden">
-              <CardHeader className="p-10 border-b bg-muted/20">
+              <CardHeader className="p-8 border-b bg-muted/20">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-primary/10 rounded-[1.5rem] flex items-center justify-center shadow-inner">
-                    <Settings className="w-7 h-7 text-primary" />
+                  <div className="w-12 h-12 bg-primary/10 rounded-[1.5rem] flex items-center justify-center shadow-inner">
+                    <Timer className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <CardTitle className="text-2xl font-black tracking-tighter">System Parameters</CardTitle>
-                    <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Global Simulation Calibration</CardDescription>
+                    <CardTitle className="text-xl font-black tracking-tighter">Exam Settings</CardTitle>
+                    <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Simulation Timing Configuration</CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-10 space-y-10">
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.3em] ml-1 flex items-center gap-2">
-                    <Timer className="w-3.5 h-3.5" /> Simulation Pacing (s/item)
-                  </label>
-                  <Input type="number" value={timePerQuestion} onChange={(e) => setTimePerQuestion(parseInt(e.target.value) || 60)} className="rounded-[1.25rem] h-14 font-black text-xl border-2 focus:border-primary shadow-inner" />
+              <CardContent className="p-8 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.3em] ml-1 flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5" /> Time Per Question (seconds)
+                    </label>
+                    <Input 
+                      type="number" 
+                      value={timePerQuestion} 
+                      onChange={(e) => setTimePerQuestion(parseInt(e.target.value) || 60)} 
+                      className="rounded-[1.25rem] h-12 font-black text-lg border-2 focus:border-primary shadow-inner" 
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.3em] ml-1 flex items-center gap-2">
+                      <Play className="w-3.5 h-3.5" /> Quick Fire Cooldown (min)
+                    </label>
+                    <Input 
+                      type="number" 
+                      value={examSettings.quickFireCooldown} 
+                      onChange={(e) => setExamSettings({...examSettings, quickFireCooldown: parseInt(e.target.value) || 60})} 
+                      className="rounded-[1.25rem] h-12 font-black text-lg border-2 focus:border-primary shadow-inner" 
+                    />
+                  </div>
                 </div>
-                <Button 
-                  onClick={async () => { 
-                    if (!firestore) return;
-                    setSavingSettings(true); 
-                    const configRef = doc(firestore, "system_configs", "global");
-                    await setDoc(configRef, { 
-                      timePerQuestion, 
-                      updatedAt: serverTimestamp() 
-                    }, { merge: true });
-                    toast({ title: "Parameters Updated", description: "System recalibrated." });
-                    setSavingSettings(false);
-                  }} 
-                  disabled={savingSettings} 
-                  className="h-16 rounded-[1.5rem] font-black text-base px-14 shadow-2xl shadow-primary/30 w-full sm:w-auto active:scale-95 transition-all gap-3"
-                >
-                  {savingSettings ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />} Commit Parameters
-                </Button>
               </CardContent>
             </Card>
+
+            {/* Base Question Limits Section */}
+            <Card className="android-surface border-none shadow-2xl rounded-[3rem] bg-card overflow-hidden">
+              <CardHeader className="p-8 border-b bg-muted/20">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-500/10 rounded-[1.5rem] flex items-center justify-center shadow-inner">
+                    <Target className="w-6 h-6 text-blue-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-black tracking-tighter">Base Question Limits</CardTitle>
+                    <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Default Questions Per Category</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-8 space-y-6">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase text-blue-600 tracking-[0.3em] ml-1">Gen Ed</label>
+                    <Input 
+                      type="number" 
+                      value={limits.limitGenEd} 
+                      onChange={(e) => setLimits({...limits, limitGenEd: parseInt(e.target.value) || 10})} 
+                      className="rounded-[1.25rem] h-12 font-black text-lg border-2 focus:border-blue-500 shadow-inner" 
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase text-purple-600 tracking-[0.3em] ml-1">Prof Ed</label>
+                    <Input 
+                      type="number" 
+                      value={limits.limitProfEd} 
+                      onChange={(e) => setLimits({...limits, limitProfEd: parseInt(e.target.value) || 10})} 
+                      className="rounded-[1.25rem] h-12 font-black text-lg border-2 focus:border-purple-500 shadow-inner" 
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase text-emerald-600 tracking-[0.3em] ml-1">Specialization</label>
+                    <Input 
+                      type="number" 
+                      value={limits.limitSpec} 
+                      onChange={(e) => setLimits({...limits, limitSpec: parseInt(e.target.value) || 10})} 
+                      className="rounded-[1.25rem] h-12 font-black text-lg border-2 focus:border-emerald-500 shadow-inner" 
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Rank-Based Question Limits Section */}
+            <Card className="android-surface border-none shadow-2xl rounded-[3rem] bg-card overflow-hidden">
+              <CardHeader className="p-8 border-b bg-muted/20">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-purple-500/10 rounded-[1.5rem] flex items-center justify-center shadow-inner">
+                    <TrendingUp className="w-6 h-6 text-purple-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-black tracking-tighter">Rank-Based Question Limits</CardTitle>
+                    <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Progressive Unlocking by Growth Rank</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-8">
+                <RankTierInput 
+                  value={rankLimits} 
+                  onChange={setRankLimits}
+                />
+              </CardContent>
+            </Card>
+
+            {/* XP Rewards Section */}
+            <Card className="android-surface border-none shadow-2xl rounded-[3rem] bg-card overflow-hidden">
+              <CardHeader className="p-8 border-b bg-muted/20">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-yellow-500/10 rounded-[1.5rem] flex items-center justify-center shadow-inner">
+                    <Zap className="w-6 h-6 text-yellow-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-black tracking-tighter">XP Rewards</CardTitle>
+                    <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Experience Point Values</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-8 space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase text-muted-foreground tracking-wider">Correct Answer</label>
+                    <Input type="number" value={xpRewards.correctAnswer} onChange={(e) => setXpRewards({...xpRewards, correctAnswer: parseInt(e.target.value) || 0})} className="h-10 font-bold" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase text-muted-foreground tracking-wider">Finish Track</label>
+                    <Input type="number" value={xpRewards.finishTrack} onChange={(e) => setXpRewards({...xpRewards, finishTrack: parseInt(e.target.value) || 0})} className="h-10 font-bold" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase text-muted-foreground tracking-wider">Full Simulation</label>
+                    <Input type="number" value={xpRewards.finishFullSim} onChange={(e) => setXpRewards({...xpRewards, finishFullSim: parseInt(e.target.value) || 0})} className="h-10 font-bold" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase text-muted-foreground tracking-wider">Mistake Review</label>
+                    <Input type="number" value={xpRewards.mistakeReview} onChange={(e) => setXpRewards({...xpRewards, mistakeReview: parseInt(e.target.value) || 0})} className="h-10 font-bold" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase text-muted-foreground tracking-wider">Quick Fire</label>
+                    <Input type="number" value={xpRewards.quickFireComplete} onChange={(e) => setXpRewards({...xpRewards, quickFireComplete: parseInt(e.target.value) || 0})} className="h-10 font-bold" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase text-muted-foreground tracking-wider">Daily Streak</label>
+                    <Input type="number" value={xpRewards.dailyStreakBonus} onChange={(e) => setXpRewards({...xpRewards, dailyStreakBonus: parseInt(e.target.value) || 0})} className="h-10 font-bold" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase text-muted-foreground tracking-wider">Daily Login</label>
+                    <Input type="number" value={xpRewards.dailyLoginBonus} onChange={(e) => setXpRewards({...xpRewards, dailyLoginBonus: parseInt(e.target.value) || 0})} className="h-10 font-bold" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase text-muted-foreground tracking-wider">QOTD</label>
+                    <Input type="number" value={xpRewards.questionOfTheDay} onChange={(e) => setXpRewards({...xpRewards, questionOfTheDay: parseInt(e.target.value) || 0})} className="h-10 font-bold" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase text-muted-foreground tracking-wider">Achievement</label>
+                    <Input type="number" value={xpRewards.achievementUnlock} onChange={(e) => setXpRewards({...xpRewards, achievementUnlock: parseInt(e.target.value) || 0})} className="h-10 font-bold" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Anti-Abuse Settings Section */}
+            <Card className="android-surface border-none shadow-2xl rounded-[3rem] bg-card overflow-hidden">
+              <CardHeader className="p-8 border-b bg-muted/20">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-red-500/10 rounded-[1.5rem] flex items-center justify-center shadow-inner">
+                    <Shield className="w-6 h-6 text-red-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-black tracking-tighter">Anti-Abuse Settings</CardTitle>
+                    <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Fraud Prevention Configuration</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-8 space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.3em] ml-1 flex items-center gap-2">
+                      <Lock className="w-3.5 h-3.5" /> Min Question Time (s)
+                    </label>
+                    <Input 
+                      type="number" 
+                      value={antiAbuseSettings.minQuestionTime} 
+                      onChange={(e) => setAntiAbuseSettings({...antiAbuseSettings, minQuestionTime: parseInt(e.target.value) || 3})} 
+                      className="rounded-[1.25rem] h-12 font-black text-lg border-2 focus:border-red-500 shadow-inner" 
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.3em] ml-1 flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5" /> Min Quick Fire Time (s)
+                    </label>
+                    <Input 
+                      type="number" 
+                      value={antiAbuseSettings.minQuickFireTime} 
+                      onChange={(e) => setAntiAbuseSettings({...antiAbuseSettings, minQuickFireTime: parseInt(e.target.value) || 15})} 
+                      className="rounded-[1.25rem] h-12 font-black text-lg border-2 focus:border-red-500 shadow-inner" 
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.3em] ml-1 flex items-center gap-2">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Daily Ad Limit
+                    </label>
+                    <Input 
+                      type="number" 
+                      value={antiAbuseSettings.dailyAdLimit} 
+                      onChange={(e) => setAntiAbuseSettings({...antiAbuseSettings, dailyAdLimit: parseInt(e.target.value) || 20})} 
+                      className="rounded-[1.25rem] h-12 font-black text-lg border-2 focus:border-red-500 shadow-inner" 
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.3em] ml-1 flex items-center gap-2">
+                      <Timer className="w-3.5 h-3.5" /> Min QOTD Time (s)
+                    </label>
+                    <Input 
+                      type="number" 
+                      value={antiAbuseSettings.minQotdTime} 
+                      onChange={(e) => setAntiAbuseSettings({...antiAbuseSettings, minQotdTime: parseInt(e.target.value) || 3})} 
+                      className="rounded-[1.25rem] h-12 font-black text-lg border-2 focus:border-red-500 shadow-inner" 
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* AI Feature Settings Section */}
+            <Card className="android-surface border-none shadow-2xl rounded-[3rem] bg-card overflow-hidden">
+              <CardHeader className="p-8 border-b bg-muted/20">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-emerald-500/10 rounded-[1.5rem] flex items-center justify-center shadow-inner">
+                    <Sparkles className="w-6 h-6 text-emerald-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-black tracking-tighter">AI Feature Settings</CardTitle>
+                    <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Artificial Intelligence Credit Costs</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-8 space-y-6">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.3em] ml-1 flex items-center gap-2">
+                      <Coins className="w-3.5 h-3.5" /> AI Unlock Cost
+                    </label>
+                    <Input 
+                      type="number" 
+                      value={aiSettings.aiUnlockCost} 
+                      onChange={(e) => setAiSettings({...aiSettings, aiUnlockCost: parseInt(e.target.value) || 10})} 
+                      className="rounded-[1.25rem] h-12 font-black text-lg border-2 focus:border-emerald-500 shadow-inner" 
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.3em] ml-1 flex items-center gap-2">
+                      <Lightbulb className="w-3.5 h-3.5" /> Deep Dive Cost
+                    </label>
+                    <Input 
+                      type="number" 
+                      value={aiSettings.aiDeepDiveCost} 
+                      onChange={(e) => setAiSettings({...aiSettings, aiDeepDiveCost: parseInt(e.target.value) || 5})} 
+                      className="rounded-[1.25rem] h-12 font-black text-lg border-2 focus:border-emerald-500 shadow-inner" 
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.3em] ml-1 flex items-center gap-2">
+                      <Flame className="w-3.5 h-3.5" /> Streak Recovery
+                    </label>
+                    <Input 
+                      type="number" 
+                      value={aiSettings.streakRecoveryCost} 
+                      onChange={(e) => setAiSettings({...aiSettings, streakRecoveryCost: parseInt(e.target.value) || 50})} 
+                      className="rounded-[1.25rem] h-12 font-black text-lg border-2 focus:border-emerald-500 shadow-inner" 
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Save Button */}
+            <Button 
+              onClick={async () => { 
+                if (!firestore) return;
+                setSavingSettings(true); 
+                const configRef = doc(firestore, "system_configs", "global");
+                await setDoc(configRef, { 
+                  timePerQuestion,
+                  limitGenEd: limits.limitGenEd,
+                  limitProfEd: limits.limitProfEd,
+                  limitSpec: limits.limitSpec,
+                  rankLimits,
+                  xpRewards,
+                  antiAbuseSettings,
+                  aiSettings,
+                  examSettings,
+                  updatedAt: serverTimestamp() 
+                }, { merge: true });
+                toast({ title: "Parameters Updated", description: "All system settings recalibrated." });
+                setSavingSettings(false);
+              }} 
+              disabled={savingSettings} 
+              className="h-16 rounded-[1.5rem] font-black text-base px-14 shadow-2xl shadow-primary/30 w-full sm:w-auto active:scale-95 transition-all gap-3"
+            >
+              {savingSettings ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />} Commit All Parameters
+            </Button>
           </TabsContent>
         </Tabs>
       </main>

@@ -22,7 +22,8 @@ import {
   Zap,
   Timer,
   AlertTriangle,
-  ChevronRight
+  ChevronRight,
+  Trophy
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -59,6 +60,7 @@ export function ResultUnlockDialog({
   const [verifying, setVerifying] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showAbortConfirm, setShowAbortConfirm] = useState(false);
 
   // Insufficient Credits Dialog State
@@ -186,9 +188,7 @@ export function ResultUnlockDialog({
 
   const handleUnlockComplete = () => {
     setShowSuccess(true);
-    setTimeout(() => {
-      onUnlock();
-    }, 2000);
+    setShowSuccessDialog(true);
   };
 
   const handleAbort = () => {
@@ -436,6 +436,101 @@ export function ResultUnlockDialog({
                 Close
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Gamified Unlock Success Dialog */}
+      <Dialog open={showSuccessDialog} onOpenChange={(open) => {
+        setShowSuccessDialog(open);
+        if (!open) {
+          setShowSuccess(false);
+          onUnlock();
+        }
+      }}>
+        <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-0 max-w-[340px] overflow-hidden outline-none z-[1100]">
+          <div className="bg-emerald-500/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
+            <motion.div
+              initial={{ scale: 0, rotate: -45 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", damping: 12, stiffness: 200, delay: 0.1 }}
+              className="w-20 h-20 bg-emerald-500 text-white rounded-[2rem] flex items-center justify-center shadow-2xl relative z-10"
+            >
+              <Trophy className="w-10 h-10" />
+            </motion.div>
+            
+            <motion.div 
+              animate={{ 
+                scale: [1, 1.2, 1],
+                opacity: [0.2, 0.4, 0.2] 
+              }}
+              transition={{ duration: 3, repeat: Infinity }}
+              className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 to-transparent z-0" 
+            />
+            
+            <div className="absolute inset-0 z-5 pointer-events-none">
+              {[...Array(5)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 0 }}
+                  animate={{ opacity: [0, 1, 0], y: -80, x: (i - 2) * 30 }}
+                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.4 }}
+                  className="absolute bottom-0 left-1/2"
+                >
+                  <Sparkles className="w-3 h-3 text-emerald-500 fill-current animate-sparkle" />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="p-8 pt-4 text-center space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="space-y-2"
+            >
+              <DialogHeader>
+                <div className="flex flex-col items-center">
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600 mb-1">Access Granted</span>
+                  <DialogTitle className="text-2xl font-black tracking-tight text-foreground">Result Unlocked!</DialogTitle>
+                  <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest mt-1">
+                    Calibration secure
+                  </DialogDescription>
+                </div>
+              </DialogHeader>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.5 }}
+              className="bg-muted/30 rounded-2xl p-4 border border-border/50 flex flex-col items-center gap-1"
+            >
+              <span className="text-[9px] font-black uppercase text-muted-foreground">Analysis Ready</span>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                <span className="text-lg font-black text-foreground">Board Rating Viewable</span>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+            >
+              <Button 
+                onClick={() => {
+                  setShowSuccessDialog(false);
+                  setShowSuccess(false);
+                  onUnlock();
+                }}
+                className="w-full h-14 rounded-2xl font-black text-base gap-2 shadow-lg shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700 text-white group"
+              >
+                View Results
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </motion.div>
           </div>
         </DialogContent>
       </Dialog>

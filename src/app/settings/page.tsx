@@ -12,7 +12,9 @@ import {
   Loader2, 
   Zap,
   Moon,
-  Sun
+  Sun,
+  Gamepad2,
+  ChevronRight
 } from "lucide-react";
 
 import Link from 'next/link';
@@ -23,6 +25,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { Switch } from "@/components/ui/switch";
 import { motion } from 'framer-motion';
 import { cn } from "@/lib/utils";
+import { GamificationSettings } from "@/components/ui/gamification-settings";
 
 function SettingsPageContent() {
   const { user, loading: userLoading, refreshUser } = useUser();
@@ -30,6 +33,7 @@ function SettingsPageContent() {
   const { isDark, toggleDarkMode } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [showGamificationSettings, setShowGamificationSettings] = useState(false);
 
   const handleRefreshData = async () => {
     setRefreshing(true);
@@ -125,6 +129,28 @@ function SettingsPageContent() {
             </CardContent>
           </Card>
 
+          {/* Game Experience */}
+          <Card 
+            className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card border border-border/50 cursor-pointer group hover:border-primary/30 transition-all"
+            onClick={() => setShowGamificationSettings(true)}
+          >
+            <CardHeader className="bg-muted/30 p-8 border-b">
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 bg-gradient-to-br from-primary to-purple-500 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
+                  <Gamepad2 className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <CardTitle className="text-2xl font-black tracking-tight">Game Experience</CardTitle>
+                  <CardDescription className="text-xs font-bold uppercase tracking-widest opacity-60">Sound, notifications, rewards & more</CardDescription>
+                </div>
+                <ChevronRight className="w-6 h-6 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+              </div>
+            </CardHeader>
+            <CardContent className="p-8">
+              <p className="text-sm text-muted-foreground font-medium">Customize sound effects, animations, achievement notifications, and more.</p>
+            </CardContent>
+          </Card>
+
           {/* Cloud Sync */}
           <Card className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-foreground text-background">
             <CardContent className="p-8">
@@ -150,6 +176,9 @@ function SettingsPageContent() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Gamification Settings Dialog */}
+        <GamificationSettings open={showGamificationSettings} onOpenChange={setShowGamificationSettings} />
       </div>
     </div>
   );

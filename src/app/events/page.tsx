@@ -6,6 +6,7 @@ import { useFirestore, useUser } from '@/firebase';
 import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import { EventsSection } from '@/components/ui/EventsSection';
 import { Leaderboard } from '@/components/ui/leaderboard';
+import { WeeklyTournament } from '@/components/ui/weekly-tournament';
 import { 
   Trophy, 
   Globe, 
@@ -204,6 +205,21 @@ export default function EventsPage() {
 
           <div className="lg:col-span-4 space-y-8">
             <div className="sticky top-24 space-y-8">
+              {/* Weekly Championship with LIVE Badge */}
+              <div>
+                <div className="flex items-center gap-2 mb-3 px-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-red-500">Live Event</span>
+                </div>
+                <WeeklyTournament 
+                  currentUserId={user?.uid}
+                  currentUserScore={0}
+                  onJoinTournament={() => {
+                    // Handled within component
+                  }}
+                />
+              </div>
+
               <div className="space-y-4">
                 <div className="flex items-center gap-3 mb-2 px-2">
                   <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shadow-inner">

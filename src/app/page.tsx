@@ -46,7 +46,8 @@ import {
   FlaskConical,
   Award,
   Unlock,
-  BrainCircuit
+  BrainCircuit,
+  CheckCircle2
 } from "lucide-react";
 import QRCode from 'qrcode';
 import { ExamInterface } from "@/components/exam/ExamInterface";
@@ -64,6 +65,12 @@ import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { getRankData, isTrackUnlocked, XP_REWARDS, COOLDOWNS, UNLOCK_RANKS, DAILY_AD_LIMIT, MIN_QUICK_FIRE_TIME, getCareerRankTitle, getQuestionLimitsByRank, QUESTION_LIMITS_BY_RANK } from '@/lib/xp-system';
+import { useSound } from '@/hooks/use-sound';
+import { CelebrationEffect, useCelebration, FloatingXP } from '@/components/ui/celebration-effects';
+import { ShareableResultCard } from '@/components/ui/shareable-result-card';
+import { FirstWinBonus, FirstWinMini } from '@/components/ui/first-win-bonus';
+import { EnhancedAchievementSystem } from '@/components/ui/enhanced-achievements';
+import { Settings } from 'lucide-react';
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
@@ -145,6 +152,8 @@ function LetsPrepContent() {
 
   const [lockedTrackInfo, setLockedTrackInfo] = useState<any>(null);
   const [isUnlockingEarly, setIsUnlockingEarly] = useState(false);
+  const [showTrackUnlockSuccess, setShowTrackUnlockSuccess] = useState(false);
+  const [lastUnlockedTrackName, setLastUnlockedTrackName] = useState("");
   
   const [timePerQuestion, setTimePerQuestion] = useState(60);
   const [limits, setLimits] = useState({ limitGenEd: 10, limitProfEd: 10, limitSpec: 10 });
@@ -163,6 +172,17 @@ function LetsPrepContent() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+
+  // Gamification features state
+  const [showGamificationSettings, setShowGamificationSettings] = useState(false);
+  const [showShareCard, setShowShareCard] = useState(false);
+  const [showFirstWinBonus, setShowFirstWinBonus] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationType, setCelebrationType] = useState<'confetti' | 'fireworks' | 'xp'>('confetti');
+  
+  // Sound hook
+  const { playCorrect, playWrong, playAchievement, playLevelUp, playQuestComplete, playUnlock, playStreak, playCoin } = useSound();
+  const { celebration, triggerConfetti, triggerXPGain, clearCelebration } = useCelebration();
 
   // Define rankData BEFORE using it in useEffect
   const rankData = useMemo(() => user ? getRankData(user.xp || 0) : null, [user?.xp]);
@@ -534,11 +554,16 @@ function LetsPrepContent() {
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-4">
-                  <h3 className="text-xl font-black tracking-tight flex items-center gap-3 px-4">
-                    <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center shadow-inner"><Users className="w-5 h-5 text-emerald-600" /></div>
-                    Intelligence Lounge
-                  </h3>
+<div className="space-y-4 pt-4">
+                  <div className="flex items-center justify-between px-4">
+                    <h3 className="text-xl font-black tracking-tight flex items-center gap-3">
+                      <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center shadow-inner"><Users className="w-5 h-5 text-emerald-600" /></div>
+                      Intelligence Lounge
+                    </h3>
+                    <Button variant="ghost" size="icon" onClick={() => setShowGamificationSettings(true)} className="rounded-full w-8 h-8">
+                      <Settings className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-1">
                     <Card onClick={() => setShowFeedbackModal(true)} className="android-surface cursor-pointer rounded-[2.25rem] p-6 flex items-center gap-5 border-none shadow-md3-1 bg-card group">
                       <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500"><MessageSquare className="w-7 h-7" /></div>
@@ -659,8 +684,9 @@ function LetsPrepContent() {
                       unlockedTracks: arrayUnion(lockedTrackInfo.id) as any 
                     }); 
                     await refreshUser(); 
-                    toast({ variant: "reward", title: "Sector Unlocked!", description: `${lockedTrackInfo.name} is now accessible.` }); 
-                    setLockedTrackInfo(null); 
+                    setLastUnlockedTrackName(lockedTrackInfo.name);
+                    setLockedTrackInfo(null);
+                    setShowTrackUnlockSuccess(true);
                   } finally { 
                     setIsUnlockingEarly(false); 
                   } 
@@ -676,6 +702,97 @@ function LetsPrepContent() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Gamified Track Unlock Success Dialog */}
+      <Dialog open={showTrackUnlockSuccess} onOpenChange={setShowTrackUnlockSuccess}>
+        <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-0 max-w-[340px] overflow-hidden outline-none z-[1100]">
+          <div className="bg-emerald-500/10 p-12 flex flex-col items-center justify-center relative overflow-hidden">
+            <motion.div
+              initial={{ scale: 0, rotate: -45 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", damping: 12, stiffness: 200, delay: 0.1 }}
+              className="w-20 h-20 bg-emerald-500 text-white rounded-[2rem] flex items-center justify-center shadow-2xl relative z-10"
+            >
+              <Trophy className="w-10 h-10" />
+            </motion.div>
+            
+            <motion.div 
+              animate={{ 
+                scale: [1, 1.2, 1],
+                opacity: [0.2, 0.4, 0.2] 
+              }}
+              transition={{ duration: 3, repeat: Infinity }}
+              className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 to-transparent z-0" 
+            />
+            
+            <div className="absolute inset-0 z-5 pointer-events-none">
+              {[...Array(5)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 0 }}
+                  animate={{ opacity: [0, 1, 0], y: -80, x: (i - 2) * 30 }}
+                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.4 }}
+                  className="absolute bottom-0 left-1/2"
+                >
+                  <Sparkles className="w-3 h-3 text-emerald-500 fill-current animate-sparkle" />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="p-8 pt-4 text-center space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="space-y-2"
+            >
+              <DialogHeader>
+                <div className="flex flex-col items-center">
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600 mb-1">Access Granted</span>
+                  <DialogTitle className="text-2xl font-black tracking-tight text-foreground">Track Unlocked!</DialogTitle>
+                  <DialogDescription className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest mt-1">
+                    {lastUnlockedTrackName} is now active
+                  </DialogDescription>
+                </div>
+              </DialogHeader>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.5 }}
+              className="bg-muted/30 rounded-2xl p-4 border border-border/50 flex flex-col items-center gap-1"
+            >
+              <span className="text-[9px] font-black uppercase text-muted-foreground">Permanent Status</span>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                <span className="text-lg font-black text-foreground">Lifetime Access</span>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+            >
+              <Button 
+                onClick={() => setShowTrackUnlockSuccess(false)}
+                className="w-full h-14 rounded-2xl font-black text-base gap-2 shadow-lg shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700 text-white group"
+              >
+                Start Training
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </motion.div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Gamification Settings Dialog */}
+      <GamificationSettings open={showGamificationSettings} onOpenChange={setShowGamificationSettings} />
+
+      {/* Celebration Effects */}
+      {celebration.show && <CelebrationEffect show={celebration.show} type={celebration.type} />}
     </div>
   );
 }
