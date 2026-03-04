@@ -378,7 +378,7 @@ const handleGenerateExplanation = async (q: Question) => {
                   <Button variant="outline" onClick={handleUnlockWithCredits} disabled={unlocking} className="h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-2 border-2 border-primary/30 bg-primary/5 text-primary active:scale-95 transition-all">
                     <span className="flex-1 text-left px-1">Unlock Vault</span>
                     <div className="bg-background/90 px-2 py-1 rounded-lg border border-primary/30 flex items-center gap-1.5">
-                      <span className="font-black text-xs">{AI_UNLOCK_COST}</span>
+                      <span className="font-black text-xs">{AI_COSTS.UNLOCK_RESULTS}</span>
                       <Sparkles className="w-3.5 h-3.5 fill-current animate-sparkle" />
                     </div>
                   </Button>
@@ -517,7 +517,7 @@ const handleGenerateExplanation = async (q: Question) => {
                                           <span>AI Tutor Deep Dive</span>
                                         </div>
                                         <div className="bg-background/90 px-3 py-1 rounded-lg border border-primary/20 flex items-center gap-1.5 shadow-inner">
-                                          <span className="font-black text-xs text-primary">{AI_DEEP_DIVE_COST}</span>
+                                          <span className="font-black text-xs text-primary">{AI_COSTS.EXPLANATION_DEEP_DIVE}</span>
                                           <Sparkles className="w-3.5 h-3.5 text-primary fill-current animate-sparkle" />
                                         </div>
                                       </div>
